@@ -7,8 +7,6 @@ import std.format : format;
 import std.range : drop, dropOne, empty;
 import std.utf : toUTF32;
 
-import seqmap;
-
 class XmlTree
 {
   this()
@@ -269,13 +267,12 @@ class XmlNode
   this(dstring name)
   {
     this.name = name;
-    attrs = new SeqMap!(dstring, dstring);
   }
 
   XmlNode parent;
   XmlNode[] children;
   dstring name;
-  SeqMap!(dstring, dstring) attrs;
+  dstring[dstring] attrs;
   dstring content;
 }
 
