@@ -1,0 +1,27 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[*.d]
+indent_style = space
+indent_size = 2
+tab_width = 2
+max_line_length = 120
+dfmt_soft_max_line_length = 100
+dfmt_brace_style = allman
+dfmt_align_switch_statements = false
+dfmt_split_operator_at_line_end = false
+dfmt_space_after_cast = false
+dfmt_space_before_function_parameters = false
+dfmt_selective_import_space = true
+dfmt_compact_labeled_statements = false
+# dfmt_template_constraint_style = 
+# dfmt_single_template_constraint_indent = 
+dfmt_space_before_aa_colon = false
+dfmt_keep_line_breaks = true
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab
