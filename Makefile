@@ -15,4 +15,4 @@ run-test:
 
 .PHONY: format
 format:
-	dub run dfmt --compiler=ldc2 -- --inplace src
+	dub run dfmt --compiler=ldc2 -- --inplace source

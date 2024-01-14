@@ -1,40 +1,35 @@
 module gid;
 
+import std.algorithm : sort;
 import std.file : readText;
 import std.getopt;
 import std.stdio : writeln;
 
-import xmltree;
+import gir.repo;
+import xml_tree;
 
 void main(string[] args)
 {
   auto tree = new XmlTree();
-	string data = readText(args[1]);
+  string data = readText(args[1]);
+  tree.parse(data, args[1]);
 
-  try
+  auto repo = new Repo(tree);
+
+  /*
+	bool[dstring] nodeNames;
+
+	void recurseTree(XmlNode node)
 	{
-		tree.parse(data);
-	}
-	catch (XmlParseError e)
-	{
-		writeln(e);
-		throw e;
-	}
-
-	void recurseXmlTree(XmlNode node, dstring indent="")
-	{
-		dstring s = indent ~ node.name ~ ":";
-
-		foreach (atName; node.attrs.keys)
-			s ~= " " ~ atName ~ "=" ~ node.attrs[atName];
-
-		writeln(s);
+		nodeNames[node.name] = true;
 
 		foreach (child; node.children)
-			recurseXmlTree(child, indent ~ "  ");
-
-		writeln(indent ~ "/" ~ node.name);
+		  recurseTree(child);
 	}
 
-	recurseXmlTree(tree.root);
+	recurseTree(tree.root);
+
+	foreach (name; nodeNames.keys.sort)
+		writeln("case \"", name, "\":");
+*/
 }

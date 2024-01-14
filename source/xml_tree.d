@@ -1,10 +1,12 @@
-module xmltree;
+module xml_tree;
 
+import core.exception : RangeError;
 import std.algorithm : countUntil, startsWith;
 import std.conv : to;
 import std.exception : assertThrown;
 import std.format : format;
 import std.range : drop, dropOne, empty;
+import std.stdio : stderr;
 import std.utf : toUTF32;
 
 class XmlTree
@@ -14,7 +16,7 @@ class XmlTree
     xmlDoc = new XmlNode("xml");
   }
 
-  void parse(string data, string fileName="<UNKNOWN>")
+  void parse(string data, string fileName = "<UNKNOWN>")
   {
     enum State
     {
@@ -25,9 +27,8 @@ class XmlTree
     }
 
     dstring xmlstr = toUTF32(data);
-    auto totalLength = xmlstr.length;
-    size_t lineCount;
-    size_t charIndex;
+    uint lineCount;
+    uint charIndex;
     XmlNode[] nodeStack;
     State state;
 
@@ -36,13 +37,13 @@ class XmlTree
       throw new XmlParseError(message, fileName, lineCount, charIndex);
     }
 
-    void pop(size_t count=1)
+    void pop(size_t count = 1)
     {
       charIndex += count;
       xmlstr = xmlstr.drop(count);
     }
 
-    dstring popval(size_t count=1)
+    dstring popval(size_t count = 1)
     {
       dstring retval = xmlstr[0 .. count];
       pop(count);
@@ -144,11 +145,13 @@ class XmlTree
               else if (xmlstr[0] >= 'A' && xmlstr[0] <= 'F')
                 d = d << 4 | (popval()[0] - 'A' + 0xA);
               else
-                error(format("Invalid digit '%s' in XML hex numeric entity", xmlstr[0]));
+                error(format("Invalid digit '%s' in XML hex numeric entity",
+                    xmlstr[0]));
             }
 
             if (!match(";"))
-              error("Unexpected EOF while looking for XML hex numeric entity terminator");
+              error(
+                  "Unexpected EOF while looking for XML hex numeric entity terminator");
 
             val ~= d;
           }
@@ -201,7 +204,8 @@ class XmlTree
           error("Invalid XML element name");
 
         if (name != nodeStack[$ - 1].name)
-          error(format("Unexpected XML closing element '%s', expected '%s'", name, nodeStack[$ - 1].name));
+          error(format("Unexpected XML closing element '%s', expected '%s'",
+              name, nodeStack[$ - 1].name));
 
         nodeStack = nodeStack[0 .. $ - 1];
       }
@@ -216,10 +220,12 @@ class XmlTree
       }
       else if (state == State.Node && match("<")) // Opening/standalone element?
       {
+        auto parseLine = lineCount;
+
         if (!parseName(name))
           error("Invalid XML element name");
 
-        nodeStack ~= new XmlNode(name);
+        nodeStack ~= new XmlNode(name, fileName, parseLine);
         state = State.Element;
 
         if (nodeStack.length > 1)
@@ -264,39 +270,150 @@ class XmlTree
 
 class XmlNode
 {
-  this(dstring name)
+  this(dstring name, string parseFile = null, uint parseLine = 0)
   {
     this.name = name;
+    this.parseFile = parseFile;
+    this.parseLine = parseLine;
   }
 
-  XmlNode parent;
-  XmlNode[] children;
-  dstring name;
-  dstring[dstring] attrs;
-  dstring content;
+  /// Node full name including its ancestry names separated by periods.
+  @property dstring fullname()
+  {
+    dstring s;
+
+    for (auto n = this; n; n = n.parent)
+      s = s.empty ? n.name : n.name ~ "." ~ s;
+
+    return s;
+  }
+
+  dstring opIndex(dstring key)
+  {
+    dstring retval;
+
+    try
+      retval = attrs[key];
+    catch (RangeError e)
+      throw new XmlAttrError(this, key);
+
+    return retval;
+  }
+
+  dstring get(dstring key, dstring def = null)
+  {
+    return attrs.get(key, def);
+  }
+
+  /**
+   * Find a child by name.
+   * Params:
+   *   childName = Name of child node to find
+   * Returns: The first XmlNode child with childName or null if not found
+   */
+  XmlNode findChild(dstring childName)
+  {
+    foreach (child; children)
+      if (child.name == childName)
+        return child;
+
+    return null;
+  }
+
+  /**
+   * Find a child by name and throw XmlChildNotFoundError if not found.
+   * Params:
+   *   childName = Name of child node to find
+   * Returns: The first XmlNode child with childName
+   */
+  XmlNode requireChild(dstring childName)
+  {
+    if (auto retval = findChild(childName))
+      return retval;
+
+    throw new XmlChildNotFoundError(this, childName);
+  }
+
+  /**
+   * Display a warning message with node location details.
+   * Params:
+   *   msg = The message
+   */
+  void warn(dstring msg)
+  {
+    stderr.writeln(format("WARNING: %s (node '%s' in file '%s' at line %s)",
+        msg, fullname, parseFile, parseLine));
+  }
+
+  XmlNode parent; /// Parent XML node
+  XmlNode[] children; /// Children nodes
+  dstring name; /// Name of node
+  dstring[dstring] attrs; /// Node attribute values
+  dstring content; /// The text content between open and closing element
+
+  string parseFile; /// Name of parsed XML file
+  uint parseLine; /// Line number in original XML file that the node name was parsed on
 }
 
 class XmlParseError : Exception
 {
-  this(string message, string file, size_t line, size_t index)
+  this(string msg, string file, size_t line, size_t index)
   {
-    super(message);
-    _message = message;
-    _file = file;
-    _line = line;
-    _index = index;
+    super(msg);
+    this.file = file;
+    this.line = line;
+    this.index = index;
   }
 
   override string toString() const
   {
-    return format("XmlParseError: %s (in file %s, at line %s, index %s)", _message, _file, _line, _index);
+    return format("XmlParseError: %s (in file '%s', at line %s, index %s)",
+        msg, file, line, index);
   }
 
-private:
-  string _message;
-  string _file;
-  size_t _line;
-  size_t _index;
+  string file;
+  size_t line;
+  size_t index;
+}
+
+/// XML attribute lookup error. Used for catching missing required attributes.
+class XmlAttrError : RangeError
+{
+  this(XmlNode node, dstring attrName)
+  {
+    super("Attribute " ~ attrName.to!string ~ " not found");
+    this.node = node;
+    this.attrName = attrName;
+  }
+
+  override string toString()
+  {
+    return format("XmlAttrError: %s (in node %s, in file '%s', line %s)",
+        msg, node.fullname, node.parseFile, node.parseLine);
+  }
+
+  XmlNode node; /// The XML node
+  dstring attrName; /// The attribute name
+}
+
+/// XML child node not found error. Used for catching missing child nodes.
+class XmlChildNotFoundError : Exception
+{
+  this(XmlNode node, dstring childName)
+  {
+    super("Child node " ~ childName.to!string ~ " not found");
+    this.node = node;
+    this.childName = childName;
+  }
+
+  override string toString()
+  {
+    return format("XmlChildNotFoundError: %s (in node %s, in file '%s', line %s)",
+        msg, node.fullname, node.parseFile, node.parseLine);
+  }
+
+  XmlNode node; /// The XML node
+  dstring childName; /// The name of the child which is missing
 }
 
 /**

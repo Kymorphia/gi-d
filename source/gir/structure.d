@@ -1,10 +1,15 @@
 module gir.structure;
 
+import std.conv : to;
+
+import gir.base;
+import gir.field;
 import gir.func;
-import gir.type;
+import gir.property;
+import gir.type_node;
 
 /// Type of structure
-enum StructureType : dstring
+enum StructType : dstring
 {
   Class = "class", /// A class
   Interface = "interface", /// An interface
@@ -12,15 +17,52 @@ enum StructureType : dstring
 }
 
 /// Structure class which is used for class, interface, and records in Gir files
-class Structure
+final class Structure : Base
 {
+  this()
+  {
+  }
+
+  this(XmlNode node)
+  {
+    fromXml(node);
+  }
+
+  override void fromXml(XmlNode node)
+  {
+    super.fromXml(node);
+
+    name = node.get("name");
+    structType = cast(StructType)node.name;
+    cType = node.get("c:type");
+    cSymbolPrefix = node.get("c:symbol-prefix");
+    parent = node.get("parent");
+    version_ = node.get("version");
+
+    abstract_ = node.get("abstract") == "1";
+    deprecated_ = node.get("deprecated") == "1";
+    disguised = node.get("disguised") == "1";
+    opaque = node.get("opaque") == "1";
+    glibFundamental = node.get("glib:fundamental") == "1";
+
+    deprecatedVersion = node.get("deprecated-version");
+    glibGetType = node.get("glib:get-type");
+    glibTypeName = node.get("glib:type-name");
+    glibGetValueFunc = node.get("glib:get-value-func");
+    glibSetValueFunc = node.get("glib:set-value-func");
+    glibRefFunc = node.get("glib:glib-ref-func");
+    glibUnrefFunc = node.get("glib:glib-unref-func");
+    glibTypeStruct = node.get("glib:type-struct");
+    glibIsGtypeStructFor = node.get("glib:is-gtype-struct-for");
+  }
+
   dstring name; /// Name of structure
-  StructureType structureType; /// Type of structure
+  StructType structType; /// Type of structure
   dstring cType; /// C type name
   dstring cSymbolPrefix; /// C symbol prefix
   dstring parent; /// Parent structure
 
-  dstring implements; /// Interfaces implemented by structure
+  dstring[] implements; /// Interfaces implemented by structure
   dstring[] prerequisites; /// Interface prerequisite types
   Func[] functions; /// Constructors, functions, methods, virtual methods, and signals
   Field[] fields; /// Structure fields
@@ -42,50 +84,4 @@ class Structure
   dstring glibUnrefFunc; /// GLib unref function
   dstring glibTypeStruct; /// GLib class structure
   dstring glibIsGtypeStructFor; /// Indicates what type a class structure belongs to
-
-  dstring sourceFilename; /// Source filename
-  uint sourceLine; /// Source line
-
-  dstring docFilename; /// Documentation filename
-  uint docLine; /// Documentation line
-
-  dstring xmlns;
-  dstring xmlnsC;
-  dstring xmlnsGlib;
-}
-
-/// Field in a structure
-class Field
-{
-  dstring name; /// Field name
-  Type type; /// Field type (array element type if array.isArray)
-  ArrayInfo array; /// Array info for array field types
-  bool private_; /// Private field?
-  bool readable; /// Readable field?
-}
-
-/// Class property
-class Property
-{
-  dstring name; /// Name of property
-  Type type; /// Property type
-  ArrayInfo array; /// Array info for array properties
-  dstring defaultValue; /// Default value
-  Ownership ownership; /// Ownership transfer
-  bool readable; /// Property is readable
-  bool writable; /// Property is writable
-  bool construct; /// Construct property?
-  bool constructOnly; /// Construct only property?
-  bool deprecated_; /// Deprecated?
-  bool introspectable; /// Introspectable?
-  dstring version_; /// Version
-  dstring deprecatedVersion; /// Deprecated version
-
-  dstring cPropertyGet; /// C get property function
-  dstring cPropertySet; /// C set property function
-  dstring getter; /// Getter method
-  dstring setter; /// Setter method
-
-  dstring docFilename; /// Documentation filename
-  uint docLine; /// Documentation line
 }

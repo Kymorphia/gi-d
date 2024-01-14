@@ -1,16 +1,25 @@
 module gir.constant;
 
-import gir.type;
+import gir.type_node;
 
-class Constant
+final class Constant : TypeNode
 {
+  this()
+  {
+  }
+
+  this(XmlNode node)
+  {
+    fromXml(node);
+  }
+
+  override void fromXml(XmlNode node)
+  {
+    super.fromXml(node);
+    name = node.get("name");
+    value = node.get("value");
+  }
+
   dstring name; /// Name of constant
   dstring value; /// Value of constant
-  Type type; /// Type
-  dstring cType; /// C type name
-
-  dstring sourceFilename; /// Source filename
-  uint sourceLine; /// Source line
-  dstring docFilename; /// Documentation filename
-  uint docLine; /// Documentation line
 }

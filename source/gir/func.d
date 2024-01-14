@@ -1,6 +1,81 @@
 module gir.func;
 
-import gir.type;
+import std.conv : to;
+
+import gir.param;
+import gir.type_node;
+
+/**
+ * Function like object. Can be a function, method, signal, callback, etc.
+ * The TypeNode parent class stores the return type information.
+ */
+final class Func : TypeNode
+{
+  this()
+  {
+  }
+
+  this(XmlNode node)
+  {
+    fromXml(node);
+  }
+
+  override void fromXml(XmlNode node)
+  {
+    Base.fromXml(node);
+
+    if (auto retValNode = node.findChild("return-value"))
+    {
+      super.fromXml(retValNode); // The return-value node is used for TypeNode
+      ownership = cast(Ownership)retValNode.get("transfer-ownership");
+      nullable = retValNode.get("nullable") == "1";
+    }
+
+    name = node.get("name");
+    funcType = cast(FuncType)node.name;
+    cName = node.get("c:identifier");
+
+    version_ = node.get("version");
+    shadowedBy = node.get("shadowed-by");
+    shadows = node.get("shadows");
+    invoker = node.get("invoker");
+    movedTo = node.get("moved-to");
+    introspectable = node.get("introspectable") == "1";
+    throws = node.get("throws") == "1";
+    action = node.get("action") == "1";
+    detailed = node.get("detailed") == "1";
+    noHooks = node.get("noHooks") == "1";
+    noRecurse = node.get("noRecurse") == "1";
+    deprecated_ = node.get("deprecated") == "1";
+    deprecatedVersion = node.get("deprecated-version");
+    when = cast(SignalWhen)node.get("when");
+  }
+
+  dstring name; /// Name of function
+  FuncType funcType; /// Function type
+  dstring cName; /// C type name (Gir c:identifier)
+  Param[] params; /// Parameters
+
+  Ownership ownership; /// Ownership of return value (Gir "return-value:transfer-ownership")
+  bool nullable; /// Nullable return value pointer
+
+  dstring version_; /// Version
+  dstring shadowedBy; /// Function which shadows this
+  dstring shadows; /// Function that this shadows
+  dstring invoker; /// Invoker method
+  dstring movedTo; /// Function moved to name
+
+  bool introspectable; /// Introspectable?
+  bool throws; /// Throws exception?
+  bool action; /// Signal action (FIXME)
+  bool detailed; /// Signal detailed (FIXME)
+  bool noHooks; /// Signal no hooks (FIXME)
+  bool noRecurse; /// Signal no recurse (FIXME)
+
+  bool deprecated_; /// Deprecated
+  dstring deprecatedVersion; /// Deprecated version
+  SignalWhen when; /// Signal when
+}
 
 enum FuncType : dstring
 {
@@ -15,77 +90,8 @@ enum FuncType : dstring
 
 enum SignalWhen : dstring
 {
+  Unset = null,
   First = "first",
   Last = "last",
   Cleanup = "cleanup",
-}
-
-class Func
-{
-  dstring name; /// Name of function
-  FuncType funcType; /// Function type
-  dstring cType; /// C type name
-  dstring cIdentifier; /// C function name
-  Type returnValue; /// Return value type
-  ArrayInfo returnArray; /// Array info for array return values
-  Param[] params; /// Parameters
-
-  dstring version_; /// Version
-  dstring shadowedBy; /// Function which shadows this
-  dstring shadows; /// Function that this shadows
-  dstring invoker; /// Invoker method
-  dstring movedTo; /// Function moved to name
-
-  bool deprecated_; /// Deprecated
-  dstring deprecatedVersion; /// Deprecated version
-  bool introspectable; /// Introspectable?
-  bool throws; /// Throws exception?
-  bool action; /// Signal action (FIXME)
-  bool detailed; /// Signal detailed (FIXME)
-  bool noHooks; /// Signal no hooks (FIXME)
-  bool noRecurse; /// Signal no recurse (FIXME)
-  SignalWhen when; /// Signal when
-
-  dstring sourceFilename; /// Source filename
-  uint sourceLine; /// Source line number
-  dstring docFilename; /// Documentation filename
-  uint docLine; /// Documentation line number
-}
-
-/// Direction of a parameter
-enum ParamDirection : dstring
-{
-  In = "in", /// Input direction (not actually found in Gir files, since it is the default unspecified value)
-  Out = "out", /// Output direction
-  InOut = "inout", /// Input and output direction
-}
-
-/// Parameter scope
-enum ParamScope : dstring
-{
-  Call = "call", /// FIXME
-  Async = "async", /// FIXME
-  Notified = "notified", /// FIXME
-}
-
-/// Function parameter
-class Param
-{
-  dstring name;
-  Type type;
-  ParamDirection direction;
-  Ownership transferOwnership;
-  ArrayInfo array;
-  bool allowNone;
-  bool callerAllocates;
-  bool nullable;
-  bool optional;
-  bool varargs;
-
-  uint closureParam;
-  uint destroyParam;
-  ParamScope scope_;
-
-  dstring docFilename; /// Documentation filename
-  uint docLine; /// Documentation line number
 }

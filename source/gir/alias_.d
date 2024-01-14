@@ -1,14 +1,29 @@
 module gir.alias_;
 
-import gir.type;
+import gir.type_node;
 
-class Alias
+/**
+ * Gir type alias object.
+ * The TypeNode parent stores the aliased type.
+ */
+final class Alias : TypeNode
 {
-  dstring name;
-  Type type;
-  dstring cType;
-  dstring docFilename;
-  uint docLine;
-  dstring sourceFilename;
-  uint sourceLine;
+  this()
+  {
+  }
+
+  this(XmlNode node)
+  {
+    fromXml(node);
+  }
+
+  override void fromXml(XmlNode node)
+  {
+    super.fromXml(node);
+    name = node.get("name");
+    cName = node.get("c:type");
+  }
+
+  dstring name; /// D type name for the alias (Gir "name" attribute)
+  dstring cName; /// C type name for the alias (Gir "c:type" attribute)
 }
