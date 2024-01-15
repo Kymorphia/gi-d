@@ -10,7 +10,7 @@ abstract class TypeNode : Base
 {
   override void fromXml(XmlNode node)
   {
-    this.node = node;
+    super.fromXml(node);
 
     if (auto typ = node.findChild("type"))
     {
@@ -33,6 +33,12 @@ abstract class TypeNode : Base
         lengthParamIndex = (*pLength).to!int;
       else
         lengthParamIndex = NoLengthParam;
+
+      if (auto typ = arr.findChild("type")) // Use array element type for type info
+      {
+        dType = typ.get("name");
+        cType = typ.get("c:type");
+      }
     }
     else
       isArray = false;

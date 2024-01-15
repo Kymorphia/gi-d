@@ -1,7 +1,7 @@
 module xml_tree;
 
 import core.exception : RangeError;
-import std.algorithm : countUntil, startsWith;
+import std.algorithm : among, countUntil, startsWith;
 import std.conv : to;
 import std.exception : assertThrown;
 import std.format : format;
@@ -27,7 +27,7 @@ class XmlTree
     }
 
     dstring xmlstr = toUTF32(data);
-    uint lineCount;
+    uint lineCount = 1;
     uint charIndex;
     XmlNode[] nodeStack;
     State state;
@@ -37,37 +37,35 @@ class XmlTree
       throw new XmlParseError(message, fileName, lineCount, charIndex);
     }
 
-    void pop(size_t count = 1)
+    void pop(size_t len = 1)
     {
-      charIndex += count;
-      xmlstr = xmlstr.drop(count);
+      foreach (i; 0 .. len)
+      {
+        if (xmlstr[i] == '\n')
+        {
+          lineCount++;
+          charIndex = 0;
+        }
+        else
+          charIndex++;
+      }
+
+      xmlstr = xmlstr.drop(len);
     }
 
-    dstring popval(size_t count = 1)
+    dstring popval(size_t len = 1)
     {
-      dstring retval = xmlstr[0 .. count];
-      pop(count);
+      dstring retval = xmlstr[0 .. len];
+      pop(len);
       return retval;
     }
 
     // Skip whitespace, returns true if there was any
     bool skipWhiteSpace()
     {
-      bool retval;
-      while (!xmlstr.empty && isWhite(xmlstr[0]))
-      {
-        if (xmlstr[0] == '\n')
-        {
-          lineCount++;
-          xmlstr = xmlstr.dropOne;
-          charIndex = 0;
-        }
-        else
-          pop();
-
-        retval = true;
-      }
-      return retval;
+      auto len = xmlstr.countUntil!(x => !isWhite(x));
+      pop(len);
+      return len > 0;
     }
 
     bool match(dstring m)
@@ -85,11 +83,8 @@ class XmlTree
       if (xmlstr.empty || !isValidElemStartChar(xmlstr[0]))
         return false;
 
-      name ~= popval();
-
-      while (!xmlstr.empty && isValidElemChar(xmlstr[0]))
-        name ~= popval();
-
+      auto len = xmlstr[1 .. $].countUntil!(x => !isValidElemChar(x));
+      name ~= popval(1 + len);
       return true;
     }
 
@@ -109,13 +104,12 @@ class XmlTree
       if (quotechar != '"' && quotechar != '\'')
         error("Expected XML attribute value quote character");
 
-      while (!xmlstr.empty && xmlstr[0] != quotechar)
-      {
-        if (xmlstr[0] == '<' || xmlstr[0] == '&')
-          error(format("Unexpected character '%s' in XML attribute value", xmlstr[0]));
+      auto len = xmlstr.countUntil!(x => x.among(quotechar, '<', '&') != 0);
 
-        val ~= popval();
-      }
+      if (len < xmlstr.length && (xmlstr[len] == '<' || xmlstr[len] == '&'))
+        error(format("Unexpected character '%s' in XML attribute value", xmlstr[len]));
+
+      val ~= popval(len);
 
       if (!match([quotechar]))
         error("Unexpected EOF looking for XML attribute value closing quote");
@@ -211,12 +205,12 @@ class XmlTree
       }
       else if (match("<!--")) // Comment
       {
-        auto count = xmlstr.countUntil("-->");
+        auto len = xmlstr.countUntil("-->");
 
-        if (count == -1)
+        if (len == -1)
           error("Unexpected EOF looking for comment closing");
 
-        pop(count + 3);
+        pop(len + 3);
       }
       else if (state == State.Node && match("<")) // Opening/standalone element?
       {

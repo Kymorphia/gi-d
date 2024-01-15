@@ -17,9 +17,11 @@ final class Constant : TypeNode
   {
     super.fromXml(node);
     name = node.get("name");
+    cName = node.get("c:type");
     value = node.get("value");
   }
 
   dstring name; /// Name of constant
+  dstring cName; /// C name of constant
   dstring value; /// Value of constant
 }

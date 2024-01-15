@@ -20,13 +20,14 @@ final class Member : TypeNode
 
     name = node.get("name");
     cName = node.get("c:identifier");
+    value = node.get("value");
     glibName = node.get("glib:name");
     glibNick = node.get("glib:nick");
   }
 
   dstring name; /// Name of the enumeration or bitfield member
   dstring cName; /// C name (Gir "c:identifier")
-  long value; /// The value
+  dstring value; /// The value
   dstring glibName; /// GLib enum/flags name
   dstring glibNick; /// GLib enum/flags nick name
 }

@@ -1,5 +1,6 @@
 module gir.field;
 
+import gir.func;
 import gir.type_node;
 
 /// Field in a structure
@@ -24,6 +25,7 @@ final class Field : TypeNode
   }
 
   dstring name; /// Field name
+  Func callback; /// For callback fields
   bool private_; /// Private field?
   bool readable; /// Readable field?
 }

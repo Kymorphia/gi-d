@@ -16,6 +16,8 @@ void main(string[] args)
 
   auto repo = new Repo(tree);
 
+  repo.writePackage();
+
   /*
 	bool[dstring] nodeNames;
 
