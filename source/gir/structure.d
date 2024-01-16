@@ -6,7 +6,9 @@ import gir.base;
 import gir.field;
 import gir.func;
 import gir.property;
+import gir.repo;
 import gir.type_node;
+import utils;
 
 /// Type of structure
 enum StructType : dstring
@@ -19,13 +21,15 @@ enum StructType : dstring
 /// Structure class which is used for class, interface, and records in Gir files
 final class Structure : Base
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
+    this.repo = repo;
+    fromXml(node);
   }
 
-  this(XmlNode node)
+  @property dstring subCType()
   {
-    fromXml(node);
+    return repo.defs.subCTypeStr(cType);
   }
 
   override void fromXml(XmlNode node)

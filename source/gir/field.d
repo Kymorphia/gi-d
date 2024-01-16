@@ -6,12 +6,9 @@ import gir.type_node;
 /// Field in a structure
 final class Field : TypeNode
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 

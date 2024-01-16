@@ -7,12 +7,9 @@ import gir.member;
 /// Enumeration or bitfield flags
 final class Enumeration : Base
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 

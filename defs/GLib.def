@@ -1,0 +1,29 @@
+girfile GLib-2.0
+
+subtype gboolean bool
+subtype gchar char
+subtype gdouble double
+subtype gfloat float
+subtype gint int
+subtype gint16 short
+subtype gint32 int
+subtype gint64 long
+subtype gint8 byte
+subtype gpointer void*
+subtype gshort short
+subtype gsize size_t
+subtype gssize ptrdiff_t
+subtype guchar ubyte
+subtype guint uint
+subtype guint16 ushort
+subtype guint32 uint
+subtype guint64 ulong
+subtype guint8 ubyte
+subtype guintptr size_t
+subtype gunichar dchar
+subtype gushort ushort
+subtype va_list void*
+
+# FIXME - Need to use int/uint on Windows
+subtype glong long
+subtype gulong ulong

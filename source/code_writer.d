@@ -2,11 +2,9 @@ module code_writer;
 
 import core.sys.posix.signal : SIGTRAP;
 import core.stdc.signal : raise;
-import std.algorithm : endsWith, startsWith;
-import std.conv : to;
-import std.file : exists, mkdirRecurse, fileRead = read, fileWrite = write;
-import std.path : dirName;
-import std.string : splitLines, strip;
+import std.file : fileRead = read, fileWrite = write;
+
+import std_includes;
 
 /**
  * Code writer object.
@@ -52,7 +50,7 @@ class CodeWriter
   CodeWriter opOpAssign(string op)(dstring rhs) if (op == "~")
   { // Remove end newline to have identical behavior of raw text append
     if (rhs.endsWith('\n'))
-      rhs = rhs[1 .. $];
+      rhs = rhs[0 .. $ - 1];
 
     if (rhs == "")
       return this ~= [""];
@@ -66,20 +64,37 @@ class CodeWriter
       mkdirRecurse(fileName.dirName());
 
     dstring content;
-    dstring indent = "";
+    uint indent;
+    bool indentStatement; // Used for indenting a single line after a control statement without a open/close brace block
 
     foreach (l; lines)
     {
-      if (l.endsWith('}') && indent.length >= 2)
-        indent.length -= 2;
+      if (!inComment)
+      {
+        if (l.startsWith("/*")) // Start of multi-line comment?
+          inComment = true;
+        else if (l.endsWith('}') && indent >= 2) // End brace for a control block?
+          indent -= 2;
+        else if (l.endsWith('{'))
+          indentStatement = false; // Don't add single statement indent if indent statement is followed by an open brace
+      }
 
-      if (l.startsWith("*"))
-        content ~= indent ~ " " ~ l.strip ~ '\n'; // Indent an extra space for multiline comments
-      else
-        content ~= indent ~ l.strip ~ '\n';
+      auto calcIndent = indent
+        + (l.startsWith("*") ? 1 : 0) // Indent an extra space for multiline comments
+        + (indentStatement ? 2 : 0); // Indent statements without braces
 
-      if (l.endsWith('{'))
-        indent ~= "  ";
+      content ~= (cast(dchar)' ').repeat(calcIndent).array ~ l.strip ~ "\n"d;
+      indentStatement = false;
+
+      if (inComment)
+      {
+        if (l.endsWith("*/")) // End of multi-line comment?
+          inComment = false;
+      }
+      else if (l.endsWith('{')) // Open brace for a control block increases indent
+        indent += 2;
+      else if (["else", "for ", "if ", "static if ", "version(", "while "].filter!(x => l.startsWith(x)).empty != true)
+        indentStatement = true;
     }
 
     string strContent = content.to!string;
@@ -104,7 +119,5 @@ private:
   string fileName; // Name of file the buffer will be written to
   bool[] trapActive; // Array of booleans indicating if a trap is active and not yet triggered (true)
 
-  dstring tabs; // Current indentation tab characters
-  bool statement; // True if in a statement
-  int paramList = 0; // Parameter list
+  bool inComment; // True if inside a multi-line comment
 }

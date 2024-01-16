@@ -1,13 +1,8 @@
 module xml_tree;
 
 import core.exception : RangeError;
-import std.algorithm : among, countUntil, startsWith;
-import std.conv : to;
-import std.exception : assertThrown;
-import std.format : format;
-import std.range : drop, dropOne, empty;
-import std.stdio : stderr;
 import std.utf : toUTF32;
+import std_includes;
 
 class XmlTree
 {

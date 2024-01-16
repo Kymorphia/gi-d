@@ -3,7 +3,9 @@ module gir.func;
 import std.conv : to;
 
 import gir.param;
+import gir.repo;
 import gir.type_node;
+import utils;
 
 /**
  * Function like object. Can be a function, method, signal, callback, etc.
@@ -11,12 +13,9 @@ import gir.type_node;
  */
 final class Func : TypeNode
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 
@@ -49,6 +48,20 @@ final class Func : TypeNode
     deprecated_ = node.get("deprecated") == "1";
     deprecatedVersion = node.get("deprecated-version");
     when = cast(SignalWhen)node.get("when");
+  }
+
+  /**
+   * Get function prototype string for function.
+   * Returns: Function prototype string which intentially omits the function name for definition by the caller.
+   */
+  dstring getCPrototype()
+  {
+    dstring fnptr = (isArray ? subArrayCType : subCType) ~ " function(";
+
+    foreach (i, p; params)
+      fnptr ~= (i > 0 ? ", "d : "") ~ p.subCType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
+
+    return fnptr ~ ")";
   }
 
   dstring name; /// Name of function

@@ -4,12 +4,22 @@ import std.algorithm : map;
 import std.string : splitLines, strip;
 
 import code_writer;
+public import gir.repo;
 public import xml_tree;
 
 private static Base[XmlNode] xmlNodeBaseHash;
 
 abstract class Base
 {
+  this()
+  {
+  }
+
+  this(Repo repo)
+  {
+    this.repo = repo;
+  }
+
   @property XmlNode xmlNode()
   {
     return _node;
@@ -41,6 +51,7 @@ abstract class Base
 
   private XmlNode _node; /// The XML node object was created from
 
+  Repo repo; /// Parent repo
   dstring[dstring] attributes; /// Gir key/value attributes
   dstring docContent; /// Documentation content
   dstring docFilename; /// Documentation filename

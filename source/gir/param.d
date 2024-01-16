@@ -7,12 +7,9 @@ import gir.type_node;
 /// Function parameter
 final class Param : TypeNode
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 

@@ -8,12 +8,9 @@ import gir.type_node;
 /// Class property
 final class Property : TypeNode
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 

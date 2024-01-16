@@ -5,16 +5,19 @@ import std.file : readText;
 import std.getopt;
 import std.stdio : writeln;
 
+import definitions;
 import gir.repo;
 import xml_tree;
 
 void main(string[] args)
 {
-  auto tree = new XmlTree();
-  string data = readText(args[1]);
-  tree.parse(data, args[1]);
+  auto defs = new Definitions();
+  defs.loadDefFiles();
 
-  auto repo = new Repo(tree);
+  auto tree = new XmlTree();
+  tree.parse(readText(args[1]), args[1]);
+
+  auto repo = new Repo(defs, tree);
 
   repo.writePackage();
 

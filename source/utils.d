@@ -1,6 +1,6 @@
 module utils;
 
-import std.string : toUpper;
+import std_includes;
 
 /**
  * Changes snake case to camelCase.
@@ -36,4 +36,35 @@ dstring camelCase(dstring snakeCase, bool firstUpper = false)
     camelStr ~= snakeCase[lastPos .. $];
 
   return camelStr;
+}
+
+/**
+ * Tokenize a type string into words and '*' pointers
+ * Params:
+ *   type = The type string
+ * Returns: 
+ */
+dstring[] tokenizeType(dstring type)
+{
+  dstring[] tokens;
+  ulong lastStart;
+
+  foreach (i, c; type)
+  {
+    if (c.among('*', ' ', '(', ')'))
+    {
+      if (lastStart < i)
+        tokens ~= type[lastStart .. i];
+
+      if (c != ' ')
+        tokens ~= [c];
+
+      lastStart = i + 1;
+    }
+  }
+
+  if (lastStart < type.length)
+    tokens ~= type[lastStart .. $];
+
+  return tokens;
 }

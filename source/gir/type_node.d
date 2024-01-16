@@ -1,13 +1,23 @@
 module gir.type_node;
 
-import std.conv : to;
-
 public import gir.base;
+import std_includes;
+import utils;
 
 /// Type information class
 /// Combines multiple Gir information (type, array, ownership, etc)
 abstract class TypeNode : Base
 {
+  @property dstring subCType()
+  {
+    return repo.defs.subCTypeStr(cType);
+  }
+
+  @property dstring subArrayCType()
+  {
+    return repo.defs.subCTypeStr(arrayCType);
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
@@ -42,6 +52,12 @@ abstract class TypeNode : Base
     }
     else
       isArray = false;
+  }
+
+  /// Check if type is a string type
+  bool isString()
+  {
+    return dType == "utf8"; // FIXME - Other types
   }
 
   dstring dType; /// D type (element type for arrays, Gir "name")

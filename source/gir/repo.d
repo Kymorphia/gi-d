@@ -1,12 +1,6 @@
 module gir.repo;
 
-import std.conv : to;
-import std.file : mkdirRecurse;
-import std.path : buildPath;
-import std.range : empty;
-import std.stdio : stderr;
-import std.string : toLower;
-
+import definitions;
 import gir.alias_;
 import gir.base;
 import gir.constant;
@@ -19,18 +13,21 @@ import gir.property;
 import gir.structure;
 import gir.type_node;
 import code_writer;
+import std_includes;
 import utils;
 import xml_tree;
 
 /// Gir repository
 final class Repo
 {
-  this()
+  this(Definitions defs)
   {
+    this.defs = defs;
   }
 
-  this(XmlTree tree)
+  this(Definitions defs, XmlTree tree)
   {
+    this(defs);
     fromXmlTree(tree);
   }
 
@@ -42,14 +39,14 @@ final class Repo
       switch (node.name)
       {
         case "alias": // Alias info
-          aliases ~= new Alias(node);
+          aliases ~= new Alias(this, node);
           break;
         case "array": // Array type info
           break; // Do nothing, TypeNode handles this
         case "attribute": // FIXME - Freeform attributes, but for which nodes?
           break;
         case "bitfield", "enumeration": // Flags and enumerations
-          enums ~= new Enumeration(node);
+          enums ~= new Enumeration(this, node);
           break;
         case "c:include": // C include header
           cIncludes ~= node["name"];
@@ -62,17 +59,17 @@ final class Repo
               if (field.callback)
                 node.warn("Field has multiple callbacks");
               else
-                field.callback = new Func(node);
+                field.callback = new Func(this, node);
             }
           }
           else
-            callbacks ~= new Func(node);
+            callbacks ~= new Func(this, node);
           break;
         case "class", "interface", "record": // Class, interfaces, and structures
-          structs ~= new Structure(node);
+          structs ~= new Structure(this, node);
           break;
         case "constant": // Constants
-          constants ~= new Constant(node);
+          constants ~= new Constant(this, node);
           break;
         case "constructor": // Constructor method (class and record)
         case "function": // Function (class, enumeration, namespace, interface, record)
@@ -81,11 +78,11 @@ final class Repo
         case "method": // Method function (class, interface, record)
         case "virtual-method": // Virtual method (class, interface)
           if (auto cl = node.baseParentFromXmlNode!Structure)
-            cl.functions ~= new Func(node);
+            cl.functions ~= new Func(this, node);
           else if (auto en = node.baseParentFromXmlNode!Enumeration)
-            en.functions ~= new Func(node);
+            en.functions ~= new Func(this, node);
           else
-            functions ~= new Func(node);
+            functions ~= new Func(this, node);
           break;
         case "doc": // Documentation file position
           if (auto base = baseParentFromXmlNodeWarn!Base(node))
@@ -100,11 +97,11 @@ final class Repo
             base.docDeprecated = node.content;
           break;
         case "docsection": // Documentation section
-          docSections ~= new DocSection(node);
+          docSections ~= new DocSection(this, node);
           break;
         case "field": // Field 
           if (auto st = node.baseParentFromXmlNodeWarn!Structure)
-            st.fields ~= new Field(node);
+            st.fields ~= new Field(this, node);
           break;
         case "glib:boxed":
           break; // Silently ignore this seldom used node (only TreeRowData seen so far)
@@ -118,7 +115,7 @@ final class Repo
           break;
         case "member": // Enumeration or bitfield member
           if (auto en = node.baseParentFromXmlNodeWarn!Enumeration)
-            en.members ~= new Member(node);
+            en.members ~= new Member(this, node);
           break;
         case "namespace": // Namespace
           namespace = node["name"];
@@ -134,7 +131,7 @@ final class Repo
           if (node.parent)
           {
             if (auto fn = node.parent.baseParentFromXmlNodeWarn!Func)
-              fn.params ~= new Param(node);
+              fn.params ~= new Param(this, node);
           }
           else
             node.warn("Expected node to have a parent");
@@ -148,7 +145,7 @@ final class Repo
           break;
         case "property": // Class or interface property
           if (auto cl = node.baseParentFromXmlNodeWarn!Structure)
-            cl.properties ~= new Property(node);
+            cl.properties ~= new Property(this, node);
           break;
         case "repository": // Toplevel repository
           repoVersion = node.get("version");
@@ -202,6 +199,7 @@ final class Repo
     auto packageCPath = buildPath(packagePath, "c");
 
     writeCTypes(buildPath(packageCPath, "types.d"));
+    writeCFuncs(buildPath(packageCPath, "functions.d"));
   }
 
   /**
@@ -218,7 +216,7 @@ final class Repo
     foreach (a; aliases)
     {
       a.writeDocs(writer);
-      writer ~= ["alias " ~ a.cName ~ " = " ~ a.cType, ""];
+      writer ~= ["alias " ~ a.cName ~ " = " ~ a.subCType ~ ";", ""];
     }
 
     foreach (e; enums)
@@ -229,7 +227,7 @@ final class Repo
 
       Member[dstring] dupCheck; // Duplicate member check
 
-      foreach (i, m; e.members)
+      foreach (m; e.members)
       {
         auto memberName = m.name.camelCase(true);
 
@@ -241,11 +239,11 @@ final class Repo
 
         dupCheck[memberName] = m;
 
-        m.writeDocs(writer);
-        writer ~= memberName ~ " = " ~ m.value ~ ",";
-
-        if (i + 1 < e.members.length)
+        if (writer.lines[$ - 1] != "{")
           writer ~= "";
+
+        m.writeDocs(writer);
+        writer ~= defs.symbolName(memberName) ~ " = " ~ m.value ~ ",";
       }
 
       writer ~= ["}", ""];
@@ -257,39 +255,32 @@ final class Repo
       {
         st.writeDocs(writer);
 
-        writer ~= ["struct " ~ st.cType, "{"];
+        writer ~= ["struct " ~ st.subCType, "{"];
 
         foreach (fi, f; st.fields)
         {
           f.writeDocs(writer);
 
-          if (f.callback) // Callback field?
-          {
-            dstring cb = "extern(C) " ~ f.callback.cType ~ " function(";
-
-            foreach (i, p; f.callback.params)
-              cb ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ p.name.camelCase;
-
-            writer ~= cb ~ ") " ~ f.callback.name.camelCase ~ ";";
-          }
-          else if (f.isArray)
+          if (f.isArray)
           {
             if (f.fixedSize == NotFixedSize)
             { // Use array cType if array is not a fixed size
               if (!f.arrayCType.empty)
-                writer ~= f.arrayCType ~ " " ~ f.name.camelCase ~ ";";
+                writer ~= f.arrayCType ~ " " ~ defs.symbolName(f.name.camelCase) ~ ";";
               else
                 f.xmlNode.warn("Struct array field is not fixed size and array c:type not set");
             }
             else if (!f.cType.empty)
-              writer ~= f.cType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ f.name.camelCase ~ ";";
+              writer ~= f.subCType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ defs.symbolName(f.name.camelCase) ~ ";";
             else
               f.xmlNode.warn("Struct array field is missing c:type attribute");
           }
+          else if (f.callback) // Callback field?
+            writer ~= "extern(C) " ~ f.callback.getCPrototype ~ " " ~ defs.symbolName(f.callback.name.camelCase) ~ ";";
           else // A regular field
           {
             if (!f.cType.empty)
-              writer ~= f.cType ~ " " ~ f.name.camelCase ~ ";";
+              writer ~= f.subCType ~ " " ~ defs.symbolName(f.name.camelCase) ~ ";";
             else
               f.xmlNode.warn("Struct field is missing c:type attribute");
           }
@@ -301,29 +292,148 @@ final class Repo
         writer ~= ["}", ""];
       }
       else // Opaque structure (docs are not written for the C type)
-        writer ~= ["struct " ~ st.cType ~ ";", ""];
+        writer ~= ["struct " ~ st.subCType ~ ";", ""];
     }
 
     foreach (cb; callbacks)
     {
       cb.writeDocs(writer);
-
-      dstring dec = "extern(C) " ~ cb.cType ~ " function(";
-
-      foreach (i, p; cb.params)
-        dec ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ p.name.camelCase;
-
-      writer ~= [dec ~ ") " ~ cb.name.camelCase ~ ";", ""];
+      writer ~= ["extern(C) " ~ cb.getCPrototype ~ " " ~ defs.symbolName(cb.name.camelCase) ~ ";", ""];
     }
 
     foreach (con; constants)
     {
       con.writeDocs(writer);
-      writer ~= ["enum " ~ con.cName ~ " = " ~ con.value ~ ";", ""];
+
+      if (con.isString)
+        writer ~= ["enum " ~ con.cName ~ " = \"" ~ con.value ~ "\";", ""];
+      else
+        writer ~= ["enum " ~ con.cName ~ " = " ~ con.value ~ ";", ""];
     }
 
     writer.write();
   }
+
+  private void writeCFuncs(string path)
+  {
+    auto writer = new CodeWriter(path);
+
+    writer ~= ["module " ~ namespace.toLower ~ ".c.funcs;", ""];
+
+    writeSharedLibs(writer);
+
+    writer ~= ["__gshared extern(C)", "{"];
+
+    foreach (st; structs)
+    {
+      if (st.functions.length == 0)
+        continue;
+
+      bool preambleShown;
+
+      foreach (f; st.functions)
+      {
+        with (FuncType)
+          if (!f.funcType.among(Function, Constructor, Method))
+            continue;
+
+        if (!preambleShown)
+        {
+          if (writer.lines[$ - 1] != "{")
+            writer ~= "";
+
+          writer ~= ["// " ~ namespace.toLower ~ "." ~ st.name, ""];
+          preambleShown = true;
+        }
+
+        writer ~= f.getCPrototype ~ " c_" ~ f.cName ~ ";";
+      }
+    }
+
+    writer ~= ["}", ""];
+
+    foreach (st; structs)
+    {
+      bool preambleShown;
+
+      foreach (f; st.functions)
+      {
+        with (FuncType)
+          if (!f.funcType.among(Function, Constructor, Method))
+            continue;
+
+        if (!preambleShown)
+        {
+          if (writer.lines[$ - 2] != "}")
+            writer ~= "";
+
+          writer ~= ["// " ~ namespace.toLower ~ "." ~ st.name, ""];
+          preambleShown = true;
+        }
+
+        writer ~= "alias " ~ f.cName ~ " = c_" ~ f.cName ~ ";";
+      }
+    }
+
+    writer ~= ["", "static this()", "{"];
+
+    foreach (st; structs)
+    {
+      bool preambleShown;
+
+      foreach (f; st.functions)
+      {
+        with (FuncType)
+          if (!f.funcType.among(Function, Constructor, Method))
+            continue;
+
+        if (!preambleShown)
+        {
+          if (writer.lines[$ - 1] != "{")
+            writer ~= "";
+
+          writer ~= ["// " ~ namespace.toLower ~ "." ~ st.name, ""];
+          preambleShown = true;
+        }
+
+        writer ~= f.cName ~ " = link(\"" ~ f.cName ~ "\");";
+      }
+    }
+
+    writer ~= ["}"];
+
+    writer ~= linkerCode.to!dstring;
+
+    writer.write();
+  }
+
+  private void writeSharedLibs(CodeWriter writer)
+  {
+    dstring[] winLibs, osxLibs, posixLibs;
+
+    foreach (lib; sharedLibrary.split(',')) // Multiple libraries separated by commas
+    { // Example "libatk-1.0.so.0"
+      auto t = lib.split(".so."); // Split example into "libatk-1.0" and "0"
+      auto t2 = t[0].split("."); // Split "libatk-1.0" into "libatk-1" and "0"
+
+      // libatk-1.0-0.dll;atk-1.0-0.dll;atk-1.dll
+      winLibs ~= "\"" ~ t[0] ~ "-" ~ t[1] ~ ".dll;" ~ t[0][3 .. $] ~ "-" ~ t[1] ~ ".dll;" ~ t2[0][3 .. $] ~ ".dll\"";
+      osxLibs ~= "\"" ~ t[0] ~ "." ~ t[1] ~ ".dylib\""; // libatk-1.0.0.dylib
+      posixLibs ~= "\"" ~ lib ~ "\""; // libatk-1.0.so.0
+    }
+
+    writer ~= [
+      "version(Windows)",
+      "private immutable LIBS = [" ~ winLibs.join(", ") ~ "];",
+      "version(OSX)",
+      "private immutable LIBS = [" ~ osxLibs.join(", ") ~ "];",
+      "else",
+      "private immutable LIBS = [" ~ posixLibs.join(", ") ~ "];",
+      ""
+    ];
+  }
+
+  Definitions defs; /// Definitions loaded from def files
 
   dstring fileName; /// Gir filename
   dstring packageName; /// Package name
@@ -331,7 +441,7 @@ final class Repo
 
   dstring namespace; /// Name space of symbols in gir file
   dstring nsVersion; /// Version of the namespace
-  dstring sharedLibrary; /// Namespace shared library
+  dstring sharedLibrary; /// Namespace shared library (multiple values separated by commas)
   dstring identifierPrefixes; /// Prefix to identifiers
   dstring symbolPrefixes; /// C symbol prefix
 
@@ -360,8 +470,9 @@ struct Include
 /// Documentation section
 final class DocSection : Base
 {
-  this(XmlNode node)
+  this(Repo repo, XmlNode node)
   {
+    this.repo = repo;
     fromXml(node);
   }
 
@@ -373,3 +484,30 @@ final class DocSection : Base
 
   dstring name; /// Name of doc section
 }
+
+/// Dynamic linker code included directly in each package
+immutable string linkerCode =
+  `
+import core.sys.posix.dlfcn : dlclose, dlerror, dlopen, dlsym, RTLD_GLOBAL, RTLD_NOW;
+import std.string : fromStringz, toStringz;
+
+private void* link(string symbol)
+{
+  foreach (lib; LIBS)
+  {
+    if (auto handle = dlopen(lib, RTLD_GLOBAL | RTLD_NOW))
+    {
+      if (auto fptr = dlsym(handle, cast(char*)toStringz(symbol)))
+        return fptr;
+    }
+    else throw new Error("Failed to load library '" ~ lib ~ "': " ~ dlerror().fromStringz.idup);
+  }
+
+  return symbolNotFound;
+}
+
+private void symbolNotFound()
+{
+  throw new Error("Attempted to execute a dynamic library function which was not found");
+}
+`;

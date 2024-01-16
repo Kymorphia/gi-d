@@ -8,12 +8,9 @@ import gir.type_node;
  */
 final class Alias : TypeNode
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 

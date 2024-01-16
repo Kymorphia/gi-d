@@ -5,12 +5,9 @@ import gir.type_node;
 /// Member value for Enumeration
 final class Member : TypeNode
 {
-  this()
+  this(Repo repo, XmlNode node)
   {
-  }
-
-  this(XmlNode node)
-  {
+    this.repo = repo;
     fromXml(node);
   }
 
