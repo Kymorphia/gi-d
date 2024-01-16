@@ -59,7 +59,10 @@ class XmlTree
     bool skipWhiteSpace()
     {
       auto len = xmlstr.countUntil!(x => !isWhite(x));
-      pop(len);
+
+      if (len > 0)
+        pop(len);
+
       return len > 0;
     }
 
@@ -83,41 +86,14 @@ class XmlTree
       return true;
     }
 
-    bool parseAttribute(out dstring name, out dstring val)
-    {
-      if (!parseName(name))
-        return false;
-
-      if (!match("="))
-        error("Expected '=' delimiter for XML attribute value");
-
-      dchar quotechar;
-
-      if (!xmlstr.empty)
-        quotechar = popval()[0];
-
-      if (quotechar != '"' && quotechar != '\'')
-        error("Expected XML attribute value quote character");
-
-      auto len = xmlstr.countUntil!(x => x.among(quotechar, '<', '&') != 0);
-
-      if (len < xmlstr.length && (xmlstr[len] == '<' || xmlstr[len] == '&'))
-        error(format("Unexpected character '%s' in XML attribute value", xmlstr[len]));
-
-      val ~= popval(len);
-
-      if (!match([quotechar]))
-        error("Unexpected EOF looking for XML attribute value closing quote");
-
-      return true;
-    }
-
-    bool parseContent(out dstring val)
+    bool parseContent(out dstring val, dchar quotechar=0)
     {
       if (xmlstr.empty)
         return false;
 
-      while (!xmlstr.empty && xmlstr[0] != '<')
+      auto endChars = quotechar != 0 ? ['<', '>', quotechar] : [cast(dchar)'<', '>'];
+
+      while (!xmlstr.empty && !endChars.canFind(xmlstr[0]))
       {
         if (match("&"))
         {
@@ -181,6 +157,33 @@ class XmlTree
       return true;
     }
 
+    bool parseAttribute(out dstring name, out dstring val)
+    {
+      if (!parseName(name))
+        return false;
+
+      if (!match("="))
+        error("Expected '=' delimiter for XML attribute value");
+
+      dchar quotechar;
+
+      if (!xmlstr.empty)
+        quotechar = popval()[0];
+
+      if (quotechar != '"' && quotechar != '\'')
+        error("Expected XML attribute value quote character");
+
+      parseContent(val, quotechar);
+
+      if (xmlstr.empty)
+        error("Unexpected EOF looking for XML attribute value closing quote");
+
+      if (!match([quotechar]))
+        error(format("Unexpected character '%s' in XML attribute value", xmlstr[0]));
+
+      return true;
+    }
+
     while (!xmlstr.empty)
     {
       dstring name, val;
@@ -197,6 +200,9 @@ class XmlTree
               name, nodeStack[$ - 1].name));
 
         nodeStack = nodeStack[0 .. $ - 1];
+
+        if (!match(">"))
+          error("Expected '>' at end of XML closing tag");
       }
       else if (match("<!--")) // Comment
       {
@@ -348,10 +354,11 @@ class XmlParseError : Exception
 {
   this(string msg, string file, size_t line, size_t index)
   {
-    super(msg);
+    this.msg = msg;
     this.file = file;
     this.line = line;
     this.index = index;
+    super(toString);
   }
 
   override string toString() const

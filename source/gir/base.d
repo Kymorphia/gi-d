@@ -56,6 +56,7 @@ abstract class Base
   dstring docContent; /// Documentation content
   dstring docFilename; /// Documentation filename
   uint docLine; /// Documentation line number
+  dstring docVersion; /// FIXME - What is this for?
   dstring sourceFilename; /// Source code filename
   uint sourceLine; /// Source code line number
   dstring docDeprecated; /// Deprecated note documentation

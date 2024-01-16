@@ -65,7 +65,7 @@ final class Repo
           else
             callbacks ~= new Func(this, node);
           break;
-        case "class", "interface", "record": // Class, interfaces, and structures
+        case "class", "interface", "record", "union": // Class, interfaces, structures, and unions
           structs ~= new Structure(this, node);
           break;
         case "constant": // Constants
@@ -91,10 +91,14 @@ final class Repo
             base.docFilename = node.get("filename");
             base.docLine = node.get("line").to!uint;
           }
-          break; // Do nothing, handled by individual objects
+          break;
         case "doc-deprecated": // Deprecated note
           if (auto base = node.baseParentFromXmlNodeWarn!Base)
             base.docDeprecated = node.content;
+          break;
+        case "doc-version": // FIXME - Not sure what this is for
+          if (auto base = baseParentFromXmlNodeWarn!Base(node))
+            base.docVersion = node.content;
           break;
         case "docsection": // Documentation section
           docSections ~= new DocSection(this, node);
@@ -314,6 +318,11 @@ final class Repo
     writer.write();
   }
 
+  /**
+   * Write the functions.d for the package which contains the C function definitions and dynamic loading.
+   * Params:
+   *   path = Path to the functions.d file to write
+   */
   private void writeCFuncs(string path)
   {
     auto writer = new CodeWriter(path);

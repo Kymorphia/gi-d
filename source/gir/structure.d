@@ -2,6 +2,7 @@ module gir.structure;
 
 import std.conv : to;
 
+import code_writer;
 import gir.base;
 import gir.field;
 import gir.func;
@@ -16,6 +17,7 @@ enum StructType : dstring
   Class = "class", /// A class
   Interface = "interface", /// An interface
   Record = "record", /// A structure record
+  Union = "union", /// A union
 }
 
 /// Structure class which is used for class, interface, and records in Gir files
