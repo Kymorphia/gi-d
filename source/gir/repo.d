@@ -335,52 +335,46 @@ final class Repo
 
     foreach (st; structs)
     {
-      if (st.functions.length == 0)
-        continue;
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
 
-      bool preambleShown;
+      if (writer.lines[$ - 1] == "{")
+        preamble = preamble[1 .. $];
+
+      if (!st.glibGetType.empty)
+      { // Write GType function if set
+        writer ~= preamble ~ ["GType function() c_" ~ st.glibGetType ~ ";"];
+        preamble = null;
+      }
 
       foreach (f; st.functions)
       {
-        with (FuncType)
-          if (!f.funcType.among(Function, Constructor, Method))
-            continue;
+        if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
+          continue;
 
-        if (!preambleShown)
-        {
-          if (writer.lines[$ - 1] != "{")
-            writer ~= "";
-
-          writer ~= ["// " ~ namespace.toLower ~ "." ~ st.name, ""];
-          preambleShown = true;
-        }
-
-        writer ~= f.getCPrototype ~ " c_" ~ f.cName ~ ";";
+        writer ~= preamble ~ [f.getCPrototype ~ " c_" ~ f.cName ~ ";"];
+        preamble = null;
       }
     }
 
-    writer ~= ["}", ""];
+    writer ~= ["}"];
 
     foreach (st; structs)
     {
-      bool preambleShown;
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+
+      if (!st.glibGetType.empty)
+      { // Write GType function if set
+        writer ~= preamble ~ ["alias " ~ st.glibGetType ~ " = c_" ~ st.glibGetType ~ ";"];
+        preamble = null;
+      }
 
       foreach (f; st.functions)
       {
-        with (FuncType)
-          if (!f.funcType.among(Function, Constructor, Method))
-            continue;
+        if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
+          continue;
 
-        if (!preambleShown)
-        {
-          if (writer.lines[$ - 2] != "}")
-            writer ~= "";
-
-          writer ~= ["// " ~ namespace.toLower ~ "." ~ st.name, ""];
-          preambleShown = true;
-        }
-
-        writer ~= "alias " ~ f.cName ~ " = c_" ~ f.cName ~ ";";
+        writer ~= preamble ~ ["alias " ~ f.cName ~ " = c_" ~ f.cName ~ ";"];
+        preamble = null;
       }
     }
 
@@ -388,24 +382,24 @@ final class Repo
 
     foreach (st; structs)
     {
-      bool preambleShown;
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+
+      if (writer.lines[$ - 1] == "{")
+        preamble = preamble[1 .. $];
+
+      if (!st.glibGetType.empty)
+      { // Write GType function if set
+        writer ~= preamble ~ [st.glibGetType ~ " = link(\"" ~ st.glibGetType ~ "\");"];
+        preamble = null;
+      }
 
       foreach (f; st.functions)
       {
-        with (FuncType)
-          if (!f.funcType.among(Function, Constructor, Method))
-            continue;
+        if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
+          continue;
 
-        if (!preambleShown)
-        {
-          if (writer.lines[$ - 1] != "{")
-            writer ~= "";
-
-          writer ~= ["// " ~ namespace.toLower ~ "." ~ st.name, ""];
-          preambleShown = true;
-        }
-
-        writer ~= f.cName ~ " = link(\"" ~ f.cName ~ "\");";
+        writer ~= preamble ~ [f.cName ~ " = link(\"" ~ f.cName ~ "\");"];
+        preamble = null;
       }
     }
 

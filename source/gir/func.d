@@ -59,7 +59,8 @@ final class Func : TypeNode
     dstring fnptr = (isArray ? subArrayCType : subCType) ~ " function(";
 
     foreach (i, p; params)
-      fnptr ~= (i > 0 ? ", "d : "") ~ p.subCType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
+      fnptr ~= (i > 0 ? ", "d : "") ~ (p.isArray ? p.subArrayCType
+          : p.subCType) ~ " " ~ repo.defs.symbolName(p.name.camelCase);
 
     return fnptr ~ ")";
   }

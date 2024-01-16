@@ -2,6 +2,7 @@ girfile GLib-2.0
 
 subtype gboolean bool
 subtype gchar char
+subtype gconstpointer const(void)*
 subtype gdouble double
 subtype gfloat float
 subtype gint int

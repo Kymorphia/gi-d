@@ -86,7 +86,7 @@ class XmlTree
       return true;
     }
 
-    bool parseContent(out dstring val, dchar quotechar=0)
+    bool parseContent(out dstring val, dchar quotechar = 0)
     {
       if (xmlstr.empty)
         return false;
