@@ -1,17 +1,24 @@
 module xml_tree;
 
 import core.exception : RangeError;
-import std.utf : toUTF32;
 import std_includes;
+import utils;
+import xml_patch;
 
-class XmlTree
+final class XmlTree
 {
   this()
   {
     xmlDoc = new XmlNode("xml");
   }
 
-  void parse(string data, string fileName = "<UNKNOWN>")
+  this(dstring data, string fileName = "<UNKNOWN>")
+  {
+    this();
+    parse(data, fileName);
+  }
+
+  void parse(dstring xmlstr, string fileName = "<UNKNOWN>")
   {
     enum State
     {
@@ -21,7 +28,6 @@ class XmlTree
       Node // Inside element content (node)
     }
 
-    dstring xmlstr = toUTF32(data);
     uint lineCount = 1;
     uint charIndex;
     XmlNode[] nodeStack;
@@ -195,9 +201,9 @@ class XmlTree
         if (!parseName(name))
           error("Invalid XML element name");
 
-        if (name != nodeStack[$ - 1].name)
+        if (name != nodeStack[$ - 1].id)
           error(format("Unexpected XML closing element '%s', expected '%s'",
-              name, nodeStack[$ - 1].name));
+              name, nodeStack[$ - 1].id));
 
         nodeStack = nodeStack[0 .. $ - 1];
 
@@ -259,15 +265,88 @@ class XmlTree
       error("Unexpected EOF with unterminated XML elements");
   }
 
+  /**
+   * Apply a patch to the XML tree.
+   * Params:
+   *   patchSpec = Patch specification
+   *   defaultRoot = Default root node or null
+   */
+  void patch(XmlPatch patch, XmlNode defaultRoot)
+  {
+    bool checkMatch(XmlNode node, XmlSelector sel)
+    {
+      if (node.id != sel.id)
+        return false;
+
+      foreach (a; sel.attrs.byKeyValue)
+        if (node[a.key] != a.value)
+          return false;
+
+      return true;
+    }
+
+    XmlNode curNode;
+
+    if (!defaultRoot || patch.selectors[0].id == root.id)
+    {
+      curNode = root;
+
+      // Make sure root node matches first selector
+      if (!checkMatch(curNode, patch.selectors[0]))
+        throw new Exception("XML patch selector '" ~ patch.selectorString(1).to!string ~ "' not found");
+    }
+    else
+      curNode = defaultRoot;
+
+    selLoop: foreach (selNdx, sel; patch.selectors) // Loop over selectors (node id and attribute match criteria)
+    { // Skip the first selector if patch is referenced to root
+      if (selNdx == 0 && curNode is root)
+        continue;
+
+      foreach (n; curNode.children) // Loop over current node's children
+      {
+        if (checkMatch(n, sel))
+        {
+          curNode = n;
+          continue selLoop;
+        }
+      }
+
+      throw new Exception("XML patch selector '" ~ patch.selectorString(cast(uint)selNdx + 2).to!string ~ "' not found");
+    }
+
+    final switch (patch.op) with (XmlPatchOp)
+    {
+      case Set:
+        if (patch.selAttrId.empty)
+        { // Replace node with new node tree
+          curNode.parent.addChild(patch.nodeValue.root);
+          curNode.unlink;
+        }
+        else
+          curNode.attrs[patch.selAttrId] = patch.attrValue;
+        break;
+      case Delete:
+        if (patch.selAttrId.empty)
+          curNode.unlink;
+        else if (patch.selAttrId in curNode.attrs)
+          curNode.attrs.remove(patch.selAttrId);
+        break;
+      case Add:
+        curNode.addChild(patch.nodeValue.root);
+        break;
+    }
+  }
+
   XmlNode root;
   XmlNode xmlDoc;
 }
 
 class XmlNode
 {
-  this(dstring name, string parseFile = null, uint parseLine = 0)
+  this(dstring id, string parseFile = null, uint parseLine = 0)
   {
-    this.name = name;
+    this.id = id;
     this.parseFile = parseFile;
     this.parseLine = parseLine;
   }
@@ -278,7 +357,12 @@ class XmlNode
     dstring s;
 
     for (auto n = this; n; n = n.parent)
-      s = s.empty ? n.name : n.name ~ "." ~ s;
+    {
+      if (auto nameAttr = "name" in n.attrs)
+        s = s.empty ? (n.id ~ "["d ~ *nameAttr ~ "]"d) : (n.id ~ "["d ~ *nameAttr ~ "]"d ~ "."d ~ s);
+      else
+        s = s.empty ? n.id : n.id ~ "." ~ s;
+    }
 
     return s;
   }
@@ -309,7 +393,7 @@ class XmlNode
   XmlNode findChild(dstring childName)
   {
     foreach (child; children)
-      if (child.name == childName)
+      if (child.id == childName)
         return child;
 
     return null;
@@ -330,6 +414,33 @@ class XmlNode
   }
 
   /**
+   * Add a child node (and sub tree) to a node.
+   * Params:
+   *   child = The child to add
+   */
+  void addChild(XmlNode child)
+  {
+    if (child.parent)
+      child.unlink;
+
+    children ~= child;
+    child.parent = this;
+  }
+
+  /**
+   * Unlink an XML node from its parent.
+   */
+  void unlink()
+  {
+    if (parent)
+    {
+      auto ndx = parent.children.countUntil!(x => x is this);
+      assert (ndx >= 0);
+      parent.children = parent.children[0 .. ndx] ~ parent.children[(ndx + 1) .. $];
+    }
+  }
+
+  /**
    * Display a warning message with node location details.
    * Params:
    *   msg = The message
@@ -342,7 +453,7 @@ class XmlNode
 
   XmlNode parent; /// Parent XML node
   XmlNode[] children; /// Children nodes
-  dstring name; /// Name of node
+  dstring id; /// XML ID of node
   dstring[dstring] attrs; /// Node attribute values
   dstring content; /// The text content between open and closing element
 

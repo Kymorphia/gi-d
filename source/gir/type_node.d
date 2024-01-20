@@ -10,12 +10,20 @@ abstract class TypeNode : Base
 {
   @property dstring subCType()
   {
-    return repo.defs.subCTypeStr(cType);
+    return repo.defs.subTypeStr(cType);
   }
 
   @property dstring subArrayCType()
   {
-    return repo.defs.subCTypeStr(arrayCType);
+    return repo.defs.subTypeStr(arrayCType);
+  }
+
+  @property dstring subDType()
+  { // FIXME - Add dlang type substitution
+    if (isArray)
+      return repo.defs.subTypeStr(dType) ~ "[]";
+    else
+      return repo.defs.subTypeStr(dType);
   }
 
   override void fromXml(XmlNode node)

@@ -17,7 +17,7 @@ final class Enumeration : Base
   {
     super.fromXml(node);
 
-    bitfield = node.name == "bitfield";
+    bitfield = node.id == "bitfield";
     name = node.get("name");
     cName = node.get("c:type");
 

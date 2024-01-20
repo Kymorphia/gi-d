@@ -2,6 +2,7 @@ module gir.func;
 
 import std.conv : to;
 
+import code_writer;
 import gir.param;
 import gir.repo;
 import gir.type_node;
@@ -31,7 +32,7 @@ final class Func : TypeNode
     }
 
     name = node.get("name");
-    funcType = cast(FuncType)node.name;
+    funcType = cast(FuncType)node.id;
     cName = node.get("c:identifier");
 
     version_ = node.get("version");
@@ -39,7 +40,7 @@ final class Func : TypeNode
     shadows = node.get("shadows");
     invoker = node.get("invoker");
     movedTo = node.get("moved-to");
-    introspectable = node.get("introspectable") == "1";
+    introspectable = node.get("introspectable", "1") == "1";
     throws = node.get("throws") == "1";
     action = node.get("action") == "1";
     detailed = node.get("detailed") == "1";
@@ -65,6 +66,25 @@ final class Func : TypeNode
     return fnptr ~ ")";
   }
 
+  /**
+   * Write function to a CodeWriter.
+   * Params:
+   *   writer = The code writer
+   */
+  void writeFunction(CodeWriter writer)
+  {
+    writeDocs(writer);
+
+    dstring decl = "static " ~ subDType ~ " " ~ name.camelCase ~ "(";
+
+    foreach (i, p; params)
+      decl ~= (i > 0 ? ", "d : "") ~ (p.subDType) ~ " " ~ repo.defs.symbolName(p.name.camelCase);
+
+    writer ~= [decl ~ ")", "{"];
+
+    writer ~= "}";
+  }
+
   dstring name; /// Name of function
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)
@@ -79,7 +99,7 @@ final class Func : TypeNode
   dstring invoker; /// Invoker method
   dstring movedTo; /// Function moved to name
 
-  bool introspectable; /// Introspectable?
+  bool introspectable = true; /// Introspectable?
   bool throws; /// Throws exception?
   bool action; /// Signal action (FIXME)
   bool detailed; /// Signal detailed (FIXME)

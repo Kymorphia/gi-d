@@ -1,7 +1,5 @@
 module gir.structure;
 
-import std.conv : to;
-
 import code_writer;
 import gir.base;
 import gir.field;
@@ -29,9 +27,14 @@ final class Structure : Base
     fromXml(node);
   }
 
+  @property dstring subName()
+  {
+    return name; // FIXME - Need to substitute D symbol names
+  }
+
   @property dstring subCType()
   {
-    return repo.defs.subCTypeStr(cType);
+    return repo.defs.subTypeStr(cType);
   }
 
   override void fromXml(XmlNode node)
@@ -39,7 +42,7 @@ final class Structure : Base
     super.fromXml(node);
 
     name = node.get("name");
-    structType = cast(StructType)node.name;
+    structType = cast(StructType)node.id;
     cType = node.get("c:type");
     cSymbolPrefix = node.get("c:symbol-prefix");
     parent = node.get("parent");
@@ -60,6 +63,63 @@ final class Structure : Base
     glibUnrefFunc = node.get("glib:glib-unref-func");
     glibTypeStruct = node.get("glib:type-struct");
     glibIsGtypeStructFor = node.get("glib:is-gtype-struct-for");
+  }
+
+  /**
+   * Returns true if this structure is implemented as a D class.
+   * Returns: true if struct is a D class (GBoxed and GObject types)
+   */
+  bool isDClass()
+  {
+    return structType == StructType.Class || !glibGetType.empty;
+  }
+
+  /**
+   * Check if structure is a boxed type.
+   * Returns: true if structure is a boxed type
+   */
+  bool isBoxed()
+  {
+    return structType == StructType.Record && !glibGetType.empty;
+  }
+
+  /**
+   * Check if structure is a GObject type.
+   * Returns: true if structure is a boxed type
+   */
+  bool isGObject()
+  {
+    return structType == StructType.Class && !parent.empty && !glibGetType.empty;
+  }
+
+  /**
+   * Write "class" to a file path. This includes GObject and Boxed types.
+   * Params:
+   *   path = Path to the file to write to
+   */
+  void writeBoxed(string path)
+  {
+    auto writer = new CodeWriter(path);
+
+    writer ~= ["module " ~ repo.namespace ~ "." ~ name ~ ";", ""];
+    writeDocs(writer);
+
+    writer ~= `\
+class ` ~ subName ~ ` : Boxed
+{
+  this(` ~ subCType ~ `* wrapPtr)
+  {
+    super(wrapPtr);
+  }
+
+  override GType getType()
+  {
+    return ` ~ glibGetType ~ `();
+  }
+`;
+
+    foreach (f; functions)
+      f.writeFunction(writer);
   }
 
   dstring name; /// Name of structure

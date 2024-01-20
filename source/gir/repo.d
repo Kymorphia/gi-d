@@ -1,6 +1,6 @@
 module gir.repo;
 
-import definitions;
+import defs;
 import gir.alias_;
 import gir.base;
 import gir.constant;
@@ -15,20 +15,21 @@ import gir.type_node;
 import code_writer;
 import std_includes;
 import utils;
+import xml_patch;
 import xml_tree;
 
 /// Gir repository
 final class Repo
 {
-  this(Definitions defs)
+  this(Defs defs)
   {
     this.defs = defs;
   }
 
-  this(Definitions defs, XmlTree tree)
+  this(Defs defs, string filename)
   {
-    this(defs);
-    fromXmlTree(tree);
+    this.defs = defs;
+    this.filename = filename;
   }
 
   /// Convert an XML object tree to a Gir object tree
@@ -36,7 +37,7 @@ final class Repo
   {
     void recurseXml(XmlNode node)
     {
-      switch (node.name)
+      switch (node.id)
       {
         case "alias": // Alias info
           aliases ~= new Alias(this, node);
@@ -52,7 +53,7 @@ final class Repo
           cIncludes ~= node["name"];
           break;
         case "callback": // Callback type
-          if (node.parent && node.parent.name == "field")
+          if (node.parent && node.parent.id == "field")
           {
             if (auto field = baseParentFromXmlNodeWarn!Field(node))
             {
@@ -66,6 +67,15 @@ final class Repo
             callbacks ~= new Func(this, node);
           break;
         case "class", "interface", "record", "union": // Class, interfaces, structures, and unions
+          if (!node.parent || node.parent.id != "namespace")
+          { // Only warn if structure is not marked as opaque
+            auto st = node.baseParentFromXmlNode!Structure;
+            if (!st || !st.opaque)
+              node.warn("Embedded structure types not supported");
+
+            goto noRecurse;
+          }
+
           structs ~= new Structure(this, node);
           break;
         case "constant": // Constants
@@ -105,7 +115,17 @@ final class Repo
           break;
         case "field": // Field 
           if (auto st = node.baseParentFromXmlNodeWarn!Structure)
-            st.fields ~= new Field(this, node);
+          {
+            auto f = new Field(this, node);
+
+            if (!f.introspectable && !st.opaque)
+            {
+              node.warn("Field is not introspectable, setting struct to opaque");
+              st.opaque = true;
+            }
+
+            st.fields ~= f;
+          }
           break;
         case "glib:boxed":
           break; // Silently ignore this seldom used node (only TreeRowData seen so far)
@@ -175,16 +195,18 @@ final class Repo
         default:
           static bool[dstring] unknownElements;
 
-          if (node.name !in unknownElements)
+          if (node.id !in unknownElements)
           {
-            unknownElements[node.name] = true;
-            stderr.writeln(cast(string)("Unknown XML element '" ~ node.name ~ "'"));
+            unknownElements[node.id] = true;
+            stderr.writeln(cast(string)("Unknown XML element '" ~ node.id ~ "'"));
           }
           break;
       }
 
       foreach (child; node.children)
         recurseXml(child);
+
+    noRecurse:
     }
 
     recurseXml(tree.root);
@@ -194,9 +216,9 @@ final class Repo
    * Write repository D binding package.
    * Params:
    *   basePath = The path to the toplevel packages directory (defaults to "packages")
-   *   packagePrefix = Prefix to add to package name (defaults to "gid")
+   *   packagePrefix = Prefix to add to package name (defaults to "gid-")
    */
-  void writePackage(string basePath = "packages", string packagePrefix = "gid")
+  void writePackage(string basePath = "packages", string packagePrefix = "gid-")
   {
     assert(namespace.length > 0);
     auto packagePath = buildPath(basePath, packagePrefix ~ namespace.to!string);
@@ -204,6 +226,7 @@ final class Repo
 
     writeCTypes(buildPath(packageCPath, "types.d"));
     writeCFuncs(buildPath(packageCPath, "functions.d"));
+    writeGlobalModule(buildPath(packagePath, namespace.to!string ~ ".d"));
   }
 
   /**
@@ -257,7 +280,8 @@ final class Repo
     {
       if (st.fields.length > 0 && !st.opaque) // Regular structure?
       {
-        st.writeDocs(writer);
+        if (!st.isDClass)
+          st.writeDocs(writer);
 
         writer ~= ["struct " ~ st.subCType, "{"];
 
@@ -295,8 +319,11 @@ final class Repo
 
         writer ~= ["}", ""];
       }
-      else // Opaque structure (docs are not written for the C type)
+      else // Opaque structure
+      {
+        st.writeDocs(writer);
         writer ~= ["struct " ~ st.subCType ~ ";", ""];
+      }
     }
 
     foreach (cb; callbacks)
@@ -436,9 +463,101 @@ final class Repo
     ];
   }
 
-  Definitions defs; /// Definitions loaded from def files
+  /**
+   * Write the global module for a package which has the same name as the namespace.
+   * Params:
+   *   path = Path to the file to write the global module to
+   */
+  private void writeGlobalModule(string path)
+  {
+    auto writer = new CodeWriter(path);
 
-  dstring fileName; /// Gir filename
+    writer ~= ["module " ~ namespace.toLower ~ "." ~ namespace ~ ";", "", "struct " ~ namespace, "{" ];
+
+    bool preambleShown;
+    foreach (al; aliases)
+    {
+      if (!preambleShown)
+      {
+        writer ~= "// Aliases";
+        preambleShown = true;
+      }
+
+      writer ~= "alias " ~ al.name ~ " = " ~ al.cName ~ ";";
+    }
+
+    preambleShown = false;
+    foreach (en; enums)
+    {
+      if (en.bitfield)
+        continue;
+
+      if (!preambleShown)
+      {
+        if (writer.lines[$ - 1] != "{")
+          writer ~= "";
+
+        writer ~= "// Enums";
+        preambleShown = true;
+      }
+
+      writer ~= "alias " ~ en.name ~ " = " ~ en.cName ~ ";";
+    }
+
+    preambleShown = false;
+    foreach (en; enums)
+    {
+      if (!en.bitfield)
+        continue;
+
+      if (!preambleShown)
+      {
+        if (writer.lines[$ - 1] != "{")
+          writer ~= "";
+
+        writer ~= "// Flags";
+        preambleShown = true;
+      }
+
+      writer ~= "alias " ~ en.name ~ " = BitFlags!" ~ en.cName ~ ";";
+    }
+
+    preambleShown = false;
+    foreach (st; structs)
+    {
+      if (st.isDClass)
+        continue;
+
+      if (!preambleShown)
+      {
+        if (writer.lines[$ - 1] != "{")
+          writer ~= "";
+
+        writer ~= "// Structs";
+        preambleShown = true;
+      }
+
+      writer ~= "alias " ~ st.name ~ " = " ~ st.subCType ~ ";";
+    }
+
+    foreach (fn; functions)
+    {
+      if (fn.funcType != FuncType.Function || !fn.introspectable)
+        continue;
+
+      writer ~= "";
+      fn.writeFunction(writer);
+    }
+
+    writer ~= "}";
+
+    writer.write();
+  }
+
+  Defs defs; /// Defs loaded from def files
+  string defsFilename; /// Defs filename responsible for loading this Repo object
+
+  string filename; /// Gir filename
   dstring packageName; /// Package name
   dstring repoVersion; /// Version of the repo
 
@@ -457,6 +576,9 @@ final class Repo
   Include[] includes; /// Package includes
   dstring[] cIncludes; /// C header includes
   DocSection[] docSections; /// Documentation sections
+
+  XmlPatch[] patches; /// XML patches specified in definitions file
+  dstring[dstring] typeSubs; /// Type substitutions defined in the definitions file
 
   dstring xmlns;
   dstring xmlnsC;
