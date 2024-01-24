@@ -52,6 +52,8 @@ abstract class Base
   private XmlNode _node; /// The XML node object was created from
 
   Repo repo; /// Parent repo
+  Base parent; /// Parent base object
+  bool disable; /// Object is disabled
   dstring[dstring] attributes; /// Gir key/value attributes
   dstring docContent; /// Documentation content
   dstring docFilename; /// Documentation filename

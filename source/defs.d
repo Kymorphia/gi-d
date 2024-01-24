@@ -2,7 +2,11 @@ module defs;
 
 import std.utf : toUTF32;
 
+import gir.func;
+import gir.param;
 import gir.repo;
+import gir.structure;
+import gir.type_node;
 import std_includes;
 import utils;
 import xml_patch;
@@ -39,31 +43,38 @@ class Defs
       Content, // Processing content until '}'
     }
 
-    uint lineCount;
+    dstring[] cmdTokens;
+    uint lineCount, startLine;
     BlockState block;
-    bool repoSpecified;
+    Repo curRepo;
+    StructDefs curStructDefs;
 
     string posInfo()
     {
       return "(file '" ~ filename ~ "' line " ~ lineCount.to!string ~ ")";
     }
 
-    foreach (line; defs.splitLines.map!(x => x.strip))
+    foreach (line; defs.splitLines)
     {
       lineCount++;
-      dstring[] cmdTokens;
 
       bool warnRepoUnspecified()
       {
-        if (!repoSpecified)
+        if (!curRepo)
           stderr.writeln("'", cmdTokens[0], "' command requires 'repo' file to be specified");
+        return curRepo !is null;
+      }
 
-        return repoSpecified;
+      bool warnStructUnspecified()
+      {
+        if (!curStructDefs)
+          stderr.writeln("'", cmdTokens[0], "' command requires 'struct' to be specified");
+        return curStructDefs !is null;
       }
 
       if (block == BlockState.Start) // Expecting block start?
       {
-        if (line == "{")
+        if (line.startsWith('{'))
         {
           block = BlockState.Content;
           continue;
@@ -75,16 +86,18 @@ class Defs
 
       if (block == BlockState.None)
       {
+        line = line.strip;
+
         if (line.startsWith("#") || line.empty) // Skip comments and empty lines
           continue;
 
-        cmdTokens = line.split; // Parse command tokens
+        cmdTokens = line.splitQuoted.array; // Parse command tokens
       }
       else if (block == BlockState.Content) // Processing multi-line brace block content
       {
-        if (line != "}")
+        if (!line.startsWith('}'))
         { // Append content to last command argument and advance to next line
-          cmdTokens[$ - 1] ~= line;
+          cmdTokens[$ - 1] ~= line ~ "\n";
           continue;
         }
 
@@ -99,9 +112,14 @@ class Defs
 
           if (cmdTokens.length == 3)
           {
-            auto patch = new XmlPatch(filename, lineCount);
-            patch.parseAddCmd(cmdTokens[1], cmdTokens[2]);
-            repos[$ - 1].patches ~= patch;
+            try
+            {
+              auto patch = new XmlPatch();
+              patch.parseAddCmd(cmdTokens[1], cmdTokens[2]);
+              curRepo.patches ~= patch;
+            }
+            catch (XmlPatchError e)
+              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
           }
           else if (cmdTokens.length == 2)
           {
@@ -109,24 +127,87 @@ class Defs
             cmdTokens ~= "";
           }
           break;
+        case "code":
+          if (!warnRepoUnspecified)
+            break;
+
+          if (cmdTokens.length == 2)
+          {
+            auto code = "// code start at line " ~ startLine.to!dstring ~ "\n\n" ~ cmdTokens[1] ~ "\n// code end at line "
+              ~ lineCount.to!dstring;
+
+            if (curStructDefs)
+              curStructDefs.code ~= code;
+            else
+              curRepo.code ~= code;
+          }
+          else if (cmdTokens.length == 1)
+          {
+            block = BlockState.Start;
+            cmdTokens ~= "";
+            startLine = lineCount;
+          }
+          else
+            stderr.writeln("'code' command requires 1 argument ", posInfo);
+          break;
         case "del":
           if (!warnRepoUnspecified)
             break;
 
           if (cmdTokens.length == 2)
           {
-            auto patch = new XmlPatch(filename, lineCount);
-            patch.parseDeleteCmd(cmdTokens[1]);
-            repos[$ - 1].patches ~= patch;
+            try
+            {
+              auto patch = new XmlPatch();
+              patch.parseDeleteCmd(cmdTokens[1]);
+              curRepo.patches ~= patch;
+            }
+            catch (XmlPatchError e)
+              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
           }
           else
             stderr.writeln("'del' command requires 1 argument ", posInfo);
           break;
+        case "import":
+          if (!warnRepoUnspecified)
+            break;
+
+          if (cmdTokens.length == 2)
+          {
+            if (curStructDefs)
+              curStructDefs.imports ~= cmdTokens[1];
+            else
+              curRepo.imports ~= cmdTokens[1];
+          }
+          else
+            stderr.writeln("'code' command requires 1 argument ", posInfo);
+          break;
+        case "rename":
+          if (!warnRepoUnspecified)
+            break;
+
+          if (cmdTokens.length == 3)
+          {
+            try
+            {
+              auto patch = new XmlPatch();
+              patch.parseRenameCmd(cmdTokens[1], cmdTokens[2]);
+              curRepo.patches ~= patch;
+            }
+            catch (XmlPatchError e)
+              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
+          }
+          else if (cmdTokens.length == 2)
+          {
+            block = BlockState.Start;
+            cmdTokens ~= "";
+          }
+          break;
         case "repo":
           if (cmdTokens.length == 2)
           {
-            repoSpecified = true;
-            repos ~= new Repo(this, cmdTokens[1].to!string);
+            curRepo = new Repo(this, cmdTokens[1].to!string);
+            repos ~= curRepo;
           }
           else
             stderr.writeln("'gir' command requires 1 argument ", posInfo);
@@ -144,9 +225,14 @@ class Defs
 
           if (cmdTokens.length == 3)
           {
-            auto patch = new XmlPatch(filename, lineCount);
-            patch.parseSetCmd(cmdTokens[1], cmdTokens[2]);
-            repos[$ - 1].patches ~= patch;
+            try
+            {
+              auto patch = new XmlPatch();
+              patch.parseSetCmd(cmdTokens[1], cmdTokens[2]);
+              curRepo.patches ~= patch;
+            }
+            catch (XmlPatchError e)
+              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
           }
           else if (cmdTokens.length == 2)
           {
@@ -154,10 +240,22 @@ class Defs
             cmdTokens ~= "";
           }
           break;
+        case "struct":
+          if (!warnRepoUnspecified)
+            break;
+
+          if (cmdTokens.length == 2)
+          {
+            curStructDefs = new StructDefs();
+            structDefs[cmdTokens[1]] = curStructDefs;
+          }
+          else
+            stderr.writeln("'struct' command requires 1 argument ", posInfo);
+          break;
         case "subtype":
           if (cmdTokens.length == 3)
           {
-            typeof(typeSubs)* subs = repoSpecified ? &repos[$ - 1].typeSubs : &typeSubs;
+            typeof(typeSubs)* subs = curRepo ? &curRepo.typeSubs : &typeSubs;
 
             if (cmdTokens[1] !in *subs)
               (*subs)[cmdTokens[1]] = cmdTokens[2];
@@ -213,9 +311,124 @@ class Defs
         throw new Exception("No 'namespace' XML node found in Gir file");
 
       foreach (patch; repo.patches) // Apply XML patches from defs file
-        tree.patch(patch, namespaceNode);
+        patch.apply(tree, namespaceNode);
 
       repo.fromXmlTree(tree); // Convert XML tree to Gir object tree
+    }
+
+    fixupRepos();
+  }
+
+  /// Ensure consistent state of repo data and fixup additional data (array parameter indexes, etc)
+  private void fixupRepos()
+  {
+    foreach (repo; repos)
+    {
+      foreach (fn; repo.functions)
+        fixupFunc(fn, [FuncType.Function]);
+
+      foreach (st; repo.structs)
+        foreach (fn; st.functions)
+          fixupFunc(fn, [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method]);
+    }
+  }
+
+  void fixupFunc(Func fn, FuncType[] allowedTypes)
+  {
+    void disableFunc(string msg)
+    {
+      fn.disable = true;
+      stderr.writeln("Disabling '" ~ (fn.parent ? (cast(Structure)fn.parent).name.to!string : fn.repo.namespace.to!string) ~ "."
+        ~ fn.name.to!string ~ "': " ~ msg);
+    }
+
+    if (!fn.introspectable || !fn.movedTo.empty || fn.funcType == FuncType.VirtualMethod
+        || fn.funcType == FuncType.FuncMacro)
+      fn.disable = true;
+
+    if (fn.disable)
+      return;
+
+    if (!allowedTypes.canFind(fn.funcType))
+    {
+      disableFunc("type '" ~ fn.funcType.to!string ~ "' not supported where found");
+      return;
+    }
+
+    if (fn.isArray && fn.lengthParamIndex == ArrayNoLengthParam && fn.fixedSize == ArrayNotFixed
+      && !fn.zeroTerminated)
+    {
+      disableFunc("array return value has indeterminate length");
+      return;
+    }
+
+    if (fn.lengthParamIndex != ArrayNoLengthParam) // Returns array with a length argument?
+    { // Array length parameter indexes don't count instance parameters
+      if (fn.hasInstanceParam)
+        fn.lengthParamIndex++;
+
+      if (fn.lengthParamIndex >= fn.params.length)
+      {
+        disableFunc("invalid return array length parameter index");
+        return;
+      }
+
+      auto lengthParam = fn.params[fn.lengthParamIndex];
+
+      if (lengthParam.direction != ParamDirection.Out)
+      {
+        disableFunc("return array length parameter direction must be 'out'");
+        return;
+      }
+
+      lengthParam.isArrayLength = true;
+      lengthParam.arrayParamIndex = ParamIndexReturnVal;
+    }
+
+    foreach (pi, pa; fn.params)
+    {
+      if (pa.isInstanceParam && pi != 0)
+      {
+        disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'");
+        return;
+      }
+
+      if (pa.isArray && pa.lengthParamIndex == ArrayNoLengthParam && pa.fixedSize == ArrayNotFixed
+        && !pa.zeroTerminated)
+      {
+        disableFunc("array param '" ~ pa.name.to!string ~ "' has indeterminate length");
+        return;
+      }
+
+      if (pa.lengthParamIndex != ArrayNoLengthParam) // Parameter array with a length argument?
+      { // Array length parameter indexes don't count instance parameters
+        if (fn.hasInstanceParam)
+          pa.lengthParamIndex++;
+
+        if (pa.lengthParamIndex >= fn.params.length)
+        {
+          disableFunc("array param '" ~ pa.name.to!string ~ "' has invalid length parameter index");
+          return;
+        }
+
+        auto lengthParam = fn.params[pa.lengthParamIndex];
+
+        if (pa.direction != lengthParam.direction)
+        {
+          disableFunc("array param '" ~ pa.name.to!string ~ "' direction mismatch with length param '"
+            ~ lengthParam.name.to!string ~ "'");
+          return;
+        }
+
+        lengthParam.isArrayLength = true;
+        lengthParam.arrayParamIndex = cast(int)pi;
+      }
+
+      if (pa.direction != ParamDirection.Out && pa.ownership != Ownership.None)
+      { // FIXME
+        disableFunc("param '" ~ pa.name.to!string ~ "' ownership transfer not yet supported");
+        return;
+      }
     }
   }
 
@@ -231,6 +444,47 @@ class Defs
     {
       repo.writePackage(basePath, packagePrefix);
     }
+  }
+
+  /**
+   * Get the kind classification of a type string
+   * Params:
+   *   type = The type string (a C or D type)
+   *   repo = The repo the type was found in
+   * Returns: The type classification, falls back to TypeKind.Basic if no other type applies
+   */
+  TypeKind typeKind(dstring type, Repo repo)
+  {
+    if (auto kind = type in typeCache)
+      return *kind;
+
+    if (type.among("char*"d, "const char*"d, "string"d, "utf8"d))
+      return TypeKind.String;
+
+    auto ndx = type.countUntil('.');
+
+    if (ndx != -1)
+    {
+      if (auto pRepo = type in repoHash)
+        repo = *pRepo;
+
+      type = type[ndx + 1 .. $];
+    }
+
+    if (auto en = type in repo.enumHash)
+      return en.bitfield ? TypeKind.Flags : TypeKind.Enum;
+
+    if (auto st = type in repo.structHash)
+    {
+      if (st.isGObject)
+        return TypeKind.Object;
+      else if (st.isBoxed)
+        return TypeKind.Boxed;
+      else
+        return TypeKind.Struct;
+    }
+
+    return TypeKind.Basic;
   }
 
   /**
@@ -257,24 +511,59 @@ class Defs
    */
   dstring subTypeStr(dstring type)
   {
-    auto tok = tokenizeType(type);
+    auto tok = tokenizeType(type).filter!(x => x != "volatile").array;
 
     if (tok.empty)
       return type;
 
+    // Substitute types not including end '*' pointers
+    dstring sub(dstring s)
+    {
+      for (auto i = cast(int)(s.length) - 1; i >= 0; i--)
+      {
+        if (s[i] != '*' && s[i] != ' ')
+        {
+          auto t = s[0 .. i + 1];
+          return typeSubs.get(t, t) ~ s[i + 1 .. $];
+        }
+      }
+
+      return s;
+    }
+
     // Remove multiple "const", format as const(TYPE)*, and substitute type names
     if (tok[0] == "const" && tok[$ - 1] == "*")
-      return "const(" ~ tok[0 .. $ - 1].filter!(x => x != "const" && x != "volatile")
-        .map!(x => typeSubs.get(x, x))
-        .join("") ~ ")*";
+      return "const(" ~ sub(tok[0 .. $ - 1].filter!(x => x != "const").join("")) ~ ")*";
 
-    return tok.filter!(x => x != "const" && x != "volatile")
-      .map!(x => typeSubs.get(x, x))
+    return sub(tok.filter!(x => x != "const")
       .map!(x => x == "*" ? x : " " ~ x)
-      .join("").strip;
+      .join("").strip);
   }
 
   bool[dstring] reservedWords; /// Reserved words (_ appended)
   dstring[dstring] typeSubs; /// Global type substitutions
   Repo[] repos; /// Gir repositories
+  StructDefs[dstring] structDefs; /// Structure definitions by name
+  TypeKind[dstring] typeCache; /// Type kind cache
+
+  Repo[dstring] repoHash; /// Hash of repositories by namespace
+}
+
+/// Structure definitions
+class StructDefs
+{
+  dstring[] imports; /// Import commands
+  dstring code; /// Combined content of code commands
+}
+
+/// Kind of a type
+enum TypeKind
+{
+  Basic, /// A basic data type
+  Enum, /// Enumeration type
+  Flags, /// Bitfield flags type
+  Struct, /// Simple struct type
+  String, /// A string
+  Object, /// A GObject derived type
+  Boxed, /// A GLib boxed type
 }

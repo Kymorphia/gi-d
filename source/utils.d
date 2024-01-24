@@ -85,6 +85,7 @@ unittest
   assert(" const  char  * ".tokenizeType.equal(["const"d,"char","*"]));
   assert(" const  (char)  *  *".tokenizeType.equal(["const"d,"(","char",")","*", "*"]));
   assert("const char**".tokenizeType.equal(["const"d,"char","*","*"]));
+  assert("const char".tokenizeType.equal(["const"d,"char"]));
 }
 
 /**
@@ -95,16 +96,27 @@ unittest
  */
 auto splitQuoted(dstring s)
 {
-  bool inQuoted;
+  dchar quoteChar = 0;
 
   bool doSplit(dchar c)
   {
-    bool retval = c == '"' || (!inQuoted && c.isWhite);
+    if (!quoteChar)
+    {
+      if (c == '"' || c == '\'')
+      {
+        quoteChar = c;
+        return true;
+      }
 
-    if (c == '"')
-      inQuoted = !inQuoted;
+      return c.isWhite;
+    }
+    else if (c == quoteChar)
+    {
+      quoteChar = 0;
+      return true;
+    }
 
-    return retval;
+    return false;
   }
 
   return splitter!(doSplit)(s).filter!(x => !x.empty);
@@ -113,5 +125,62 @@ auto splitQuoted(dstring s)
 unittest
 {
   assert(splitQuoted("a b c  d").equal(["a"d, "b", "c", "d"]));
-  assert(splitQuoted("a \"quoted value\"\t b c  d").equal(["a"d, "quoted value", "b", "c", "d"]));
+  assert(splitQuoted("a \"double quoted value\"\t b c  d").equal(["a"d, "double quoted value", "b", "c", "d"]));
+  assert(splitQuoted("a 'single quoted value'\t b c  d").equal(["a"d, "single quoted value", "b", "c", "d"]));
+  assert(splitQuoted("a'single quoted value'\tb c  d").equal(["a"d, "single quoted value", "b", "c", "d"]));
+}
+
+/**
+ * Check if a string matches a given pattern with * wildcards.
+ * Params:
+ *   str = The string to match
+ *   pattern = The pattern with * wildcard matching
+ * Returns: true if str matches pattern, false otherwise.
+ */
+bool matchWild(dstring str, dstring pattern)
+{
+  dstring[] matches = pattern.split('*');
+
+  if (matches.length <= 1) // No wildcards?
+    return str == pattern;
+
+  if (!matches[0].empty) // Pattern does not start with wildcard?
+  {
+    if (!str.startsWith(matches[0]))
+      return false;
+
+    str = str[matches[1].length .. $];
+    matches = matches[1 .. $];
+  }
+
+  while (matches.length > 0)
+  {
+    if (matches.length == 1 && matches[0].empty) // Wildcard at end of pattern?
+      return true;
+
+    auto ndx = str.countUntil(matches[0]);
+
+    if (ndx == -1)
+      return false;
+
+    str = str[ndx + matches[0].length .. $];
+    matches = matches[1 .. $];
+  }
+
+  return str.empty;
+}
+
+unittest
+{
+  assert(matchWild("Hello Beautiful World", "Hello Beautiful World"));
+  assert(matchWild("Hello Beautiful World", "Hello*"));
+  assert(matchWild("Hello Beautiful World", "*World"));
+  assert(matchWild("Hello Beautiful World", "Hello*World"));
+  assert(matchWild("Hello Beautiful World", "*Beautiful*"));
+  assert(matchWild("Hello Beautiful World", "*Hello*World*"));
+
+  assert(!matchWild("Hello Beautiful World", "Hello"));
+  assert(!matchWild("Hello Beautiful World", "*Hello"));
+  assert(!matchWild("Hello Beautiful World", "Help*"));
+  assert(!matchWild("Hello Beautiful World", "Hello*Full"));
 }

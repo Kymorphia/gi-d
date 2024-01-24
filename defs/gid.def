@@ -103,6 +103,7 @@ reserved while
 reserved with
 
 subtype gboolean bool
+subtype filename string
 subtype gchar char
 subtype gconstpointer const(void)*
 subtype gdouble double
@@ -126,9 +127,14 @@ subtype guintptr size_t
 subtype gunichar dchar
 subtype gushort ushort
 subtype none void
+subtype "unsigned int" uint
 subtype utf8 string
 subtype va_list void*
 
 # FIXME - Need to use int/uint on Windows
 subtype glong long
 subtype gulong ulong
+
+# goffset
+# grefcount
+# gunichar2

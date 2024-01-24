@@ -22,10 +22,9 @@ final class XmlTree
   {
     enum State
     {
-      Start, // Start of document
-      Xml, // XML doc <?xml ?> node
+      Node, // Inside element content (node)
       Element, // Inside an element tag
-      Node // Inside element content (node)
+      Xml, // XML doc <?xml ?> node
     }
 
     uint lineCount = 1;
@@ -219,6 +218,8 @@ final class XmlTree
 
         pop(len + 3);
       }
+      else if (state == State.Node && match("<?xml"))
+        state = State.Xml;
       else if (state == State.Node && match("<")) // Opening/standalone element?
       {
         auto parseLine = lineCount;
@@ -244,8 +245,6 @@ final class XmlTree
       }
       else if (state == State.Element && match(">")) // End of element?
         state = State.Node;
-      else if (state == State.Start && match("<?xml"))
-        state = State.Xml;
       else if (state == State.Xml && parseAttribute(name, val)) // <?xml attribute name="value"?
         xmlDoc.attrs[name] = val;
       else if (state == State.Xml && match("?>"))
@@ -265,79 +264,6 @@ final class XmlTree
       error("Unexpected EOF with unterminated XML elements");
   }
 
-  /**
-   * Apply a patch to the XML tree.
-   * Params:
-   *   patchSpec = Patch specification
-   *   defaultRoot = Default root node or null
-   */
-  void patch(XmlPatch patch, XmlNode defaultRoot)
-  {
-    bool checkMatch(XmlNode node, XmlSelector sel)
-    {
-      if (node.id != sel.id)
-        return false;
-
-      foreach (a; sel.attrs.byKeyValue)
-        if (node[a.key] != a.value)
-          return false;
-
-      return true;
-    }
-
-    XmlNode curNode;
-
-    if (!defaultRoot || patch.selectors[0].id == root.id)
-    {
-      curNode = root;
-
-      // Make sure root node matches first selector
-      if (!checkMatch(curNode, patch.selectors[0]))
-        throw new Exception("XML patch selector '" ~ patch.selectorString(1).to!string ~ "' not found");
-    }
-    else
-      curNode = defaultRoot;
-
-    selLoop: foreach (selNdx, sel; patch.selectors) // Loop over selectors (node id and attribute match criteria)
-    { // Skip the first selector if patch is referenced to root
-      if (selNdx == 0 && curNode is root)
-        continue;
-
-      foreach (n; curNode.children) // Loop over current node's children
-      {
-        if (checkMatch(n, sel))
-        {
-          curNode = n;
-          continue selLoop;
-        }
-      }
-
-      throw new Exception("XML patch selector '" ~ patch.selectorString(cast(uint)selNdx + 2).to!string ~ "' not found");
-    }
-
-    final switch (patch.op) with (XmlPatchOp)
-    {
-      case Set:
-        if (patch.selAttrId.empty)
-        { // Replace node with new node tree
-          curNode.parent.addChild(patch.nodeValue.root);
-          curNode.unlink;
-        }
-        else
-          curNode.attrs[patch.selAttrId] = patch.attrValue;
-        break;
-      case Delete:
-        if (patch.selAttrId.empty)
-          curNode.unlink;
-        else if (patch.selAttrId in curNode.attrs)
-          curNode.attrs.remove(patch.selAttrId);
-        break;
-      case Add:
-        curNode.addChild(patch.nodeValue.root);
-        break;
-    }
-  }
-
   XmlNode root;
   XmlNode xmlDoc;
 }
@@ -349,6 +275,15 @@ class XmlNode
     this.id = id;
     this.parseFile = parseFile;
     this.parseLine = parseLine;
+  }
+
+  this(XmlNode node)
+  {
+    id = node.id;
+    attrs = node.attrs.dup;
+    content = node.content;
+    parseFile = node.parseFile;
+    parseLine = node.parseLine;
   }
 
   /// Node full name including its ancestry names separated by periods.
@@ -428,7 +363,7 @@ class XmlNode
   }
 
   /**
-   * Unlink an XML node from its parent.
+   * Unlink an XML node from its parent. Does nothing if node has no parent.
    */
   void unlink()
   {
@@ -437,7 +372,46 @@ class XmlNode
       auto ndx = parent.children.countUntil!(x => x is this);
       assert (ndx >= 0);
       parent.children = parent.children[0 .. ndx] ~ parent.children[(ndx + 1) .. $];
+      parent = null;
     }
+  }
+
+  /**
+   * Replace a node with a new one. Does nothing if this node has no parent.
+   */
+  void replace(XmlNode newNode)
+  {
+    if (parent)
+    {
+      auto ndx = parent.children.countUntil!(x => x is this);
+      assert (ndx >= 0);
+      parent.children[ndx] = newNode;
+      newNode.parent = parent;
+      parent = null;
+    }
+  }
+
+  /**
+   * Perform a deep copy of an XmlNode and its children recursively.
+   * Returns: New XmlNode which is a fully duplicated tree.
+   */
+  XmlNode deepcopy()
+  {
+    XmlNode root = new XmlNode(this);
+
+    void recurseCopy(XmlNode oldNode, XmlNode newNode)
+    {
+      foreach (oldChild; oldNode.children)
+      {
+        auto newChild = new XmlNode(oldChild);
+        newNode.addChild(newChild);
+        recurseCopy(oldChild, newChild);
+      }
+    }
+
+    recurseCopy(this, root);
+
+    return root;
   }
 
   /**
@@ -558,7 +532,7 @@ bool isValidElemChar(dchar ch)
 
 unittest
 {
-  string data = `<?xml version="1.0"?>
+  dstring data = `<?xml version="1.0"?>
 <repository version="1.2"
             xmlns="http://www.gtk.org/introspection/core/1.0"
             xmlns:c="http://www.gtk.org/introspection/c/1.0"
@@ -588,17 +562,17 @@ The %G_DATE_BAD_DAY value represents an invalid day of the month.</doc>
   tree.parse(data);
 
   assert(tree.xmlDoc.attrs["version"] == "1.0");
-  assert(tree.root.name == "repository");
+  assert(tree.root.id == "repository");
   assert(tree.root.attrs["version"] == "1.2");
   assert(tree.root.attrs["xmlns:glib"] == "http://www.gtk.org/introspection/glib/1.0");
-  assert(tree.root.children[0].name == "package");
+  assert(tree.root.children[0].id == "package");
   assert(tree.root.children[0].attrs["name"] == "glib-2.0");
-  assert(tree.root.children[2].name == "namespace");
+  assert(tree.root.children[2].id == "namespace");
   assert(tree.root.children[2].attrs["name"] == "GLib");
-  assert(tree.root.children[2].children[1].name == "test");
+  assert(tree.root.children[2].children[1].id == "test");
   assert(tree.root.children[2].children[1].content == "& < > ' \" 1 2"d);
 
-  string noAttrEqual = `<?xml version="1.0"?><repository version`;
+  dstring noAttrEqual = `<?xml version="1.0"?><repository version`;
   tree = new XmlTree();
   assertThrown(tree.parse(noAttrEqual));
 }

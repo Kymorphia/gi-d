@@ -7,6 +7,7 @@ import gir.constant;
 import gir.enumeration;
 import gir.field;
 import gir.func;
+import gir.func_writer;
 import gir.member;
 import gir.param;
 import gir.property;
@@ -41,6 +42,7 @@ final class Repo
       {
         case "alias": // Alias info
           aliases ~= new Alias(this, node);
+          aliasHash[aliases[$ - 1].name] = aliases[$ - 1];
           break;
         case "array": // Array type info
           break; // Do nothing, TypeNode handles this
@@ -48,6 +50,7 @@ final class Repo
           break;
         case "bitfield", "enumeration": // Flags and enumerations
           enums ~= new Enumeration(this, node);
+          enumHash[enums[$ - 1].name] = enums[$ - 1];
           break;
         case "c:include": // C include header
           cIncludes ~= node["name"];
@@ -57,10 +60,13 @@ final class Repo
           {
             if (auto field = baseParentFromXmlNodeWarn!Field(node))
             {
-              if (field.callback)
-                node.warn("Field has multiple callbacks");
-              else
+              if (!field.callback)
+              {
                 field.callback = new Func(this, node);
+                field.callback.parent = field;
+              }
+              else
+                node.warn("Field has multiple callbacks");
             }
           }
           else
@@ -77,6 +83,7 @@ final class Repo
           }
 
           structs ~= new Structure(this, node);
+          structHash[structs[$ - 1].name] = structs[$ - 1];
           break;
         case "constant": // Constants
           constants ~= new Constant(this, node);
@@ -88,9 +95,15 @@ final class Repo
         case "method": // Method function (class, interface, record)
         case "virtual-method": // Virtual method (class, interface)
           if (auto cl = node.baseParentFromXmlNode!Structure)
+          {
             cl.functions ~= new Func(this, node);
+            cl.functions[$ - 1].parent = cl;
+          }
           else if (auto en = node.baseParentFromXmlNode!Enumeration)
+          {
             en.functions ~= new Func(this, node);
+            en.functions[$ - 1].parent = en;
+          }
           else
             functions ~= new Func(this, node);
           break;
@@ -124,6 +137,7 @@ final class Repo
               st.opaque = true;
             }
 
+            f.parent = st;
             st.fields ~= f;
           }
           break;
@@ -139,7 +153,10 @@ final class Repo
           break;
         case "member": // Enumeration or bitfield member
           if (auto en = node.baseParentFromXmlNodeWarn!Enumeration)
+          {
             en.members ~= new Member(this, node);
+            en.members[$ - 1].parent = en;
+          }
           break;
         case "namespace": // Namespace
           namespace = node["name"];
@@ -155,7 +172,10 @@ final class Repo
           if (node.parent)
           {
             if (auto fn = node.parent.baseParentFromXmlNodeWarn!Func)
+            {
               fn.params ~= new Param(this, node);
+              fn.params[$ - 1].parent = fn;
+            }
           }
           else
             node.warn("Expected node to have a parent");
@@ -169,7 +189,10 @@ final class Repo
           break;
         case "property": // Class or interface property
           if (auto cl = node.baseParentFromXmlNodeWarn!Structure)
+          {
             cl.properties ~= new Property(this, node);
+            cl.properties[$ - 1].parent = cl;
+          }
           break;
         case "repository": // Toplevel repository
           repoVersion = node.get("version");
@@ -187,6 +210,12 @@ final class Repo
           }
           break;
         case "type": // Type information
+          if (dumpCTypes && "c:type" in node.attrs)
+            cTypeHash[node["c:type"]] = true;
+
+          if (dumpDTypes && "name" in node.attrs)
+            dTypeHash[node["name"]] = true;
+
           break; // Do nothing, TypeNode handles this
         case "varargs": // Varargs enable
           if (auto par = node.baseParentFromXmlNodeWarn!Param)
@@ -227,6 +256,17 @@ final class Repo
     writeCTypes(buildPath(packageCPath, "types.d"));
     writeCFuncs(buildPath(packageCPath, "functions.d"));
     writeGlobalModule(buildPath(packagePath, namespace.to!string ~ ".d"));
+
+    foreach (st; structs)
+    {
+      if (st.disable)
+        continue;
+
+      if (st.isBoxed)
+        st.writeBoxed(buildPath(packagePath, st.name.to!string ~ ".d"));
+      else if (st.isGObject)
+        st.writeObject(buildPath(packagePath, st.name.to!string ~ ".d"));
+    }
   }
 
   /**
@@ -291,7 +331,7 @@ final class Repo
 
           if (f.isArray)
           {
-            if (f.fixedSize == NotFixedSize)
+            if (f.fixedSize == ArrayNotFixed)
             { // Use array cType if array is not a fixed size
               if (!f.arrayCType.empty)
                 writer ~= f.arrayCType ~ " " ~ defs.symbolName(f.name.camelCase) ~ ";";
@@ -360,20 +400,32 @@ final class Repo
 
     writer ~= ["__gshared extern(C)", "{"];
 
-    foreach (st; structs)
+    dstring modName(Object obj)
     {
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+      if (auto st = cast(Structure)obj)
+        return st.name;
+      else
+        return namespace;
+    }
+
+    // Create a sorted list of modules including the global module
+    auto modules = (cast(Object[])structs ~ [cast(Object)this]).sort!((x, y) => modName(x) < modName(y));
+
+    foreach (mod; modules)
+    {
+      auto st = cast(Structure)mod;
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ modName(mod)];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
 
-      if (!st.glibGetType.empty)
+      if (st && !st.glibGetType.empty)
       { // Write GType function if set
         writer ~= preamble ~ ["GType function() c_" ~ st.glibGetType ~ ";"];
         preamble = null;
       }
 
-      foreach (f; st.functions)
+      foreach (f; st ? st.functions : functions)
       {
         if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
@@ -385,17 +437,18 @@ final class Repo
 
     writer ~= ["}"];
 
-    foreach (st; structs)
+    foreach (mod; modules)
     {
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+      auto st = cast(Structure)mod;
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ modName(mod)];
 
-      if (!st.glibGetType.empty)
+      if (st && !st.glibGetType.empty)
       { // Write GType function if set
         writer ~= preamble ~ ["alias " ~ st.glibGetType ~ " = c_" ~ st.glibGetType ~ ";"];
         preamble = null;
       }
 
-      foreach (f; st.functions)
+      foreach (f; st ? st.functions : functions)
       {
         if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
@@ -407,20 +460,21 @@ final class Repo
 
     writer ~= ["", "static this()", "{"];
 
-    foreach (st; structs)
+    foreach (mod; modules)
     {
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+      auto st = cast(Structure)mod;
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ modName(mod)];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
 
-      if (!st.glibGetType.empty)
+      if (st && !st.glibGetType.empty)
       { // Write GType function if set
         writer ~= preamble ~ [st.glibGetType ~ " = link(\"" ~ st.glibGetType ~ "\");"];
         preamble = null;
       }
 
-      foreach (f; st.functions)
+      foreach (f; st ? st.functions : functions)
       {
         if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
@@ -472,7 +526,15 @@ final class Repo
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ namespace.toLower ~ "." ~ namespace ~ ";", "", "struct " ~ namespace, "{" ];
+    writer ~= ["module " ~ namespace.toLower ~ "." ~ namespace ~ ";", ""];
+
+    foreach (im; imports)
+      writer ~= "import " ~ im ~ ";";
+
+    if (imports.length > 0)
+      writer ~= "";
+
+    writer ~= ["struct " ~ namespace, "{" ];
 
     bool preambleShown;
     foreach (al; aliases)
@@ -540,13 +602,19 @@ final class Repo
       writer ~= "alias " ~ st.name ~ " = " ~ st.subCType ~ ";";
     }
 
+    if (code)
+    {
+      writer ~= "";
+      writer ~= code;
+    }
+
     foreach (fn; functions)
     {
-      if (fn.funcType != FuncType.Function || !fn.introspectable)
+      if (fn.disable)
         continue;
 
       writer ~= "";
-      fn.writeFunction(writer);
+      new FuncWriter(fn, writer).write();
     }
 
     writer ~= "}";
@@ -577,12 +645,24 @@ final class Repo
   dstring[] cIncludes; /// C header includes
   DocSection[] docSections; /// Documentation sections
 
+  Alias[dstring] aliasHash;
+  Enumeration[dstring] enumHash;
+  Structure[dstring] structHash;
+
   XmlPatch[] patches; /// XML patches specified in definitions file
   dstring[dstring] typeSubs; /// Type substitutions defined in the definitions file
+  dstring code; /// Combined content of all "code" commands in the definitions file
+  dstring[] imports; /// Global repo import commands in the definitions file
 
   dstring xmlns;
   dstring xmlnsC;
   dstring xmlnsGlib;
+
+  static bool dumpCTypes; /// Set to true to dump C types
+  static bool[dstring] cTypeHash; /// Hash of all C types encountered
+
+  static bool dumpDTypes; /// Set to true to dump D types
+  static bool[dstring] dTypeHash; /// Hash of all D types encountered
 }
 
 /// Package include

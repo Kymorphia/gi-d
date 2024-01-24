@@ -4,6 +4,7 @@ import code_writer;
 import gir.base;
 import gir.field;
 import gir.func;
+import gir.func_writer;
 import gir.property;
 import gir.repo;
 import gir.type_node;
@@ -93,7 +94,7 @@ final class Structure : Base
   }
 
   /**
-   * Write "class" to a file path. This includes GObject and Boxed types.
+   * Write Boxed structure module.
    * Params:
    *   path = Path to the file to write to
    */
@@ -101,15 +102,20 @@ final class Structure : Base
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ repo.namespace ~ "." ~ name ~ ";", ""];
+    writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
     writeDocs(writer);
 
-    writer ~= `\
-class ` ~ subName ~ ` : Boxed
+    writer ~= 
+`class ` ~ subName ~ ` : Boxed
 {
   this(` ~ subCType ~ `* wrapPtr)
   {
     super(wrapPtr);
+  }
+
+  auto cPtr()
+  {
+    return cast(` ~ subCType ~ `*)ptr;
   }
 
   override GType getType()
@@ -118,8 +124,53 @@ class ` ~ subName ~ ` : Boxed
   }
 `;
 
-    foreach (f; functions)
-      f.writeFunction(writer);
+    foreach (fn; functions)
+      if (!fn.disable)
+        new FuncWriter(fn, writer).write();
+
+    writer ~= "}";
+
+    writer.write();
+  }
+
+  /**
+   * Write GObject module.
+   * Params:
+   *   path = Path to the file to write to
+   */
+  void writeObject(string path)
+  {
+    auto writer = new CodeWriter(path);
+
+    writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
+    writeDocs(writer);
+
+    writer ~=
+`class ` ~ subName ~ ` : ` ~ parent ~ `
+{
+  this(` ~ subCType ~ `* wrapPtr, bool owned)
+  {
+    super(wrapPtr, owned);
+  }
+
+  auto cPtr()
+  {
+    return cast(` ~ subCType ~ `*)ptr;
+  }
+
+  override GType getType()
+  {
+    return ` ~ glibGetType ~ `();
+  }
+`;
+
+    foreach (fn; functions)
+      if (!fn.disable)
+        new FuncWriter(fn, writer).write();
+
+    writer ~= "}";
+
+    writer.write();
   }
 
   dstring name; /// Name of structure

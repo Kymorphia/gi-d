@@ -45,12 +45,12 @@ abstract class TypeNode : Base
       if (auto pFixedSize = "fixed-size" in arr.attrs)
         fixedSize = (*pFixedSize).to!int;
       else
-        fixedSize = NotFixedSize;
+        fixedSize = ArrayNotFixed;
 
       if (auto pLength = "length" in arr.attrs)
         lengthParamIndex = (*pLength).to!int;
       else
-        lengthParamIndex = NoLengthParam;
+        lengthParamIndex = ArrayNoLengthParam;
 
       if (auto typ = arr.findChild("type")) // Use array element type for type info
       {
@@ -74,9 +74,9 @@ abstract class TypeNode : Base
   bool isArray; /// true if this type is an array
   dstring arrayCType; /// Array C type (if isArray is true)
   bool zeroTerminated; /// true if array is zero terminated
-  int fixedSize = NotFixedSize; /// Non-zero if array is a fixed size
-  int lengthParamIndex = NoLengthParam; /// >= 0 if a length parameter index is set
+  int fixedSize = ArrayNotFixed; /// Non-zero if array is a fixed size
+  int lengthParamIndex = ArrayNoLengthParam; /// >= 0 if a length parameter index is set
 }
 
-enum NotFixedSize = 0; /// Value for TypeNode.fixedSize which indicates size is not fixed
-enum NoLengthParam = -1; /// Value used for TypeNode.lengthParamIndex which indicates no length parameter
+enum ArrayNotFixed = 0; /// Value for TypeNode.fixedSize which indicates size is not fixed
+enum ArrayNoLengthParam = -1; /// Value used for TypeNode.lengthParamIndex which indicates no length parameter

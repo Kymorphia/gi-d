@@ -3,6 +3,7 @@ module gir.param;
 import std.conv : to;
 
 import gir.type_node;
+import utils;
 
 /// Function parameter
 final class Param : TypeNode
@@ -13,11 +14,18 @@ final class Param : TypeNode
     fromXml(node);
   }
 
+  /// Get the parameter name formatted in D camelCase
+  dstring dName()
+  {
+    return repo.defs.symbolName(name.camelCase);
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
 
     name = node.get("name");
+    isInstanceParam = node.id == "instance-parameter";
     direction = cast(ParamDirection)node.get("direction");
     ownership = cast(Ownership)node.get("transfer-ownership");
     nullable = node.get("nullable") == "1";
@@ -40,6 +48,9 @@ final class Param : TypeNode
   }
 
   dstring name; /// Name of parameter
+  bool isInstanceParam; /// true if this parameter is the instance parameter
+  bool isArrayLength; /// true if this parameter is an array length
+  int arrayParamIndex; /// If isArrayLength is true, the parameter index of the array or ParamIndexReturnVal if the array is the return value
   ParamDirection direction; /// Parameter direction
   Ownership ownership; /// Ownership of value (Gir "transfer-ownership")
   bool nullable; /// Nullable pointer
@@ -52,6 +63,9 @@ final class Param : TypeNode
   int destroyIndex = NoDestroy; /// Destroy parameter index
   ParamScope scope_; /// FIXME
 }
+
+/// Value used for arrayParamIndex to indicate it is the length for the return value
+enum ParamIndexReturnVal = -1;
 
 /// Direction of a parameter
 enum ParamDirection : dstring

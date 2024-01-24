@@ -20,6 +20,18 @@ final class Func : TypeNode
     fromXml(node);
   }
 
+  /// Get the function name formatted in D camelCase
+  dstring dName()
+  {
+    return repo.defs.symbolName(name.camelCase);
+  }
+
+  /// Returns true if function has an instance parameter
+  bool hasInstanceParam()
+  {
+    return params.length > 0 && params[0].isInstanceParam;
+  }
+
   override void fromXml(XmlNode node)
   {
     Base.fromXml(node);
@@ -64,25 +76,6 @@ final class Func : TypeNode
           : p.subCType) ~ " " ~ repo.defs.symbolName(p.name.camelCase);
 
     return fnptr ~ ")";
-  }
-
-  /**
-   * Write function to a CodeWriter.
-   * Params:
-   *   writer = The code writer
-   */
-  void writeFunction(CodeWriter writer)
-  {
-    writeDocs(writer);
-
-    dstring decl = "static " ~ subDType ~ " " ~ name.camelCase ~ "(";
-
-    foreach (i, p; params)
-      decl ~= (i > 0 ? ", "d : "") ~ (p.subDType) ~ " " ~ repo.defs.symbolName(p.name.camelCase);
-
-    writer ~= [decl ~ ")", "{"];
-
-    writer ~= "}";
   }
 
   dstring name; /// Name of function
