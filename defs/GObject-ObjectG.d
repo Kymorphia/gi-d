@@ -1,4 +1,5 @@
 import core.memory;
+import gid.utils;
 import glib.c.functions;
 import glib.GLib;
 import glib.GObject;
@@ -23,6 +24,9 @@ abstract class ObjectG
     */
   this(void* cptr, bool owned)
   {
+    if (!cptr)
+      throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
+
     this.cptr = cptr;
 
     // Add a data pointer to the D object from the C GObject

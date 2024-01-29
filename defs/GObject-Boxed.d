@@ -1,3 +1,4 @@
+import gid.functions;
 import glib.c.functions;
 
 /// Class wrapper for boxed types
@@ -13,6 +14,9 @@ abstract class Boxed
     */
   this(void* cptr, bool owned)
   {
+    if (!cptr)
+      throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
+
     this.cptr = owned ? cptr : g_boxed_copy(getType, boxed.cptr);
   }
 

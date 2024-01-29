@@ -37,3 +37,12 @@ string fromCString(char* cstr, bool transfer)
 
   return dstr;
 }
+
+/// Exception class used for ObjectG constructor errors
+class GidConstructException : Exception
+{
+  this(string msg)
+  {
+    super(msg);
+  }
+}
