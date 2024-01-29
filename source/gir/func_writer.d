@@ -23,7 +23,9 @@ class FuncWriter
 
     processReturn();
 
-    decl ~= func.dName ~ "(";
+    auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
+
+    decl ~= isCtor ? "this(" : func.dName ~ "(";
     call ~= func.cName ~ "(";
 
     foreach (param; func.params)
@@ -43,7 +45,7 @@ class FuncWriter
     if (postCall.length > 0)
       writer ~= postCall;
 
-    if (func.dType != "none")
+    if (func.dType != "none" && !isCtor)
       writer ~= "return _retval;";
 
     writer ~= "}";
@@ -95,6 +97,7 @@ class FuncWriter
     }
 
     auto kind = func.repo.defs.typeKind(func.subDType, func.repo);
+    auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
 
     final switch(kind) with(TypeKind)
     {
@@ -123,18 +126,30 @@ class FuncWriter
         postCall ~= "string _retval = _cretval.fromCString("d ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
         break;
       case Object:
-        decl ~= func.subDType ~ " ";
+        if (!isCtor)
+          decl ~= func.subDType ~ " ";
+
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
-        postCall ~= func.subDType ~ " _retval = GObject.getDObject!" ~ func.subDType ~ "("
-          ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+
+        if (isCtor)
+          postCall ~= "super(_cretval, true);\n";
+        else
+          postCall ~= func.subDType ~ " _retval = GObject.getDObject!" ~ func.subDType ~ "("
+            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
         break;
       case Boxed:
-        decl ~= func.subDType ~ " ";
+        if (!isCtor)
+          decl ~= func.subDType ~ " ";
+
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
-        postCall ~= func.subDType ~ " _retval;\nif (_cretval)\n_retval = new " ~ func.subDType ~ "(_cretval, "
-          ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+
+        if (isCtor)
+          postCall ~= "super(_cretval, true);\n";
+        else
+          postCall ~= func.subDType ~ " _retval;\n_retval = new " ~ func.subDType ~ "(_cretval, "
+            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
         break;
     }
   }
