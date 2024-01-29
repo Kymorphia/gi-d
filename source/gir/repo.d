@@ -33,6 +33,20 @@ final class Repo
     this.filename = filename;
   }
 
+  /**
+   * Add a structure to a repository. A struct with the same name must not already exist.
+   * Params:
+   *   st = The structure to add to the repository
+   */
+  void addStruct(Structure st)
+  {
+    if (st.name in structHash)
+      throw new Exception("Duplicate structure name '" ~ namespace.to!string ~ "." ~ st.name.to!string ~ "'");
+
+    structs ~= st;
+    structHash[st.name] = st;
+  }
+
   /// Convert an XML object tree to a Gir object tree
   void fromXmlTree(XmlTree tree)
   {
@@ -82,8 +96,7 @@ final class Repo
             goto noRecurse;
           }
 
-          structs ~= new Structure(this, node);
-          structHash[structs[$ - 1].name] = structs[$ - 1];
+          addStruct(new Structure(this, node));
           break;
         case "constant": // Constants
           constants ~= new Constant(this, node);
@@ -105,7 +118,7 @@ final class Repo
             en.functions[$ - 1].parent = en;
           }
           else
-            functions ~= new Func(this, node);
+            globalStruct.functions ~= new Func(this, node);
           break;
         case "doc": // Documentation file position
           if (auto base = baseParentFromXmlNodeWarn!Base(node))
@@ -164,6 +177,12 @@ final class Repo
           nsVersion = node.get("version");
           identifierPrefixes = node.get("c:identifier-prefixes");
           symbolPrefixes = node.get("c:symbol-prefixes");
+
+          // Add global namespace structure
+          globalStruct = new Structure(this);
+          globalStruct.name = namespace;
+          globalStruct.structType = StructType.Class;
+          addStruct(globalStruct);
           break;
         case "package": // Package name
           packageName = node.get("name");
@@ -400,32 +419,20 @@ final class Repo
 
     writer ~= ["__gshared extern(C)", "{"];
 
-    dstring modName(Object obj)
+    foreach (st; structs)
     {
-      if (auto st = cast(Structure)obj)
-        return st.name;
-      else
-        return namespace;
-    }
-
-    // Create a sorted list of modules including the global module
-    auto modules = (cast(Object[])structs ~ [cast(Object)this]).sort!((x, y) => modName(x) < modName(y));
-
-    foreach (mod; modules)
-    {
-      auto st = cast(Structure)mod;
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ modName(mod)];
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
 
-      if (st && !st.glibGetType.empty)
+      if (!st.glibGetType.empty)
       { // Write GType function if set
         writer ~= preamble ~ ["GType function() c_" ~ st.glibGetType ~ ";"];
         preamble = null;
       }
 
-      foreach (f; st ? st.functions : functions)
+      foreach (f; st.functions)
       {
         if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
@@ -437,10 +444,9 @@ final class Repo
 
     writer ~= ["}"];
 
-    foreach (mod; modules)
+    foreach (st; structs)
     {
-      auto st = cast(Structure)mod;
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ modName(mod)];
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
 
       if (st && !st.glibGetType.empty)
       { // Write GType function if set
@@ -448,7 +454,7 @@ final class Repo
         preamble = null;
       }
 
-      foreach (f; st ? st.functions : functions)
+      foreach (f; st.functions)
       {
         if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
@@ -460,10 +466,9 @@ final class Repo
 
     writer ~= ["", "static this()", "{"];
 
-    foreach (mod; modules)
+    foreach (st; structs)
     {
-      auto st = cast(Structure)mod;
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ modName(mod)];
+      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
@@ -474,7 +479,7 @@ final class Repo
         preamble = null;
       }
 
-      foreach (f; st ? st.functions : functions)
+      foreach (f; st.functions)
       {
         if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
@@ -528,16 +533,22 @@ final class Repo
 
     writer ~= ["module " ~ namespace.toLower ~ "." ~ namespace ~ ";", ""];
 
-    foreach (im; imports)
+    foreach (im; globalStruct.defCode.imports) // Write out imports
       writer ~= "import " ~ im ~ ";";
 
-    if (imports.length > 0)
+    if (globalStruct.defCode.imports.length > 0)
       writer ~= "";
 
-    writer ~= ["struct " ~ namespace, "{" ];
+    if (globalStruct.defCode.preClass.length > 0)
+      writer ~= globalStruct.defCode.preClass;
+
+    if (globalStruct.defCode.classDecl.length > 0)
+      writer ~= globalStruct.defCode.classDecl;
+    else
+      writer ~= ["struct " ~ namespace, "{" ];
 
     bool preambleShown;
-    foreach (al; aliases)
+    foreach (al; aliases) // Write out aliases
     {
       if (!preambleShown)
       {
@@ -549,7 +560,7 @@ final class Repo
     }
 
     preambleShown = false;
-    foreach (en; enums)
+    foreach (en; enums) // Write out enum aliases
     {
       if (en.bitfield)
         continue;
@@ -567,7 +578,7 @@ final class Repo
     }
 
     preambleShown = false;
-    foreach (en; enums)
+    foreach (en; enums) // Write out bitfield aliases
     {
       if (!en.bitfield)
         continue;
@@ -585,7 +596,7 @@ final class Repo
     }
 
     preambleShown = false;
-    foreach (st; structs)
+    foreach (st; structs) // Write out simple struct aliases (not classes)
     {
       if (st.isDClass)
         continue;
@@ -602,13 +613,10 @@ final class Repo
       writer ~= "alias " ~ st.name ~ " = " ~ st.subCType ~ ";";
     }
 
-    if (code)
-    {
-      writer ~= "";
-      writer ~= code;
-    }
+    if (globalStruct.defCode.inClass.length > 0)
+      writer ~= globalStruct.defCode.inClass;
 
-    foreach (fn; functions)
+    foreach (fn; globalStruct.functions)
     {
       if (fn.disable)
         continue;
@@ -639,8 +647,8 @@ final class Repo
   Constant[] constants; /// Constants
   Enumeration[] enums; /// Enumerations and bitfields
   Func[] callbacks; /// Callback function types
-  Func[] functions; /// Global package functions
   Structure[] structs; /// Structures
+  Structure globalStruct; /// Global namespace structure
   Include[] includes; /// Package includes
   dstring[] cIncludes; /// C header includes
   DocSection[] docSections; /// Documentation sections
@@ -651,8 +659,7 @@ final class Repo
 
   XmlPatch[] patches; /// XML patches specified in definitions file
   dstring[dstring] typeSubs; /// Type substitutions defined in the definitions file
-  dstring code; /// Combined content of all "code" commands in the definitions file
-  dstring[] imports; /// Global repo import commands in the definitions file
+  DefCode[dstring] structDefCode; /// Code defined in definition file for structures
 
   dstring xmlns;
   dstring xmlnsC;

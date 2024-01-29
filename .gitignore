@@ -1,4 +1,4 @@
 .dub
 dub.selections.json
 gi-d
-packages
+packages/gid-*

@@ -12,6 +12,9 @@ import utils;
 import xml_patch;
 import xml_tree;
 
+enum DefsCmdPrefix = "//!"d; /// Prefix used for definition commands
+enum DefsCommentPrefix = "//#"d; /// Prefix used for definition comments (not included in content)
+
 class Defs
 {
   this()
@@ -25,16 +28,28 @@ class Defs
    */
   void loadDefFiles(string path = "defs")
   {
-    foreach (string filename; dirEntries(path, "*.def", SpanMode.shallow))
-      loadDefs(readText(filename).to!dstring, filename);
+    string[] classFiles;
+
+    foreach (string filename; dirEntries(path, "*.d", SpanMode.shallow))
+    { // Process class files, which contain a dash in the filename, after the main repo files
+      if (filename.baseName.canFind('-'))
+        classFiles ~= filename;
+      else
+        loadDefs(filename);
+    }
+
+    foreach (filename; classFiles)
+      loadDefs(filename);
   }
 
   /**
-   * Load a definition file.
+   * Load a definition file. Filenames are of the form "Namespace.d" and "Namespace-Class.d",
+   * such as "GObject.d" and "GObject-Boxed.d".
+   *
    * Params:
-   *   filename = The name of the .def file to load
+   *   filename = The name of the definition file to load
    */
-  void loadDefs(dstring defs, string filename = null)
+  void loadDefs(string filename)
   { // Curly brace block argument processing state machine
     enum BlockState
     {
@@ -43,38 +58,91 @@ class Defs
       Content, // Processing content until '}'
     }
 
-    dstring[] cmdTokens;
-    uint lineCount, startLine;
-    BlockState block;
-    Repo curRepo;
-    StructDefs curStructDefs;
+    auto fileData = readText(filename).to!dstring; // The definition file data converted to a unicode dstring
+    dstring[] cmdTokens; // Parsed definition command tokens (space separated and quoted strings)
+    uint lineCount; // Current line count
+    BlockState block; // Multi-line block processing state
+    Repo curRepo; // Current repo or null
+    dstring curStructName; // Current structure name or null
+    bool inClass; // true if currently inside class (a raw code declaration or "class" command)
 
     string posInfo()
     {
       return "(file '" ~ filename ~ "' line " ~ lineCount.to!string ~ ")";
     }
 
-    foreach (line; defs.splitLines)
+    // Process raw code lines in definition files (not definition commands)
+    void processDefCode(dstring line)
     {
-      lineCount++;
+      auto defCode = curRepo.structDefCode[curStructName];
 
-      bool warnRepoUnspecified()
+      if (line.startsWith("import ")) // Import statement?
       {
-        if (!curRepo)
-          stderr.writeln("'", cmdTokens[0], "' command requires 'repo' file to be specified");
-        return curRepo !is null;
+        defCode.imports ~= line;
+        return;
       }
 
-      bool warnStructUnspecified()
+      if (!inClass) // Not inside class?
+      { // Is this a class declaration?
+        if (line.startsWith("class") || line.startsWith("abstract class"))
+        {
+          defCode.classDecl = line;
+          inClass = true;
+        }
+        else
+          defCode.preClass ~= line; // Append to pre class content
+      }
+      else
+        defCode.inClass ~= line; // Append to inside class content
+    }
+
+    auto classSplitName = filename.baseName.stripExtension.split('-');
+    auto repoName = classSplitName[0];
+
+    if (classSplitName.length > 1) // Is this a repo class file? Will have a dash separator between the namespace and class names.
+    {
+      auto findRepo = repos.find!(x => x.namespace.to!string == repoName);
+
+      if (findRepo.length > 0) // Is there a repo with the matching namespace from the filename?
+      { // Set current repo and struct name from filename
+        curRepo = findRepo[0];
+        curStructName = classSplitName[1].to!dstring;
+
+        if (curStructName !in curRepo.structDefCode) // If structure definition code wasn't already created, create it
+          curRepo.structDefCode[curStructName] = DefCode();
+      }
+      else
       {
-        if (!curStructDefs)
-          stderr.writeln("'", cmdTokens[0], "' command requires 'struct' to be specified");
-        return curStructDefs !is null;
+        stderr.writeln("Ignoring class definition file '", filename, "' with no matching repository '",
+          classSplitName[0], "'");
+        return;
+      }
+    }
+
+    foreach (line; fileData.splitLines) // Loop on definition file lines
+    {
+      lineCount++;
+      auto lineStrip = line.strip;
+
+      if (lineStrip.startsWith(DefsCommentPrefix)) // Skip definition comments
+        continue;
+
+      dstring cmdLine;
+
+      if (lineStrip.startsWith(DefsCmdPrefix))
+        cmdLine = lineStrip[DefsCmdPrefix.length .. $];
+
+      if (!cmdLine)
+      { // All lines which aren't definition commands get processed as potential code
+        if (!curStructName.empty)
+          processDefCode(lineStrip);
+
+        continue;
       }
 
       if (block == BlockState.Start) // Expecting block start?
       {
-        if (line.startsWith('{'))
+        if (cmdLine.startsWith('{'))
         {
           block = BlockState.Content;
           continue;
@@ -86,171 +154,119 @@ class Defs
 
       if (block == BlockState.None)
       {
-        line = line.strip;
-
-        if (line.startsWith("#") || line.empty) // Skip comments and empty lines
+        if (cmdLine.empty) // Skip empty command lines
           continue;
 
-        cmdTokens = line.splitQuoted.array; // Parse command tokens
+        cmdTokens = cmdLine.splitQuoted.array; // Parse command tokens
       }
       else if (block == BlockState.Content) // Processing multi-line brace block content
       {
-        if (!line.startsWith('}'))
+        if (!cmdLine.startsWith('}'))
         { // Append content to last command argument and advance to next line
-          cmdTokens[$ - 1] ~= line ~ "\n";
+          cmdTokens[$ - 1] ~= cmdLine ~ "\n";
           continue;
         }
 
         block = BlockState.None; // Closing brace of multi-line block argument, fall through to process the command
       }
 
-      switch (cmdTokens[0])
+      auto cmd = cmdTokens[0];
+      auto findCmdInfo = defCommandInfo.find!(x => x.name == cmd);
+      if (findCmdInfo.empty)
       {
-        case "add":
-          if (!warnRepoUnspecified)
-            break;
+        stderr.writeln("Unknown command '", cmd, "'");
+        continue;
+      }
 
-          if (cmdTokens.length == 3)
+      auto cmdInfo = findCmdInfo[0];
+
+      if ((cmdInfo.flags & DefCmdFlags.AllowBlock) && cmdTokens.length == cmdInfo.argCount) // Allow multi-line block arguments for some commands
+      {
+        block = BlockState.Start;
+        cmdTokens ~= "";
+        continue;
+      }
+
+      if (cmdTokens.length != cmdInfo.argCount + 1)
+      {
+        stderr.writeln("'", cmd, "' command requires ", cmdInfo.argCount, cmdInfo.argCount == 1
+          ? "argument " : "arguments ", posInfo);
+        break;
+      }
+
+      if (cmdInfo.flags & DefCmdFlags.ReqRepo && !curRepo)
+      {
+        stderr.writeln("'", cmd, "' command requires 'repo' to be specified");
+        continue;
+      }
+
+      if (cmdInfo.flags & DefCmdFlags.ReqClass && !curStructName)
+      {
+        stderr.writeln("'", cmd, "' command requires 'struct' to be specified");
+        continue;
+      }
+
+      switch (cmd)
+      {
+        case "add", "del", "rename", "set":
+          auto patch = new XmlPatch();
+
+          try
           {
-            try
+            final switch (cmd)
             {
-              auto patch = new XmlPatch();
-              patch.parseAddCmd(cmdTokens[1], cmdTokens[2]);
-              curRepo.patches ~= patch;
+              case "add":
+                patch.parseAddCmd(cmdTokens[1], cmdTokens[2]);
+                break;
+              case "del":
+                patch.parseDeleteCmd(cmdTokens[1]);
+                break;
+              case "rename":
+                patch.parseRenameCmd(cmdTokens[1], cmdTokens[2]);
+                break;
+              case "set":
+                patch.parseSetCmd(cmdTokens[1], cmdTokens[2]);
+                break;
             }
-            catch (XmlPatchError e)
-              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
           }
-          else if (cmdTokens.length == 2)
+          catch (XmlPatchError e)
           {
-            block = BlockState.Start;
-            cmdTokens ~= "";
-          }
-          break;
-        case "code":
-          if (!warnRepoUnspecified)
+            stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
             break;
-
-          if (cmdTokens.length == 2)
-          {
-            auto code = "// code start at line " ~ startLine.to!dstring ~ "\n\n" ~ cmdTokens[1] ~ "\n// code end at line "
-              ~ lineCount.to!dstring;
-
-            if (curStructDefs)
-              curStructDefs.code ~= code;
-            else
-              curRepo.code ~= code;
           }
-          else if (cmdTokens.length == 1)
-          {
-            block = BlockState.Start;
-            cmdTokens ~= "";
-            startLine = lineCount;
-          }
-          else
-            stderr.writeln("'code' command requires 1 argument ", posInfo);
+
+          curRepo.patches ~= patch;
           break;
-        case "del":
-          if (!warnRepoUnspecified)
-            break;
+        case "class":
+          curStructName = cmdTokens[1];
 
-          if (cmdTokens.length == 2)
-          {
-            try
-            {
-              auto patch = new XmlPatch();
-              patch.parseDeleteCmd(cmdTokens[1]);
-              curRepo.patches ~= patch;
-            }
-            catch (XmlPatchError e)
-              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
-          }
+          if (curStructName !in curRepo.structDefCode)
+            curRepo.structDefCode[curStructName] = DefCode();
           else
-            stderr.writeln("'del' command requires 1 argument ", posInfo);
+            stderr.writeln("Duplicate class command found for '", curStructName, "' ", posInfo);
           break;
         case "import":
-          if (!warnRepoUnspecified)
-            break;
-
           if (cmdTokens.length == 2)
-          {
-            if (curStructDefs)
-              curStructDefs.imports ~= cmdTokens[1];
-            else
-              curRepo.imports ~= cmdTokens[1];
-          }
+            curRepo.structDefCode[curStructName].imports ~= cmdTokens[1];
           else
-            stderr.writeln("'code' command requires 1 argument ", posInfo);
-          break;
-        case "rename":
-          if (!warnRepoUnspecified)
-            break;
-
-          if (cmdTokens.length == 3)
-          {
-            try
-            {
-              auto patch = new XmlPatch();
-              patch.parseRenameCmd(cmdTokens[1], cmdTokens[2]);
-              curRepo.patches ~= patch;
-            }
-            catch (XmlPatchError e)
-              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
-          }
-          else if (cmdTokens.length == 2)
-          {
-            block = BlockState.Start;
-            cmdTokens ~= "";
-          }
+            stderr.writeln("'import' command requires 1 argument ", posInfo);
           break;
         case "repo":
           if (cmdTokens.length == 2)
           {
             curRepo = new Repo(this, cmdTokens[1].to!string);
+            curRepo.namespace = repoName.to!dstring;
             repos ~= curRepo;
+            curStructName = null;
           }
           else
-            stderr.writeln("'gir' command requires 1 argument ", posInfo);
+            stderr.writeln("'repo' command requires 1 argument ", posInfo);
           break;
         case "reserved":
           if (cmdTokens.length == 2)
             reservedWords[cmdTokens[1]] = true;
           else
             stderr.writeln("'reserved' command requires 1 argument ", posInfo);
-
-          break;
-        case "set":
-          if (!warnRepoUnspecified)
-            break;
-
-          if (cmdTokens.length == 3)
-          {
-            try
-            {
-              auto patch = new XmlPatch();
-              patch.parseSetCmd(cmdTokens[1], cmdTokens[2]);
-              curRepo.patches ~= patch;
-            }
-            catch (XmlPatchError e)
-              stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
-          }
-          else if (cmdTokens.length == 2)
-          {
-            block = BlockState.Start;
-            cmdTokens ~= "";
-          }
-          break;
-        case "struct":
-          if (!warnRepoUnspecified)
-            break;
-
-          if (cmdTokens.length == 2)
-          {
-            curStructDefs = new StructDefs();
-            structDefs[cmdTokens[1]] = curStructDefs;
-          }
-          else
-            stderr.writeln("'struct' command requires 1 argument ", posInfo);
           break;
         case "subtype":
           if (cmdTokens.length == 3)
@@ -267,7 +283,7 @@ class Defs
 
           break;
         default:
-          stderr.writeln("Unknown command '", cmdTokens[0], "'");
+          assert(0);
       }
     }
   }
@@ -324,12 +340,28 @@ class Defs
   {
     foreach (repo; repos)
     {
-      foreach (fn; repo.functions)
-        fixupFunc(fn, [FuncType.Function]);
+      repoHash[repo.namespace] = repo;
 
       foreach (st; repo.structs)
         foreach (fn; st.functions)
           fixupFunc(fn, [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method]);
+
+      foreach (defCode; repo.structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
+      {
+        auto st = repo.structHash.get(defCode.key, null);
+
+        if (!st) // Create new class structures if non-existant
+        {
+          st = new Structure(repo);
+          st.name = defCode.key;
+          st.structType = StructType.Class;
+          repo.addStruct(st);
+        }
+
+        st.defCode = defCode.value;
+      }
+
+      repo.structs.sort!((x, y) => x.name < y.name); // Sort structures by name
     }
   }
 
@@ -338,8 +370,8 @@ class Defs
     void disableFunc(string msg)
     {
       fn.disable = true;
-      stderr.writeln("Disabling '" ~ (fn.parent ? (cast(Structure)fn.parent).name.to!string : fn.repo.namespace.to!string) ~ "."
-        ~ fn.name.to!string ~ "': " ~ msg);
+      stderr.writeln("Disabling '" ~ (fn.parent ? (cast(Structure)fn.parent).name.to!string
+        : fn.repo.namespace.to!string) ~ "." ~ fn.name.to!string ~ "': " ~ msg);
     }
 
     if (!fn.introspectable || !fn.movedTo.empty || fn.funcType == FuncType.VirtualMethod
@@ -543,17 +575,26 @@ class Defs
   bool[dstring] reservedWords; /// Reserved words (_ appended)
   dstring[dstring] typeSubs; /// Global type substitutions
   Repo[] repos; /// Gir repositories
-  StructDefs[dstring] structDefs; /// Structure definitions by name
   TypeKind[dstring] typeCache; /// Type kind cache
 
   Repo[dstring] repoHash; /// Hash of repositories by namespace
 }
 
-/// Structure definitions
-class StructDefs
+/// Definition command flags
+enum DefCmdFlags
 {
-  dstring[] imports; /// Import commands
-  dstring code; /// Combined content of code commands
+  AllowBlock = 1 << 0, /// Allow a multi-line block argument (last arg)
+  ReqRepo = 1 << 1, /// Require repo to have been specified
+  ReqClass = 1 << 2, /// Require struct to have been specified
+  None = 0,
+}
+
+/// Definition command info
+struct DefCmd
+{
+  dstring name;
+  int argCount;
+  BitFlags!DefCmdFlags flags;
 }
 
 /// Kind of a type
@@ -567,3 +608,25 @@ enum TypeKind
   Object, /// A GObject derived type
   Boxed, /// A GLib boxed type
 }
+
+/// Manual code from a definitions file
+struct DefCode
+{
+  dstring[] imports; /// Imports (of the form MOD or MOD : SYM)
+  dstring[] preClass; /// Pre class declaration code, line separated
+  dstring classDecl; /// Class declaration
+  dstring[] inClass; /// Code inside of the class, line separated
+}
+
+// Command information
+immutable DefCmd[] defCommandInfo = [
+  {"add", 2, DefCmdFlags.AllowBlock | DefCmdFlags.ReqRepo},
+  {"class", 1, DefCmdFlags.ReqRepo},
+  {"del", 1, DefCmdFlags.ReqRepo},
+  {"import", 1, DefCmdFlags.ReqClass},
+  {"rename", 2, DefCmdFlags.ReqRepo},
+  {"repo", 1, DefCmdFlags.None},
+  {"reserved", 1, DefCmdFlags.None},
+  {"set", 2, DefCmdFlags.AllowBlock | DefCmdFlags.ReqRepo},
+  {"subtype", 2, DefCmdFlags.None},
+];

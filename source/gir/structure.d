@@ -1,6 +1,7 @@
 module gir.structure;
 
 import code_writer;
+import defs;
 import gir.base;
 import gir.field;
 import gir.func;
@@ -22,6 +23,11 @@ enum StructType : dstring
 /// Structure class which is used for class, interface, and records in Gir files
 final class Structure : Base
 {
+  this(Repo repo)
+  {
+    this.repo = repo;
+  }
+
   this(Repo repo, XmlNode node)
   {
     this.repo = repo;
@@ -105,28 +111,35 @@ final class Structure : Base
     writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
     writeDocs(writer);
 
-    writer ~= 
-`class ` ~ subName ~ ` : Boxed
-{
-  this(` ~ subCType ~ `* wrapPtr)
-  {
-    super(wrapPtr);
-  }
+    foreach (im; defCode.imports) // Write out imports
+      writer ~= "import " ~ im ~ ";";
 
-  auto cPtr()
-  {
-    return cast(` ~ subCType ~ `*)ptr;
-  }
+    if (defCode.imports.length > 0)
+      writer ~= "";
 
-  override GType getType()
-  {
-    return ` ~ glibGetType ~ `();
-  }
-`;
+    if (defCode.preClass.length > 0)
+      writer ~= defCode.preClass;
+
+    if (defCode.classDecl.length > 0)
+      writer ~= defCode.classDecl;
+    else
+      writer ~= ["class " ~ subName ~ " : Boxed" ];
+
+    writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr)", "{", "super(wrapPtr);", "}", ""];
+    writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
+    writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}", ""];
+
+    if (defCode.inClass.length > 0)
+      writer ~= defCode.inClass;
 
     foreach (fn; functions)
-      if (!fn.disable)
-        new FuncWriter(fn, writer).write();
+    {
+      if (fn.disable)
+        continue;
+
+      writer ~= "";
+      new FuncWriter(fn, writer).write();
+    }
 
     writer ~= "}";
 
@@ -145,24 +158,23 @@ final class Structure : Base
     writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
     writeDocs(writer);
 
-    writer ~=
-`class ` ~ subName ~ ` : ` ~ parent ~ `
-{
-  this(` ~ subCType ~ `* wrapPtr, bool owned)
-  {
-    super(wrapPtr, owned);
-  }
+    foreach (im; defCode.imports) // Write out imports
+      writer ~= "import " ~ im ~ ";";
 
-  auto cPtr()
-  {
-    return cast(` ~ subCType ~ `*)ptr;
-  }
+    if (defCode.imports.length > 0)
+      writer ~= "";
 
-  override GType getType()
-  {
-    return ` ~ glibGetType ~ `();
-  }
-`;
+    if (defCode.preClass.length > 0)
+      writer ~= defCode.preClass;
+
+    if (defCode.classDecl.length > 0)
+      writer ~= defCode.classDecl;
+    else
+      writer ~= ["class " ~ subName ~ " : " ~ parent ];
+
+    writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr, bool owned)", "{", "super(wrapPtr, owned);", "}", ""];
+    writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
+    writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}", ""];
 
     foreach (fn; functions)
       if (!fn.disable)
@@ -184,6 +196,8 @@ final class Structure : Base
   Func[] functions; /// Constructors, functions, methods, virtual methods, and signals
   Field[] fields; /// Structure fields
   Property[] properties; /// Properties
+
+  DefCode defCode; /// Code from definitions file
 
   bool abstract_; /// Is abstract type?
   bool deprecated_; /// Deprecated?

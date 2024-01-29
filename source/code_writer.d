@@ -67,33 +67,40 @@ class CodeWriter
     uint indent;
     bool indentStatement; // Used for indenting a single line after a control statement without a open/close brace block
 
-    foreach (l; lines)
+    foreach (line; lines)
     {
       if (!inComment)
       {
-        if (l.startsWith("/*")) // Start of multi-line comment?
+        if (line.startsWith("/*")) // Start of multi-line comment?
           inComment = true;
-        else if (l.endsWith('}') && indent >= 2) // End brace for a control block?
+        else if (line.endsWith('}') && indent >= 2) // End brace for a control block?
           indent -= 2;
-        else if (l.endsWith('{'))
+        else if (line.endsWith('{'))
           indentStatement = false; // Don't add single statement indent if indent statement is followed by an open brace
       }
 
       auto calcIndent = indent
-        + (l.startsWith("*") ? 1 : 0) // Indent an extra space for multiline comments
+        + (line.startsWith("*") ? 1 : 0) // Indent an extra space for multiline comments
         + (indentStatement ? 2 : 0); // Indent statements without braces
 
-      content ~= (cast(dchar)' ').repeat(calcIndent).array ~ l.strip ~ "\n"d;
+      auto stripLine = line.strip;
+
+      if (stripLine.length > 0)
+        content ~= (cast(dchar)' ').repeat(calcIndent).array ~ stripLine ~ "\n"d;
+      else
+        content ~= "\n";
+
       indentStatement = false;
 
       if (inComment)
       {
-        if (l.endsWith("*/")) // End of multi-line comment?
+        if (line.endsWith("*/")) // End of multi-line comment?
           inComment = false;
       }
-      else if (l.endsWith('{')) // Open brace for a control block increases indent
+      else if (line.endsWith('{')) // Open brace for a control block increases indent
         indent += 2;
-      else if (["else", "for ", "if ", "static if ", "version(", "while "].filter!(x => l.startsWith(x)).empty != true)
+      else if (["else", "for ", "if ", "static if ", "version(", "while "].filter!(x => line.startsWith(x))
+          .empty != true)
         indentStatement = true;
     }
 
