@@ -1,4 +1,4 @@
-// Dlang reserved words
+//# Dlang reserved words
 //!reserved abstract
 //!reserved alias
 //!reserved align
@@ -102,7 +102,7 @@
 //!reserved while
 //!reserved with
 
-// Global type substitutions
+//# Global type substitutions
 //!subtype gboolean bool
 //!subtype filename string
 //!subtype gchar char
@@ -135,6 +135,13 @@
 //!subtype utf8 string
 //!subtype va_list void*
 
-// FIXME - Need to use int/uint on Windows
+//# FIXME - Need to use int/uint on Windows
 //!subtype glong long
 //!subtype gulong ulong
+
+//# Global XML patches
+
+//# Generally free(), ref(), and unref() functions/methods aren't desirable
+//!set *.method[free][introspectable] 0
+//!set *.method[ref][introspectable] 0
+//!set *.method[unref][introspectable] 0

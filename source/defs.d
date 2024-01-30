@@ -240,7 +240,10 @@ class Defs
             break;
           }
 
-          curRepo.patches ~= patch;
+          if (curRepo)
+            curRepo.patches ~= patch;
+          else
+            patches ~= patch;
           break;
         case "class":
           curStructName = cmdTokens[1];
@@ -330,6 +333,14 @@ class Defs
 
       if (!namespaceNode)
         throw new Exception("No 'namespace' XML node found in Gir file");
+
+      foreach (patch; patches) // Apply global XML patches from defs file
+      {
+        try
+          patch.apply(tree, namespaceNode);
+        catch (XmlPatchError e)
+        {}
+      }
 
       foreach (patch; repo.patches) // Apply XML patches from defs file
         patch.apply(tree, namespaceNode);
@@ -579,6 +590,7 @@ class Defs
 
   bool[dstring] reservedWords; /// Reserved words (_ appended)
   dstring[dstring] typeSubs; /// Global type substitutions
+  XmlPatch[] patches; /// Global XML patches specified in definitions file
   Repo[] repos; /// Gir repositories
   TypeKind[dstring] typeCache; /// Type kind cache
 
@@ -630,13 +642,13 @@ struct DefCmd
 
 // Command information
 immutable DefCmd[] defCommandInfo = [
-  {"add", 2, DefCmdFlags.AllowBlock | DefCmdFlags.ReqRepo},
+  {"add", 2, DefCmdFlags.AllowBlock},
   {"class", 1, DefCmdFlags.ReqRepo},
-  {"del", 1, DefCmdFlags.ReqRepo},
+  {"del", 1, DefCmdFlags.None},
   {"import", 1, DefCmdFlags.ReqClass},
-  {"rename", 2, DefCmdFlags.ReqRepo},
+  {"rename", 2, DefCmdFlags.None},
   {"repo", 1, DefCmdFlags.None},
   {"reserved", 1, DefCmdFlags.None},
-  {"set", 2, DefCmdFlags.AllowBlock | DefCmdFlags.ReqRepo},
+  {"set", 2, DefCmdFlags.AllowBlock},
   {"subtype", 2, DefCmdFlags.None},
 ];
