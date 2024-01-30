@@ -1,6 +1,7 @@
 module gir.repo;
 
 import defs;
+import import_symbols;
 import gir.alias_;
 import gir.base;
 import gir.constant;
@@ -281,10 +282,8 @@ final class Repo
       if (st.disable)
         continue;
 
-      if (st.isBoxed)
-        st.writeBoxed(buildPath(packagePath, st.name.to!string ~ ".d"));
-      else if (st.isGObject)
-        st.writeObject(buildPath(packagePath, st.name.to!string ~ ".d"));
+      if (st.isGObject || st.isBoxed)
+        st.write(buildPath(packagePath, st.name.to!string ~ ".d"));
     }
   }
 
@@ -533,10 +532,21 @@ final class Repo
 
     writer ~= ["module " ~ namespace.toLower ~ "." ~ namespace ~ ";", ""];
 
-    foreach (im; globalStruct.defCode.imports) // Write out imports
-      writer ~= "import " ~ im ~ ";";
+    // Create the function writers first to construct the imports
+    auto imports = new ImportSymbols(globalStruct.defCode.imports);
+    FuncWriter[] funcWriters;
 
-    if (globalStruct.defCode.imports.length > 0)
+    foreach (fn; globalStruct.functions)
+    {
+      if (fn.disable)
+        continue;
+
+      auto w = new FuncWriter(fn);
+      imports.merge(w.imports);
+      funcWriters ~= w;
+    }
+
+    if (imports.write(writer))
       writer ~= "";
 
     if (globalStruct.defCode.preClass.length > 0)
@@ -616,13 +626,10 @@ final class Repo
     if (globalStruct.defCode.inClass.length > 0)
       writer ~= globalStruct.defCode.inClass;
 
-    foreach (fn; globalStruct.functions)
+    foreach (fnWriter; funcWriters)
     {
-      if (fn.disable)
-        continue;
-
       writer ~= "";
-      new FuncWriter(fn, writer).write();
+      fnWriter.write(writer);
     }
 
     writer ~= "}";

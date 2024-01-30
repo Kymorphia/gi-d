@@ -2,6 +2,7 @@ module defs;
 
 import std.utf : toUTF32;
 
+import import_symbols;
 import gir.func;
 import gir.param;
 import gir.repo;
@@ -78,7 +79,11 @@ class Defs
 
       if (line.startsWith("import ")) // Import statement?
       {
-        defCode.imports ~= line;
+        try
+          defCode.imports.parseImport(line);
+        catch(Exception e)
+          stderr.writeln(e.msg, " ", posInfo);
+
         return;
       }
 
@@ -109,7 +114,7 @@ class Defs
         curStructName = classSplitName[1].to!dstring;
 
         if (curStructName !in curRepo.structDefCode) // If structure definition code wasn't already created, create it
-          curRepo.structDefCode[curStructName] = DefCode();
+          curRepo.structDefCode[curStructName] = new DefCode();
       }
       else
       {
@@ -241,13 +246,13 @@ class Defs
           curStructName = cmdTokens[1];
 
           if (curStructName !in curRepo.structDefCode)
-            curRepo.structDefCode[curStructName] = DefCode();
+            curRepo.structDefCode[curStructName] = new DefCode();
           else
             stderr.writeln("Duplicate class command found for '", curStructName, "' ", posInfo);
           break;
         case "import":
           if (cmdTokens.length == 2)
-            curRepo.structDefCode[curStructName].imports ~= cmdTokens[1];
+            curRepo.structDefCode[curStructName].imports.add(cmdTokens[1]);
           else
             stderr.writeln("'import' command requires 1 argument ", posInfo);
           break;
@@ -346,19 +351,19 @@ class Defs
         foreach (fn; st.functions)
           fixupFunc(fn, [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method]);
 
-      foreach (defCode; repo.structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
+      foreach (dcArray; repo.structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
       {
-        auto st = repo.structHash.get(defCode.key, null);
+        auto st = repo.structHash.get(dcArray.key, null);
 
         if (!st) // Create new class structures if non-existant
         {
           st = new Structure(repo);
-          st.name = defCode.key;
+          st.name = dcArray.key;
           st.structType = StructType.Class;
           repo.addStruct(st);
         }
 
-        st.defCode = defCode.value;
+        st.defCode = dcArray.value;
       }
 
       repo.structs.sort!((x, y) => x.name < y.name); // Sort structures by name
@@ -580,6 +585,32 @@ class Defs
   Repo[dstring] repoHash; /// Hash of repositories by namespace
 }
 
+/// Kind of a type
+enum TypeKind
+{
+  Basic, /// A basic data type
+  Enum, /// Enumeration type
+  Flags, /// Bitfield flags type
+  Struct, /// Simple struct type
+  String, /// A string
+  Object, /// A GObject derived type
+  Boxed, /// A GLib boxed type
+}
+
+/// Manual code from a definitions file
+class DefCode
+{
+  this()
+  {
+    imports = new ImportSymbols();
+  }
+
+  ImportSymbols imports; /// Imports
+  dstring[] preClass; /// Pre class declaration code, line separated
+  dstring classDecl; /// Class declaration
+  dstring[] inClass; /// Code inside of the class, line separated
+}
+
 /// Definition command flags
 enum DefCmdFlags
 {
@@ -595,27 +626,6 @@ struct DefCmd
   dstring name;
   int argCount;
   BitFlags!DefCmdFlags flags;
-}
-
-/// Kind of a type
-enum TypeKind
-{
-  Basic, /// A basic data type
-  Enum, /// Enumeration type
-  Flags, /// Bitfield flags type
-  Struct, /// Simple struct type
-  String, /// A string
-  Object, /// A GObject derived type
-  Boxed, /// A GLib boxed type
-}
-
-/// Manual code from a definitions file
-struct DefCode
-{
-  dstring[] imports; /// Imports (of the form MOD or MOD : SYM)
-  dstring[] preClass; /// Pre class declaration code, line separated
-  dstring classDecl; /// Class declaration
-  dstring[] inClass; /// Code inside of the class, line separated
 }
 
 // Command information

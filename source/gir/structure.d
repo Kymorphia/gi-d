@@ -2,6 +2,7 @@ module gir.structure;
 
 import code_writer;
 import defs;
+import import_symbols;
 import gir.base;
 import gir.field;
 import gir.func;
@@ -26,11 +27,12 @@ final class Structure : Base
   this(Repo repo)
   {
     this.repo = repo;
+    defCode = new DefCode;
   }
 
   this(Repo repo, XmlNode node)
   {
-    this.repo = repo;
+    this(repo);
     fromXml(node);
   }
 
@@ -100,85 +102,59 @@ final class Structure : Base
   }
 
   /**
-   * Write Boxed structure module.
+   * Write structure module.
    * Params:
    *   path = Path to the file to write to
    */
-  void writeBoxed(string path)
+  void write(string path)
   {
     auto writer = new CodeWriter(path);
 
     writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
-    writeDocs(writer);
 
-    foreach (im; defCode.imports) // Write out imports
-      writer ~= "import " ~ im ~ ";";
-
-    if (defCode.imports.length > 0)
-      writer ~= "";
-
-    if (defCode.preClass.length > 0)
-      writer ~= defCode.preClass;
-
-    if (defCode.classDecl.length > 0)
-      writer ~= defCode.classDecl;
-    else
-      writer ~= ["class " ~ subName ~ " : Boxed" ];
-
-    writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr)", "{", "super(wrapPtr);", "}", ""];
-    writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
-    writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}", ""];
-
-    if (defCode.inClass.length > 0)
-      writer ~= defCode.inClass;
+    // Create the function writers first to construct the imports
+    auto imports = new ImportSymbols(defCode.imports);
+    FuncWriter[] funcWriters;
 
     foreach (fn; functions)
     {
       if (fn.disable)
         continue;
 
-      writer ~= "";
-      new FuncWriter(fn, writer).write();
+      auto w = new FuncWriter(fn);
+      imports.merge(w.imports);
+      funcWriters ~= w;
     }
 
-    writer ~= "}";
-
-    writer.write();
-  }
-
-  /**
-   * Write GObject module.
-   * Params:
-   *   path = Path to the file to write to
-   */
-  void writeObject(string path)
-  {
-    auto writer = new CodeWriter(path);
-
-    writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
-    writeDocs(writer);
-
-    foreach (im; defCode.imports) // Write out imports
-      writer ~= "import " ~ im ~ ";";
-
-    if (defCode.imports.length > 0)
+    if (imports.write(writer))
       writer ~= "";
 
     if (defCode.preClass.length > 0)
       writer ~= defCode.preClass;
 
+    writeDocs(writer);
+
     if (defCode.classDecl.length > 0)
       writer ~= defCode.classDecl;
     else
-      writer ~= ["class " ~ subName ~ " : " ~ parent ];
+      writer ~= ["class " ~ subName ~ (isGObject ? " : " ~ parent : " : Boxed") ];
 
-    writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr, bool owned)", "{", "super(wrapPtr, owned);", "}", ""];
+    if (isGObject)
+      writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr, bool owned)", "{", "super(wrapPtr, owned);", "}", ""];
+    else // Boxed
+      writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr)", "{", "super(wrapPtr);", "}", ""];
+
     writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
-    writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}", ""];
+    writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
 
-    foreach (fn; functions)
-      if (!fn.disable)
-        new FuncWriter(fn, writer).write();
+    if (defCode.inClass.length > 0)
+      writer ~= defCode.inClass;
+
+    foreach (fnWriter; funcWriters)
+    {
+      writer ~= "";
+      fnWriter.write(writer);
+    }
 
     writer ~= "}";
 

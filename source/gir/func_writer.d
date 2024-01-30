@@ -2,6 +2,7 @@ module gir.func_writer;
 
 import code_writer;
 import defs;
+import import_symbols;
 import gir.func;
 import gir.param;
 import gir.type_node;
@@ -10,17 +11,16 @@ import std_includes;
 /// Function writer class
 class FuncWriter
 {
-  this(Func func, CodeWriter writer)
+  this(Func func)
   {
+    this.imports = new ImportSymbols;
     this.func = func;
-    this.writer = writer;
+    process();
   }
 
-  /// Write function binding to a CodeWriter
-  void write()
+  // Process the function
+  private void process()
   {
-    func.writeDocs(writer);
-
     processReturn();
 
     auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
@@ -33,22 +33,6 @@ class FuncWriter
 
     decl ~= ")";
     call ~= ");";
-
-    writer ~= decl;
-    writer ~= "{";
-
-    if (preCall.length > 0)
-      writer ~= preCall;
-
-    writer ~= call;
-
-    if (postCall.length > 0)
-      writer ~= postCall;
-
-    if (func.dType != "none" && !isCtor)
-      writer ~= "return _retval;";
-
-    writer ~= "}";
   }
 
   // Helper to add parameter to call string with comma separator
@@ -124,6 +108,7 @@ class FuncWriter
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
         postCall ~= "string _retval = _cretval.fromCString("d ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+        imports.add("gid.utils");
         break;
       case Object:
         if (!isCtor)
@@ -132,11 +117,14 @@ class FuncWriter
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
 
-        if (isCtor)
-          postCall ~= "super(_cretval, true);\n";
-        else
+        if (!isCtor)
+        {
           postCall ~= func.subDType ~ " _retval = GObject.getDObject!" ~ func.subDType ~ "("
             ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.GObject");
+        }
+        else
+          postCall ~= "super(_cretval, true);\n";
         break;
       case Boxed:
         if (!isCtor)
@@ -197,10 +185,12 @@ class FuncWriter
           break;
         case TypeKind.String:
           postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.utils");
           break;
         case TypeKind.Object:
           postCall ~= "_retval[i] = GObject.getDObject!" ~ func.subDType ~ "(_cretval[i], "
             ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.GObject");
           break;
         case TypeKind.Boxed:
           postCall ~= "_retval[i] = new " ~ func.subDType ~ "(_cretval[i]);\n";
@@ -275,6 +265,7 @@ class FuncWriter
         {
           preCall ~= param.subCType ~ " _" ~ param.dName ~ " = " ~ param.dName ~ ".toCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.utils");
           addCallParam("_" ~ param.dName);
         }
         else if (param.direction == ParamDirection.Out)
@@ -283,6 +274,7 @@ class FuncWriter
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = _" ~ param.dName ~ ".fromCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.utils");
         }
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
@@ -335,6 +327,7 @@ class FuncWriter
         case TypeKind.String:
           preCall ~= param.subCType ~ "[] _tmp" ~ param.dName ~ ";\n";
           preCall ~= "foreach(s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
+          imports.add("gid.utils");
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;";
@@ -386,6 +379,7 @@ class FuncWriter
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= _" ~ param.dName ~ "[i].fromCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.utils");
 
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
@@ -394,6 +388,7 @@ class FuncWriter
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= GObject.getDObject(_" ~ param.dName
             ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("gid.GObject");
 
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
@@ -410,8 +405,36 @@ class FuncWriter
     }
   }
 
-  CodeWriter writer; ///  The code writer instance
+  /**
+   * Write function binding to a CodeWriter.
+   * Params:
+   *   writer = Code writer to write to.
+   */
+  void write(CodeWriter writer)
+  {
+    func.writeDocs(writer);
+
+    writer ~= decl;
+    writer ~= "{";
+
+    if (preCall.length > 0)
+      writer ~= preCall;
+
+    writer ~= call;
+
+    if (postCall.length > 0)
+      writer ~= postCall;
+
+    auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
+
+    if (func.dType != "none" && !isCtor)
+      writer ~= "return _retval;";
+
+    writer ~= "}";
+  }
+
   Func func; /// The function object being written
+  ImportSymbols imports; /// Import symbols needed to support the function
   dstring decl; /// Function declaration
   dstring preCall; /// Pre-call code for call return variable, call output parameter variables, and input variable processing
   dstring call; /// The C function call
