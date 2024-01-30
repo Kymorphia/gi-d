@@ -21,9 +21,12 @@ class FuncWriter
   // Process the function
   private void process()
   {
-    processReturn();
-
     auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
+
+    if (func.funcType != FuncType.Method)
+      decl ~= "static ";
+
+    processReturn();
 
     decl ~= isCtor ? "this(" : func.dName ~ "(";
     call ~= func.cName ~ "(";
