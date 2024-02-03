@@ -1,6 +1,7 @@
-module gid.utils;
+module gid;
 
 import std.string : fromStringz, toStringz;
+public import std.typecons : BitFlags, Yes;
 
 /**
  * Convert a D string to a zero terminated C string, with allocation parameter.

@@ -3,6 +3,7 @@ module gir.field;
 import gir.func;
 import gir.structure;
 import gir.type_node;
+import utils;
 
 /// Field in a structure
 final class Field : TypeNode
@@ -11,6 +12,18 @@ final class Field : TypeNode
   {
     this.repo = repo;
     fromXml(node);
+  }
+
+  // Get field name and handle reserved words by adding an underscore to the field name
+  @property dstring subName()
+  {
+    return repo.defs.symbolName(name);
+  }
+
+  /// Get the field name formatted in D camelCase
+  dstring dName()
+  {
+    return repo.defs.symbolName(name.camelCase);
   }
 
   override void fromXml(XmlNode node)

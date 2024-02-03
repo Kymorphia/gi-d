@@ -45,7 +45,7 @@ class Defs
 
   /**
    * Load a definition file. Filenames are of the form "Namespace.d" and "Namespace-Class.d",
-   * such as "GObject.d" and "GObject-Boxed.d".
+   * such as "GLib.d" and "GLib-Boxed.d".
    *
    * Params:
    *   filename = The name of the definition file to load
@@ -254,41 +254,24 @@ class Defs
             stderr.writeln("Duplicate class command found for '", curStructName, "' ", posInfo);
           break;
         case "import":
-          if (cmdTokens.length == 2)
-            curRepo.structDefCode[curStructName].imports.add(cmdTokens[1]);
-          else
-            stderr.writeln("'import' command requires 1 argument ", posInfo);
+          curRepo.structDefCode[curStructName].imports.add(cmdTokens[1]);
           break;
         case "repo":
-          if (cmdTokens.length == 2)
-          {
-            curRepo = new Repo(this, cmdTokens[1].to!string);
-            curRepo.namespace = repoName.to!dstring;
-            repos ~= curRepo;
-            curStructName = null;
-          }
-          else
-            stderr.writeln("'repo' command requires 1 argument ", posInfo);
+          curRepo = new Repo(this, cmdTokens[1].to!string);
+          curRepo.namespace = repoName.to!dstring;
+          repos ~= curRepo;
+          curStructName = null;
           break;
         case "reserved":
-          if (cmdTokens.length == 2)
-            reservedWords[cmdTokens[1]] = true;
-          else
-            stderr.writeln("'reserved' command requires 1 argument ", posInfo);
+          reservedWords[cmdTokens[1]] = true;
           break;
         case "subtype":
-          if (cmdTokens.length == 3)
-          {
-            typeof(typeSubs)* subs = curRepo ? &curRepo.typeSubs : &typeSubs;
+          typeof(typeSubs)* subs = curRepo ? &curRepo.typeSubs : &typeSubs;
 
-            if (cmdTokens[1] !in *subs)
-              (*subs)[cmdTokens[1]] = cmdTokens[2];
-            else
-              stderr.writeln("subtype '", cmdTokens[1], "' already exists ", posInfo);
-          }
+          if (cmdTokens[1] !in *subs)
+            (*subs)[cmdTokens[1]] = cmdTokens[2];
           else
-            stderr.writeln("'subtype' command requires 2 arguments ", posInfo);
-
+            stderr.writeln("subtype '", cmdTokens[1], "' already exists ", posInfo);
           break;
         default:
           assert(0);
@@ -304,21 +287,23 @@ class Defs
   void loadRepos(string[] girPaths = ["/usr/share/gir-1.0"])
   {
     foreach (repo; repos)
-    { // Search for Gir file in search paths
-      foreach (search; girPaths)
+    {
+      string filePath;
+      foreach (search; girPaths) // Search for Gir file in search paths
       {
-        auto filePath = buildPath(search, repo.filename ~ ".gir");
-        if (isFile(filePath))
+        auto p = buildPath(search, repo.filename ~ ".gir");
+        if (isFile(p))
         {
-          repo.filename = filePath;
-          goto found;
+          filePath = p;
+          break;
         }
       }
 
-      throw new Exception("Repository Gir file '" ~ repo.filename ~ "' not found (search paths = "
-        ~ girPaths.join(":") ~ ")");
+      if (filePath.empty)
+        throw new Exception("Repository Gir file '" ~ repo.filename ~ "' not found (search paths = "
+          ~ girPaths.join(":") ~ ")");
 
-      found:
+      repo.filename = filePath;
       auto tree = new XmlTree();
       tree.parse(readText(repo.filename).toUTF32, repo.filename); // Load the Gir XML file
 
@@ -359,8 +344,25 @@ class Defs
       repoHash[repo.namespace] = repo;
 
       foreach (st; repo.structs)
+      {
         foreach (fn; st.functions)
           fixupFunc(fn, [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method]);
+
+        if (st.kind == TypeKind.Wrap)
+        {
+          foreach (f; st.fields)
+          {
+            auto kind = repo.defs.typeKind(f.subDType, repo);
+            if (kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
+            {
+              f.disable = true;
+              stderr.writeln("Disabling " ~ repo.namespace.to!string ~ "." ~ st.subName.to!string ~ " field "
+                ~ f.subName.to!string  ~ " with unhandled type '" ~ f.subDType.to!string ~ "' (" ~ kind.to!string
+                ~ ")");
+            }
+          }
+        }
+      }
 
       foreach (dcArray; repo.structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
       {
@@ -433,6 +435,10 @@ class Defs
       lengthParam.arrayParamIndex = ParamIndexReturnVal;
     }
 
+    auto kind = fn.repo.defs.typeKind(fn.subDType, fn.repo);
+    if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
+      disableFunc("unknown function return type '" ~ fn.subDType.to!string ~ "'");
+
     foreach (pi, pa; fn.params)
     {
       if (pa.isInstanceParam && pi != 0)
@@ -477,6 +483,10 @@ class Defs
         disableFunc("param '" ~ pa.name.to!string ~ "' ownership transfer not yet supported");
         return;
       }
+
+      kind = fn.repo.defs.typeKind(pa.subDType, fn.repo);
+      if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
+        disableFunc("unknown function parameter type '" ~ pa.subDType.to!string ~ "'");
     }
   }
 
@@ -486,11 +496,11 @@ class Defs
    *   basePath = The path to the toplevel packages directory (defaults to "packages")
    *   packagePrefix = Prefix to add to package name (defaults to "gid-")
    */
-  void writePackages(string basePath = "packages", string packagePrefix = "gid-")
+  void writePackages(string basePath = "packages")
   {
     foreach (repo; repos)
     {
-      repo.writePackage(basePath, packagePrefix);
+      repo.writePackage(basePath);
     }
   }
 
@@ -523,14 +533,7 @@ class Defs
       return en.bitfield ? TypeKind.Flags : TypeKind.Enum;
 
     if (auto st = type in repo.structHash)
-    {
-      if (st.isGObject)
-        return TypeKind.Object;
-      else if (st.isBoxed)
-        return TypeKind.Boxed;
-      else
-        return TypeKind.Struct;
-    }
+      return st.kind;
 
     return TypeKind.Basic;
   }
@@ -555,9 +558,10 @@ class Defs
    * Substitute type.
    * Params:
    *   type = Type string
+   *   localSubs = Local substitution map or null (default)
    * Returns: Type string with any relevant substitutions
    */
-  dstring subTypeStr(dstring type)
+  dstring subTypeStr(dstring type, dstring[dstring] localSubs = null)
   {
     auto tok = tokenizeType(type).filter!(x => x != "volatile").array;
 
@@ -572,7 +576,13 @@ class Defs
         if (s[i] != '*' && s[i] != ' ')
         {
           auto t = s[0 .. i + 1];
-          return typeSubs.get(t, t) ~ s[i + 1 .. $];
+
+          if (t in localSubs)
+            t = localSubs[t];
+          else
+            t = typeSubs.get(t, t);
+
+          return t ~ s[i + 1 .. $];
         }
       }
 
@@ -600,13 +610,40 @@ class Defs
 /// Kind of a type
 enum TypeKind
 {
+  Unknown, /// Unknown type
   Basic, /// A basic data type
+  String, /// A string
   Enum, /// Enumeration type
   Flags, /// Bitfield flags type
-  Struct, /// Simple struct type
-  String, /// A string
-  Object, /// A GObject derived type
+  Simple, /// Simple structure or union with fields and no methods (alias to C type)
+  Opaque, /// Opaque structure pointer type with no accessible fields (alias to C type)
+  Wrap, /// Structure or union with accessible fields and methods (wrap with a class)
   Boxed, /// A GLib boxed type
+  Object, /// A GObject derived type
+  Interface, /// Interface type
+  Namespace, /// Namespace structure (no C type, global module for example)
+}
+
+/**
+ * Check if a type kind has a module file.
+ * Params:
+ *   kind = The type kind
+ * Returns: true if the given type kind is implemented with its own module
+ */
+bool typeKindHasMod(TypeKind kind)
+{
+  return kind >= TypeKind.Wrap;
+}
+
+/**
+ * Check if a type kind is defined in a global module.
+ * Params:
+ *   kind = The type kind
+ * Returns: true if the given type kind is defined in a global module
+ */
+bool typeKindIsGlobal(TypeKind kind)
+{
+  return kind >= TypeKind.Enum && kind <= TypeKind.Opaque;
 }
 
 /// Manual code from a definitions file

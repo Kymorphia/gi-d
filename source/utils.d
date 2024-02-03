@@ -1,6 +1,14 @@
 module utils;
 
+import core.stdc.signal : raise;
+import core.sys.posix.signal : SIGTRAP;
+
 public import std_includes;
+
+void breakpoint()
+{
+  raise(SIGTRAP);
+}
 
 /**
  * Changes snake case to camelCase.

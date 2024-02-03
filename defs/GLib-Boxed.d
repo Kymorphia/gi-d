@@ -1,6 +1,3 @@
-import gid.functions;
-import glib.c.functions;
-
 /// Class wrapper for boxed types
 abstract class Boxed
 {
@@ -38,4 +35,3 @@ abstract class Boxed
     * Returns: The GObject GType
     */
   GType getType();
-}

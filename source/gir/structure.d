@@ -38,12 +38,35 @@ final class Structure : Base
 
   @property dstring subName()
   {
-    return name; // FIXME - Need to substitute D symbol names
+    return repo.defs.subTypeStr(name, repo.typeSubs);
   }
 
   @property dstring subCType()
   {
-    return repo.defs.subTypeStr(cType);
+    return repo.defs.subTypeStr(cType, repo.typeSubs);
+  }
+
+  @property TypeKind kind()
+  {
+    if (cType.empty)
+      return TypeKind.Namespace;
+
+    if (structType == StructType.Class && !parent.empty && !glibGetType.empty)
+      return TypeKind.Object;
+
+    if (structType == StructType.Record && !glibGetType.empty)
+      return TypeKind.Boxed;
+
+    if (structType == StructType.Record && opaque)
+      return TypeKind.Opaque;
+
+    if (structType == StructType.Record || structType == StructType.Union)
+      return functions.empty ? TypeKind.Simple : TypeKind.Wrap;
+
+    if (structType == StructType.Interface)
+      return TypeKind.Interface;
+
+    return TypeKind.Unknown;
   }
 
   override void fromXml(XmlNode node)
@@ -75,56 +98,55 @@ final class Structure : Base
   }
 
   /**
-   * Returns true if this structure is implemented as a D class.
-   * Returns: true if struct is a D class (GBoxed and GObject types)
-   */
-  bool isDClass()
-  {
-    return structType == StructType.Class || !glibGetType.empty;
-  }
-
-  /**
-   * Check if structure is a boxed type.
-   * Returns: true if structure is a boxed type
-   */
-  bool isBoxed()
-  {
-    return structType == StructType.Record && !glibGetType.empty;
-  }
-
-  /**
-   * Check if structure is a GObject type.
-   * Returns: true if structure is a boxed type
-   */
-  bool isGObject()
-  {
-    return structType == StructType.Class && !parent.empty && !glibGetType.empty;
-  }
-
-  /**
    * Write structure module.
    * Params:
    *   path = Path to the file to write to
    */
   void write(string path)
   {
+    auto moduleName = repo.namespace ~ "." ~ name;
     auto writer = new CodeWriter(path);
-
-    writer ~= ["module " ~ repo.namespace.toLower ~ "." ~ name ~ ";", ""];
+    writer ~= ["module " ~ moduleName ~ ";", ""];
 
     // Create the function writers first to construct the imports
-    auto imports = new ImportSymbols(defCode.imports);
+    auto imports = new ImportSymbols(defCode.imports, repo.namespace);
+
+    imports.add("gid");
+    imports.add(repo.namespace ~ ".c.functions");
+    imports.add(repo.namespace ~ ".c.types");
+
     FuncWriter[] funcWriters;
 
     foreach (fn; functions)
     {
-      if (fn.disable)
-        continue;
-
-      auto w = new FuncWriter(fn);
-      imports.merge(w.imports);
-      funcWriters ~= w;
+      if (!fn.disable)
+      {
+        funcWriters ~= new FuncWriter(fn);
+        imports.merge(funcWriters[$ - 1].imports);
+      }
     }
+
+    dstring parentType;
+    auto kindVal = kind;
+
+    if (kindVal == TypeKind.Object)
+    {
+      if (parent.canFind('.'))
+        parentType = parent;
+      else
+        parentType = repo.namespace ~ "." ~ parent;
+    }
+    else if (kindVal == TypeKind.Boxed)
+      parentType = "GLib.Boxed";
+
+    if (parentType)
+      imports.add(parentType);
+
+    dstring[] propMethods;
+    if (kindVal == TypeKind.Wrap)
+      propMethods = constructPropMethods(imports); // Construct wrapper property methods in order to collect imports
+
+    imports.remove(moduleName);
 
     if (imports.write(writer))
       writer ~= "";
@@ -134,18 +156,33 @@ final class Structure : Base
 
     writeDocs(writer);
 
-    if (defCode.classDecl.length > 0)
+    if (!defCode.classDecl.empty)
       writer ~= defCode.classDecl;
+    else if (parentType)
+      writer ~= "class " ~ subName ~ " : " ~ parentType.split('.')[1];
     else
-      writer ~= ["class " ~ subName ~ (isGObject ? " : " ~ parent : " : Boxed") ];
+      writer ~= "class " ~ subName;
 
-    if (isGObject)
+    if (kindVal == TypeKind.Object)
+    {
       writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr, bool owned)", "{", "super(wrapPtr, owned);", "}", ""];
-    else // Boxed
+      writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
+      writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+    }
+    else if (kindVal == TypeKind.Boxed)
+    {
       writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr)", "{", "super(wrapPtr);", "}", ""];
-
-    writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
-    writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+      writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
+      writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+    }
+    else if (kindVal == TypeKind.Wrap) // Wrap a structure in a class with properties
+    {
+      writer ~= ["{", subCType ~ "* cPtr;", ""];
+      writer ~= ["this(" ~ subCType ~ "* wrapPtr)", "{", "cPtr = wrapPtr;", "}"];
+      writer ~= propMethods;
+    }
+    else if (defCode.inClass.length == 0)
+      writer ~= "{";
 
     if (defCode.inClass.length > 0)
       writer ~= defCode.inClass;
@@ -159,6 +196,89 @@ final class Structure : Base
     writer ~= "}";
 
     writer.write();
+  }
+
+  // Construct struct wrapper property methods
+  private dstring[] constructPropMethods(ImportSymbols imports)
+  {
+    dstring[] lines;
+
+    foreach(f; fields)
+    {
+      if (f.disable)
+        continue;
+
+      auto fieldKind = repo.defs.typeKind(f.subDType, repo);
+
+      lines ~= ["", "@property " ~ f.subDType ~ " " ~ f.dName ~ "()", "{"];
+
+      final switch(fieldKind) with(TypeKind)
+      {
+        case Basic:
+          lines ~= "return cPtr." ~ f.dName ~ ";";
+          break;
+        case String:
+          lines ~= "return cPtr." ~ f.dName ~ ".fromCString(false);";
+          break;
+        case Enum, Flags:
+          lines ~= "return cast(" ~ f.subDType ~ ")cPtr." ~ f.dName ~ ";";
+          imports.add("global");
+          break;
+        case Simple:
+          lines ~= "return *cPtr." ~ f.dName ~ ";";
+          imports.add(f.subDType);
+          break;
+        case Boxed:
+        case Wrap:
+          lines ~= "return new " ~ f.subDType ~ "(cPtr." ~ f.dName ~ ");";
+          imports.add(f.subDType);
+          break;
+        case Object:
+          lines ~= "return ObjectG.getDObject!" ~ f.subDType ~ "(cPtr." ~ f.dName ~ ", false);";
+          imports.add(f.subDType);
+          break;
+        case Unknown, Opaque, Interface, Namespace:
+          throw new Exception("Unhandled field property type '" ~ f.subDType.to!string ~ "' (" ~ fieldKind.to!string
+            ~ ") for struct " ~ subName.to!string);
+      }
+
+      lines ~= "}";
+
+      if (!f.writable)
+        continue;
+
+      lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.subDType ~ " propval)", "{"];
+
+      final switch(fieldKind) with(TypeKind)
+      {
+        case Basic:
+          lines ~= "cPtr." ~ f.dName ~ " = propval;";
+          break;
+        case String:
+          lines ~= "cPtr." ~ f.dName ~ " = toCString(true);";
+          break;
+        case Enum, Flags:
+          lines ~= "cPtr." ~ f.dName ~ " = cast(" ~ f.subCType ~ ")propval;";
+          break;
+        case Simple:
+          lines ~= "cPtr." ~ f.dName ~ " = *propval;";
+          break;
+        case Boxed:
+        case Wrap:
+          lines ~= "cPtr." ~ f.dName ~ " = propval.cPtr;";
+          break;
+        case Object:
+          lines ~= "cPtr." ~ f.dName ~ " = propval.get" ~ f.subDType ~ ";";
+          break;
+        case Unknown, Opaque, Interface, Namespace:
+          throw new Exception("Unhandled field property type '" ~ f.subDType.to!string ~ "' (" ~ fieldKind.to!string
+            ~ ") for struct " ~ subName.to!string);
+      }
+
+      lines ~= "}";
+    }
+
+    return lines;
   }
 
   dstring name; /// Name of structure

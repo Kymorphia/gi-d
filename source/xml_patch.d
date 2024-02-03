@@ -93,7 +93,7 @@ class XmlPatch
    */
   void parseAddCmd(dstring sel, dstring xmlVal)
   {
-    op = XmlPatchOp.Delete;
+    op = XmlPatchOp.Add;
     parseSelector(sel);
     nodeValue = new XmlTree(xmlVal, "<VALUE>");
   }
@@ -279,7 +279,6 @@ class XmlPatch
   XmlNode[] select(XmlTree tree, XmlNode defaultRoot, bool selAttrSet)
   {
     XmlNode[] nodes;
-    auto curNode = (!defaultRoot || selectors[0].id == tree.root.id) ? tree.root : defaultRoot;
 
     // Check if a XML node matches a selector
     bool matchSelector(XmlNode node, XmlSelector sel)
@@ -346,7 +345,18 @@ class XmlPatch
       }
     }
 
-    recurseTree(curNode, selectors);
+    if (!defaultRoot || selectors[0].id == tree.root.id) // No default root or selector matches root ID
+    {
+      if (matchSelector(tree.root, selectors[0])) // Does root selector match?
+      {
+        if (selectors.length == 1)
+          nodes ~= tree.root;
+        else
+          recurseTree(tree.root, selectors[1 .. $]);
+      }
+    }
+    else
+      recurseTree(defaultRoot, selectors);
 
     return nodes;
   }

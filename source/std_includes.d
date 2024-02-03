@@ -4,7 +4,7 @@ public import std.algorithm : among, canFind, countUntil, endsWith, equal, find,
 public import std.array : array, assocArray, split;
 public import std.conv : to;
 public import std.exception : assertThrown;
-public import std.file : exists, dirEntries, isFile, mkdirRecurse, readText, SpanMode;
+public import std.file : exists, dirEntries, isFile, mkdirRecurse, readText, SpanMode, write;
 public import std.format : format;
 public import std.path : baseName, buildPath, dirName, stripExtension;
 public import std.range : drop, dropOne, empty, join, repeat, tee;

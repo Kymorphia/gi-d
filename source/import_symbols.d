@@ -5,12 +5,15 @@ import std_includes;
 
 final class ImportSymbols
 {
-  this()
+  this(dstring defaultNamespace = null)
   {
+    this.defaultNamespace = defaultNamespace;
   }
 
-  this(ImportSymbols imSyms)
+  this(ImportSymbols imSyms, dstring defaultNamespace = null)
   {
+    this(defaultNamespace);
+
     foreach (m; imSyms.modSyms.byKeyValue)
       add(m.key, m.value.keys);
   }
@@ -18,7 +21,7 @@ final class ImportSymbols
   /**
    * Add an import symbol.
    * Params:
-   *   module = The import module name 
+   *   module = The import module name (default namespace is used if not present)
    *   symbol = Optional symbol in the module to import
    */
   void add(dstring mod, dstring symbol = null)
@@ -37,6 +40,9 @@ final class ImportSymbols
    */
   void add(dstring mod, dstring[] symbols)
   {
+    if (!mod.canFind('.') && mod != "gid" && defaultNamespace)
+      mod = defaultNamespace ~ "." ~ mod;
+
     if (mod in modSyms) // Module name already exists?
     {
       if (!modSyms[mod].empty) // Module symbol array not empty?
@@ -54,6 +60,34 @@ final class ImportSymbols
       modSyms[mod] = symbols.map!(x => tuple(x, true)).assocArray; // Add module and symbols
     else
       modSyms[mod] = cast(bool[dstring])null; // Add module for all symbols (empty array)
+  }
+
+  /**
+   * Remove an import module or import module symbol from an import array.
+   * Params:
+   *   mod = Module name
+   *   symbol = The symbol to remove or null (default) to remove all symbols
+   * Returns: true if removed, false if no match was found
+   */
+  bool remove(dstring mod, dstring symbol = null)
+  {
+    if (!mod.canFind('.') && mod != "gid" && defaultNamespace)
+      mod = defaultNamespace ~ "." ~ mod;
+
+    if (mod !in modSyms)
+      return false;
+
+    if (!symbol.empty)
+    {
+      if (symbol !in modSyms[mod])
+        return false;
+
+      modSyms[mod].remove(symbol);
+      return true;
+    }
+
+    modSyms.remove(mod);
+    return true;
   }
 
   /**
@@ -110,4 +144,5 @@ final class ImportSymbols
 
   /// moduleName => (Symbol => true)
   private bool[dstring][dstring] modSyms;
+  private dstring defaultNamespace;
 }

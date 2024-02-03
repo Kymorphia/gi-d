@@ -144,13 +144,6 @@ final class Repo
           if (auto st = node.baseParentFromXmlNodeWarn!Structure)
           {
             auto f = new Field(this, node);
-
-            if (!f.introspectable && !st.opaque)
-            {
-              node.warn("Field is not introspectable, setting struct to opaque");
-              st.opaque = true;
-            }
-
             f.parent = st;
             st.fields ~= f;
           }
@@ -267,24 +260,47 @@ final class Repo
    *   basePath = The path to the toplevel packages directory (defaults to "packages")
    *   packagePrefix = Prefix to add to package name (defaults to "gid-")
    */
-  void writePackage(string basePath = "packages", string packagePrefix = "gid-")
+  void writePackage(string basePath = "packages")
   {
     assert(namespace.length > 0);
-    auto packagePath = buildPath(basePath, packagePrefix ~ namespace.to!string);
-    auto packageCPath = buildPath(packagePath, "c");
+    auto packagePath = buildPath(basePath, namespace.toLower.to!string);
+    auto sourcePath = buildPath(packagePath, namespace.to!string);
+    auto cSourcePath = buildPath(sourcePath, "c");
 
-    writeCTypes(buildPath(packageCPath, "types.d"));
-    writeCFuncs(buildPath(packageCPath, "functions.d"));
-    writeGlobalModule(buildPath(packagePath, namespace.to!string ~ ".d"));
+    writeCTypes(buildPath(cSourcePath, "types.d"));
+    writeCFuncs(buildPath(cSourcePath, "functions.d"));
+    writeGlobalModule(buildPath(sourcePath, "global.d"));
 
     foreach (st; structs)
     {
-      if (st.disable)
-        continue;
-
-      if (st.isGObject || st.isBoxed)
-        st.write(buildPath(packagePath, st.name.to!string ~ ".d"));
+      auto kind = st.kind;
+      if (!st.disable && ((st.defCode && st.defCode.inClass) || kind == TypeKind.Object || kind == TypeKind.Boxed
+          || kind == TypeKind.Wrap) && st !is globalStruct)
+        st.write(buildPath(sourcePath, st.subName.to!string ~ ".d"));
     }
+
+    writeDubJsonFile(buildPath(packagePath, "dub.json"));
+  }
+
+  /**
+   * Write a dub JSON package file.
+   * Params:
+   *   path = Path of the file to write
+   */
+  private void writeDubJsonFile(string path)
+  {
+    auto content = `{
+  "name": "%s",
+  "description": "%s library gi-d binding",
+  "copyright": "Copyright © 2024, Kymorphia, PBC",
+  "license": "MIT",
+  "targetType": "library",
+  "sourcePaths": ["%s"],
+  "sourceFiles": ["../gid.d"]
+}
+`;
+
+    write(path, content.format(namespace.toLower.to!string, namespace.to!string, namespace.to!string));
   }
 
   /**
@@ -296,7 +312,7 @@ final class Repo
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ namespace.toLower ~ ".c.types;", ""];
+    writer ~= ["module " ~ namespace ~ ".c.types;", ""];
 
     foreach (a; aliases)
     {
@@ -336,9 +352,14 @@ final class Repo
 
     foreach (st; structs)
     {
+      auto kind = st.kind;
+
+      if (kind == TypeKind.Namespace)
+        continue;
+
       if (st.fields.length > 0 && !st.opaque) // Regular structure?
       {
-        if (!st.isDClass)
+        if (kind == TypeKind.Simple)
           st.writeDocs(writer);
 
         writer ~= ["struct " ~ st.subCType, "{"];
@@ -352,21 +373,21 @@ final class Repo
             if (f.fixedSize == ArrayNotFixed)
             { // Use array cType if array is not a fixed size
               if (!f.arrayCType.empty)
-                writer ~= f.arrayCType ~ " " ~ defs.symbolName(f.name.camelCase) ~ ";";
+                writer ~= f.arrayCType ~ " " ~ f.dName ~ ";";
               else
                 f.xmlNode.warn("Struct array field is not fixed size and array c:type not set");
             }
             else if (!f.cType.empty)
-              writer ~= f.subCType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ defs.symbolName(f.name.camelCase) ~ ";";
+              writer ~= f.subCType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ f.dName ~ ";";
             else
               f.xmlNode.warn("Struct array field is missing c:type attribute");
           }
           else if (f.callback) // Callback field?
-            writer ~= "extern(C) " ~ f.callback.getCPrototype ~ " " ~ defs.symbolName(f.callback.name.camelCase) ~ ";";
+            writer ~= "extern(C) " ~ f.callback.getCPrototype ~ " " ~ f.callback.dName ~ ";";
           else // A regular field
           {
             if (!f.cType.empty)
-              writer ~= f.subCType ~ " " ~ defs.symbolName(f.name.camelCase) ~ ";";
+              writer ~= f.subCType ~ " " ~ f.dName ~ ";";
             else
               f.xmlNode.warn("Struct field is missing c:type attribute");
           }
@@ -387,7 +408,7 @@ final class Repo
     foreach (cb; callbacks)
     {
       cb.writeDocs(writer);
-      writer ~= ["extern(C) " ~ cb.getCPrototype ~ " " ~ defs.symbolName(cb.name.camelCase) ~ ";", ""];
+      writer ~= ["alias extern(C) " ~ cb.getCPrototype ~ " " ~ cb.cName ~ ";", ""];
     }
 
     foreach (con; constants)
@@ -412,7 +433,9 @@ final class Repo
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ namespace.toLower ~ ".c.funcs;", ""];
+    writer ~= ["module " ~ namespace ~ ".c.functions;", ""];
+
+    writer ~= ["import " ~ namespace ~ ".c.types;", ""];
 
     writeSharedLibs(writer);
 
@@ -420,7 +443,7 @@ final class Repo
 
     foreach (st; structs)
     {
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+      auto preamble = ["", "// " ~ namespace ~ "." ~ st.name];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
@@ -433,7 +456,7 @@ final class Repo
 
       foreach (f; st.functions)
       {
-        if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
+        if (f.movedTo || !f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
 
         writer ~= preamble ~ [f.getCPrototype ~ " c_" ~ f.cName ~ ";"];
@@ -445,7 +468,7 @@ final class Repo
 
     foreach (st; structs)
     {
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+      auto preamble = ["", "// " ~ namespace ~ "." ~ st.name];
 
       if (st && !st.glibGetType.empty)
       { // Write GType function if set
@@ -455,7 +478,7 @@ final class Repo
 
       foreach (f; st.functions)
       {
-        if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
+        if (f.movedTo || !f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
 
         writer ~= preamble ~ ["alias " ~ f.cName ~ " = c_" ~ f.cName ~ ";"];
@@ -467,7 +490,7 @@ final class Repo
 
     foreach (st; structs)
     {
-      auto preamble = ["", "// " ~ namespace.toLower ~ "." ~ st.name];
+      auto preamble = ["", "// " ~ namespace ~ "." ~ st.name];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
@@ -480,7 +503,7 @@ final class Repo
 
       foreach (f; st.functions)
       {
-        if (!f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
+        if (f.movedTo || !f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
 
         writer ~= preamble ~ [f.cName ~ " = link(\"" ~ f.cName ~ "\");"];
@@ -530,10 +553,10 @@ final class Repo
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ namespace.toLower ~ "." ~ namespace ~ ";", ""];
+    writer ~= ["module " ~ namespace ~ ".global;", ""];
 
     // Create the function writers first to construct the imports
-    auto imports = new ImportSymbols(globalStruct.defCode.imports);
+    auto imports = new ImportSymbols(globalStruct.defCode.imports, namespace);
     FuncWriter[] funcWriters;
 
     foreach (fn; globalStruct.functions)
@@ -541,21 +564,17 @@ final class Repo
       if (fn.disable)
         continue;
 
-      auto w = new FuncWriter(fn);
-      imports.merge(w.imports);
-      funcWriters ~= w;
+      funcWriters ~= new FuncWriter(fn);
+      imports.merge(funcWriters[$ - 1].imports);
     }
+
+    imports.remove("global");
 
     if (imports.write(writer))
       writer ~= "";
 
     if (globalStruct.defCode.preClass.length > 0)
       writer ~= globalStruct.defCode.preClass;
-
-    if (globalStruct.defCode.classDecl.length > 0)
-      writer ~= globalStruct.defCode.classDecl;
-    else
-      writer ~= ["struct " ~ namespace, "{" ];
 
     bool preambleShown;
     foreach (al; aliases) // Write out aliases
@@ -602,13 +621,14 @@ final class Repo
         preambleShown = true;
       }
 
-      writer ~= "alias " ~ en.name ~ " = BitFlags!" ~ en.cName ~ ";";
+      writer ~= "alias " ~ en.name ~ " = BitFlags!(" ~ en.cName ~ ", Yes.unsafe);";
     }
 
     preambleShown = false;
     foreach (st; structs) // Write out simple struct aliases (not classes)
     {
-      if (st.isDClass)
+      auto kind = st.kind;
+      if (kind != TypeKind.Simple && kind != TypeKind.Opaque)
         continue;
 
       if (!preambleShown)
@@ -631,8 +651,6 @@ final class Repo
       writer ~= "";
       fnWriter.write(writer);
     }
-
-    writer ~= "}";
 
     writer.write();
   }

@@ -103,8 +103,10 @@
 //!reserved with
 
 //# Global type substitutions
-//!subtype gboolean bool
+//!subtype FILE void
 //!subtype filename string
+//!subtype gatomicrefcount int
+//!subtype gboolean bool
 //!subtype gchar char
 //!subtype gconstpointer const(void)*
 //!subtype gdouble double
@@ -130,7 +132,11 @@
 //!subtype gunichar dchar
 //!subtype gunichar2 ushort
 //!subtype gushort ushort
+//!subtype "long double" real
 //!subtype none void
+//!subtype passwd void
+//!subtype time_t uint
+//!subtype tm void
 //!subtype "unsigned int" uint
 //!subtype utf8 string
 //!subtype va_list void*

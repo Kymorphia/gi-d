@@ -47,6 +47,9 @@ final class Func : TypeNode
     funcType = cast(FuncType)node.id;
     cName = node.get("c:identifier");
 
+    if (cName.empty)
+      cName = node.get("c:type");
+
     version_ = node.get("version");
     shadowedBy = node.get("shadowed-by");
     shadows = node.get("shadows");

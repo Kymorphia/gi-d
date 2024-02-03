@@ -13,7 +13,11 @@ class FuncWriter
 {
   this(Func func)
   {
-    this.imports = new ImportSymbols;
+    this.imports = new ImportSymbols(func.repo.namespace);
+    imports.add("gid");
+    imports.add("global");
+    imports.add(func.repo.namespace ~ ".c.functions");
+    imports.add(func.repo.namespace ~ ".c.types");
     this.func = func;
     process();
   }
@@ -23,7 +27,7 @@ class FuncWriter
   {
     auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
 
-    if (func.funcType != FuncType.Method)
+    if (func.funcType != FuncType.Method && !isCtor)
       decl ~= "static ";
 
     processReturn();
@@ -94,24 +98,50 @@ class FuncWriter
         call ~= "_retval = ";
         // postCall ~= func.subDType ~ " _retval = cast(" ~ func.subDType ~ ")_cretval;\n";
         break;
+      case String:
+        decl ~= "string ";
+        preCall ~= func.subCType ~ " _cretval;\n";
+        call ~= "_cretval = ";
+        postCall ~= "string _retval = _cretval.fromCString("d ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+        break;
       case Enum, Flags:
         decl ~= func.subDType ~ " ";
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
         postCall ~= func.subDType ~ " _retval = cast(" ~ func.subDType ~ ")_cretval;\n";
         break;
-      case Struct:
+      case Simple:
         decl ~= func.subDType ~ " ";
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
         postCall ~= func.subDType ~ " _retval;\nif (_cretval)\n_retval = *_cretval;\n";
         break;
-      case String:
-        decl ~= "string ";
+      case Opaque:
+        decl ~= func.subDType ~ "* ";
+        call ~= func.subDType ~ "* _cretval = ";
+        break;
+      case Wrap:
+        decl ~= func.subDType ~ " ";
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
-        postCall ~= "string _retval = _cretval.fromCString("d ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
-        imports.add("gid.utils");
+        postCall ~= func.subDType ~ " _retval;\n_retval = new " ~ func.subDType ~ "(_cretval);\n";
+        imports.add(func.subDType.canFind(".") ? func.subDType : func.repo.namespace ~ "." ~ func.subDType);
+        break;
+      case Boxed:
+        if (!isCtor)
+          decl ~= func.subDType ~ " ";
+
+        preCall ~= func.subCType ~ " _cretval;\n";
+        call ~= "_cretval = ";
+
+        if (!isCtor)
+        {
+          postCall ~= func.subDType ~ " _retval;\n_retval = new " ~ func.subDType ~ "(_cretval, "
+            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add(func.subDType.canFind(".") ? func.subDType : func.repo.namespace ~ "." ~ func.subDType);
+        }
+        else
+          postCall ~= "super(_cretval, true);\n";
         break;
       case Object:
         if (!isCtor)
@@ -122,26 +152,17 @@ class FuncWriter
 
         if (!isCtor)
         {
-          postCall ~= func.subDType ~ " _retval = GObject.getDObject!" ~ func.subDType ~ "("
+          postCall ~= func.subDType ~ " _retval = ObjectG.getDObject!" ~ func.subDType ~ "("
             ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.GObject");
+          imports.add("GObject.ObjectG");
+          imports.add(func.subDType.canFind(".") ? func.subDType : func.repo.namespace ~ "." ~ func.subDType);
         }
         else
           postCall ~= "super(_cretval, true);\n";
         break;
-      case Boxed:
-        if (!isCtor)
-          decl ~= func.subDType ~ " ";
-
-        preCall ~= func.subCType ~ " _cretval;\n";
-        call ~= "_cretval = ";
-
-        if (isCtor)
-          postCall ~= "super(_cretval, true);\n";
-        else
-          postCall ~= func.subDType ~ " _retval;\n_retval = new " ~ func.subDType ~ "(_cretval, "
-            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
-        break;
+      case Unknown, Interface, Namespace:
+        assert(0, "Unsupported return value type '" ~ func.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
+          ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
     }
   }
 
@@ -175,31 +196,37 @@ class FuncWriter
     else
       assert(0); // This should be prevented by defs.fixupRepos()
 
-    if (kind.among (TypeKind.Basic, TypeKind.Enum, TypeKind.Struct))
+    if (kind.among (TypeKind.Basic, TypeKind.Enum))
       postCall ~= "\n" ~ func.subDType ~ "[] _retval = _cretval[0 .. " ~ lengthStr ~ "];\n";
     else
     {
       postCall ~= "\nauto _retval = new "~ func.subDType ~ "[" ~ lengthStr ~ "];\nforeach (i; 0 .. " ~ lengthStr ~ ")\n";
 
-      switch (kind)
+      final switch (kind) with(TypeKind)
       {
-        case TypeKind.Flags:
+        case String:
+          postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          break;
+        case Flags:
           postCall ~= "_retval[i] = cast(" ~ func.subDType ~ ")(_cretval[i]);\n";
           break;
-        case TypeKind.String:
-          postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.utils");
+        case Simple:
+          postCall ~= "_retval[i] = *cretval[i];\n";
           break;
-        case TypeKind.Object:
-          postCall ~= "_retval[i] = GObject.getDObject!" ~ func.subDType ~ "(_cretval[i], "
-            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.GObject");
+        case Opaque:
+          postCall ~= "_retval[i] = cretval[i];\n";
           break;
-        case TypeKind.Boxed:
+        case Wrap, Boxed:
           postCall ~= "_retval[i] = new " ~ func.subDType ~ "(_cretval[i]);\n";
           break;
-        default:
-          assert(0); // Shouldn't happen
+        case Object:
+          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ func.subDType ~ "(_cretval[i], "
+            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("GObject.ObjectG");
+          break;
+        case Basic, Enum, Unknown, Interface, Namespace:
+          assert(0, "Unsupported return value array type '" ~ func.subDType.to!string ~ "' (" ~ kind.to!string
+            ~ ") for " ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
       }
     }
 
@@ -243,12 +270,12 @@ class FuncWriter
       return;
     }
 
-    auto kind = param.repo.defs.typeKind(param.subDType, param.repo);
     auto isInput = param.direction == ParamDirection.In;
+    auto kind = param.repo.defs.typeKind(param.subDType, param.repo);
 
     final switch(kind) with(TypeKind)
     {
-      case Basic, Struct:
+      case Basic:
         addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
         addCallParam((!isInput ? "&"d : "") ~ param.dName);
         break;
@@ -268,7 +295,6 @@ class FuncWriter
         {
           preCall ~= param.subCType ~ " _" ~ param.dName ~ " = " ~ param.dName ~ ".toCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.utils");
           addCallParam("_" ~ param.dName);
         }
         else if (param.direction == ParamDirection.Out)
@@ -277,16 +303,27 @@ class FuncWriter
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = _" ~ param.dName ~ ".fromCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.utils");
         }
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
 
         break;
-      case Object, Boxed:
+      case Simple:
+        addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
+        addCallParam((!isInput ? "&"d : "") ~ param.dName);
+        break;
+      case Opaque:
+        addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
+        addCallParam(param.dName);
+        break;
+      case Object, Boxed, Wrap:
         addDeclParam(param.subDType ~ " " ~ param.dName);
         addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr : null");
+        imports.add(param.subDType);
         break;
+      case Unknown, Interface, Namespace:
+        assert(0, "Unsupported parameter type '" ~ param.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
+          ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
     }
   }
 
@@ -314,40 +351,42 @@ class FuncWriter
         preCall ~= "assert(!" ~ param.dName ~ " || " ~ param.dName ~ ".length == "
           ~ param.fixedSize.to!dstring ~ ");\n";
 
-      final switch (kind)
+      final switch (kind) with(TypeKind)
       {
-        case TypeKind.Basic, TypeKind.Enum, TypeKind.Flags, TypeKind.Struct:
+        case Basic, Enum, Flags, Simple, Opaque:
           dstring ptrStr;
 
           if (param.zeroTerminated) // If zero terminated, append a null or 0 value to the array and use the pointer to pass to the C function call
-            ptrStr = "(" ~ param.dName ~ " ~ " ~ param.subCType.endsWith("*") ? "null" : "0" ~").ptr";
+            ptrStr = "(" ~ param.dName ~ " ~ " ~ param.subCType.endsWith("*") ? "null" : "0" ~ ").ptr";
           else
             ptrStr = param.dName ~ ".ptr";
 
-          preCall ~= param.arrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName, param.dName ~ ".ptr")
+          preCall ~= param.subArrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName, ptrStr)
             ~ ";\n";
           break;
-        case TypeKind.String:
+        case String:
           preCall ~= param.subCType ~ "[] _tmp" ~ param.dName ~ ";\n";
           preCall ~= "foreach(s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
-          imports.add("gid.utils");
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;";
 
-          preCall ~= param.arrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName,
+          preCall ~= param.subArrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName,
             "_tmp" ~ param.dName ~ ".ptr") ~ ";\n";
           break;
-        case TypeKind.Object, TypeKind.Boxed:
+        case Wrap, Boxed, Object:
           preCall ~= param.subCType ~ "[] _tmp" ~ param.dName ~ ";\n";
           preCall ~= "foreach(obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr : null;\n";
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;";
 
-          preCall ~= param.arrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName,
+          preCall ~= param.subArrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName,
             "_tmp" ~ param.dName ~ ".ptr") ~ ";\n";
           break;
+        case Unknown, Interface, Namespace:
+          assert(0, "Unsupported parameter array type '" ~ param.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
+            ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
       }
     }
 
@@ -368,35 +407,25 @@ class FuncWriter
       else
         assert(0); // This should be prevented by defs.fixupRepos()
 
-      preCall ~= param.arrayCType ~ " _" ~ param.dName ~ ";\n";
+      preCall ~= param.subArrayCType ~ " _" ~ param.dName ~ ";\n";
 
-      final switch (kind)
+      final switch (kind) with(TypeKind)
       {
-        case TypeKind.Basic, TypeKind.Enum, TypeKind.Flags, TypeKind.Struct:
+        case Basic, Enum, Flags, Simple, Opaque:
           postCall ~= param.dName ~ " = _" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
 
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
           break;
-        case TypeKind.String:
+        case String:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= _" ~ param.dName ~ "[i].fromCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.utils");
 
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
           break;
-        case TypeKind.Object:
-          postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= GObject.getDObject(_" ~ param.dName
-            ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add("gid.GObject");
-
-          if (param.ownership != Ownership.None)
-            postCall ~= "g_free(_" ~ param.dName ~ ");\n";
-          break;
-        case TypeKind.Boxed:
+        case Boxed, Wrap:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= new " ~ param.subDType ~ "("
             ~ param.dName ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
@@ -404,6 +433,18 @@ class FuncWriter
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
           break;
+        case Object:
+          postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
+          postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject(_" ~ param.dName
+            ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+          imports.add("GObject.ObjectG");
+
+          if (param.ownership != Ownership.None)
+            postCall ~= "g_free(_" ~ param.dName ~ ");\n";
+          break;
+        case Unknown, Interface, Namespace:
+          assert(0, "Unsupported parameter array type '" ~ param.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
+            ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
       }
     }
   }

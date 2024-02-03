@@ -92,4 +92,3 @@ abstract class ObjectG
     else
       return new T(cptr, owned);
   }
-}
