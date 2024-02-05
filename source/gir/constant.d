@@ -4,9 +4,9 @@ import gir.type_node;
 
 final class Constant : TypeNode
 {
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this.repo = repo;
+    super(parent);
     fromXml(node);
   }
 

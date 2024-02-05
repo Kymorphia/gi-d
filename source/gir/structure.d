@@ -24,15 +24,15 @@ enum StructType : dstring
 /// Structure class which is used for class, interface, and records in Gir files
 final class Structure : Base
 {
-  this(Repo repo)
+  this(Base parent)
   {
-    this.repo = repo;
+    super(parent);
     defCode = new DefCode;
   }
 
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this(repo);
+    this(parent);
     fromXml(node);
   }
 
@@ -46,13 +46,15 @@ final class Structure : Base
     return repo.defs.subTypeStr(cType, repo.typeSubs);
   }
 
+  dstring fullName()
+  {
+    return repo.namespace ~ "." ~ subName;
+  }
+
   @property TypeKind kind()
   {
     if (cType.empty)
       return TypeKind.Namespace;
-
-    if (structType == StructType.Class && !parent.empty && !glibGetType.empty)
-      return TypeKind.Object;
 
     if (structType == StructType.Record && !glibGetType.empty)
       return TypeKind.Boxed;
@@ -61,7 +63,22 @@ final class Structure : Base
       return TypeKind.Opaque;
 
     if (structType == StructType.Record || structType == StructType.Union)
-      return functions.empty ? TypeKind.Simple : TypeKind.Wrap;
+    {
+      if (!functions.empty)
+        return TypeKind.Wrap;
+
+      foreach (field; fields)
+        if (!field.kind.among(TypeKind.Basic, TypeKind.Enum, TypeKind.Flags))
+          return TypeKind.Wrap;
+
+      return TypeKind.Simple;
+    }
+
+    if (structType == StructType.Class && glibFundamental && !glibRefFunc.empty && !glibUnrefFunc.empty)
+      return TypeKind.Reffed;
+
+    if (structType == StructType.Class && !parent.empty && !glibGetType.empty)
+      return TypeKind.Object;
 
     if (structType == StructType.Interface)
       return TypeKind.Interface;
@@ -82,7 +99,6 @@ final class Structure : Base
 
     abstract_ = node.get("abstract") == "1";
     deprecated_ = node.get("deprecated") == "1";
-    disguised = node.get("disguised") == "1";
     opaque = node.get("opaque") == "1";
     glibFundamental = node.get("glib:fundamental") == "1";
 
@@ -91,10 +107,12 @@ final class Structure : Base
     glibTypeName = node.get("glib:type-name");
     glibGetValueFunc = node.get("glib:get-value-func");
     glibSetValueFunc = node.get("glib:set-value-func");
-    glibRefFunc = node.get("glib:glib-ref-func");
-    glibUnrefFunc = node.get("glib:glib-unref-func");
+    glibRefFunc = node.get("glib:ref-func");
+    glibUnrefFunc = node.get("glib:unref-func");
     glibTypeStruct = node.get("glib:type-struct");
     glibIsGtypeStructFor = node.get("glib:is-gtype-struct-for");
+    copyFunction = node.get("copy-function");
+    freeFunction = node.get("free-function");
   }
 
   /**
@@ -104,7 +122,7 @@ final class Structure : Base
    */
   void write(string path)
   {
-    auto moduleName = repo.namespace ~ "." ~ name;
+    auto moduleName = repo.namespace ~ "." ~ subName;
     auto writer = new CodeWriter(path);
     writer ~= ["module " ~ moduleName ~ ";", ""];
 
@@ -129,15 +147,15 @@ final class Structure : Base
     dstring parentType;
     auto kindVal = kind;
 
-    if (kindVal == TypeKind.Object)
+    if (kindVal == TypeKind.Boxed)
+      parentType = "GLib.Boxed";
+    else if (!parent.empty)
     {
       if (parent.canFind('.'))
         parentType = parent;
       else
         parentType = repo.namespace ~ "." ~ parent;
     }
-    else if (kindVal == TypeKind.Boxed)
-      parentType = "GLib.Boxed";
 
     if (parentType)
       imports.add(parentType);
@@ -159,27 +177,51 @@ final class Structure : Base
     if (!defCode.classDecl.empty)
       writer ~= defCode.classDecl;
     else if (parentType)
-      writer ~= "class " ~ subName ~ " : " ~ parentType.split('.')[1];
+    {
+      auto p = parentType.split('.');
+      writer ~= "class " ~ subName ~ " : " ~ (p[0] == repo.namespace ? p[1] : parentType);
+    }
     else
       writer ~= "class " ~ subName;
 
-    if (kindVal == TypeKind.Object)
+    if (kindVal == TypeKind.Wrap) // Wrap a structure in a class with properties
+    {
+      writer ~= ["{", subCType ~ "* wrapPtr;", ""];
+      writer ~= ["this(" ~ subCType ~ "* wrapPtr)", "{",
+        "if (!wrapPtr)", "throw new GidConstructException(\"Null struct pointer for " ~ fullName ~ "\");", "",
+        "this.wrapPtr = wrapPtr;", "}"];
+
+      if (freeFunction)
+        writer ~= ["", "~this()", "{", freeFunction ~ "(wrapPtr);", "}"];
+
+      writer ~= propMethods;
+    }
+    else if (kindVal == TypeKind.Boxed)
+    {
+      writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr, bool ownedRef = false)", "{",
+        "super(cast(void*)wrapPtr, ownedRef);", "}", ""];
+      writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)boxPtr;", "}", ""];
+      writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+    }
+    else if (kindVal == TypeKind.Reffed)
+    {
+      writer ~= "{";
+
+      if (!parentType) // Root fundamental reffed type?
+        writer ~= ["void* wrapPtr;", ""];
+
+      if (!abstract_)
+      {
+        writer ~= ["this(" ~ subCType ~ "* wrapPtr, bool ownedRef)", "{", "this.wrapPtr = cast(void*)wrapPtr;", "",
+          "if (!ownedRef)", glibRefFunc ~ "(wrapPtr);", "}", ""];
+        writer ~= ["~this()", "{", glibUnrefFunc ~ "(wrapPtr);", "}", ""];
+      }
+    }
+    else if (kindVal == TypeKind.Object)
     {
       writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr, bool owned)", "{", "super(wrapPtr, owned);", "}", ""];
       writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
       writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
-    }
-    else if (kindVal == TypeKind.Boxed)
-    {
-      writer ~= ["{", "this(" ~ subCType ~ "* wrapPtr)", "{", "super(wrapPtr);", "}", ""];
-      writer ~= ["auto cPtr()", "{", "return cast(" ~ subCType ~ "*)ptr;", "}", ""];
-      writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
-    }
-    else if (kindVal == TypeKind.Wrap) // Wrap a structure in a class with properties
-    {
-      writer ~= ["{", subCType ~ "* cPtr;", ""];
-      writer ~= ["this(" ~ subCType ~ "* wrapPtr)", "{", "cPtr = wrapPtr;", "}"];
-      writer ~= propMethods;
     }
     else if (defCode.inClass.length == 0)
       writer ~= "{";
@@ -208,37 +250,38 @@ final class Structure : Base
       if (f.disable)
         continue;
 
-      auto fieldKind = repo.defs.typeKind(f.subDType, repo);
+      auto fieldKind = f.kind;
 
       lines ~= ["", "@property " ~ f.subDType ~ " " ~ f.dName ~ "()", "{"];
 
       final switch(fieldKind) with(TypeKind)
       {
         case Basic:
-          lines ~= "return cPtr." ~ f.dName ~ ";";
+          lines ~= "return wrapPtr." ~ f.dName ~ ";";
           break;
         case String:
-          lines ~= "return cPtr." ~ f.dName ~ ".fromCString(false);";
+          lines ~= "return wrapPtr." ~ f.dName ~ ".fromCString(false);";
           break;
         case Enum, Flags:
-          lines ~= "return cast(" ~ f.subDType ~ ")cPtr." ~ f.dName ~ ";";
+          lines ~= "return cast(" ~ f.subDType ~ ")wrapPtr." ~ f.dName ~ ";";
           imports.add("global");
           break;
         case Simple:
-          lines ~= "return *cPtr." ~ f.dName ~ ";";
+          lines ~= "return *wrapPtr." ~ f.dName ~ ";";
           imports.add(f.subDType);
           break;
         case Boxed:
         case Wrap:
-          lines ~= "return new " ~ f.subDType ~ "(cPtr." ~ f.dName ~ ");";
+        case Reffed:
+          lines ~= "return new " ~ f.subDType ~ "(wrapPtr." ~ f.dName ~ ");";
           imports.add(f.subDType);
           break;
         case Object:
-          lines ~= "return ObjectG.getDObject!" ~ f.subDType ~ "(cPtr." ~ f.dName ~ ", false);";
+          lines ~= "return ObjectG.getDObject!" ~ f.subDType ~ "(wrapPtr." ~ f.dName ~ ", false);";
           imports.add(f.subDType);
           break;
         case Unknown, Opaque, Interface, Namespace:
-          throw new Exception("Unhandled field property type '" ~ f.subDType.to!string ~ "' (" ~ fieldKind.to!string
+          throw new Exception("Unhandled readable field property type '" ~ f.subDType.to!string ~ "' (" ~ fieldKind.to!string
             ~ ") for struct " ~ subName.to!string);
       }
 
@@ -252,26 +295,22 @@ final class Structure : Base
       final switch(fieldKind) with(TypeKind)
       {
         case Basic:
-          lines ~= "cPtr." ~ f.dName ~ " = propval;";
+          lines ~= "wrapPtr." ~ f.dName ~ " = propval;";
           break;
         case String:
-          lines ~= "cPtr." ~ f.dName ~ " = toCString(true);";
+          lines ~= ["g_free(wrapPtr." ~ f.dName ~ ");", "wrapPtr." ~ f.dName ~ " = propval.toCString(true);"];
           break;
         case Enum, Flags:
-          lines ~= "cPtr." ~ f.dName ~ " = cast(" ~ f.subCType ~ ")propval;";
+          lines ~= "wrapPtr." ~ f.dName ~ " = cast(" ~ f.subCType ~ ")propval;";
           break;
         case Simple:
-          lines ~= "cPtr." ~ f.dName ~ " = *propval;";
-          break;
-        case Boxed:
-        case Wrap:
-          lines ~= "cPtr." ~ f.dName ~ " = propval.cPtr;";
+          lines ~= "wrapPtr." ~ f.dName ~ " = *propval;";
           break;
         case Object:
-          lines ~= "cPtr." ~ f.dName ~ " = propval.get" ~ f.subDType ~ ";";
+          lines ~= "wrapPtr." ~ f.dName ~ " = propval.get" ~ f.subDType ~ ";";
           break;
-        case Unknown, Opaque, Interface, Namespace:
-          throw new Exception("Unhandled field property type '" ~ f.subDType.to!string ~ "' (" ~ fieldKind.to!string
+        case Boxed, Wrap, Reffed, Unknown, Opaque, Interface, Namespace:
+          throw new Exception("Unhandled writable field property type '" ~ f.subDType.to!string ~ "' (" ~ fieldKind.to!string
             ~ ") for struct " ~ subName.to!string);
       }
 
@@ -297,7 +336,6 @@ final class Structure : Base
 
   bool abstract_; /// Is abstract type?
   bool deprecated_; /// Deprecated?
-  bool disguised; /// Disguised (FIXME)
   bool opaque; /// Opaque structure type
   dstring version_; /// Version
   dstring deprecatedVersion; /// Deprecated version
@@ -311,4 +349,6 @@ final class Structure : Base
   dstring glibUnrefFunc; /// GLib unref function
   dstring glibTypeStruct; /// GLib class structure
   dstring glibIsGtypeStructFor; /// Indicates what type a class structure belongs to
+  dstring copyFunction; /// Record/Union copy function (not seen in the wild, but defined in gir-1.2.rnc - we use it via XML patching)
+  dstring freeFunction; /// Record/Union free function (not seen in the wild, but defined in gir-1.2.rnc - we use it via XML patching)
 }

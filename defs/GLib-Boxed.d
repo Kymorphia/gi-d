@@ -1,20 +1,20 @@
 /// Class wrapper for boxed types
 abstract class Boxed
 {
-  private void* cptr; /// Pointer to the C boxed value
+  void* boxPtr; /// Pointer to the C boxed value
 
   /**
     * Constructor for wrapping a GObject boxed value
     * Params:
-    *   cptr = The pointer to the boxed type instance
+    *   boxPtr = The pointer to the boxed type instance
     *   owned = true if ownership of pointer should be taken by the D object, false to do a box copy of it
     */
-  this(void* cptr, bool owned)
+  this(void* boxPtr, bool owned)
   {
-    if (!cptr)
+    if (!boxPtr)
       throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
 
-    this.cptr = owned ? cptr : g_boxed_copy(getType, boxed.cptr);
+    this.boxPtr = owned ? boxPtr : g_boxed_copy(getType, boxPtr);
   }
 
   /**
@@ -22,12 +22,12 @@ abstract class Boxed
     */
   this(Boxed boxed)
   {
-    this(boxed.cptr, false);
+    this(boxed.boxPtr, false);
   }
 
   ~this()
   {
-    g_boxed_free(getType, cptr);
+    g_boxed_free(getType, boxPtr);
   }
 
   /**

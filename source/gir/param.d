@@ -8,9 +8,9 @@ import utils;
 /// Function parameter
 final class Param : TypeNode
 {
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this.repo = repo;
+    super(parent);
     fromXml(node);
   }
 

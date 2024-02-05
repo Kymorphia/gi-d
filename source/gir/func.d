@@ -14,9 +14,9 @@ import utils;
  */
 final class Func : TypeNode
 {
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this.repo = repo;
+    super(parent);
     fromXml(node);
   }
 
@@ -34,14 +34,14 @@ final class Func : TypeNode
 
   override void fromXml(XmlNode node)
   {
-    Base.fromXml(node);
-
     if (auto retValNode = node.findChild("return-value"))
     {
       super.fromXml(retValNode); // The return-value node is used for TypeNode
       ownership = cast(Ownership)retValNode.get("transfer-ownership");
       nullable = retValNode.get("nullable") == "1";
     }
+
+    Base.fromXml(node);
 
     name = node.get("name");
     funcType = cast(FuncType)node.id;

@@ -8,9 +8,9 @@ import utils;
 /// Field in a structure
 final class Field : TypeNode
 {
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this.repo = repo;
+    super(parent);
     fromXml(node);
   }
 

@@ -1,13 +1,19 @@
 module gir.type_node;
 
+import defs;
 public import gir.base;
 import std_includes;
 import utils;
 
 /// Type information class
 /// Combines multiple Gir information (type, array, ownership, etc)
-abstract class TypeNode : Base
+class TypeNode : Base
 {
+  this(Base parent)
+  {
+    super(parent);
+  }
+
   @property dstring subCType()
   {
     return repo.defs.subTypeStr(cType, repo.typeSubs);
@@ -19,11 +25,13 @@ abstract class TypeNode : Base
   }
 
   @property dstring subDType()
-  { // FIXME - Add dlang type substitution
-    if (isArray)
-      return repo.defs.subTypeStr(dType, repo.typeSubs) ~ "[]";
-    else
-      return repo.defs.subTypeStr(dType, repo.typeSubs);
+  {
+    return repo.defs.subTypeStr(dType, repo.typeSubs);
+  }
+
+  @property TypeKind kind()
+  {
+    return repo.defs.typeKind(subDType, repo);
   }
 
   override void fromXml(XmlNode node)

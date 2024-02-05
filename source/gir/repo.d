@@ -21,7 +21,7 @@ import xml_patch;
 import xml_tree;
 
 /// Gir repository
-final class Repo
+final class Repo : Base
 {
   this(Defs defs)
   {
@@ -41,11 +41,13 @@ final class Repo
    */
   void addStruct(Structure st)
   {
-    if (st.name in structHash)
-      throw new Exception("Duplicate structure name '" ~ namespace.to!string ~ "." ~ st.name.to!string ~ "'");
+    auto sub = st.subName;
+
+    if (sub in structHash)
+      throw new Exception("Duplicate structure name '" ~ namespace.to!string ~ "." ~ sub.to!string ~ "'");
 
     structs ~= st;
-    structHash[st.name] = st;
+    structHash[sub] = st;
   }
 
   /// Convert an XML object tree to a Gir object tree
@@ -76,10 +78,7 @@ final class Repo
             if (auto field = baseParentFromXmlNodeWarn!Field(node))
             {
               if (!field.callback)
-              {
-                field.callback = new Func(this, node);
-                field.callback.parent = field;
-              }
+                field.callback = new Func(field, node);
               else
                 node.warn("Field has multiple callbacks");
             }
@@ -89,7 +88,7 @@ final class Repo
           break;
         case "class", "interface", "record", "union": // Class, interfaces, structures, and unions
           if (!node.parent || node.parent.id != "namespace")
-          { // Only warn if structure is not marked as opaque
+          { // Only warn if embedded structure is not marked as opaque
             auto st = node.baseParentFromXmlNode!Structure;
             if (!st || !st.opaque)
               node.warn("Embedded structure types not supported");
@@ -109,17 +108,13 @@ final class Repo
         case "method": // Method function (class, interface, record)
         case "virtual-method": // Virtual method (class, interface)
           if (auto cl = node.baseParentFromXmlNode!Structure)
-          {
-            cl.functions ~= new Func(this, node);
-            cl.functions[$ - 1].parent = cl;
-          }
+            cl.functions ~= new Func(cl, node);
           else if (auto en = node.baseParentFromXmlNode!Enumeration)
-          {
-            en.functions ~= new Func(this, node);
-            en.functions[$ - 1].parent = en;
-          }
+            en.functions ~= new Func(en, node);
           else
-            globalStruct.functions ~= new Func(this, node);
+            globalStruct.functions ~= new Func(globalStruct, node);
+          break;
+        case "disable": // Not an actual Gir attribute, used for disabling arbitrary nodes
           break;
         case "doc": // Documentation file position
           if (auto base = baseParentFromXmlNodeWarn!Base(node))
@@ -140,13 +135,9 @@ final class Repo
         case "docsection": // Documentation section
           docSections ~= new DocSection(this, node);
           break;
-        case "field": // Field 
+        case "field": // Field
           if (auto st = node.baseParentFromXmlNodeWarn!Structure)
-          {
-            auto f = new Field(this, node);
-            f.parent = st;
-            st.fields ~= f;
-          }
+            st.fields ~= new Field(st, node);
           break;
         case "glib:boxed":
           break; // Silently ignore this seldom used node (only TreeRowData seen so far)
@@ -160,10 +151,7 @@ final class Repo
           break;
         case "member": // Enumeration or bitfield member
           if (auto en = node.baseParentFromXmlNodeWarn!Enumeration)
-          {
-            en.members ~= new Member(this, node);
-            en.members[$ - 1].parent = en;
-          }
+            en.members ~= new Member(en, node);
           break;
         case "namespace": // Namespace
           namespace = node["name"];
@@ -185,10 +173,7 @@ final class Repo
           if (node.parent)
           {
             if (auto fn = node.parent.baseParentFromXmlNodeWarn!Func)
-            {
-              fn.params ~= new Param(this, node);
-              fn.params[$ - 1].parent = fn;
-            }
+              fn.params ~= new Param(fn, node);
           }
           else
             node.warn("Expected node to have a parent");
@@ -202,10 +187,7 @@ final class Repo
           break;
         case "property": // Class or interface property
           if (auto cl = node.baseParentFromXmlNodeWarn!Structure)
-          {
-            cl.properties ~= new Property(this, node);
-            cl.properties[$ - 1].parent = cl;
-          }
+            cl.properties ~= new Property(cl, node);
           break;
         case "repository": // Toplevel repository
           repoVersion = node.get("version");
@@ -223,11 +205,11 @@ final class Repo
           }
           break;
         case "type": // Type information
-          if (dumpCTypes && "c:type" in node.attrs)
+          if (dumpCTypes && "c:type" in node.attrs && !node["c:type"].canFind('.'))
             cTypeHash[node["c:type"]] = true;
 
-          if (dumpDTypes && "name" in node.attrs)
-            dTypeHash[node["name"]] = true;
+          if (dumpDTypes && "name" in node.attrs && !node["name"].canFind('.'))
+            dTypeHash[defs.subTypeStr(node["name"], typeSubs)] = true;
 
           break; // Do nothing, TypeNode handles this
         case "varargs": // Varargs enable
@@ -272,12 +254,8 @@ final class Repo
     writeGlobalModule(buildPath(sourcePath, "global.d"));
 
     foreach (st; structs)
-    {
-      auto kind = st.kind;
-      if (!st.disable && ((st.defCode && st.defCode.inClass) || kind == TypeKind.Object || kind == TypeKind.Boxed
-          || kind == TypeKind.Wrap) && st !is globalStruct)
+      if (!st.disable && ((st.defCode && st.defCode.inClass) || st.kind.typeKindHasModule) && st !is globalStruct)
         st.write(buildPath(sourcePath, st.subName.to!string ~ ".d"));
-    }
 
     writeDubJsonFile(buildPath(packagePath, "dub.json"));
   }
@@ -352,14 +330,12 @@ final class Repo
 
     foreach (st; structs)
     {
-      auto kind = st.kind;
-
-      if (kind == TypeKind.Namespace)
+      if (st.kind == TypeKind.Namespace)
         continue;
 
       if (st.fields.length > 0 && !st.opaque) // Regular structure?
       {
-        if (kind == TypeKind.Simple)
+        if (st.kind == TypeKind.Simple)
           st.writeDocs(writer);
 
         writer ~= ["struct " ~ st.subCType, "{"];
@@ -627,8 +603,7 @@ final class Repo
     preambleShown = false;
     foreach (st; structs) // Write out simple struct aliases (not classes)
     {
-      auto kind = st.kind;
-      if (kind != TypeKind.Simple && kind != TypeKind.Opaque)
+      if (st.kind != TypeKind.Simple && st.kind != TypeKind.Opaque)
         continue;
 
       if (!preambleShown)
@@ -641,6 +616,24 @@ final class Repo
       }
 
       writer ~= "alias " ~ st.name ~ " = " ~ st.subCType ~ ";";
+    }
+
+    preambleShown = false;
+    foreach (cb; callbacks) // Write out callback aliases
+    {
+      if (cb.disable)
+        continue;
+
+      if (!preambleShown)
+      {
+        if (writer.lines[$ - 1] != "{")
+          writer ~= "";
+
+        writer ~= "// Callbacks";
+        preambleShown = true;
+      }
+
+      writer ~= "alias " ~ cb.dName ~ " = " ~ cb.cName ~ ";";
     }
 
     if (globalStruct.defCode.inClass.length > 0)
@@ -691,10 +684,10 @@ final class Repo
   dstring xmlnsGlib;
 
   static bool dumpCTypes; /// Set to true to dump C types
-  static bool[dstring] cTypeHash; /// Hash of all C types encountered
+  bool[dstring] cTypeHash; /// Hash of local C types
 
   static bool dumpDTypes; /// Set to true to dump D types
-  static bool[dstring] dTypeHash; /// Hash of all D types encountered
+  bool[dstring] dTypeHash; /// Hash of local D types
 }
 
 /// Package include
@@ -707,9 +700,9 @@ struct Include
 /// Documentation section
 final class DocSection : Base
 {
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this.repo = repo;
+    super(parent);
     fromXml(node);
   }
 

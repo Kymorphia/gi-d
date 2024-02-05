@@ -28,6 +28,7 @@
 //!reserved deprecated
 //!reserved do
 //!reserved double
+//!reserved dstring
 //!reserved else
 //!reserved enum
 //!reserved export
@@ -76,6 +77,7 @@
 //!reserved shared
 //!reserved short
 //!reserved static
+//!reserved string
 //!reserved struct
 //!reserved super
 //!reserved switch
@@ -151,3 +153,6 @@
 //!set *.method[free][introspectable] 0
 //!set *.method[ref][introspectable] 0
 //!set *.method[unref][introspectable] 0
+
+//# Remove glib:get-type "intern"
+//!del '*class[glib:get-type=intern][glib:get-type]'

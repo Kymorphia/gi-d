@@ -1,8 +1,5 @@
 //!repo GLib-2.0
 
-// Error conflicts with the base D Error type, rename to ErrorG
-//!subtype Error ErrorG
-
 // Don't treat ByteArray as an actual array, treat it as an opaque type, as it should be.
 //!set *.array[GLib.ByteArray] '<type name="ByteArray" c:type="GByteArray*"/>'
 
@@ -24,13 +21,27 @@
 //!set record[ByteArray].method[set_size][introspectable] 1
 //!set record[ByteArray].method[sort][introspectable] 1
 
-// Remove some problematic types which aren't needed
+// Disable Data list type (not useful in bindings)
+//!set record[Data][disable] 1
+
+// Disable datalist functions
+//!set *function[datalist_*][disable] 1
+
+// Remove problematic type
 //!del union[DoubleIEEE754]
+
+// Error conflicts with the base D Error type, rename to ErrorG
+//!subtype Error ErrorG
+
+// Remove problematic type
 //!del union[FloatIEEE754]
 
-// Set some structures to opaque as they should be
+// Change IConv from a record to a void* alias
+//!del record[IConv]
+//!add repository.namespace '<alias name="IConv" c:type="GIConv"><type name="void*" c:type="void*"/></alias>'
+
+// IOChannel should be opaque
 //!set record[IOChannel][opaque] 1
-//!set record[VariantBuilder][opaque] 1
 
 //# FIXME - This contains a union which isn't currently supported
 //!set record[VariantDict][opaque] 1
@@ -42,6 +53,14 @@
 //!set record[Regex].method[split_full].return-value.array[][zero-terminated] 1
 //!set record[Regex].function[split_simple].return-value.array[][zero-terminated] 1
 
-// Change IConv from a record to a void* alias
-//!del record[IConv]
-//!add repository.namespace '<alias name="IConv" c:type="GIConv"><type name="void*" c:type="void*"/></alias>'
+// Set Scanner free function
+//!set record[Scanner][free-function] g_scanner_destroy
+
+// Change Variant to a class, set to glib:fundamental, and add ref and unref functions
+//!rename record[Variant] class
+//!set class[Variant][glib:fundamental] 1
+//!set class[Variant][glib:ref-func] g_variant_ref
+//!set class[Variant][glib:unref-func] g_variant_unref
+
+// VariantBuilder should be opaque
+//!set record[VariantBuilder][opaque] 1

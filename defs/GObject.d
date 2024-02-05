@@ -9,3 +9,8 @@
 
 // Object conflicts with the base D Object type, rename to ObjectG
 //!set class[Object][name] ObjectG
+
+// Set ref/unref of ParamSpec
+//!set class[ParamSpec][glib:ref-func] g_param_spec_ref
+//!set class[ParamSpec][glib:unref-func] g_param_spec_unref
+//!del class[ParamSpec][glib:get-type]

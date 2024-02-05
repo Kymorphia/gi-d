@@ -194,7 +194,7 @@ class Defs
 
       if (cmdTokens.length != cmdInfo.argCount + 1)
       {
-        stderr.writeln("'", cmd, "' command requires ", cmdInfo.argCount, cmdInfo.argCount == 1
+        stderr.writeln("'", cmd, "' command requires ", cmdInfo.argCount, " ", cmdInfo.argCount == 1
           ? "argument " : "arguments ", posInfo);
         break;
       }
@@ -350,15 +350,22 @@ class Defs
 
         if (st.kind == TypeKind.Wrap)
         {
+          if (!st.freeFunction)
+            stderr.writeln("Wrapped structure " ~ st.fullName ~ " has no free-function");
+
           foreach (f; st.fields)
           {
-            auto kind = repo.defs.typeKind(f.subDType, repo);
-            if (kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
+            if (f.kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
             {
               f.disable = true;
-              stderr.writeln("Disabling " ~ repo.namespace.to!string ~ "." ~ st.subName.to!string ~ " field "
-                ~ f.subName.to!string  ~ " with unhandled type '" ~ f.subDType.to!string ~ "' (" ~ kind.to!string
-                ~ ")");
+              stderr.writeln("Disabling " ~ st.fullName.to!string ~ " field " ~ f.subName.to!string
+                ~ " with unhandled type '" ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
+            }
+            else if (f.writable && f.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
+            {
+              f.writable = false;
+              stderr.writeln("Setting writable to false for " ~ st.fullName.to!string ~ " field " ~ f.subName.to!string
+                ~ " with unhandled type '" ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
             }
           }
         }
@@ -435,9 +442,8 @@ class Defs
       lengthParam.arrayParamIndex = ParamIndexReturnVal;
     }
 
-    auto kind = fn.repo.defs.typeKind(fn.subDType, fn.repo);
-    if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
-      disableFunc("unknown function return type '" ~ fn.subDType.to!string ~ "'");
+    if (fn.kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
+      disableFunc("unknown function return type kind '" ~ fn.subDType.to!string ~ "' (" ~ fn.kind.to!string ~ ")");
 
     foreach (pi, pa; fn.params)
     {
@@ -484,9 +490,8 @@ class Defs
         return;
       }
 
-      kind = fn.repo.defs.typeKind(pa.subDType, fn.repo);
-      if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
-        disableFunc("unknown function parameter type '" ~ pa.subDType.to!string ~ "'");
+      if (pa.kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
+        disableFunc("unknown function parameter type kind '" ~ pa.subDType.to!string ~ "' (" ~ pa.kind.to!string ~ ")");
     }
   }
 
@@ -615,11 +620,12 @@ enum TypeKind
   String, /// A string
   Enum, /// Enumeration type
   Flags, /// Bitfield flags type
-  Simple, /// Simple structure or union with fields and no methods (alias to C type)
-  Opaque, /// Opaque structure pointer type with no accessible fields (alias to C type)
-  Wrap, /// Structure or union with accessible fields and methods (wrap with a class)
-  Boxed, /// A GLib boxed type
-  Object, /// A GObject derived type
+  Simple, /// Simple Record or Union with basic fields (Basic, Enum, Flags) and no methods (alias to C type)
+  Opaque, /// Opaque Record pointer type with no accessible fields (alias to C type)
+  Wrap, /// Record or Union with accessible fields and methods (wrap with a class)
+  Boxed, /// A GLib boxed Record type
+  Reffed, /// Referenced Class type with inheritence (not GObject derived)
+  Object, /// A GObject Class
   Interface, /// Interface type
   Namespace, /// Namespace structure (no C type, global module for example)
 }
@@ -630,7 +636,7 @@ enum TypeKind
  *   kind = The type kind
  * Returns: true if the given type kind is implemented with its own module
  */
-bool typeKindHasMod(TypeKind kind)
+bool typeKindHasModule(TypeKind kind)
 {
   return kind >= TypeKind.Wrap;
 }

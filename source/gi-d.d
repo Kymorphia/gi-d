@@ -39,9 +39,36 @@ void main(string[] args)
 	defs.loadRepos();
 	defs.writePackages();
 
+  defs.repos.sort!((a, b) => a.namespace < b.namespace);
+
   if (Repo.dumpCTypes)
-    writeln(Repo.cTypeHash.keys.array.sort.join("\n"));
+  {
+    bool[dstring] cTypes;
+
+    foreach (repo; defs.repos)
+      foreach (typeName; repo.cTypeHash.keys)
+        cTypes[typeName] = true;
+
+    writeln(cTypes.keys.array.sort.join("\n"));
+  }
 
   if (Repo.dumpDTypes)
-    writeln(Repo.dTypeHash.keys.array.sort.join("\n"));
+  {
+    bool[dstring] dTypes;
+
+    foreach (repo; defs.repos)
+    {
+      foreach (typeName; repo.dTypeHash.keys)
+      {
+        auto kind = defs.typeKind(typeName, repo);
+
+        if (kind != TypeKind.Basic)
+          typeName = repo.namespace ~ "." ~ typeName;
+
+        dTypes[typeName ~ "," ~ kind.to!dstring] = true;
+      }
+    }
+
+    writeln(dTypes.keys.array.sort.join("\n"));
+  }
 }

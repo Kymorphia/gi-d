@@ -8,9 +8,9 @@ import gir.type_node;
  */
 final class Alias : TypeNode
 {
-  this(Repo repo, XmlNode node)
+  this(Base parent, XmlNode node)
   {
-    this.repo = repo;
+    super(parent);
     fromXml(node);
   }
 

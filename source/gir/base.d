@@ -15,9 +15,12 @@ abstract class Base
   {
   }
 
-  this(Repo repo)
+  this(Base parent)
   {
-    this.repo = repo;
+    this.parent = parent;
+
+    this.repo = getParentByType!Repo;
+    assert(this.repo !is null);
   }
 
   @property XmlNode xmlNode()
@@ -34,6 +37,7 @@ abstract class Base
   void fromXml(XmlNode node)
   {
     this.xmlNode = node;
+    this.disable = node.get("disable") == "1"; // Not an actual Gir attribute, but used in def files
   }
 
   void writeDocs(CodeWriter writer)
@@ -47,6 +51,21 @@ abstract class Base
       writer ~= "* " ~ l;
 
     writer ~= "*/";
+  }
+
+  /**
+    * Template to get an Base parent object of a given type.
+    * Params:
+    *   T = The expected type of object
+    * Returns: The parent object of the given type or null
+    */
+  T getParentByType(T)()
+  {
+    for (auto n = this; n !is null; n = n.parent)
+      if (auto found = cast(T)n)
+        return found;
+
+    return null;
   }
 
   private XmlNode _node; /// The XML node object was created from
