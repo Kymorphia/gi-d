@@ -20,10 +20,20 @@ final class Func : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   /// Get the function name formatted in D camelCase
   dstring dName()
   {
-    return repo.defs.symbolName(name.camelCase);
+    return repo.defs.symbolName(_name.camelCase);
   }
 
   /// Returns true if function has an instance parameter
@@ -37,14 +47,14 @@ final class Func : TypeNode
     if (auto retValNode = node.findChild("return-value"))
     {
       super.fromXml(retValNode); // The return-value node is used for TypeNode
-      ownership = cast(Ownership)retValNode.get("transfer-ownership");
+      ownership = cast(Ownership)OwnershipValues.countUntil(retValNode.get("transfer-ownership"));
       nullable = retValNode.get("nullable") == "1";
     }
 
     Base.fromXml(node);
 
-    name = node.get("name");
-    funcType = cast(FuncType)node.id;
+    _name = node.get("name");
+    funcType = cast(FuncType)FuncTypeValues.countUntil(node.id);
     cName = node.get("c:identifier");
 
     if (cName.empty)
@@ -63,7 +73,7 @@ final class Func : TypeNode
     noRecurse = node.get("noRecurse") == "1";
     deprecated_ = node.get("deprecated") == "1";
     deprecatedVersion = node.get("deprecated-version");
-    when = cast(SignalWhen)node.get("when");
+    when = cast(SignalWhen)SignalWhenValues.countUntil(node.get("when"));
   }
 
   /**
@@ -81,7 +91,77 @@ final class Func : TypeNode
     return fnptr ~ ")";
   }
 
-  dstring name; /// Name of function
+  override void fixup()
+  {
+    if (!introspectable || !movedTo.empty || funcType == FuncType.VirtualMethod || funcType == FuncType.FuncMacro)
+      disable = true;
+
+    if (disable)
+      return;
+
+    void disableFunc(string msg)
+    {
+      disable = true;
+      stderr.writeln("Disabling '" ~ fullName.to!string ~ "': " ~ msg);
+    }
+
+    try
+      super.fixup; // Fixup the return type
+    catch (Exception e)
+    {
+      disableFunc(e.msg);
+      return;
+    }
+
+    FuncType[] allowedTypes = [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method];
+
+    if (!allowedTypes.canFind(funcType))
+    {
+      disableFunc("type '" ~ funcType.to!string ~ "' not supported where found");
+      return;
+    }
+
+    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+    {
+      if (hasInstanceParam) // Array length parameter indexes don't count instance parameters
+        lengthParamIndex++;
+
+      if (lengthParamIndex >= params.length)
+      {
+        disableFunc("invalid return array length parameter index");
+        return;
+      }
+
+      auto lengthParam = params[lengthParamIndex];
+      lengthParam.arrayParamIndex = ParamIndexReturnVal;
+      lengthParam.isArrayLength = true;
+
+      if (lengthParam.direction != ParamDirection.Out)
+      {
+        disableFunc("return array length parameter direction must be Out");
+        return;
+      }
+    }
+
+    foreach (pi, pa; params)
+    {
+      if (pa.isInstanceParam && pi != 0)
+      {
+        disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'");
+        return;
+      }
+
+      try
+        pa.fixup; // Perform fixup on parameter
+      catch (Exception e)
+      {
+        disableFunc(e.msg);
+        return;
+      }
+    }
+  }
+
+  private dstring _name; /// Name of function
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)
   Param[] params; /// Parameters
@@ -107,21 +187,27 @@ final class Func : TypeNode
   SignalWhen when; /// Signal when
 }
 
-enum FuncType : dstring
+enum FuncType
 {
-  Function = "function",
-  Callback = "callback",
-  Constructor = "constructor",
-  Signal = "glib:signal",
-  Method = "method",
-  VirtualMethod = "virtual-method",
-  FuncMacro = "function-macro",
+  Unknown = -1,
+  Function,
+  Callback,
+  Constructor,
+  Signal,
+  Method,
+  VirtualMethod,
+  FuncMacro,
 }
 
-enum SignalWhen : dstring
+immutable dstring[] FuncTypeValues = ["function", "callback", "constructor", "glib:signal", "method",
+  "virtual-method", "function-macro"];
+
+enum SignalWhen
 {
-  Unset = null,
-  First = "first",
-  Last = "last",
-  Cleanup = "cleanup",
+  Unknown = -1,
+  First,
+  Last,
+  Cleanup,
 }
+
+immutable dstring[] SignalWhenValues = ["first", "last", "cleanup"];

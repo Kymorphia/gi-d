@@ -13,12 +13,22 @@ final class Enumeration : Base
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
 
     bitfield = node.id == "bitfield";
-    name = node.get("name");
+    _name = node.get("name");
     cName = node.get("c:type");
 
     glibGetType = node.get("glib:get-type");
@@ -28,7 +38,7 @@ final class Enumeration : Base
   }
 
   bool bitfield; /// true if flags bitfield, false for enum
-  dstring name; /// Name of enum/flags
+  private dstring _name; /// Name of enum/flags
   dstring cName; /// C type name (Gir c:type)
   dstring glibGetType; /// GLib get_type function name
   dstring glibTypeName; /// GLib type name

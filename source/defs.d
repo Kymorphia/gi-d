@@ -343,29 +343,85 @@ class Defs
     {
       repoHash[repo.namespace] = repo;
 
+      foreach (al; repo.aliases)
+      {
+        try
+          al.fixup;
+        catch (Exception e)
+        {
+          al.disable = true;
+          stderr.writeln("Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
+        }
+      }
+
+      foreach (con; repo.constants)
+      {
+        try
+          con.fixup;
+        catch (Exception e)
+        {
+          con.disable = true;
+          stderr.writeln("Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
+        }
+      }
+
       foreach (st; repo.structs)
       {
         foreach (fn; st.functions)
-          fixupFunc(fn, [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method]);
+          fn.fixup;
 
         if (st.kind == TypeKind.Wrap)
         {
           if (!st.freeFunction)
-            stderr.writeln("Wrapped structure " ~ st.fullName ~ " has no free-function");
+            stderr.writeln("Wrapped structure " ~ st.fullName.to!string ~ " has no free-function");
 
           foreach (f; st.fields)
           {
+            try
+              f.fixup;
+            catch (Exception e)
+            {
+              f.disable = true;
+              stderr.writeln("Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
+              continue;
+            }
+
             if (f.kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
             {
               f.disable = true;
-              stderr.writeln("Disabling " ~ st.fullName.to!string ~ " field " ~ f.subName.to!string
-                ~ " with unhandled type '" ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
+              stderr.writeln("Disabling field " ~ f.fullName.to!string ~ " with unhandled type '"
+                ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
             }
             else if (f.writable && f.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
             {
               f.writable = false;
-              stderr.writeln("Setting writable to false for " ~ st.fullName.to!string ~ " field " ~ f.subName.to!string
-                ~ " with unhandled type '" ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
+              stderr.writeln("Setting writable to false for field " ~ f.fullName.to!string ~ " with unhandled type '"
+                ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
+            }
+          }
+
+          foreach (prop; st.properties)
+          {
+            try
+              prop.fixup;
+            catch (Exception e)
+            {
+              prop.disable = true;
+              stderr.writeln("Disabling property '" ~ prop.fullName.to!string ~ "': " ~ e.msg);
+              continue;
+            }
+
+            if (prop.kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
+            {
+              prop.disable = true;
+              stderr.writeln("Disabling property " ~ prop.fullName.to!string ~ " with unhandled type '"
+                ~ prop.subDType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
+            }
+            else if (prop.writable && prop.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
+            {
+              prop.writable = false;
+              stderr.writeln("Setting writable to false for property " ~ prop.fullName.to!string
+                ~ " with unhandled type '" ~ prop.subDType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
             }
           }
         }
@@ -390,111 +446,6 @@ class Defs
     }
   }
 
-  void fixupFunc(Func fn, FuncType[] allowedTypes)
-  {
-    void disableFunc(string msg)
-    {
-      fn.disable = true;
-      stderr.writeln("Disabling '" ~ (fn.parent ? (cast(Structure)fn.parent).name.to!string
-        : fn.repo.namespace.to!string) ~ "." ~ fn.name.to!string ~ "': " ~ msg);
-    }
-
-    if (!fn.introspectable || !fn.movedTo.empty || fn.funcType == FuncType.VirtualMethod
-        || fn.funcType == FuncType.FuncMacro)
-      fn.disable = true;
-
-    if (fn.disable)
-      return;
-
-    if (!allowedTypes.canFind(fn.funcType))
-    {
-      disableFunc("type '" ~ fn.funcType.to!string ~ "' not supported where found");
-      return;
-    }
-
-    if (fn.isArray && fn.lengthParamIndex == ArrayNoLengthParam && fn.fixedSize == ArrayNotFixed
-      && !fn.zeroTerminated)
-    {
-      disableFunc("array return value has indeterminate length");
-      return;
-    }
-
-    if (fn.lengthParamIndex != ArrayNoLengthParam) // Returns array with a length argument?
-    { // Array length parameter indexes don't count instance parameters
-      if (fn.hasInstanceParam)
-        fn.lengthParamIndex++;
-
-      if (fn.lengthParamIndex >= fn.params.length)
-      {
-        disableFunc("invalid return array length parameter index");
-        return;
-      }
-
-      auto lengthParam = fn.params[fn.lengthParamIndex];
-
-      if (lengthParam.direction != ParamDirection.Out)
-      {
-        disableFunc("return array length parameter direction must be 'out'");
-        return;
-      }
-
-      lengthParam.isArrayLength = true;
-      lengthParam.arrayParamIndex = ParamIndexReturnVal;
-    }
-
-    if (fn.kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
-      disableFunc("unknown function return type kind '" ~ fn.subDType.to!string ~ "' (" ~ fn.kind.to!string ~ ")");
-
-    foreach (pi, pa; fn.params)
-    {
-      if (pa.isInstanceParam && pi != 0)
-      {
-        disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'");
-        return;
-      }
-
-      if (pa.isArray && pa.lengthParamIndex == ArrayNoLengthParam && pa.fixedSize == ArrayNotFixed
-        && !pa.zeroTerminated)
-      {
-        disableFunc("array param '" ~ pa.name.to!string ~ "' has indeterminate length");
-        return;
-      }
-
-      if (pa.lengthParamIndex != ArrayNoLengthParam) // Parameter array with a length argument?
-      { // Array length parameter indexes don't count instance parameters
-        if (fn.hasInstanceParam)
-          pa.lengthParamIndex++;
-
-        if (pa.lengthParamIndex >= fn.params.length)
-        {
-          disableFunc("array param '" ~ pa.name.to!string ~ "' has invalid length parameter index");
-          return;
-        }
-
-        auto lengthParam = fn.params[pa.lengthParamIndex];
-
-        if (pa.direction != lengthParam.direction)
-        {
-          disableFunc("array param '" ~ pa.name.to!string ~ "' direction mismatch with length param '"
-            ~ lengthParam.name.to!string ~ "'");
-          return;
-        }
-
-        lengthParam.isArrayLength = true;
-        lengthParam.arrayParamIndex = cast(int)pi;
-      }
-
-      if (pa.direction != ParamDirection.Out && pa.ownership != Ownership.None)
-      { // FIXME
-        disableFunc("param '" ~ pa.name.to!string ~ "' ownership transfer not yet supported");
-        return;
-      }
-
-      if (pa.kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
-        disableFunc("unknown function parameter type kind '" ~ pa.subDType.to!string ~ "' (" ~ pa.kind.to!string ~ ")");
-    }
-  }
-
   /**
    * Write the packages for the loaded Repo objects defined in the definitions files.
    * Params:
@@ -504,9 +455,7 @@ class Defs
   void writePackages(string basePath = "packages")
   {
     foreach (repo; repos)
-    {
       repo.writePackage(basePath);
-    }
   }
 
   /**
@@ -518,9 +467,6 @@ class Defs
    */
   TypeKind typeKind(dstring type, Repo repo)
   {
-    if (auto kind = type in typeCache)
-      return *kind;
-
     if (type.among("char*"d, "const char*"d, "string"d, "utf8"d))
       return TypeKind.String;
 
@@ -541,6 +487,60 @@ class Defs
       return st.kind;
 
     return TypeKind.Basic;
+  }
+
+  /**
+   * Find type node object by D type name which may include the namespace separated by a period.
+   * Params:
+   *   typeName = Type name string
+   *   namespace = Default namespace or null
+   * Returns: The matching type node or null if not found (possible basic type)
+   */
+  TypeNode findTypeNode(dstring typeName, dstring namespace)
+  {
+    auto t = typeName.split('.');
+    if (t.length > 1)
+    {
+      namespace = t[0];
+      typeName = t[1];
+    }
+
+    if (auto repo = namespace in repoHash)
+    {
+      if (auto en = typeName in repo.enumHash)
+        return cast(TypeNode)en;
+
+      if (auto st = typeName in repo.structHash)
+        return cast(TypeNode)st;
+    }
+
+    return null;
+  }
+
+  /**
+   * Derive an array member C type from an array C type.
+   * Params:
+   *   arrayCType = The C type string of the array
+   * Returns: The member C type or null if unable to determine
+   */
+  dstring getArrayMemberCType(dstring arrayCType)
+  {
+    auto isConst = arrayCType.startsWith("const");
+
+    if (isConst) // Strip const and () parenthesis from const(TYPE*)* expressions
+      arrayCType = arrayCType[5 .. $].filter!(x => x != '(' && x != ')').array;
+
+    auto starCount = arrayCType.retro.countUntil!(x => x != '*');
+
+    if (starCount == -1)
+      return null;
+
+    arrayCType = arrayCType[0 .. $ - starCount]; // Strip the stars off
+
+    if (isConst && starCount > 1)
+      return "const(" ~ arrayCType ~ "*"d.replicate(starCount - 2) ~ ")*";
+
+    return arrayCType ~ "*"d.replicate(starCount - 1);
   }
 
   /**
@@ -596,7 +596,7 @@ class Defs
 
     // Remove multiple "const", format as const(TYPE)*, and substitute type names
     if (tok[0] == "const" && tok[$ - 1] == "*")
-      return "const(" ~ sub(tok[0 .. $ - 1].filter!(x => x != "const").join("")) ~ ")*";
+      return "const(" ~ sub(tok[0 .. $ - 1].filter!(x => !x.among("const"d, "("d, ")"d)).join("")) ~ ")*";
 
     return sub(tok.filter!(x => x != "const")
       .map!(x => x == "*" ? x : " " ~ x)
@@ -607,7 +607,6 @@ class Defs
   dstring[dstring] typeSubs; /// Global type substitutions
   XmlPatch[] patches; /// Global XML patches specified in definitions file
   Repo[] repos; /// Gir repositories
-  TypeKind[dstring] typeCache; /// Type kind cache
 
   Repo[dstring] repoHash; /// Hash of repositories by namespace
 }
@@ -621,8 +620,8 @@ enum TypeKind
   Enum, /// Enumeration type
   Flags, /// Bitfield flags type
   Simple, /// Simple Record or Union with basic fields (Basic, Enum, Flags) and no methods (alias to C type)
-  Opaque, /// Opaque Record pointer type with no accessible fields (alias to C type)
-  Wrap, /// Record or Union with accessible fields and methods (wrap with a class)
+  Opaque, /// Opaque Record pointer type with no accessible fields or methods (alias to C type)
+  Wrap, /// Record or Union with accessible fields and/or methods (wrap with a class)
   Boxed, /// A GLib boxed Record type
   Reffed, /// Referenced Class type with inheritence (not GObject derived)
   Object, /// A GObject Class

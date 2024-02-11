@@ -126,7 +126,7 @@ class FuncWriter
         preCall ~= func.subCType ~ " _cretval;\n";
         call ~= "_cretval = ";
         postCall ~= func.subDType ~ " _retval;\n_retval = new " ~ func.subDType ~ "(_cretval);\n";
-        imports.add(func.subDType.canFind(".") ? func.subDType : func.repo.namespace ~ "." ~ func.subDType);
+        imports.add(func.fullDType);
         break;
       case Boxed, Reffed, Object:
         if (!isCtor)
@@ -139,7 +139,7 @@ class FuncWriter
         {
           postCall ~= func.subDType ~ " _retval = "d ~ (kind == Object ? "ObjectG.getDObject!"d : "new ")
             ~ func.subDType ~ "(_cretval, " ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add(func.subDType);
+          imports.add(func.fullDType);
 
           if (kind == Object)
             imports.add("GObject.ObjectG");
@@ -149,7 +149,7 @@ class FuncWriter
         break;
       case Unknown, Interface, Namespace:
         assert(0, "Unsupported return value type '" ~ func.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
-          ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
+          ~ func.fullName.to!string);
     }
   }
 
@@ -213,7 +213,7 @@ class FuncWriter
           break;
         case Basic, Enum, Unknown, Interface, Namespace:
           assert(0, "Unsupported return value array type '" ~ func.subDType.to!string ~ "' (" ~ kind.to!string
-            ~ ") for " ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
+            ~ ") for " ~ func.fullName.to!string);
       }
     }
 
@@ -233,7 +233,6 @@ class FuncWriter
     {
       auto arrayParam = param.arrayParamIndex != ParamIndexReturnVal ? func.params[param.arrayParamIndex] : null;
 
-      // Output or InOut?
       if (param.direction == ParamDirection.Out)
       {
         preCall ~= param.subCType ~ " _" ~ param.dName ~ ";\n";
@@ -262,11 +261,13 @@ class FuncWriter
     final switch(param.kind) with(TypeKind)
     {
       case Basic:
-        addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
+        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.subDType
+          ~ " " ~ param.dName);
         addCallParam((!isInput ? "&"d : "") ~ param.dName);
         break;
       case Enum, Flags:
-        addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
+        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.subDType
+          ~ " " ~ param.dName);
         preCall ~= param.subCType ~ " _" ~ param.dName ~ " = " ~ (param.direction != ParamDirection.Out ? "cast("
           ~ param.subCType ~ ")" ~ param.dName : "") ~ ";\n";
         addCallParam((!isInput ? "&_"d : "_") ~ param.dName);
@@ -275,7 +276,7 @@ class FuncWriter
           postCall ~= param.dName ~ " = cast(" ~ param.subDType ~ ")_" ~ param.dName ~ ";\n";
         break;
       case String:
-        addDeclParam((!isInput ? param.direction ~ " " : "") ~ "string " ~ param.dName);
+        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ "string " ~ param.dName);
 
         if (param.direction == ParamDirection.In)
         {
@@ -295,21 +296,23 @@ class FuncWriter
 
         break;
       case Simple:
-        addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
+        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.subDType
+          ~ " " ~ param.dName);
         addCallParam((!isInput ? "&"d : "") ~ param.dName);
         break;
       case Opaque:
-        addDeclParam((!isInput ? param.direction ~ " " : "") ~ param.subDType ~ " " ~ param.dName);
+        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.subDType
+          ~ " " ~ param.dName);
         addCallParam(param.dName);
         break;
       case Wrap, Boxed, Reffed, Object:
         addDeclParam(param.subDType ~ " " ~ param.dName);
         addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr : null");
-        imports.add(param.subDType);
+        imports.add(param.fullDType);
         break;
       case Unknown, Interface, Namespace:
         assert(0, "Unsupported parameter type '" ~ param.subDType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
-          ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
+          ~ func.fullName.to!string);
     }
   }
 
@@ -318,7 +321,7 @@ class FuncWriter
   {
     if (param.direction != ParamDirection.In)
     {
-      addDeclParam(param.direction ~ " " ~ param.subDType ~ "[] " ~ param.dName);
+      addDeclParam(ParamDirectionValues[param.direction] ~ " " ~ param.subDType ~ "[] " ~ param.dName);
       addCallParam("&_"d ~ param.dName);
     }
     else
@@ -352,7 +355,7 @@ class FuncWriter
           break;
         case String:
           preCall ~= param.subCType ~ "[] _tmp" ~ param.dName ~ ";\n";
-          preCall ~= "foreach(s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
+          preCall ~= "foreach (s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;";
@@ -362,18 +365,18 @@ class FuncWriter
           break;
         case Wrap, Boxed, Reffed, Object:
           preCall ~= param.subCType ~ "[] _tmp" ~ param.dName ~ ";\n";
-          preCall ~= "foreach(obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr : null;\n";
+          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr : null;\n";
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;";
 
           preCall ~= param.subArrayCType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName,
             "_tmp" ~ param.dName ~ ".ptr") ~ ";\n";
-          imports.add(param.subDType);
+          imports.add(param.fullDType);
           break;
         case Unknown, Interface, Namespace:
           assert(0, "Unsupported parameter array type '" ~ param.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
-            ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
+            ~ func.fullName.to!string);
       }
     }
 
@@ -406,7 +409,7 @@ class FuncWriter
           break;
         case String:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= _" ~ param.dName ~ "[i].fromCString("
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= _" ~ param.dName ~ "[i].fromCString("
             ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
 
           if (param.ownership != Ownership.None)
@@ -414,26 +417,26 @@ class FuncWriter
           break;
         case Wrap, Boxed, Reffed:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= new " ~ param.subDType ~ "("
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= new " ~ param.subDType ~ "("
             ~ param.dName ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
-          imports.add(param.subDType);
+          imports.add(param.fullDType);
 
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
           break;
         case Object:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach(i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject(_" ~ param.dName
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject(_" ~ param.dName
             ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
           imports.add("GObject.ObjectG");
-          imports.add(param.subDType);
+          imports.add(param.fullDType);
 
           if (param.ownership != Ownership.None)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
           break;
         case Unknown, Interface, Namespace:
           assert(0, "Unsupported parameter array type '" ~ param.subDType.to!string ~ "' (" ~ kind.to!string ~ ") for "
-            ~ func.repo.namespace.to!string ~ "." ~ func.name.to!string);
+            ~ func.fullName.to!string);
       }
     }
   }

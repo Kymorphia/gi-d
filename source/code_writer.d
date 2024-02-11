@@ -99,7 +99,7 @@ class CodeWriter
       }
       else if (line.endsWith('{')) // Open brace for a control block increases indent
         indent += 2;
-      else if (["else", "for ", "if ", "static if ", "version(", "while "].filter!(x => line.startsWith(x))
+      else if (["else", "for ", "foreach ", "if ", "static if ", "version(", "while "].filter!(x => line.startsWith(x))
           .empty != true)
         indentStatement = true;
     }

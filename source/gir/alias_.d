@@ -14,13 +14,23 @@ final class Alias : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
-    name = node.get("name");
+    _name = node.get("name");
     cName = node.get("c:type");
   }
 
-  dstring name; /// D type name for the alias (Gir "name" attribute)
+  private dstring _name; /// D type name for the alias (Gir "name" attribute)
   dstring cName; /// C type name for the alias (Gir "c:type" attribute)
 }

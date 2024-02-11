@@ -1,9 +1,8 @@
 module gir.property;
 
-import std.conv : to;
-
 import gir.param;
 import gir.type_node;
+import std_includes;
 
 /// Class property
 final class Property : TypeNode
@@ -14,13 +13,23 @@ final class Property : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
 
-    name = node.get("name");
+    _name = node.get("name");
     defaultValue = node.get("default-value");
-    ownership = cast(Ownership)node.get("ownership-transfer");
+    ownership = cast(Ownership)OwnershipValues.countUntil(node.get("ownership-transfer"));
     readable = node.get("readable") == "1";
     writable = node.get("writable") == "1";
     construct = node.get("construct") == "1";
@@ -37,7 +46,7 @@ final class Property : TypeNode
     setter = node.get("setter");
   }
 
-  dstring name; /// Name of property
+  private dstring _name; /// Name of property
   dstring defaultValue; /// Default value
   Ownership ownership; /// Ownership transfer
   bool readable; /// Property is readable

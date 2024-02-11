@@ -12,15 +12,6 @@ import gir.repo;
 import gir.type_node;
 import utils;
 
-/// Type of structure
-enum StructType : dstring
-{
-  Class = "class", /// A class
-  Interface = "interface", /// An interface
-  Record = "record", /// A structure record
-  Union = "union", /// A union
-}
-
 /// Structure class which is used for class, interface, and records in Gir files
 final class Structure : Base
 {
@@ -36,19 +27,24 @@ final class Structure : Base
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   @property dstring subName()
   {
-    return repo.defs.subTypeStr(name, repo.typeSubs);
+    return repo.defs.subTypeStr(_name, repo.typeSubs);
   }
 
   @property dstring subCType()
   {
     return repo.defs.subTypeStr(cType, repo.typeSubs);
-  }
-
-  dstring fullName()
-  {
-    return repo.namespace ~ "." ~ subName;
   }
 
   @property TypeKind kind()
@@ -59,7 +55,7 @@ final class Structure : Base
     if (structType == StructType.Record && !glibGetType.empty)
       return TypeKind.Boxed;
 
-    if (structType == StructType.Record && opaque)
+    if (structType == StructType.Record && opaque && functions.empty)
       return TypeKind.Opaque;
 
     if (structType == StructType.Record || structType == StructType.Union)
@@ -90,8 +86,8 @@ final class Structure : Base
   {
     super.fromXml(node);
 
-    name = node.get("name");
-    structType = cast(StructType)node.id;
+    _name = node.get("name");
+    structType = cast(StructType)StructTypeValues.countUntil(node.id);
     cType = node.get("c:type");
     cSymbolPrefix = node.get("c:symbol-prefix");
     parent = node.get("parent");
@@ -320,7 +316,7 @@ final class Structure : Base
     return lines;
   }
 
-  dstring name; /// Name of structure
+  private dstring _name; /// Name of structure
   StructType structType; /// Type of structure
   dstring cType; /// C type name
   dstring cSymbolPrefix; /// C symbol prefix
@@ -352,3 +348,14 @@ final class Structure : Base
   dstring copyFunction; /// Record/Union copy function (not seen in the wild, but defined in gir-1.2.rnc - we use it via XML patching)
   dstring freeFunction; /// Record/Union free function (not seen in the wild, but defined in gir-1.2.rnc - we use it via XML patching)
 }
+
+/// Type of structure
+enum StructType
+{
+  Class, /// A class
+  Interface, /// An interface
+  Record, /// A structure record
+  Union, /// A union
+}
+
+immutable dstring[] StructTypeValues = [ "class", "interface", "record", "union" ];

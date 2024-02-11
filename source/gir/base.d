@@ -23,6 +23,26 @@ abstract class Base
     assert(this.repo !is null);
   }
 
+  @property dstring name()
+  {
+    return "";
+  }
+
+  @property void name(dstring val)
+  {
+  }
+
+  dstring fullName()
+  {
+    dstring full;
+
+    for (auto b = this; b; b = b.parent)
+      if (auto s = b.name)
+        full = full.length > 0 ? s ~ "." ~ full : s;
+
+    return full;
+  }
+
   @property XmlNode xmlNode()
   {
     return _node;
@@ -54,10 +74,10 @@ abstract class Base
   }
 
   /**
-    * Template to get an Base parent object of a given type.
+    * Template to get an Base parent object of a given type, including itself.
     * Params:
     *   T = The expected type of object
-    * Returns: The parent object of the given type or null
+    * Returns: The parent object of the given type (can be the object itself) or null
     */
   T getParentByType(T)()
   {

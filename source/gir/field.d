@@ -14,30 +14,40 @@ final class Field : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   // Get field name and handle reserved words by adding an underscore to the field name
   @property dstring subName()
   {
-    return repo.defs.symbolName(name);
+    return repo.defs.symbolName(_name);
   }
 
   /// Get the field name formatted in D camelCase
   dstring dName()
   {
-    return repo.defs.symbolName(name.camelCase);
+    return repo.defs.symbolName(_name.camelCase);
   }
 
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
 
-    name = node.get("name");
+    _name = node.get("name");
     readable = node.get("readable", "1") == "1";
     writable = node.get("writable", "0") == "1";
     introspectable = node.get("introspectable", "1") == "1";
     private_ = node.get("private") == "1";
   }
 
-  dstring name; /// Field name
+  private dstring _name; /// Field name
   Func callback; /// For callback fields
   bool readable; /// Readable field?
   bool writable; /// Writable field?

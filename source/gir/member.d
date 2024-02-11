@@ -11,18 +11,28 @@ final class Member : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
 
-    name = node.get("name");
+    _name = node.get("name");
     cName = node.get("c:identifier");
     value = node.get("value");
     glibName = node.get("glib:name");
     glibNick = node.get("glib:nick");
   }
 
-  dstring name; /// Name of the enumeration or bitfield member
+  private dstring _name; /// Name of the enumeration or bitfield member
   dstring cName; /// C name (Gir "c:identifier")
   dstring value; /// The value
   dstring glibName; /// GLib enum/flags name

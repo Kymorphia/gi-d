@@ -34,6 +34,11 @@ final class Repo : Base
     this.filename = filename;
   }
 
+  override @property dstring name()
+  {
+    return namespace;
+  }
+
   /**
    * Add a structure to a repository. A struct with the same name must not already exist.
    * Params:
@@ -391,7 +396,7 @@ final class Repo : Base
     {
       con.writeDocs(writer);
 
-      if (con.isString)
+      if (con.kind == TypeKind.String)
         writer ~= ["enum " ~ con.cName ~ " = \"" ~ con.value ~ "\";", ""];
       else
         writer ~= ["enum " ~ con.cName ~ " = " ~ con.value ~ ";", ""];

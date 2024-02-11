@@ -3,6 +3,14 @@ module gid;
 import std.string : fromStringz, toStringz;
 public import std.typecons : BitFlags, Yes;
 
+/// Container ownership
+enum GidOwnership
+{
+  None, /// No ownership transfer
+  Container, /// Owns container
+  Full, /// Owns container and the items in it
+}
+
 /**
  * Convert a D string to a zero terminated C string, with allocation parameter.
  * Params:

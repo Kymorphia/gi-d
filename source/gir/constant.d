@@ -10,15 +10,25 @@ final class Constant : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return _name;
+  }
+
+  override @property void name(dstring val)
+  {
+    _name = val;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
-    name = node.get("name");
+    _name = node.get("name");
     cName = node.get("c:type");
     value = node.get("value");
   }
 
-  dstring name; /// Name of constant
+  private dstring _name; /// Name of constant
   dstring cName; /// C name of constant
   dstring value; /// Value of constant
 }
