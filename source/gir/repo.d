@@ -39,22 +39,6 @@ final class Repo : Base
     return namespace;
   }
 
-  /**
-   * Add a structure to a repository. A struct with the same name must not already exist.
-   * Params:
-   *   st = The structure to add to the repository
-   */
-  void addStruct(Structure st)
-  {
-    auto sub = st.subName;
-
-    if (sub in structHash)
-      throw new Exception("Duplicate structure name '" ~ namespace.to!string ~ "." ~ sub.to!string ~ "'");
-
-    structs ~= st;
-    structHash[sub] = st;
-  }
-
   /// Convert an XML object tree to a Gir object tree
   void fromXmlTree(XmlTree tree)
   {
@@ -64,7 +48,6 @@ final class Repo : Base
       {
         case "alias": // Alias info
           aliases ~= new Alias(this, node);
-          aliasHash[aliases[$ - 1].name] = aliases[$ - 1];
           break;
         case "array": // Array type info
           break; // Do nothing, TypeNode handles this
@@ -72,7 +55,6 @@ final class Repo : Base
           break;
         case "bitfield", "enumeration": // Flags and enumerations
           enums ~= new Enumeration(this, node);
-          enumHash[enums[$ - 1].name] = enums[$ - 1];
           break;
         case "c:include": // C include header
           cIncludes ~= node["name"];
@@ -101,17 +83,14 @@ final class Repo : Base
             goto noRecurse;
           }
 
-          addStruct(new Structure(this, node));
+          structs ~= new Structure(this, node);
           break;
         case "constant": // Constants
           constants ~= new Constant(this, node);
           break;
         case "constructor": // Constructor method (class and record)
         case "function": // Function (class, enumeration, namespace, interface, record)
-        case "function-macro": // Function macro (namespace)
-        case "glib:signal": // Signals (class and interface)
         case "method": // Method function (class, interface, record)
-        case "virtual-method": // Virtual method (class, interface)
           if (auto cl = node.baseParentFromXmlNode!Structure)
             cl.functions ~= new Func(cl, node);
           else if (auto en = node.baseParentFromXmlNode!Enumeration)
@@ -144,8 +123,16 @@ final class Repo : Base
           if (auto st = node.baseParentFromXmlNodeWarn!Structure)
             st.fields ~= new Field(st, node);
           break;
+        case "function-macro": // Function macro (namespace)
+          goto noRecurse; // Ignore function macros
         case "glib:boxed":
           break; // Silently ignore this seldom used node (only TreeRowData seen so far)
+        case "glib:signal": // Signals (class and interface)
+          if (auto cl = node.baseParentFromXmlNode!Structure)
+            cl.signals ~= new Func(cl, node);
+          else
+            node.warn("Signal found in an unexpected location");
+          break;
         case "implements": // Implemented interface
           if (auto cl = node.baseParentFromXmlNodeWarn!Structure)
             if (auto name = node.get("name"))
@@ -167,9 +154,9 @@ final class Repo : Base
 
           // Add global namespace structure
           globalStruct = new Structure(this);
-          globalStruct.name = namespace;
+          globalStruct.origDType = namespace;
           globalStruct.structType = StructType.Class;
-          addStruct(globalStruct);
+          structs ~= globalStruct;
           break;
         case "package": // Package name
           packageName = node.get("name");
@@ -210,24 +197,37 @@ final class Repo : Base
           }
           break;
         case "type": // Type information
+          TypeNode parent;
+
+          if (node.parent && node.parent.id == "type") // Is parent XML node also a <type>? Then it is a container type (GList, GHashTable, etc)
+            parent = node.baseParentFromXmlNode!TypeNode;
+
+          if (!parent && node.parent && node.parent.id == "array") // Is parent XML node an <array>?
+            parent = node.parent.baseParentFromXmlNode!TypeNode;
+
+          if (parent) // Add the element type to the container
+            parent.elemTypes ~= new TypeNode(parent, node);
+
           if (dumpCTypes && "c:type" in node.attrs && !node["c:type"].canFind('.'))
             cTypeHash[node["c:type"]] = true;
 
           if (dumpDTypes && "name" in node.attrs && !node["name"].canFind('.'))
             dTypeHash[defs.subTypeStr(node["name"], typeSubs)] = true;
 
-          break; // Do nothing, TypeNode handles this
+          break;
         case "varargs": // Varargs enable
           if (auto par = node.baseParentFromXmlNodeWarn!Param)
             par.varargs = true;
           break;
+        case "virtual-method": // Virtual method (class, interface)
+          goto noRecurse; // Ignore virtual methods for now (FIXME - do we want to support them?)
         default:
           static bool[dstring] unknownElements;
 
           if (node.id !in unknownElements)
           {
             unknownElements[node.id] = true;
-            stderr.writeln(cast(string)("Unknown XML element '" ~ node.id ~ "'"));
+            warning(cast(string)("Unknown XML element '" ~ node.id ~ "'"));
           }
           break;
       }
@@ -239,6 +239,129 @@ final class Repo : Base
     }
 
     recurseXml(tree.root);
+  }
+
+  /// Fixup types
+  void fixupTypes()
+  {
+    foreach (al; aliases) // Fixup aliases
+    {
+      al.fixup;
+      typeObjectHash[al.name] = al;
+    }
+
+    foreach (con; constants) // Fixup constants
+    {
+      con.fixup;
+      typeObjectHash[con.name] = con;
+    }
+
+    foreach (en; enums) // Hash enums
+      typeObjectHash[en.name] = en;
+
+    foreach (cb; callbacks) // Hash callbacks
+      typeObjectHash[cb.name] = cb;
+
+    foreach (st; structs) // Fixup structures (base type only, not dependencies which are fixed up below)
+    {
+      st.fixupType;
+      typeObjectHash[st.name] = st;
+    }
+
+    foreach (dcArray; structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
+    {
+      auto st = cast(Structure)typeObjectHash.get(dcArray.key, null);
+
+      if (!st) // Create new class structures if non-existant, fixup base type, and hash
+      {
+        st = new Structure(this);
+        st.dType = st.origDType = dcArray.key;
+        st.structType = StructType.Class;
+        structs ~= st;
+        st.fixupType;
+        typeObjectHash[st.name] = st;
+      }
+
+      st.defCode = dcArray.value;
+    }
+
+    structs.sort!((x, y) => x.name < y.name); // Sort structures by name
+
+    foreach (sub; kindSubs.byKeyValue) // Substitute type kinds
+    {
+      if (auto obj = typeObjectHash.get(sub.key, null))
+      {
+        if (auto node = cast(TypeNode)obj)
+          node.kind = sub.value;
+        else
+          warning("Type '" ~ repo.name ~ "." ~ sub.key ~ "' kind cannot be substituted");
+      }
+      else
+        warning("Type kind substitution '" ~ repo.name ~ "." ~ sub.key ~ "' not found");
+    }
+  }
+
+  // Fixup additional type dependencies (after fixupTypes() is called)
+  void fixupDeps()
+  {
+    foreach (cb; callbacks) // Fixup callbacks
+      cb.fixup;
+
+    foreach (st; structs) // Do a full fixup of structure dependencies now that all type bases have been fixed up
+      st.fixupDeps;
+  }
+
+  /// Ensure consistent state of repo data
+  void verify()
+  {
+    foreach (al; aliases) // Verify aliases
+    {
+      try
+        al.verify;
+      catch (Exception e)
+      {
+        al.disable = true;
+        warning("Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
+      }
+    }
+
+    foreach (con; constants) // Verify constants
+    {
+      try
+        con.verify;
+      catch (Exception e)
+      {
+        con.disable = true;
+        warning("Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
+      }
+    }
+
+    foreach (cb; callbacks) // Verify callbacks
+    {
+      try
+      {
+        if (cb.funcType != FuncType.Callback)
+          throw new Exception("Callback type '" ~ cb.funcType.to!string ~ "' not supported");
+
+        cb.verify;
+      }
+      catch (Exception e)
+      {
+        cb.disable = true;
+        warning("Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
+      }
+    }
+
+    foreach (st; structs) // Verify structures
+    {
+      try
+        st.verify;
+      catch (Exception e)
+      {
+        st.disable = true;
+        warning("Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
+      }
+    }
   }
 
   /**
@@ -260,7 +383,7 @@ final class Repo : Base
 
     foreach (st; structs)
       if (!st.disable && ((st.defCode && st.defCode.inClass) || st.kind.typeKindHasModule) && st !is globalStruct)
-        st.write(buildPath(sourcePath, st.subName.to!string ~ ".d"));
+        st.write(buildPath(sourcePath, st.dType.to!string ~ ".d"));
 
     writeDubJsonFile(buildPath(packagePath, "dub.json"));
   }
@@ -276,14 +399,19 @@ final class Repo : Base
   "name": "%s",
   "description": "%s library gi-d binding",
   "copyright": "Copyright © 2024, Kymorphia, PBC",
+	"authors": ["Element Green <element@kymorphia.com>"],
   "license": "MIT",
   "targetType": "library",
-  "sourcePaths": ["%s"],
-  "sourceFiles": ["../gid.d"]
+  "sourcePaths": ["%s", ".."],
+  "sourceFiles": ["../gid.d"]%s
 }
 `;
+    string deps;
+    if (!includes.empty)
+      deps = ",\n  \"dependencies\": {\n" ~ includes.map!(x => `    "gid:` ~ x.name.to!string.toLower ~ `": "*"`).join(",\n")
+        ~ "\n  }";
 
-    write(path, content.format(namespace.toLower.to!string, namespace.to!string, namespace.to!string));
+    write(path, content.format(namespace.toLower.to!string, namespace.to!string, namespace.to!string, deps));
   }
 
   /**
@@ -297,17 +425,22 @@ final class Repo : Base
 
     writer ~= ["module " ~ namespace ~ ".c.types;", ""];
 
+    writer ~= includes.map!(x => "import " ~ x.name ~ ".c.types;\n").array;
+
+    if (!includes.empty)
+      writer ~= "";
+
     foreach (a; aliases)
     {
       a.writeDocs(writer);
-      writer ~= ["alias " ~ a.cName ~ " = " ~ a.subCType ~ ";", ""];
+      writer ~= ["alias " ~ a.cName ~ " = " ~ a.cType ~ ";", ""];
     }
 
     foreach (e; enums)
     {
       e.writeDocs(writer);
 
-      writer ~= ["enum " ~ e.cName, "{"];
+      writer ~= ["enum " ~ e.cName ~ (e.bitfield ? " : uint"d : ""), "{"];
 
       Member[dstring] dupCheck; // Duplicate member check
 
@@ -343,23 +476,23 @@ final class Repo : Base
         if (st.kind == TypeKind.Simple)
           st.writeDocs(writer);
 
-        writer ~= ["struct " ~ st.subCType, "{"];
+        writer ~= ["struct " ~ st.cType, "{"];
 
         foreach (fi, f; st.fields)
         {
           f.writeDocs(writer);
 
-          if (f.isArray)
+          if (f.containerType == ContainerType.Array)
           {
             if (f.fixedSize == ArrayNotFixed)
             { // Use array cType if array is not a fixed size
-              if (!f.arrayCType.empty)
-                writer ~= f.arrayCType ~ " " ~ f.dName ~ ";";
+              if (!f.cType.empty)
+                writer ~= f.cType ~ " " ~ f.dName ~ ";";
               else
                 f.xmlNode.warn("Struct array field is not fixed size and array c:type not set");
             }
-            else if (!f.cType.empty)
-              writer ~= f.subCType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ f.dName ~ ";";
+            else if (!f.elemTypes.empty && !f.elemTypes[0].cType.empty)
+              writer ~= f.elemTypes[0].cType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ f.dName ~ ";";
             else
               f.xmlNode.warn("Struct array field is missing c:type attribute");
           }
@@ -368,7 +501,7 @@ final class Repo : Base
           else // A regular field
           {
             if (!f.cType.empty)
-              writer ~= f.subCType ~ " " ~ f.dName ~ ";";
+              writer ~= f.cType ~ " " ~ f.dName ~ ";";
             else
               f.xmlNode.warn("Struct field is missing c:type attribute");
           }
@@ -382,7 +515,7 @@ final class Repo : Base
       else // Opaque structure
       {
         st.writeDocs(writer);
-        writer ~= ["struct " ~ st.subCType ~ ";", ""];
+        writer ~= ["struct " ~ st.cType ~ ";", ""];
       }
     }
 
@@ -416,7 +549,9 @@ final class Repo : Base
 
     writer ~= ["module " ~ namespace ~ ".c.functions;", ""];
 
-    writer ~= ["import " ~ namespace ~ ".c.types;", ""];
+    writer ~= ["import " ~ namespace ~ ".c.types;"];
+    writer ~= includes.map!(x => "import " ~ x.name ~ ".c.types;\n").array;
+    writer ~= "";
 
     writeSharedLibs(writer);
 
@@ -424,7 +559,7 @@ final class Repo : Base
 
     foreach (st; structs)
     {
-      auto preamble = ["", "// " ~ namespace ~ "." ~ st.name];
+      auto preamble = ["", "// " ~ st.dType];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
@@ -449,7 +584,7 @@ final class Repo : Base
 
     foreach (st; structs)
     {
-      auto preamble = ["", "// " ~ namespace ~ "." ~ st.name];
+      auto preamble = ["", "// " ~ st.name];
 
       if (st && !st.glibGetType.empty)
       { // Write GType function if set
@@ -471,14 +606,14 @@ final class Repo : Base
 
     foreach (st; structs)
     {
-      auto preamble = ["", "// " ~ namespace ~ "." ~ st.name];
+      auto preamble = ["", "// " ~ st.name];
 
       if (writer.lines[$ - 1] == "{")
         preamble = preamble[1 .. $];
 
       if (st && !st.glibGetType.empty)
       { // Write GType function if set
-        writer ~= preamble ~ [st.glibGetType ~ " = link(\"" ~ st.glibGetType ~ "\");"];
+        writer ~= preamble ~ ["link(" ~ st.glibGetType ~ ", \"" ~ st.glibGetType ~ "\");"];
         preamble = null;
       }
 
@@ -487,7 +622,7 @@ final class Repo : Base
         if (f.movedTo || !f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
 
-        writer ~= preamble ~ [f.cName ~ " = link(\"" ~ f.cName ~ "\");"];
+        writer ~= preamble ~ ["link(" ~ f.cName ~ ", \"" ~ f.cName ~ "\");"];
         preamble = null;
       }
     }
@@ -620,7 +755,7 @@ final class Repo : Base
         preambleShown = true;
       }
 
-      writer ~= "alias " ~ st.name ~ " = " ~ st.subCType ~ ";";
+      writer ~= "alias " ~ st.name ~ " = " ~ st.cType ~ ";";
     }
 
     preambleShown = false;
@@ -676,13 +811,12 @@ final class Repo : Base
   dstring[] cIncludes; /// C header includes
   DocSection[] docSections; /// Documentation sections
 
-  Alias[dstring] aliasHash;
-  Enumeration[dstring] enumHash;
-  Structure[dstring] structHash;
-
   XmlPatch[] patches; /// XML patches specified in definitions file
   dstring[dstring] typeSubs; /// Type substitutions defined in the definitions file
+  TypeKind[dstring] kindSubs; /// Type kind substitutions defined in the definitions file
   DefCode[dstring] structDefCode; /// Code defined in definition file for structures
+
+  Base[dstring] typeObjectHash; /// Hash of type objects by name (Alias, Func (callback), Constant, Enumeration, or Structure)
 
   dstring xmlns;
   dstring xmlnsC;
@@ -723,22 +857,26 @@ final class DocSection : Base
 /// Dynamic linker code included directly in each package
 immutable string linkerCode =
   `
-import core.sys.posix.dlfcn : dlclose, dlerror, dlopen, dlsym, RTLD_GLOBAL, RTLD_NOW;
+import core.sys.posix.dlfcn : dlerror, dlopen, dlsym, RTLD_GLOBAL, RTLD_NOW;
 import std.string : fromStringz, toStringz;
 
-private void* link(string symbol)
+private void link(T)(T funcPtr, string symbol)
 {
   foreach (lib; LIBS)
   {
-    if (auto handle = dlopen(lib, RTLD_GLOBAL | RTLD_NOW))
+    if (auto handle = dlopen(cast(char*)toStringz(lib), RTLD_GLOBAL | RTLD_NOW))
     {
-      if (auto fptr = dlsym(handle, cast(char*)toStringz(symbol)))
-        return fptr;
+      if (auto symPtr = dlsym(handle, cast(char*)toStringz(symbol)))
+      {
+        funcPtr = cast(T)symPtr;
+        return;
+      }
     }
-    else throw new Error("Failed to load library '" ~ lib ~ "': " ~ dlerror().fromStringz.idup);
+    else
+      throw new Error("Failed to load library '" ~ lib ~ "': " ~ dlerror().fromStringz.idup);
   }
 
-  return symbolNotFound;
+  funcPtr = cast(T)&symbolNotFound;
 }
 
 private void symbolNotFound()

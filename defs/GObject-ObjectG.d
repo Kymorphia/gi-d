@@ -1,20 +1,19 @@
+//!generate funcs
 import core.memory;
-import gid.utils;
-import glib.c.functions;
-import glib.GLib;
-import glib.GObject;
+import GLib.global;
+import GLib.c.functions;
 
 private immutable Quark gidObjectQuark;
 
 shared static this()
 {
-  dObjQuark = GLib.quark_from_string("_gidObject");
+  gidObjectQuark = g_quark_from_string("_gidObject");
 }
 
 /// Base class wrapper for GObject types
-abstract class ObjectG
+class ObjectG
 {
-  private void* cptr; // Pointer to wrapped C GObject
+  protected ObjectC* objPtr; // Pointer to wrapped C GObject
 
   /**
     * Constructor to wrap a C GObject with a D proxy object.
@@ -22,42 +21,41 @@ abstract class ObjectG
     *   cptr = Pointer to the GObject
     *   owned = true if the D object should take ownership of the passed reference, false to add a new reference
     */
-  this(void* cptr, bool owned)
+  this(void* cObj, bool owned)
   {
-    if (!cptr)
+    if (!cObj)
       throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
 
-    this.cptr = cptr;
+    objPtr = cast(ObjectC*)cObj;
 
     // Add a data pointer to the D object from the C GObject
-    g_object_set_qdata (cptr, gidObjectQuark, cast(void*)this);
+    g_object_set_qdata(objPtr, gidObjectQuark, cast(void*)this);
 
     // Add a toggle reference to bind the GObject to this proxy D Object to prevent the GObject from being destroyed, while also preventing ref loops.
-    g_add_toggle_ref(cptr, _cObjToggleNotify, cast(void*)this);
+    g_object_add_toggle_ref(objPtr, &_cObjToggleNotify, cast(void*)this);
 
     // Add D object as a root to garbage collector so that it doesn't get collected as long as the GObject has a strong reference on it (toggle ref + 1 or more other refs).
     // There will always be at least 2 references at this point, one from the caller and one for the toggle ref.
-    GC.addRoot(this);
+    GC.addRoot(cast(void*)this);
 
     // If object has a floating reference (GInitiallyOwned), take ownership of it
-    if (g_object_is_floating(cptr))
-      g_object_ref_sink(cptr);
+    if (g_object_is_floating(objPtr))
+      g_object_ref_sink(objPtr);
 
     // If taking ownership of the object, remove the extra reference. May trigger toggle notify if it is the last remaining ref,
     // which will call GC.removeRoot() allowing the D object to be garbage collected if it is no longer being accessed, resulting in the destruction of the GObject in dtor.
     if (owned)
-      g_object_unref(cptr);
+      g_object_unref(objPtr);
   }
 
   ~this()
   { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
-    g_remove_toggle_ref(cptr); // Remove the toggle reference, which will likely lead to the destruction of the GObject
-    cptr = null;
+    g_object_remove_toggle_ref(objPtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
   }
 
   extern(C)
   { // Toggle ref callback
-    void _cObjToggleNotify(void *dObj, GObject* gObj, gboolean isLastRef)
+    static void _cObjToggleNotify(void *dObj, ObjectC* gObj, bool isLastRef)
     {
       if (isLastRef) // Is the toggle reference the only reference?
         GC.removeRoot(dObj);
@@ -66,15 +64,25 @@ abstract class ObjectG
     }
   }
 
-  GType getType();
+  /**
+   * Get a pointer to the underlying C object.
+   * Params:
+   *   T = The type of C object to get (must be a valid C type for the D object or one of it's ancestors)
+   * Returns: The C object (no reference is added)
+   */
+  T* cPtr(T)()
+    if (is(T : ObjectC))
+  {
+    return cast(T*)objPtr;
+  }
 
   /**
-    * Get the GObject wrapped by the D object.
-    * Returns: GObject (no reference is added for caller)
-    */
-  GObject* getGObject()
+   * Get the GType of an object.
+   * Returns: The GType
+   */
+  static GType getType()
   {
-    return cast(GObject*)cptr;
+    return g_object_get_type();
   }
 
   /**
@@ -82,13 +90,32 @@ abstract class ObjectG
     * Params:
     *   T = The D object type
     *   cptr = The C GObject
-    *   owned = If true then the D object will take ownership of the GObject reference.
+    *   owned = If true then the D object will take ownership of the GObject reference (false by default).
     * Returns: The D object (which may be a new object if the GObject wasn't already wrapped)
     */
-  static T getDObject(T)(void* cptr, bool owned)
+  static T getDObject(T)(void* cptr, bool owned = false)
   {
-    if (auto dObj = g_object_get_qdata(cptr, gidObjectQuark))
+    if (auto dObj = g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
       return cast(T)dObj;
     else
       return new T(cptr, owned);
   }
+}
+
+T containerGetItem(T, CT)(void* data)
+  if (is(T : ObjectG) || is(T == interface))
+{
+  return new T(cast(CT)data, ownership == GidOwnership.Full);
+}
+
+void* containerCopyItem(T, CT)(void* data)
+  if (is(T : ObjectG) || is(T == interface))
+{
+  return data ? g_object_ref(data) : null;
+}
+
+void containerFreeItem(T, CT)(void* data)
+  if (is(T : ObjectG) || is(T == interface))
+{
+  T.free(cast(CT)data);
+}

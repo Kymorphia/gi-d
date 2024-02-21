@@ -1,6 +1,8 @@
 module gir.param;
 
+import defs;
 import gir.func;
+import gir.structure;
 import gir.type_node;
 import std_includes;
 import utils;
@@ -59,10 +61,10 @@ final class Param : TypeNode
 
   override void fixup()
   {
-    super.fixup; // Fixup the type node state
+    if (origDType == "...") // Skip variable args elipsis
+      return;
 
-    if (isArray && direction != ParamDirection.Out && ownership != Ownership.None)
-      throw new Exception("array in/inout parameters with ownership not supported");
+    super.fixup; // Fixup the type node state
 
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
     {
@@ -71,15 +73,41 @@ final class Param : TypeNode
       if (typeFunc.hasInstanceParam) // Array length parameter indexes don't count instance parameters
         lengthParamIndex++;
 
+      if (lengthParamIndex < typeFunc.params.length)
+      {
+        auto lengthParam = typeFunc.params[lengthParamIndex];
+        lengthParam.arrayParamIndex = cast(int)typeFunc.params.countUntil!(x => x is this);
+        lengthParam.isArrayLength = true;
+      }
+    }
+  }
+
+  override void verify()
+  {
+    super.verify;
+
+    if (containerType == ContainerType.Array && direction != ParamDirection.Out && ownership != Ownership.None)
+      throw new Exception("Array in/inout parameters with ownership not supported");
+
+    if (containerType != ContainerType.None && ownership != Ownership.None)
+      throw new Exception("Container parameters with ownership not supported");
+
+    if (containerType == ContainerType.None && kind == TypeKind.Basic && direction == ParamDirection.In
+        && cType.countStars > 0 && dType != cType)
+      throw new Exception("Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
+        ~ cType.to!string ~ "'");
+
+    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+    {
+      auto typeFunc = getParentByType!Func;
+
       if (lengthParamIndex >= typeFunc.params.length)
-        throw new Exception("invalid array length parameter index");
+        throw new Exception("Invalid array length parameter index");
 
       auto lengthParam = typeFunc.params[lengthParamIndex];
-      lengthParam.arrayParamIndex = cast(int)typeFunc.params.countUntil!(x => x is this);
-      lengthParam.isArrayLength = true;
 
       if (lengthParam.direction != direction)
-        throw new Exception("array length parameter direction '" ~ to!string(lengthParam.direction)
+        throw new Exception("Array length parameter direction '" ~ to!string(lengthParam.direction)
           ~ "' does not match array direction '" ~ direction.to!string ~ "'");
     }
   }
@@ -89,7 +117,6 @@ final class Param : TypeNode
   bool isArrayLength; /// true if this parameter is an array length
   int arrayParamIndex; /// If isArrayLength is true, the parameter index of the array or ParamIndexReturnVal if the array is the return value
   ParamDirection direction; /// Parameter direction
-  Ownership ownership; /// Ownership of value (Gir "transfer-ownership")
   bool nullable; /// Nullable pointer
   bool optional; /// Optional pointer
   bool allowNone; /// Allow none (FIXME - how does this differ from nullable?)
@@ -113,17 +140,6 @@ enum ParamDirection
 }
 
 immutable dstring[] ParamDirectionValues = ["out", "inout"];
-
-/// Ownership transfer of a type
-enum Ownership
-{
-  Unset = -1, /// Ownership not specified
-  None, /// No transfer of ownership
-  Container, /// Transfer container ownership
-  Full, /// Transfer container and values
-}
-
-immutable dstring[] OwnershipValues = ["none", "container", "full"];
 
 /// Parameter scope
 enum ParamScope

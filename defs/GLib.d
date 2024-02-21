@@ -1,66 +1,212 @@
 //!repo GLib-2.0
 
-// Don't treat ByteArray as an actual array, treat it as an opaque type, as it should be.
-//!set *.array[GLib.ByteArray] '<type name="ByteArray" c:type="GByteArray*"/>'
+//# Not introspectable, but could be implemented manually
+//!set function[base64_encode_close][introspectable] 0
+//!set function[base64_encode_step][introspectable] 0
+//!set function[prefix_error_literal][introspectable] 0
+//!set function[strfreev][introspectable] 0
+//!set function[unichar_to_utf8][introspectable] 0
+//!set record[Variant].function[parse][introspectable] 0
 
-// Set ByteArray functions to be methods
-//!rename record[ByteArray].*function method
-
-// Change array parameter to be an instance-parameter
-//!rename record[ByteArray].*method.parameters.parameter[array] instance-parameter
-
-// Change new methods to constructors
-//!rename record[ByteArray].method[*new*] constructor
-
-// Several ByteArray methods are erroneously marked introspectable="0"
-//!set record[ByteArray].method[append][introspectable] 1
-//!set record[ByteArray].method[prepend][introspectable] 1
-//!set record[ByteArray].method[remove_index][introspectable] 1
-//!set record[ByteArray].method[remove_index_fast][introspectable] 1
-//!set record[ByteArray].method[remove_range][introspectable] 1
-//!set record[ByteArray].method[set_size][introspectable] 1
-//!set record[ByteArray].method[sort][introspectable] 1
-
-// Disable Data list type (not useful in bindings)
-//!set record[Data][disable] 1
-
-// Disable datalist functions
-//!set *function[datalist_*][disable] 1
-
-// Remove problematic type
-//!del union[DoubleIEEE754]
-
-// Error conflicts with the base D Error type, rename to ErrorG
+//# Error conflicts with the base D Error type, rename to ErrorG
 //!subtype Error ErrorG
 
-// Remove problematic type
+//# Override PollFD type kind to be a simple struct, not Boxed
+//!kind PollFD Simple
+
+//# Disable unuseful problematic structures
+//!set record[Data][disable] 1
+//!set record[TestLogBuffer][disable] 1
+//!set record[TestLogMsg][disable] 1
+//!set record[TrashStack][disable] 1
+
+//# Disable datalist functions
+//!set *function[datalist_*][disable] 1
+
+//# Remove problematic type
+//!del union[DoubleIEEE754]
+
+//# Remove problematic type
 //!del union[FloatIEEE754]
 
-// Change IConv from a record to a void* alias
+//# Change IConv from a record to a void* alias
 //!del record[IConv]
 //!add repository.namespace '<alias name="IConv" c:type="GIConv"><type name="void*" c:type="void*"/></alias>'
 
-// IOChannel should be opaque
+//# IOChannel should be opaque
 //!set record[IOChannel][opaque] 1
 
 //# FIXME - This contains a union which isn't currently supported
 //!set record[VariantDict][opaque] 1
 
-// These string arrays should have zero-terminated set
-//!set function[environ_setenv].return-value.array[][zero-terminated] 1
+//# These arrays should have zero-terminated set
+//!set function[build_filenamev].parameters.parameter[args].array[][zero-terminated] 1
+//!set function[build_pathv].parameters.parameter[args].array[][zero-terminated] 1
+//!set function[environ_getenv].parameters.parameter[envp].array[][zero-terminated] 1
 //!set function[environ_setenv].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[environ_setenv].return-value.array[][zero-terminated] 1
+//!set function[environ_unsetenv].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[environ_unsetenv].return-value.array[][zero-terminated] 1
+//!set function[get_environ].return-value.array[][zero-terminated] 1
+//!set function[get_filename_charsets].parameters.parameter[filename_charsets].array[][zero-terminated] 1
+//!set function[get_language_names].return-value.array[][zero-terminated] 1
+//!set function[get_language_names_with_category].return-value.array[][zero-terminated] 1
+//!set function[get_locale_variants].return-value.array[][zero-terminated] 1
+//!set function[get_system_config_dirs].return-value.array[][zero-terminated] 1
+//!set function[get_system_data_dirs].return-value.array[][zero-terminated] 1
+//!set function[listenv].return-value.array[][zero-terminated] 1
+//!set function[spawn_async].parameters.parameter[argv].array[][zero-terminated] 1
+//!set function[spawn_async].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[spawn_async_with_fds].parameters.parameter[argv].array[][zero-terminated] 1
+//!set function[spawn_async_with_fds].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[spawn_async_with_pipes_and_fds].parameters.parameter[argv].array[][zero-terminated] 1
+//!set function[spawn_async_with_pipes_and_fds].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[spawn_async_with_pipes].parameters.parameter[argv].array[][zero-terminated] 1
+//!set function[spawn_async_with_pipes].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[spawn_command_line_sync].parameters.parameter[standard_error].array[][zero-terminated] 1
+//!set function[spawn_command_line_sync].parameters.parameter[standard_output].array[][zero-terminated] 1
+//!set function[spawn_sync].parameters.parameter[argv].array[][zero-terminated] 1
+//!set function[spawn_sync].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[spawn_sync].parameters.parameter[standard_error].array[][zero-terminated] 1
+//!set function[spawn_sync].parameters.parameter[standard_output].array[][zero-terminated] 1
+//!set function[strsplit].return-value.array[][zero-terminated] 1
+//!set function[strsplit_set].return-value.array[][zero-terminated] 1
+//!set function[str_tokenize_and_fold].return-value.array[][zero-terminated] 1
+//!set function[str_tokenize_and_fold].parameters.parameter[ascii_alternates].array[][zero-terminated] 1
+//!set record[KeyFile].method[get_groups].return-value.array[][zero-terminated] 1
+//!set record[KeyFile].method[get_keys].return-value.array[][zero-terminated] 1
+//!set record[KeyFile].method[load_from_dirs].parameters.parameter[search_dirs].array[][zero-terminated] 1
+//!set record[MatchInfo].method[fetch_all].return-value.array[][zero-terminated] 1
+//!set record[OptionContext].method[add_main_entries].parameters.parameter[entries].array[][zero-terminated] 1
+//!set record[OptionContext].method[parse_strv].parameters.parameter[arguments].array[][zero-terminated] 1
+//!set record[OptionGroup].method[add_entries].parameters.parameter[entries].array[][zero-terminated] 1
+//!set record[StrvBuilder].method[addv].parameters.parameter[value].array[][zero-terminated] 1
+//!set record[StrvBuilder].method[end].return-value.array[][zero-terminated] 1
+//!set record[Uri].function[list_extract_uris].return-value.array[][zero-terminated] 1
+//!set record[Variant].method[get_bytestring].return-value.array[][zero-terminated] 1
+//!set record[Variant].constructor[new_bytestring].parameters.parameter[string].array[][zero-terminated] 1
 //!set record[Regex].method[split].return-value.array[][zero-terminated] 1
 //!set record[Regex].method[split_full].return-value.array[][zero-terminated] 1
 //!set record[Regex].function[split_simple].return-value.array[][zero-terminated] 1
 
-// Set Scanner free function
+//# Missing array argument length
+//!set record[IOChannel].method[write_chars].parameters.parameter[buf].array[][length] 1
+
+//# Set Scanner free function
 //!set record[Scanner][free-function] g_scanner_destroy
 
-// Change Variant to a class, set to glib:fundamental, and add ref and unref functions
+//# Change Variant to a class, set to glib:fundamental, and add ref and unref functions
 //!rename record[Variant] class
 //!set class[Variant][glib:fundamental] 1
 //!set class[Variant][glib:ref-func] g_variant_ref
 //!set class[Variant][glib:unref-func] g_variant_unref
 
-// VariantBuilder should be opaque
+//# VariantBuilder should be opaque
 //!set record[VariantBuilder][opaque] 1
+
+//# Some structures which should be opaque
+//!set record[Cond][opaque] 1
+//!set record[PathBuf][opaque] 1
+//!set record[Private][opaque] 1
+//!set record[RecMutex][opaque] 1
+//!set record[RWLock][opaque] 1
+//!set record[Source][opaque] 1
+//!set record[UriParamsIter][opaque] 1
+//!set record[VariantIter][opaque] 1
+//!set union[Mutex][opaque] 1
+
+//!set record[HookList].field[dummy][disable] 1
+//!set record[Scanner].field[qdata][disable] 1
+
+//# Add missing parameter direction "out"
+//!set record[IOChannel].method[read].parameters.parameter[bytes_read][direction] out
+//!set record[IOChannel].method[read_line_string].parameters.parameter[terminator_pos][direction] out
+//!set record[IOChannel].method[write].parameters.parameter[bytes_written][direction] out
+
+//# Replace Rand.set_seed_array seed parameter type to proper array type information
+//!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
+
+//# Fix string array parameters with lengths to be array of chars not array of strings
+//!set record[Regex].method[match_all_full].parameters.parameter[string].array.type[][name] char
+//!set record[Regex].method[match_full].parameters.parameter[string].array.type[][name] char
+//!set record[Regex].method[replace_literal].parameters.parameter[string].array.type[][name] char
+//!set record[Regex].method[replace].parameters.parameter[string].array.type[][name] char
+//!set record[Regex].method[split_full].parameters.parameter[string].array.type[][name] char
+
+//# Set proper direction of pointer parameters
+//!set function[atomic_int_add].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_and].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_compare_and_exchange_full].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_compare_and_exchange].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_dec_and_test].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_exchange_and_add].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_exchange].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_get].parameters.parameter[atomic][direction] out
+//!set function[atomic_int_inc].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_or].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_set].parameters.parameter[atomic][direction] inout
+//!set function[atomic_int_xor].parameters.parameter[atomic][direction] inout
+//!set function[atomic_ref_count_compare].parameters.parameter[arc][direction] inout
+//!set function[atomic_ref_count_dec].parameters.parameter[arc][direction] inout
+//!set function[atomic_ref_count_inc].parameters.parameter[arc][direction] inout
+//!set function[atomic_ref_count_init].parameters.parameter[arc][direction] inout
+//!set function[bit_lock].parameters.parameter[address][direction] inout
+//!set function[bit_trylock].parameters.parameter[address][direction] inout
+//!set function[bit_unlock].parameters.parameter[address][direction] inout
+//!set function[nullify_pointer].parameters.parameter[nullify_location][direction] out
+//!set function[ref_count_compare].parameters.parameter[rc][direction] inout
+//!set function[ref_count_dec].parameters.parameter[rc][direction] inout
+//!set function[ref_count_inc].parameters.parameter[rc][direction] inout
+//!set function[ref_count_init].parameters.parameter[rc][direction] inout
+//!set record[Timer].method[elapsed].parameters.parameter[microseconds][direction] out
+
+//# g_slice_get_config_state: missing return value array information
+//!set function[slice_get_config_state].return-value.type '<array length="2" zero-terminated="0" c:type="const gint64*"><type name="gint64" c:type="gint64"/></array>'
+
+//# g_unicode_canonical_decomposition: Missing return value array information
+//!set function[unicode_canonical_decomposition].return-value.type '<array length="1" zero-terminated="0" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
+
+//# g_assertion_message_cmpstrv: Missing parameter array information
+//!set function[assertion_message_cmpstrv].parameters.parameter[arg1].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
+//!set function[assertion_message_cmpstrv].parameters.parameter[arg2].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
+
+//# Missing parameter array information
+//!set function[strjoinv].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="gchar**"><type name="utf8" c:type="gchar*"/></array>'
+//!set function[strv_contains].parameters.parameter[strv].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
+//!set function[strv_equal].parameters.parameter[strv1].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
+//!set function[strv_equal].parameters.parameter[strv2].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
+//!set function[strv_length].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
+//!set function[ucs4_to_utf16].return-value.type '<array zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
+//!set function[utf16_to_ucs4].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
+//!set function[utf8_to_ucs4].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
+//!set function[utf8_to_ucs4_fast].return-value.type '<array length="2" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
+//!set function[utf8_to_ucs4_fast].parameters.parameter[str].type '<array length="1" zero-terminated="1" c:type="const gchar*"><type name="gchar" c:type="gchar"/></array>'
+//!set function[utf8_to_utf16].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
+
+T containerGetItem(T, CT)(void* data)
+  if (is(T : string) || is(T : void*))
+{
+  static if (is(T : string))
+    return fromCString(data, false);
+  else static if (is(T : void*))
+    return data;
+}
+
+void* containerCopyItem(T, CT)(void* data)
+  if (is(T : string) || is(T : void*))
+{
+  static if (is(T : string))
+    return g_strdup(cast(const(char)*)data);
+  else static if (is(T : void*))
+    return data;
+}
+
+void containerFreeItem(T, CT)(void* data)
+  if (is(T : string) || is(T : void*))
+{
+  static if (is(T : string))
+    g_free(data);
+  else static if (is(T : void*))
+  {
+  }
+}

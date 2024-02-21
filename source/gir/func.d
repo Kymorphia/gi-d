@@ -6,6 +6,7 @@ import code_writer;
 import gir.param;
 import gir.repo;
 import gir.type_node;
+import import_symbols;
 import utils;
 
 /**
@@ -76,56 +77,51 @@ final class Func : TypeNode
     when = cast(SignalWhen)SignalWhenValues.countUntil(node.get("when"));
   }
 
-  /**
-   * Get function prototype string for function.
-   * Returns: Function prototype string which intentially omits the function name for definition by the caller.
-   */
-  dstring getCPrototype()
-  {
-    dstring fnptr = (isArray ? subArrayCType : subCType) ~ " function(";
-
-    foreach (i, p; params)
-      fnptr ~= (i > 0 ? ", "d : "") ~ (p.isArray ? p.subArrayCType
-          : p.subCType) ~ " " ~ repo.defs.symbolName(p.name.camelCase);
-
-    return fnptr ~ ")";
-  }
-
   override void fixup()
   {
+    super.fixup;
+
     if (!introspectable || !movedTo.empty || funcType == FuncType.VirtualMethod || funcType == FuncType.FuncMacro)
       disable = true;
-
-    if (disable)
-      return;
-
-    void disableFunc(string msg)
-    {
-      disable = true;
-      stderr.writeln("Disabling '" ~ fullName.to!string ~ "': " ~ msg);
-    }
-
-    try
-      super.fixup; // Fixup the return type
-    catch (Exception e)
-    {
-      disableFunc(e.msg);
-      return;
-    }
-
-    FuncType[] allowedTypes = [FuncType.Function, FuncType.Constructor, FuncType.Signal, FuncType.Method];
-
-    if (!allowedTypes.canFind(funcType))
-    {
-      disableFunc("type '" ~ funcType.to!string ~ "' not supported where found");
-      return;
-    }
 
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
     {
       if (hasInstanceParam) // Array length parameter indexes don't count instance parameters
         lengthParamIndex++;
 
+      if (lengthParamIndex < params.length)
+      {
+        auto lengthParam = params[lengthParamIndex];
+        lengthParam.arrayParamIndex = ParamIndexReturnVal;
+        lengthParam.isArrayLength = true;
+      }
+    }
+
+    foreach (pi, pa; params) // Fixup parameters
+      pa.fixup;
+  }
+
+  override void verify()
+  {
+    if (disable)
+      return;
+
+    void disableFunc(string msg)
+    {
+      disable = true;
+      warning("Disabling function '" ~ fullName.to!string ~ "': " ~ msg);
+    }
+
+    try
+      super.verify; // Verify the return type
+    catch (Exception e)
+    {
+      disableFunc("Return type error: " ~ e.msg);
+      return;
+    }
+
+    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+    {
       if (lengthParamIndex >= params.length)
       {
         disableFunc("invalid return array length parameter index");
@@ -133,9 +129,6 @@ final class Func : TypeNode
       }
 
       auto lengthParam = params[lengthParamIndex];
-      lengthParam.arrayParamIndex = ParamIndexReturnVal;
-      lengthParam.isArrayLength = true;
-
       if (lengthParam.direction != ParamDirection.Out)
       {
         disableFunc("return array length parameter direction must be Out");
@@ -146,19 +139,35 @@ final class Func : TypeNode
     foreach (pi, pa; params)
     {
       if (pa.isInstanceParam && pi != 0)
-      {
         disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'");
-        return;
-      }
 
       try
-        pa.fixup; // Perform fixup on parameter
+        pa.verify; // Verify parameter
       catch (Exception e)
-      {
-        disableFunc(e.msg);
-        return;
-      }
+        disableFunc("Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg);
     }
+  }
+
+  override void addImports(ImportSymbols imports, Repo repo)
+  {
+    super.addImports(imports, repo);
+
+    foreach (param; params)
+      param.addImports(imports, repo);
+  }
+
+  /**
+   * Get function prototype string for function.
+   * Returns: Function prototype string which intentially omits the function name for definition by the caller.
+   */
+  dstring getCPrototype()
+  {
+    dstring fnptr = cType ~ " function(";
+
+    foreach (i, p; params)
+      fnptr ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
+
+    return fnptr ~ ")";
   }
 
   private dstring _name; /// Name of function
@@ -166,7 +175,6 @@ final class Func : TypeNode
   dstring cName; /// C type name (Gir c:identifier)
   Param[] params; /// Parameters
 
-  Ownership ownership; /// Ownership of return value (Gir "return-value:transfer-ownership")
   bool nullable; /// Nullable return value pointer
 
   dstring version_; /// Version

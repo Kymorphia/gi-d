@@ -2,6 +2,7 @@ module import_symbols;
 
 import code_writer;
 import std_includes;
+import utils;
 
 final class ImportSymbols
 {
@@ -21,7 +22,7 @@ final class ImportSymbols
   /**
    * Add an import symbol.
    * Params:
-   *   module = The import module name (default namespace is used if not present)
+   *   mod = The import module name (default namespace is used if not present)
    *   symbol = Optional symbol in the module to import
    */
   void add(dstring mod, dstring symbol = null)
@@ -35,7 +36,7 @@ final class ImportSymbols
   /**
    * Add import symbols to an import array.
    * Params:
-   *   module = The import module name 
+   *   mod = The import module name 
    *   symbols = Array of symbols to add (empty to indicate all symbols wildcard)
    */
   void add(dstring mod, dstring[] symbols)
@@ -122,6 +123,26 @@ final class ImportSymbols
   }
 
   /**
+   * Generate the import commands for the import symbol object.
+   */
+  dstring[] generate()
+  {
+    dstring[] importLines;
+
+    foreach (mod; modSyms.keys.array.sort)
+    {
+      auto syms = modSyms[mod];
+
+      if (syms.empty)
+        importLines ~= "import " ~ mod ~ ";";
+      else
+        importLines ~= "import " ~ mod ~ " : "d ~ syms.keys.join(", ") ~ ";";
+    }
+
+    return importLines;
+  }
+
+  /**
    * Write import statements to a code writer.
    * Params:
    *   writer = The code writer to write to
@@ -129,17 +150,9 @@ final class ImportSymbols
    */
   bool write(CodeWriter writer)
   {
-    foreach (mod; modSyms.keys.array.sort)
-    {
-      auto syms = modSyms[mod];
-
-      if (syms.empty)
-        writer ~= "import " ~ mod ~ ";";
-      else
-        writer ~= "import " ~ mod ~ " : "d ~ syms.keys.join(", ") ~ ";";
-    }
-
-    return modSyms.length > 0;
+    auto importLines = generate;
+    writer ~= importLines;
+    return !importLines.empty;
   }
 
   /// moduleName => (Symbol => true)

@@ -58,6 +58,34 @@ class CodeWriter
     return this ~= rhs.splitLines;
   }
 
+  /**
+   * Insert a single line into a code writer.
+   * Params:
+   *   pos = Position to insert at in the line buffer (< 0 or >= line buffer length to append)
+   *   ins = Line to insert
+   */
+  void insert(int pos, dstring ins)
+  {
+    insert(pos, [ins]);
+  }
+
+  /**
+   * Insert lines into a code writer.
+   * Params:
+   *   pos = Position to insert at in the line buffer (< 0 or >= line buffer length to append)
+   *   ins = Slice of lines to insert
+   */
+  void insert(int pos, dstring[] ins)
+  {
+    if (pos < 0 || pos > lines.length)
+      pos = cast(int)lines.length;
+
+    if (pos < lines.length)
+      lines = lines[0 .. pos] ~ ins ~ lines[pos .. $];
+    else
+      lines = lines[0 .. pos] ~ ins;
+  }
+
   void write()
   {
     if (!exists(fileName.dirName()))
@@ -73,9 +101,9 @@ class CodeWriter
       {
         if (line.startsWith("/*")) // Start of multi-line comment?
           inComment = true;
-        else if (line.endsWith('}') && indent >= 2) // End brace for a control block?
+        else if (line.startsWith('}') && indent >= 2) // End brace for a control block?
           indent -= 2;
-        else if (line.endsWith('{'))
+        else if (line.startsWith('{'))
           indentStatement = false; // Don't add single statement indent if indent statement is followed by an open brace
       }
 
@@ -97,7 +125,7 @@ class CodeWriter
         if (line.endsWith("*/")) // End of multi-line comment?
           inComment = false;
       }
-      else if (line.endsWith('{')) // Open brace for a control block increases indent
+      else if (line.startsWith('{')) // Open brace for a control block increases indent
         indent += 2;
       else if (["else", "for ", "foreach ", "if ", "static if ", "version(", "while "].filter!(x => line.startsWith(x))
           .empty != true)

@@ -1,6 +1,9 @@
 module gid;
 
-import std.string : fromStringz, toStringz;
+import core.exception : OutOfMemoryError;
+import core.stdc.stdlib : free, malloc;
+import core.stdc.string : strlen;
+import std.string : toStringz;
 public import std.typecons : BitFlags, Yes;
 
 /// Container ownership
@@ -20,15 +23,22 @@ enum GidOwnership
  */
 char* toCString(string dstr, bool transfer)
 {
+  if (dstr == null)
+    return null;
+
   if (transfer)
   {
-    char* cstr = g_malloc(dstr.length + 1);
+    char* cstr = cast(char*)malloc(dstr.length + 1);
+
+    if (!cstr)
+      throw new OutOfMemoryError();
+
     cstr[0 .. dstr.length] = dstr[];
     cstr[dstr.length] = '\0';
     return cstr;
   }
 
-  return s.toStringz;
+  return cast(char*)dstr.toStringz;
 }
 
 /**
@@ -36,13 +46,17 @@ char* toCString(string dstr, bool transfer)
  * Params:
  *   cstr = Zero terminated C string
  *   transfer = true to transfer the string (free it with g_free()), false to just copy it
+ * Returns: The D string copy
  */
-string fromCString(char* cstr, bool transfer)
+string fromCString(const(char)* cstr, bool transfer)
 {
-  string dstr = cstr.fromStringz;
+  if (!cstr)
+    return null;
+
+  string dstr = cstr[0 .. strlen(cstr)].dup;
 
   if (transfer)
-    g_free(cstr);
+    free(cast(void*)cstr);
 
   return dstr;
 }

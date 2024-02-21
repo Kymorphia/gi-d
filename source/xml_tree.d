@@ -421,7 +421,7 @@ class XmlNode
    */
   void warn(dstring msg)
   {
-    stderr.writeln(format("WARNING: %s (node '%s' in file '%s' at line %s)",
+    warning(format("%s (node '%s' in file '%s' at line %s)",
         msg, fullname, parseFile, parseLine));
   }
 

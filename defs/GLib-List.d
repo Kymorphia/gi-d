@@ -1,65 +1,91 @@
-import gid;
-import GLib.c.functions;
-import GLib.c.types;
+import GLib.Boxed;
+import GLib.global;
 
 /**
- * List range template. Creates an object which wraps a GList of C type (CT) items into a D type (T) items.
+ * List BidirectionalRange template. Creates an object which wraps a GList of C type (CT) items into a D type (T) items.
  */
 class List(T, CT)
 {
-  this(GList* list, GidOwnership ownership = None)
+  GList* cPtr; // Front of list
+  private GList* _backItem; // Back of list, will be null if not initialized or empty (cPtr also null)
+  GidOwnership ownership; // Ownership of the list elements and data
+
+  this(GList* list, GidOwnership ownership = GidOwnership.None)
   {
-    _list = _curItem = list;
-    _ownership = ownership;
+    cPtr = list;
+    this.ownership = ownership;
   }
 
   ~this()
   {
-    if (_ownership == GidOwnership.None)
+    if (ownership == GidOwnership.None)
       return;
 
-    if (_ownership == GidOwnership.Container)
-    {
-      g_list_free(_list);
-      return;
-    }
+    if (ownership == GidOwnership.Container)
+      g_list_free(cPtr);
 
-    while (_list)
-    {
-      auto p = _list;
-      _list = g_list_remove_link(_list, _list);
-      g_list_free_1(p);
-
-      static if (is(T : ObjectG) || is(T == interface) || is(T : Boxed))
-        T.free(cast(CT)_list.data);
-      else static if (is(T : string))
-        g_free(_list.data);
-      else
-        assert(0, "Unhandled List type " ~ T.stringof);
-    }
+    while (cPtr)
+      popFront;
   }
 
-  @property bool empty() const
+  bool empty() const
   {
-    return _curItem is null;
+    return cPtr is null;
   }
 
-  @property T front()
+  T front()
   {
-    static if (is(T : ObjectG) || is(T == interface) || is(T : Boxed))
-      return new T(cast(CT)_list.data, ownership == GidOwnership.Full);
-    else static if (is(T : string))
-      g_free(_list.data);
+    return containerGetItem(T, CT)(cPtr.data);
+  }
+
+  T back()
+  {
+    if (!_backItem && cPtr)
+      _backItem = g_list_last(cPtr);
+
+    return containerGetItem(T, CT)(_backItem.data);
   }
 
   void popFront()
   {
-    if (_curItem)
-      _curItem = _curItem.next;
+    if (cPtr)
+    {
+      auto p = cPtr;
+      cPtr = cPtr.next;
+
+      if (cPtr)
+        cPtr.prev = null;
+
+      containerFreeItem(C, T)(p.data);
+      g_list_free_1(p);
+    }
   }
 
-private:
-  GList* _list; // Root of list
-  GList* _curItem; // Current range item
-  GidOwnership _ownership; // Ownership of the list and item data
+  void popBack()
+  {
+    if (!_backItem && cPtr)
+      _backItem = g_list_last(cPtr);
+
+    if (_backItem)
+    {
+      auto p = _backItem;
+      _backItem = _backItem.prev;
+
+      if (_backItem)
+        _backItem.next = null;
+
+      containerFreeItem(T, CT)(p.data);
+      g_list_free_1(p);
+    }
+  }
+
+  List!(T, CT) save() const
+  {
+    GList* newList;
+
+    for (auto p = cPtr; p; p = p.next)
+      newList = g_list_prepend(newList, containerCopyItem(C, T)(p.data));
+
+    return new List!(T, CT)(g_list_reverse(newList), GidOwnership.Full);
+  }
 }

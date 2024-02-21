@@ -3,6 +3,9 @@ module defs;
 import std.utf : toUTF32;
 
 import import_symbols;
+import gir.alias_;
+import gir.constant;
+import gir.enumeration;
 import gir.func;
 import gir.param;
 import gir.repo;
@@ -59,13 +62,22 @@ class Defs
       Content, // Processing content until '}'
     }
 
+    // Definition code class state
+    enum ClassState
+    {
+      Pre, // Pre class
+      Start, // Start of class (expecting '{')
+      In, // In class
+      Post, // Post class
+    }
+
     auto fileData = readText(filename).to!dstring; // The definition file data converted to a unicode dstring
     dstring[] cmdTokens; // Parsed definition command tokens (space separated and quoted strings)
     uint lineCount; // Current line count
     BlockState block; // Multi-line block processing state
     Repo curRepo; // Current repo or null
     dstring curStructName; // Current structure name or null
-    bool inClass; // true if currently inside class (a raw code declaration or "class" command)
+    ClassState classState; // Current definition code class state
 
     string posInfo()
     {
@@ -73,7 +85,7 @@ class Defs
     }
 
     // Process raw code lines in definition files (not definition commands)
-    void processDefCode(dstring line)
+    void processDefCode(dstring line, dstring lineRaw)
     {
       auto defCode = curRepo.structDefCode[curStructName];
 
@@ -82,23 +94,35 @@ class Defs
         try
           defCode.imports.parseImport(line);
         catch(Exception e)
-          stderr.writeln(e.msg, " ", posInfo);
+          warning(e.msg, " ", posInfo);
 
         return;
       }
 
-      if (!inClass) // Not inside class?
+      if (classState == ClassState.Pre) // Not inside class?
       { // Is this a class declaration?
         if (line.startsWith("class") || line.startsWith("abstract class"))
         {
           defCode.classDecl = line;
-          inClass = true;
+          classState = ClassState.Start;
         }
         else
           defCode.preClass ~= line; // Append to pre class content
       }
+      else if (classState == ClassState.Start)
+      {
+        if (lineRaw == "{")
+          classState = ClassState.In;
+      }
+      else if (classState == ClassState.In)
+      {
+        if (lineRaw == "}")
+          classState = ClassState.Post;
+        else
+          defCode.inClass ~= line; // Append to inside class content
+      }
       else
-        defCode.inClass ~= line; // Append to inside class content
+        defCode.postClass ~= line; // Append to inside class content
     }
 
     auto classSplitName = filename.baseName.stripExtension.split('-');
@@ -113,12 +137,16 @@ class Defs
         curRepo = findRepo[0];
         curStructName = classSplitName[1].to!dstring;
 
-        if (curStructName !in curRepo.structDefCode) // If structure definition code wasn't already created, create it
+        if (curStructName !in curRepo.structDefCode) // If structure definition code wasn't already created, create it and disable generation of init/funcs by default
+        {
           curRepo.structDefCode[curStructName] = new DefCode();
+          curRepo.structDefCode[curStructName].genInit = false;
+          curRepo.structDefCode[curStructName].genFuncs = false;
+        }
       }
       else
       {
-        stderr.writeln("Ignoring class definition file '", filename, "' with no matching repository '",
+        warning("Ignoring class definition file '", filename, "' with no matching repository '",
           classSplitName[0], "'");
         return;
       }
@@ -140,7 +168,7 @@ class Defs
       if (!cmdLine)
       { // All lines which aren't definition commands get processed as potential code
         if (!curStructName.empty)
-          processDefCode(lineStrip);
+          processDefCode(lineStrip, line);
 
         continue;
       }
@@ -153,7 +181,7 @@ class Defs
           continue;
         }
 
-        stderr.writeln("'", cmdTokens[0], "' command requires ", cmdTokens.length, " arguments ", posInfo);
+        warning("'", cmdTokens[0], "' command requires ", cmdTokens.length, " arguments ", posInfo);
         block = BlockState.None; // Just ignore previous command and continue to process the line
       }
 
@@ -179,7 +207,7 @@ class Defs
       auto findCmdInfo = defCommandInfo.find!(x => x.name == cmd);
       if (findCmdInfo.empty)
       {
-        stderr.writeln("Unknown command '", cmd, "'");
+        warning("Unknown command '", cmd, "'");
         continue;
       }
 
@@ -194,20 +222,20 @@ class Defs
 
       if (cmdTokens.length != cmdInfo.argCount + 1)
       {
-        stderr.writeln("'", cmd, "' command requires ", cmdInfo.argCount, " ", cmdInfo.argCount == 1
+        warning("'", cmd, "' command requires ", cmdInfo.argCount, " ", cmdInfo.argCount == 1
           ? "argument " : "arguments ", posInfo);
         break;
       }
 
       if (cmdInfo.flags & DefCmdFlags.ReqRepo && !curRepo)
       {
-        stderr.writeln("'", cmd, "' command requires 'repo' to be specified");
+        warning("'", cmd, "' command requires 'repo' to be specified ", posInfo);
         continue;
       }
 
       if (cmdInfo.flags & DefCmdFlags.ReqClass && !curStructName)
       {
-        stderr.writeln("'", cmd, "' command requires 'struct' to be specified");
+        warning("'", cmd, "' command requires 'struct' to be specified ", posInfo);
         continue;
       }
 
@@ -236,7 +264,7 @@ class Defs
           }
           catch (XmlPatchError e)
           {
-            stderr.writeln("XML patch error: ", e.msg, " ", posInfo);
+            warning("XML patch error: ", e.msg, " ", posInfo);
             break;
           }
 
@@ -251,10 +279,41 @@ class Defs
           if (curStructName !in curRepo.structDefCode)
             curRepo.structDefCode[curStructName] = new DefCode();
           else
-            stderr.writeln("Duplicate class command found for '", curStructName, "' ", posInfo);
+            warning("Duplicate class command found for '", curStructName, "' ", posInfo);
+          break;
+        case "generate":
+          auto genItem = cmdTokens[1];
+
+          switch(genItem)
+          {
+            case "init":
+              curRepo.structDefCode[curStructName].genInit = true;
+              break;
+            case "funcs":
+              curRepo.structDefCode[curStructName].genFuncs = true;
+              break;
+            default:
+              warning("Unknown generate parameter '" ~ genItem ~ "' ", posInfo);
+              break;
+          }
+
           break;
         case "import":
           curRepo.structDefCode[curStructName].imports.add(cmdTokens[1]);
+          break;
+        case "kind":
+          TypeKind kind;
+
+          try
+            kind = cmdTokens[2].to!TypeKind;
+          catch (Exception e)
+          {
+            warning("Unknown type kind '" ~ cmdTokens[2].to!string ~ "' should be one of: " ~
+              [EnumMembers!TypeKind].map!(x => x.to!string).join(", "), " ", posInfo);
+            break;
+          }
+
+          curRepo.kindSubs[cmdTokens[1]] = kind;
           break;
         case "repo":
           curRepo = new Repo(this, cmdTokens[1].to!string);
@@ -271,7 +330,7 @@ class Defs
           if (cmdTokens[1] !in *subs)
             (*subs)[cmdTokens[1]] = cmdTokens[2];
           else
-            stderr.writeln("subtype '", cmdTokens[1], "' already exists ", posInfo);
+            warning("subtype '", cmdTokens[1], "' already exists ", posInfo);
           break;
         default:
           assert(0);
@@ -333,117 +392,22 @@ class Defs
       repo.fromXmlTree(tree); // Convert XML tree to Gir object tree
     }
 
-    fixupRepos();
+    fixupVerifyRepos();
   }
 
   /// Ensure consistent state of repo data and fixup additional data (array parameter indexes, etc)
-  private void fixupRepos()
+  private void fixupVerifyRepos()
   {
+    repoHash = repos.map!(x => tuple(x.namespace, x)).assocArray;
+
     foreach (repo; repos)
-    {
-      repoHash[repo.namespace] = repo;
+      repo.fixupTypes;
 
-      foreach (al; repo.aliases)
-      {
-        try
-          al.fixup;
-        catch (Exception e)
-        {
-          al.disable = true;
-          stderr.writeln("Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
-        }
-      }
+    foreach (repo; repos)
+      repo.fixupDeps;
 
-      foreach (con; repo.constants)
-      {
-        try
-          con.fixup;
-        catch (Exception e)
-        {
-          con.disable = true;
-          stderr.writeln("Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
-        }
-      }
-
-      foreach (st; repo.structs)
-      {
-        foreach (fn; st.functions)
-          fn.fixup;
-
-        if (st.kind == TypeKind.Wrap)
-        {
-          if (!st.freeFunction)
-            stderr.writeln("Wrapped structure " ~ st.fullName.to!string ~ " has no free-function");
-
-          foreach (f; st.fields)
-          {
-            try
-              f.fixup;
-            catch (Exception e)
-            {
-              f.disable = true;
-              stderr.writeln("Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
-              continue;
-            }
-
-            if (f.kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
-            {
-              f.disable = true;
-              stderr.writeln("Disabling field " ~ f.fullName.to!string ~ " with unhandled type '"
-                ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
-            }
-            else if (f.writable && f.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
-            {
-              f.writable = false;
-              stderr.writeln("Setting writable to false for field " ~ f.fullName.to!string ~ " with unhandled type '"
-                ~ f.subDType.to!string ~ "' (" ~ f.kind.to!string ~ ")");
-            }
-          }
-
-          foreach (prop; st.properties)
-          {
-            try
-              prop.fixup;
-            catch (Exception e)
-            {
-              prop.disable = true;
-              stderr.writeln("Disabling property '" ~ prop.fullName.to!string ~ "': " ~ e.msg);
-              continue;
-            }
-
-            if (prop.kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
-            {
-              prop.disable = true;
-              stderr.writeln("Disabling property " ~ prop.fullName.to!string ~ " with unhandled type '"
-                ~ prop.subDType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
-            }
-            else if (prop.writable && prop.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
-            {
-              prop.writable = false;
-              stderr.writeln("Setting writable to false for property " ~ prop.fullName.to!string
-                ~ " with unhandled type '" ~ prop.subDType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
-            }
-          }
-        }
-      }
-
-      foreach (dcArray; repo.structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
-      {
-        auto st = repo.structHash.get(dcArray.key, null);
-
-        if (!st) // Create new class structures if non-existant
-        {
-          st = new Structure(repo);
-          st.name = dcArray.key;
-          st.structType = StructType.Class;
-          repo.addStruct(st);
-        }
-
-        st.defCode = dcArray.value;
-      }
-
-      repo.structs.sort!((x, y) => x.name < y.name); // Sort structures by name
-    }
+    foreach (repo; repos)
+      repo.verify;
   }
 
   /**
@@ -467,80 +431,59 @@ class Defs
    */
   TypeKind typeKind(dstring type, Repo repo)
   {
-    if (type.among("char*"d, "const char*"d, "string"d, "utf8"d))
-      return TypeKind.String;
-
-    auto ndx = type.countUntil('.');
-
-    if (ndx != -1)
+    foreach (i; 0 .. 2) // Resolve up to 1 alias dereference
     {
-      if (auto pRepo = type in repoHash)
-        repo = *pRepo;
+      if (type.among("char*"d, "const char*"d, "string"d, "utf8"d))
+        return TypeKind.String;
 
-      type = type[ndx + 1 .. $];
+      if (auto obj = repo.typeObjectHash.get(type, null))
+      {
+        if (auto al = cast(Alias)obj)
+        {
+          type = al.dType;
+          continue;
+        }
+
+        if (cast(Func)obj)
+          return TypeKind.Callback;
+        else if (auto node = cast(TypeNode)obj)
+          return node.kind;
+        else if (cast(Constant)obj)
+          return TypeKind.Basic;
+        else if (auto en = cast(Enumeration)obj)
+          return en.bitfield ? TypeKind.Flags : TypeKind.Enum;
+        else
+          return TypeKind.Unknown;
+      }
+
+      return i > 0 ? TypeKind.BasicAlias : TypeKind.Basic;
     }
 
-    if (auto en = type in repo.enumHash)
-      return en.bitfield ? TypeKind.Flags : TypeKind.Enum;
-
-    if (auto st = type in repo.structHash)
-      return st.kind;
-
-    return TypeKind.Basic;
+    return TypeKind.Unknown; // Multiple alias dereferences
   }
 
   /**
-   * Find type node object by D type name which may include the namespace separated by a period.
+   * Find type object by D type name which may include the namespace separated by a period.
    * Params:
    *   typeName = Type name string
    *   namespace = Default namespace or null
-   * Returns: The matching type node or null if not found (possible basic type)
+   * Returns: The matching type object or null if not found (possible basic type), throws an exception if typeName has a namespace that wasn't resolved
    */
-  TypeNode findTypeNode(dstring typeName, dstring namespace)
+  Base findTypeObject(dstring typeName, Repo repo)
   {
     auto t = typeName.split('.');
     if (t.length > 1)
     {
-      namespace = t[0];
+      repo = repoHash.get(t[0], null);
+
+      if (!repo)
+        throw new Exception("Failed to resolve namespace '" ~ t[0].to!string ~ "' for type '"
+          ~ typeName.to!string ~ "'");
+
       typeName = t[1];
     }
 
-    if (auto repo = namespace in repoHash)
-    {
-      if (auto en = typeName in repo.enumHash)
-        return cast(TypeNode)en;
-
-      if (auto st = typeName in repo.structHash)
-        return cast(TypeNode)st;
-    }
-
-    return null;
-  }
-
-  /**
-   * Derive an array member C type from an array C type.
-   * Params:
-   *   arrayCType = The C type string of the array
-   * Returns: The member C type or null if unable to determine
-   */
-  dstring getArrayMemberCType(dstring arrayCType)
-  {
-    auto isConst = arrayCType.startsWith("const");
-
-    if (isConst) // Strip const and () parenthesis from const(TYPE*)* expressions
-      arrayCType = arrayCType[5 .. $].filter!(x => x != '(' && x != ')').array;
-
-    auto starCount = arrayCType.retro.countUntil!(x => x != '*');
-
-    if (starCount == -1)
-      return null;
-
-    arrayCType = arrayCType[0 .. $ - starCount]; // Strip the stars off
-
-    if (isConst && starCount > 1)
-      return "const(" ~ arrayCType ~ "*"d.replicate(starCount - 2) ~ ")*";
-
-    return arrayCType ~ "*"d.replicate(starCount - 1);
+    return repo.typeObjectHash.get(subTypeStr(typeName, repo.typeSubs), null);
   }
 
   /**
@@ -617,10 +560,12 @@ enum TypeKind
   Unknown, /// Unknown type
   Basic, /// A basic data type
   String, /// A string
+  BasicAlias, /// An alias to a basic type
   Enum, /// Enumeration type
   Flags, /// Bitfield flags type
   Simple, /// Simple Record or Union with basic fields (Basic, Enum, Flags) and no methods (alias to C type)
   Opaque, /// Opaque Record pointer type with no accessible fields or methods (alias to C type)
+  Callback, /// Callback function type
   Wrap, /// Record or Union with accessible fields and/or methods (wrap with a class)
   Boxed, /// A GLib boxed Record type
   Reffed, /// Referenced Class type with inheritence (not GObject derived)
@@ -648,7 +593,7 @@ bool typeKindHasModule(TypeKind kind)
  */
 bool typeKindIsGlobal(TypeKind kind)
 {
-  return kind >= TypeKind.Enum && kind <= TypeKind.Opaque;
+  return kind >= TypeKind.BasicAlias && kind <= TypeKind.Callback;
 }
 
 /// Manual code from a definitions file
@@ -659,10 +604,13 @@ class DefCode
     imports = new ImportSymbols();
   }
 
+  bool genInit = true; /// Generate class constructor/destructor init code
+  bool genFuncs = true; /// Generate functions and methods
   ImportSymbols imports; /// Imports
   dstring[] preClass; /// Pre class declaration code, line separated
   dstring classDecl; /// Class declaration
   dstring[] inClass; /// Code inside of the class, line separated
+  dstring[] postClass; /// Post class code
 }
 
 /// Definition command flags
@@ -680,17 +628,20 @@ struct DefCmd
   dstring name;
   int argCount;
   BitFlags!DefCmdFlags flags;
+  string help;
 }
 
 // Command information
 immutable DefCmd[] defCommandInfo = [
-  {"add", 2, DefCmdFlags.AllowBlock},
-  {"class", 1, DefCmdFlags.ReqRepo},
-  {"del", 1, DefCmdFlags.None},
-  {"import", 1, DefCmdFlags.ReqClass},
-  {"rename", 2, DefCmdFlags.None},
-  {"repo", 1, DefCmdFlags.None},
-  {"reserved", 1, DefCmdFlags.None},
-  {"set", 2, DefCmdFlags.AllowBlock},
-  {"subtype", 2, DefCmdFlags.None},
+  {"add", 2, DefCmdFlags.AllowBlock, "add <XmlSelect> <AttributeValue | Xml> - Add an XML attribute or node"},
+  {"class", 1, DefCmdFlags.ReqRepo, "class <Class> - Select the current structure/class"},
+  {"del", 1, DefCmdFlags.None, "del <XmlSelect> - Delete an XML attribute or node"},
+  {"generate", 1, DefCmdFlags.ReqClass, "generate <'Init' | 'Funcs'> - Force generation of Init or Function code"},
+  {"import", 1, DefCmdFlags.ReqClass, "import <Import> - Add a D import"},
+  {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},
+  {"rename", 2, DefCmdFlags.None, "rename <XmlSelect> <AttributeName | XmlNodeId> - Rename an XML attribute or node ID"},
+  {"repo", 1, DefCmdFlags.None, "repo <RepoName> - Specify the Gir repository name to load"},
+  {"reserved", 1, DefCmdFlags.None, "reserved <Word> - Identify a reserved word, an underscore will be appended to it"},
+  {"set", 2, DefCmdFlags.AllowBlock, "set <XmlSelect> <AttributeValue | Xml> - Set an XML attribute or node"},
+  {"subtype", 2, DefCmdFlags.None, "subtype <FromTypeName> <ToTypeName> - Substitute a type name"},
 ];

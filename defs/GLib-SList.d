@@ -1,65 +1,61 @@
-import gid;
-import GLib.c.functions;
-import GLib.c.types;
+import GLib.Boxed;
+import GLib.global;
 
 /**
- * List range template. Creates an object which wraps a GSList of C type (CT) items into a D type (T) items.
+ * SList ForwardRange template. Creates an object which wraps a GSList of C type (CT) items into a D type (T) items.
  */
-class List(T, CT)
+class SList(T, CT)
 {
-  this(GSList* list, GidOwnership ownership = None)
+  GSList* cPtr; // Front of list
+  GidOwnership ownership; // Ownership of the list elements and data
+
+  this(GList* list, GidOwnership ownership = GidOwnership.None)
   {
-    _list = _curItem = list;
-    _ownership = ownership;
+    cPtr = list;
+    self.ownership = ownership;
   }
 
   ~this()
   {
-    if (_ownership == GidOwnership.None)
+    if (ownership == GidOwnership.None)
       return;
 
-    if (_ownership == GidOwnership.Container)
-    {
-      g_list_free(_list);
-      return;
-    }
+    if (ownership == GidOwnership.Container)
+      g_slist_free(cPtr);
 
-    while (_list)
-    {
-      auto p = _list;
-      _list = g_list_remove_link(_list, _list);
-      g_list_free_1(p);
-
-      static if (is(T : ObjectG) || is(T == interface) || is(T : Boxed))
-        T.free(cast(CT)_list.data);
-      else static if (is(T : string))
-        g_free(_list.data);
-      else
-        assert(0, "Unhandled List type " ~ T.stringof);
-    }
+    while (cPtr)
+      popFront;
   }
 
-  @property bool empty() const
+  bool empty() const
   {
-    return _curItem is null;
+    return cPtr is null;
   }
 
-  @property T front()
+  T front()
   {
-    static if (is(T : ObjectG) || is(T == interface) || is(T : Boxed))
-      return new T(cast(CT)_list.data, ownership == GidOwnership.Full);
-    else static if (is(T : string))
-      g_free(_list.data);
+    return containerGetItem(cPtr);
   }
 
   void popFront()
   {
-    if (_curItem)
-      _curItem = _curItem.next;
+    if (cPtr)
+    {
+      auto p = cPtr;
+      cPtr = cPtr.next;
+
+      containerFreeItem(p);
+      g_slist_free_1(p);
+    }
   }
 
-private:
-  GSList* _list; // Root of list
-  GSList* _curItem; // Current range item
-  GidOwnership _ownership; // Ownership of the list and item data
+  List!(T, CT) save() const
+  {
+    GSList* newList;
+
+    for (auto p = cPtr; p; p = p.next)
+      newList = g_slist_prepend(newList, containerCopyItem(p.data));
+
+    return new SList!(T, CT)(g_slist_reverse(newList), GidOwnership.Full);
+  }
 }

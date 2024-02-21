@@ -2,8 +2,31 @@ module utils;
 
 import core.stdc.signal : raise;
 import core.sys.posix.signal : SIGTRAP;
+public import std.experimental.logger;
 
 public import std_includes;
+
+static this()
+{
+  sharedLog = new GidLogger(LogLevel.info);
+}
+
+/// Create our own logger to strip out some of the extra info
+class GidLogger : Logger
+{
+  this(LogLevel lv = LogLevel.all) @safe
+  {
+    super(lv);
+  }
+
+  override void writeLogMsg(ref LogEntry entry)
+  {
+    if (entry.logLevel == LogLevel.info)
+      writeln(entry.msg);
+    else
+      writeln(entry.logLevel.to!string.capitalize ~ ": " ~ entry.msg);
+  }
+}
 
 void breakpoint()
 {
@@ -94,6 +117,17 @@ unittest
   assert(" const  (char)  *  *".tokenizeType.equal(["const"d,"(","char",")","*", "*"]));
   assert("const char**".tokenizeType.equal(["const"d,"char","*","*"]));
   assert("const char".tokenizeType.equal(["const"d,"char"]));
+}
+
+/**
+ * Strip "const" and parenthesis from a type.
+ * Params:
+ *   type = The type string
+ * Returns: Type string with all "const" and parenthesis stripped out
+ */
+dstring stripConst(dstring type)
+{
+  return tokenizeType(type).filter!(x => !x.among("const"d, "("d, ")"d)).join;
 }
 
 /**
@@ -191,4 +225,16 @@ unittest
   assert(!matchWild("Hello Beautiful World", "*Hello"));
   assert(!matchWild("Hello Beautiful World", "Help*"));
   assert(!matchWild("Hello Beautiful World", "Hello*Full"));
+}
+
+/**
+ * Count the number of stars at the end of a type string.
+ * Params:
+ *   type = The type string
+ * Returns: Number of stars '*' on the end of the string
+ */
+int countStars(dstring type)
+{
+  auto count = type.retro.filter!(x => x != ')').countUntil!(x => x != '*');
+  return count > 0 ? cast(int)count : 0;
 }

@@ -1,8 +1,10 @@
 module gir.field;
 
+import defs;
 import gir.func;
 import gir.structure;
 import gir.type_node;
+import import_symbols;
 import utils;
 
 /// Field in a structure
@@ -45,6 +47,51 @@ final class Field : TypeNode
     writable = node.get("writable", "0") == "1";
     introspectable = node.get("introspectable", "1") == "1";
     private_ = node.get("private") == "1";
+  }
+
+  override void fixup()
+  {
+    super.fixup;
+
+    if (callback)
+    {
+      cType = origCType = null;
+      dType = origDType = null;
+      kind = TypeKind.Callback;
+      callback.fixup;
+    }
+  }
+
+  override void verify()
+  {
+    if (disable)
+      return;
+
+    if (callback)
+      throw new Exception("Callback fields not yet supported");
+
+    super.verify;
+
+    if (containerType != ContainerType.None)
+      throw new Exception("Container type '" ~ containerType.to!string ~ "' not supported");
+
+    if (kind.among(TypeKind.Unknown, TypeKind.Callback, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
+      throw new Exception("Unhandled type '" ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
+
+    if (writable && kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
+    {
+      writable = false;
+      warning("Setting writable to false for field " ~ fullName.to!string ~ " with unhandled type '"
+        ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
+    }
+  }
+
+  override void addImports(ImportSymbols imports, Repo repo)
+  {
+    if (callback)
+      callback.addImports(imports, repo);
+    else
+      super.addImports(imports, repo);
   }
 
   private dstring _name; /// Field name

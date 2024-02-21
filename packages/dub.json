@@ -1,0 +1,16 @@
+{
+	"name": "gid",
+	"description": "GObject introspection D binding repository",
+	"copyright": "Copyright © 2024, Kymorphia, PBC",
+	"authors": ["Element Green <element@kymorphia.com>"],
+	"license": "MIT",
+	"targetType": "none",
+	"dependencies": {
+		":glib": "*",
+		":gobject": "*"
+	},
+	"subPackages" : [
+		"./glib/",
+		"./gobject/"
+	]
+}

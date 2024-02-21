@@ -10,6 +10,7 @@ public import std.format : format;
 public import std.path : baseName, buildPath, dirName, stripExtension;
 public import std.range : drop, dropOne, empty, join, repeat, retro, tee;
 public import std.stdio : stderr, writeln;
-public import std.string : splitLines, toLower, toUpper, strip, stripLeft, stripRight;
+public import std.string : capitalize, splitLines, toLower, toUpper, strip, stripLeft, stripRight;
+public import std.traits : EnumMembers;
 public import std.typecons : BitFlags, tuple, Yes;
 public import std.uni : isWhite;

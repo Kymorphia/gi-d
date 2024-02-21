@@ -104,6 +104,9 @@
 //!reserved while
 //!reserved with
 
+//# This conflicts with Object.toString method
+//!reserved toString
+
 //# Global type substitutions
 //!subtype FILE void
 //!subtype filename string
@@ -137,7 +140,7 @@
 //!subtype "long double" real
 //!subtype none void
 //!subtype passwd void
-//!subtype time_t uint
+//!subtype time_t long
 //!subtype tm void
 //!subtype "unsigned int" uint
 //!subtype utf8 string

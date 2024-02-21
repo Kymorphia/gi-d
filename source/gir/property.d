@@ -48,7 +48,6 @@ final class Property : TypeNode
 
   private dstring _name; /// Name of property
   dstring defaultValue; /// Default value
-  Ownership ownership; /// Ownership transfer
   bool readable; /// Property is readable
   bool writable; /// Property is writable
   bool construct; /// Construct property?
