@@ -402,6 +402,7 @@ final class Repo : Base
 	"authors": ["Element Green <element@kymorphia.com>"],
   "license": "MIT",
   "targetType": "library",
+  "importPaths": [".", ".."],
   "sourcePaths": ["%s", ".."],
   "sourceFiles": ["../gid.d"]%s
 }
@@ -602,7 +603,7 @@ final class Repo : Base
       }
     }
 
-    writer ~= ["", "static this()", "{"];
+    writer ~= ["", "shared static this()", "{"];
 
     foreach (st; structs)
     {
@@ -860,7 +861,7 @@ immutable string linkerCode =
 import core.sys.posix.dlfcn : dlerror, dlopen, dlsym, RTLD_GLOBAL, RTLD_NOW;
 import std.string : fromStringz, toStringz;
 
-private void link(T)(T funcPtr, string symbol)
+private void link(T)(ref T funcPtr, string symbol)
 {
   foreach (lib; LIBS)
   {
