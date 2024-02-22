@@ -14,10 +14,17 @@
 //# Override PollFD type kind to be a simple struct, not Boxed
 //!kind PollFD Simple
 
+//# We use native associative arrays, disable HashTable bindings
+//!set record[HashTable][disable] 1
+//!set record[HashTableIter][disable] 1
+
 //# Disable unuseful problematic structures
 //!set record[Data][disable] 1
+//!set record[Hook][disable] 1
+//!set record[HookList][disable] 1
 //!set record[TestLogBuffer][disable] 1
 //!set record[TestLogMsg][disable] 1
+//!set record[ThreadPool][disable] 1
 //!set record[TrashStack][disable] 1
 
 //# Disable datalist functions
@@ -92,8 +99,23 @@
 //# Missing array argument length
 //!set record[IOChannel].method[write_chars].parameters.parameter[buf].array[][length] 1
 
-//# Set Scanner free function
+//# Add missing free functions
+//!set record[AsyncQueue][free-function] g_async_queue_unref
+//!set record[Hmac][free-function] g_hmac_unref
+//!set record[Hook][free-function] g_hook_free
+//!set record[List][free-function] g_list_free
+//!set record[OptionContext][free-function] g_option_context_free
+//!set record[Queue][free-function] g_queue_free
+//!set record[Rand][free-function] g_rand_free
 //!set record[Scanner][free-function] g_scanner_destroy
+//!set record[Sequence][free-function] g_sequence_free
+//!set record[SList][free-function] g_slist_free
+//!set record[StringChunk][free-function] g_string_chunk_free
+//!set record[StrvBuilder][free-function] g_strv_builder_unref
+//!set record[TestCase][free-function] g_test_case_free
+//!set record[TestSuite][free-function] g_test_suite_free
+//!set record[ThreadPool][free-function] g_thread_pool_free
+//!set record[VariantIter][free-function] g_variant_iter_free
 
 //# Change Variant to a class, set to glib:fundamental, and add ref and unref functions
 //!rename record[Variant] class
@@ -105,7 +127,6 @@
 //!set record[VariantBuilder][opaque] 1
 
 //# Some structures which should be opaque
-//!set record[Cond][opaque] 1
 //!set record[PathBuf][opaque] 1
 //!set record[Private][opaque] 1
 //!set record[RecMutex][opaque] 1
@@ -122,9 +143,6 @@
 //!set record[IOChannel].method[read].parameters.parameter[bytes_read][direction] out
 //!set record[IOChannel].method[read_line_string].parameters.parameter[terminator_pos][direction] out
 //!set record[IOChannel].method[write].parameters.parameter[bytes_written][direction] out
-
-//# Replace Rand.set_seed_array seed parameter type to proper array type information
-//!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
 
 //# Fix string array parameters with lengths to be array of chars not array of strings
 //!set record[Regex].method[match_all_full].parameters.parameter[string].array.type[][name] char
@@ -160,53 +178,45 @@
 //!set function[ref_count_init].parameters.parameter[rc][direction] inout
 //!set record[Timer].method[elapsed].parameters.parameter[microseconds][direction] out
 
-//# g_slice_get_config_state: missing return value array information
-//!set function[slice_get_config_state].return-value.type '<array length="2" zero-terminated="0" c:type="const gint64*"><type name="gint64" c:type="gint64"/></array>'
-
-//# g_unicode_canonical_decomposition: Missing return value array information
-//!set function[unicode_canonical_decomposition].return-value.type '<array length="1" zero-terminated="0" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
-
-//# g_assertion_message_cmpstrv: Missing parameter array information
+//# Fix or add missing array information
 //!set function[assertion_message_cmpstrv].parameters.parameter[arg1].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
 //!set function[assertion_message_cmpstrv].parameters.parameter[arg2].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
-
-//# Missing parameter array information
+//!set function[slice_get_config_state].return-value.type '<array length="2" zero-terminated="0" c:type="const gint64*"><type name="gint64" c:type="gint64"/></array>'
 //!set function[strjoinv].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="gchar**"><type name="utf8" c:type="gchar*"/></array>'
 //!set function[strv_contains].parameters.parameter[strv].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
 //!set function[strv_equal].parameters.parameter[strv1].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
 //!set function[strv_equal].parameters.parameter[strv2].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
 //!set function[strv_length].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
 //!set function[ucs4_to_utf16].return-value.type '<array zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
+//!set function[unicode_canonical_decomposition].return-value.type '<array length="1" zero-terminated="0" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf16_to_ucs4].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4_fast].return-value.type '<array length="2" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4_fast].parameters.parameter[str].type '<array length="1" zero-terminated="1" c:type="const gchar*"><type name="gchar" c:type="gchar"/></array>'
 //!set function[utf8_to_utf16].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
+//!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
 
-T containerGetItem(T, CT)(void* data)
-  if (is(T : string) || is(T : void*))
+/**
+ * Template to convert a GHashTable to a D associative array.
+ * Params:
+ *   K = The key D type
+ *   V = The value D type
+ *   owned = Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
+ * Returns: The D associative array which is a copy of the data in hash
+ */
+V[K] hashTableToMap(K, V, bool owned = false)(GHashTable* hash)
 {
-  static if (is(T : string))
-    return fromCString(data, false);
-  else static if (is(T : void*))
-    return data;
+  GHashTableIter iter;
+  void* key;
+  void* value;
+  V[K] map;
+
+  for (g_hash_table_iter_init(&iter, cPtr); g_hash_table_iter_next(&key, &key, &value); )
+    map[containerGetItem!K(key)] = containerGetItem!V(val);
+
+  static if (owned)
+    g_hash_table_unref(hash);
+
+  return map;
 }
 
-void* containerCopyItem(T, CT)(void* data)
-  if (is(T : string) || is(T : void*))
-{
-  static if (is(T : string))
-    return g_strdup(cast(const(char)*)data);
-  else static if (is(T : void*))
-    return data;
-}
-
-void containerFreeItem(T, CT)(void* data)
-  if (is(T : string) || is(T : void*))
-{
-  static if (is(T : string))
-    g_free(data);
-  else static if (is(T : void*))
-  {
-  }
-}

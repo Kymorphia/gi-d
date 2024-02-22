@@ -1,10 +1,8 @@
 module gir.base;
 
-import std.algorithm : map;
-import std.string : splitLines, strip;
-
 import code_writer;
 public import gir.repo;
+import std_includes;
 public import xml_tree;
 
 private static Base[XmlNode] xmlNodeBaseHash;
@@ -58,6 +56,22 @@ abstract class Base
   {
     this.xmlNode = node;
     this.disable = node.get("disable") == "1"; // Not an actual Gir attribute, but used in def files
+  }
+
+  /**
+   * Get an XML selector for this node. Of the form ID[NAME].ID[NAME].. such as class[Widget].method[show]. registry.namespace is not included.
+   * Returns: The XML selector or null if there is no XML node associated with the object.
+   */
+  dstring xmlSelector()
+  {
+    if (!_node)
+      return null;
+
+    dstring s;
+    for (auto n = _node; n && n.id != "namespace"; n = n.parent)
+      s = n.id ~ ("name" in n.attrs ? "[" ~ n["name"] ~ "]" : "") ~ (s.empty ? "" : "." ~ s);
+
+    return s;
   }
 
   void writeDocs(CodeWriter writer)

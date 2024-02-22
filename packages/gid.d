@@ -61,6 +61,54 @@ string fromCString(const(char)* cstr, bool transfer)
   return dstr;
 }
 
+/**
+ * Template to get a D item from a container C data item. Used internally for binding containers.
+ * Params:
+ *   T = The D item type
+ *   data = The container C data pointer
+ * Returns: The D item which is a copy of the C item
+ */
+T containerGetItem(T)(void* data)
+  if (is(T : string) || is(T : void*))
+{
+  static if (is(T : string))
+    return fromCString(data, false);
+  else static if (is(T : void*))
+    return data;
+}
+
+/**
+ * Template to copy a container C item to another C item. Used internally for binding containers.
+ * Params:
+ *   T = The D item type
+ *   data = The container C data pointer
+ * Returns: A copy of the C item
+ */
+void* containerCopyItem(T)(void* data)
+  if (is(T : string) || is(T : void*))
+{
+  static if (is(T : string))
+    return g_strdup(cast(const(char)*)data);
+  else static if (is(T : void*))
+    return data;
+}
+
+/**
+ * Free a container C item. Used internally for binding containers.
+ * Params:
+ *   T = The D item type
+ *   data = The container C data pointer
+ */
+void containerFreeItem(T)(void* data)
+  if (is(T : string) || is(T : void*))
+{
+  static if (is(T : string))
+    g_free(data);
+  else static if (is(T : void*))
+  {
+  }
+}
+
 /// Exception class used for ObjectG constructor errors
 class GidConstructException : Exception
 {

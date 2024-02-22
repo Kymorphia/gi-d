@@ -44,3 +44,6 @@
 
 //!set function[clear_signal_handler].parameters.parameter[handler_id_ptr][direction] inout
 //!set record[TypeClass].function[adjust_private_offset].parameters.parameter[private_size_or_offset][direction] inout
+
+//# Add missing free functions
+//!set record[TypeClass][free-function] g_type_class_unref

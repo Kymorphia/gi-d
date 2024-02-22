@@ -19,6 +19,7 @@ void main(string[] args)
     "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
     "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
     "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
+    "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
     "trap", "Add gdb breakpoint in an output file in the form 'filename:line' (file paths match from the end)", &traps,
   );
 

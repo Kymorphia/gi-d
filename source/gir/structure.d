@@ -158,7 +158,20 @@ final class Structure : TypeNode
     }
 
     if (kind == TypeKind.Wrap && !freeFunction)
+    {
       warning("Wrapped structure " ~ fullName.to!string ~ " has no free-function");
+
+      if (repo.suggestDefCmds)
+      {
+        auto unrefFunc = functions.find!(x => x.name == "unref");
+
+        if (unrefFunc.empty)
+          unrefFunc = functions.find!(x => x.name == "free");
+
+        if (!unrefFunc.empty)
+          writeln("//!set " ~ xmlSelector ~ "[free-function] " ~ unrefFunc[0].cName);
+      }
+    }
 
     foreach (f; fields) // Verify structure fields
     {
@@ -328,8 +341,11 @@ final class Structure : TypeNode
 
     foreach(f; fields)
     {
-      if (f.disable)
+      if (f.disable || f.private_)
         continue;
+
+      assert(f.containerType == ContainerType.None, "Unsupported structure field " ~ f.fullName.to!string
+        ~ " with container type " ~ f.containerType.to!string);
 
       f.addImports(imports, repo);
 

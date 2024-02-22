@@ -178,7 +178,7 @@ class TypeNode : Base
       if (elemTypes[0].cType.empty) // Missing array element C type?
         throw new Exception("Could not determine member type for array type '" ~ cType.to!string ~ "'");
 
-      if (cType.empty) // No array C type?
+      if (cType.empty && fixedSize == 0) // No array C type and not fixed size?
         warning("No array c:type for array of D type '" ~ dType.to!string ~ "' in '"
           ~ fullName.to!string ~ "'");
 

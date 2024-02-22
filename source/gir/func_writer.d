@@ -97,6 +97,16 @@ class FuncWriter
       postCall ~= "ByteArray _retval = _cretval ? new ByteArray(_cretval) : null;\n";
       return;
     }
+    else if (func.containerType == ContainerType.HashTable)
+    {
+      auto mapType = func.elemTypes[1].dType ~ "[" ~ func.elemTypes[0].dType ~ "]";
+      decl ~= mapType ~ " ";
+      preCall ~= "GHashTable* _cretval;\n";
+      call ~= "_cretval = ";
+      postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
+        ~ func.elemTypes[1].dType ~ ", " ~ (func.ownership == Ownership.Full).to!dstring ~ ")(_cretval) : null;\n";
+      return;
+    }
     else if (func.containerType != ContainerType.None)
     {
       processReturnContainer();
@@ -234,7 +244,7 @@ class FuncWriter
     postCall ~= "}\n";
   }
 
-  /// Process a return container (not Array or ByteArray)
+  /// Process a return container (not Array, ByteArray, or HashTable)
   private void processReturnContainer()
   {
     auto dContainer = func.dType ~ "!(";
@@ -301,6 +311,19 @@ class FuncWriter
     {
       processArrayParam(param);
       return;
+    }
+    else if (param.containerType == ContainerType.HashTable)
+    {
+      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param.fullName.to!string
+        ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
+
+      auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
+      addDeclParam(mapType ~ " " ~ param.dName);
+
+      preCall ~= "GHashTable* _cretval;\n";
+      call ~= "_cretval = ";
+      postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
+        ~ func.elemTypes[1].dType ~ ", " ~ (func.ownership == Ownership.Full).to!dstring ~ ")(_cretval) : null;\n";
     }
     else if (param.containerType != ContainerType.None)
     {

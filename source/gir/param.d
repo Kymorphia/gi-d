@@ -86,11 +86,13 @@ final class Param : TypeNode
   {
     super.verify;
 
-    if (containerType == ContainerType.Array && direction != ParamDirection.Out && ownership != Ownership.None)
-      throw new Exception("Array in/inout parameters with ownership not supported");
-
-    if (containerType != ContainerType.None && ownership != Ownership.None)
-      throw new Exception("Container parameters with ownership not supported");
+    if (containerType == ContainerType.HashTable)
+    {
+      if (direction != ParamDirection.Out)
+        throw new Exception("HashTable " ~ direction.to!string ~ " parameters not supported");
+    }
+    else if (containerType != ContainerType.None && ownership != Ownership.None)
+      throw new Exception("Container " ~ containerType.to!string ~ " parameter with ownership not supported");
 
     if (containerType == ContainerType.None && kind == TypeKind.Basic && direction == ParamDirection.In
         && cType.countStars > 0 && dType != cType)

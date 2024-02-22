@@ -823,11 +823,12 @@ final class Repo : Base
   dstring xmlnsC;
   dstring xmlnsGlib;
 
-  static bool dumpCTypes; /// Set to true to dump C types
   bool[dstring] cTypeHash; /// Hash of local C types
-
-  static bool dumpDTypes; /// Set to true to dump D types
   bool[dstring] dTypeHash; /// Hash of local D types
+
+  static bool dumpCTypes; /// Set to true to dump C types
+  static bool dumpDTypes; /// Set to true to dump D types
+  static bool suggestDefCmds; /// Output definition command suggestions
 }
 
 /// Package include
