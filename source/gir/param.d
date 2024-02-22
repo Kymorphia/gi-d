@@ -96,8 +96,9 @@ final class Param : TypeNode
 
     if (containerType == ContainerType.None && kind == TypeKind.Basic && direction == ParamDirection.In
         && cType.countStars > 0 && dType != cType)
-      throw new Exception("Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
-        ~ cType.to!string ~ "'");
+      throw new Exception(
+          "Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
+          ~ cType.to!string ~ "'");
 
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
     {
@@ -109,8 +110,9 @@ final class Param : TypeNode
       auto lengthParam = typeFunc.params[lengthParamIndex];
 
       if (lengthParam.direction != direction)
-        throw new Exception("Array length parameter direction '" ~ to!string(lengthParam.direction)
-          ~ "' does not match array direction '" ~ direction.to!string ~ "'");
+        throw new Exception("Array length parameter direction '" ~ to!string(
+            lengthParam.direction)
+            ~ "' does not match array direction '" ~ direction.to!string ~ "'");
     }
   }
 

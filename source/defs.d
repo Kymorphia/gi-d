@@ -93,7 +93,7 @@ class Defs
       {
         try
           defCode.imports.parseImport(line);
-        catch(Exception e)
+        catch (Exception e)
           warning(e.msg, " ", posInfo);
 
         return;
@@ -147,7 +147,7 @@ class Defs
       else
       {
         warning("Ignoring class definition file '", filename, "' with no matching repository '",
-          classSplitName[0], "'");
+            classSplitName[0], "'");
         return;
       }
     }
@@ -223,7 +223,7 @@ class Defs
       if (cmdTokens.length != cmdInfo.argCount + 1)
       {
         warning("'", cmd, "' command requires ", cmdInfo.argCount, " ", cmdInfo.argCount == 1
-          ? "argument " : "arguments ", posInfo);
+            ? "argument " : "arguments ", posInfo);
         break;
       }
 
@@ -284,7 +284,7 @@ class Defs
         case "generate":
           auto genItem = cmdTokens[1];
 
-          switch(genItem)
+          switch (genItem)
           {
             case "init":
               curRepo.structDefCode[curStructName].genInit = true;
@@ -327,7 +327,7 @@ class Defs
         case "subtype":
           typeof(typeSubs)* subs = curRepo ? &curRepo.typeSubs : &typeSubs;
 
-          if (cmdTokens[1] !in *subs)
+          if (cmdTokens[1]!in *subs)
             (*subs)[cmdTokens[1]] = cmdTokens[2];
           else
             warning("subtype '", cmdTokens[1], "' already exists ", posInfo);
@@ -359,8 +359,9 @@ class Defs
       }
 
       if (filePath.empty)
-        throw new Exception("Repository Gir file '" ~ repo.filename ~ "' not found (search paths = "
-          ~ girPaths.join(":") ~ ")");
+        throw new Exception(
+            "Repository Gir file '" ~ repo.filename ~ "' not found (search paths = "
+            ~ girPaths.join(":") ~ ")");
 
       repo.filename = filePath;
       auto tree = new XmlTree();
@@ -383,7 +384,8 @@ class Defs
         try
           patch.apply(tree, namespaceNode);
         catch (XmlPatchError e)
-        {}
+        {
+        }
       }
 
       foreach (patch; repo.patches) // Apply XML patches from defs file
@@ -542,8 +544,8 @@ class Defs
       return "const(" ~ sub(tok[0 .. $ - 1].filter!(x => !x.among("const"d, "("d, ")"d)).join("")) ~ ")*";
 
     return sub(tok.filter!(x => x != "const")
-      .map!(x => x == "*" ? x : " " ~ x)
-      .join("").strip);
+        .map!(x => x == "*" ? x : " " ~ x)
+        .join("").strip);
   }
 
   bool[dstring] reservedWords; /// Reserved words (_ appended)
@@ -633,15 +635,25 @@ struct DefCmd
 
 // Command information
 immutable DefCmd[] defCommandInfo = [
-  {"add", 2, DefCmdFlags.AllowBlock, "add <XmlSelect> <AttributeValue | Xml> - Add an XML attribute or node"},
+  {
+    "add", 2, DefCmdFlags.AllowBlock, "add <XmlSelect> <AttributeValue | Xml> - Add an XML attribute or node"
+  },
   {"class", 1, DefCmdFlags.ReqRepo, "class <Class> - Select the current structure/class"},
   {"del", 1, DefCmdFlags.None, "del <XmlSelect> - Delete an XML attribute or node"},
-  {"generate", 1, DefCmdFlags.ReqClass, "generate <'Init' | 'Funcs'> - Force generation of Init or Function code"},
+  {
+    "generate", 1, DefCmdFlags.ReqClass, "generate <'Init' | 'Funcs'> - Force generation of Init or Function code"
+  },
   {"import", 1, DefCmdFlags.ReqClass, "import <Import> - Add a D import"},
   {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},
-  {"rename", 2, DefCmdFlags.None, "rename <XmlSelect> <AttributeName | XmlNodeId> - Rename an XML attribute or node ID"},
+  {
+    "rename", 2, DefCmdFlags.None, "rename <XmlSelect> <AttributeName | XmlNodeId> - Rename an XML attribute or node ID"
+  },
   {"repo", 1, DefCmdFlags.None, "repo <RepoName> - Specify the Gir repository name to load"},
-  {"reserved", 1, DefCmdFlags.None, "reserved <Word> - Identify a reserved word, an underscore will be appended to it"},
-  {"set", 2, DefCmdFlags.AllowBlock, "set <XmlSelect> <AttributeValue | Xml> - Set an XML attribute or node"},
+  {
+    "reserved", 1, DefCmdFlags.None, "reserved <Word> - Identify a reserved word, an underscore will be appended to it"
+  },
+  {
+    "set", 2, DefCmdFlags.AllowBlock, "set <XmlSelect> <AttributeValue | Xml> - Set an XML attribute or node"
+  },
   {"subtype", 2, DefCmdFlags.None, "subtype <FromTypeName> <ToTypeName> - Substitute a type name"},
 ];

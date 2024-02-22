@@ -409,7 +409,8 @@ final class Repo : Base
 `;
     string deps;
     if (!includes.empty)
-      deps = ",\n  \"dependencies\": {\n" ~ includes.map!(x => `    "gid:` ~ x.name.to!string.toLower ~ `": "*"`).join(",\n")
+      deps = ",\n  \"dependencies\": {\n" ~ includes.map!(x => `    "gid:` ~ x.name.to!string.toLower ~ `": "*"`)
+        .join(",\n")
         ~ "\n  }";
 
     write(path, content.format(namespace.toLower.to!string, namespace.to!string, namespace.to!string, deps));

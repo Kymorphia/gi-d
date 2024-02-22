@@ -15,12 +15,12 @@ void main(string[] args)
   arraySep = ","; // Allow comma separated values for array parameters (traps)
 
   auto helpInformation = getopt(
-    args,
-    "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
-    "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
-    "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
-    "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
-    "trap", "Add gdb breakpoint in an output file in the form 'filename:line' (file paths match from the end)", &traps,
+      args,
+      "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
+      "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
+      "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
+      "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
+      "trap", "Add gdb breakpoint in an output file in the form 'filename:line' (file paths match from the end)", &traps,
   );
 
   if (helpInformation.helpWanted)
@@ -37,8 +37,8 @@ void main(string[] args)
 
   auto defs = new Defs();
   defs.loadDefFiles();
-	defs.loadRepos();
-	defs.writePackages();
+  defs.loadRepos();
+  defs.writePackages();
 
   defs.repos.sort!((a, b) => a.namespace < b.namespace);
 

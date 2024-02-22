@@ -305,7 +305,8 @@ class XmlPatch
     // Returns true to continue recursion, false if item was found and not wildcard
     void recurseTree(XmlNode node, XmlSelector[] selArray, bool wildNode = false)
     {
-      selectorLoop: while (true)
+    selectorLoop:
+      while (true)
       {
         auto sel = selArray[0];
 

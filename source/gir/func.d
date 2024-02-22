@@ -207,8 +207,10 @@ enum FuncType
   FuncMacro,
 }
 
-immutable dstring[] FuncTypeValues = ["function", "callback", "constructor", "glib:signal", "method",
-  "virtual-method", "function-macro"];
+immutable dstring[] FuncTypeValues = [
+  "function", "callback", "constructor", "glib:signal", "method",
+  "virtual-method", "function-macro"
+];
 
 enum SignalWhen
 {

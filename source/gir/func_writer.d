@@ -116,7 +116,7 @@ class FuncWriter
     auto kind = func.kind;
     auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
 
-    final switch(kind) with(TypeKind)
+    final switch (kind) with (TypeKind)
     {
       case Basic, BasicAlias:
         decl ~= func.dType ~ " ";
@@ -164,14 +164,15 @@ class FuncWriter
         {
           postCall ~= func.dType ~ " _retval = "d ~ (kind == Object ? "ObjectG.getDObject!"d : "new ")
             ~ func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval, "
-            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ (func.ownership == Ownership.Full)
+              .to!dstring ~ ");\n";
         }
         else // Constructor method
           postCall ~= "this(_cretval, " ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
         break;
       case Unknown, Interface, Namespace:
         assert(0, "Unsupported return value type '" ~ func.dType.to!string ~ "' (" ~ kind.to!string ~ ") for "
-          ~ func.fullName.to!string);
+            ~ func.fullName.to!string);
     }
   }
 
@@ -206,14 +207,14 @@ class FuncWriter
     else
       assert(0, "Function '" ~ func.fullName.to!string ~ "' return array has indeterminate length"); // This should be prevented by defs.fixupRepos()
 
-    if (elemType.kind.among (TypeKind.Basic, TypeKind.BasicAlias, TypeKind.Enum))
-      postCall ~= "_retval = cast(" ~ elemType.dType  ~ "[])_cretval[0 .. " ~ lengthStr ~ "];\n";
+    if (elemType.kind.among(TypeKind.Basic, TypeKind.BasicAlias, TypeKind.Enum))
+      postCall ~= "_retval = cast(" ~ elemType.dType ~ "[])_cretval[0 .. " ~ lengthStr ~ "];\n";
     else
     {
-      postCall ~= "_retval = new "~ elemType.dType ~ "[" ~ lengthStr ~ "];\nforeach (i; 0 .. "
+      postCall ~= "_retval = new " ~ elemType.dType ~ "[" ~ lengthStr ~ "];\nforeach (i; 0 .. "
         ~ lengthStr ~ ")\n";
 
-      final switch (elemType.kind) with(TypeKind)
+      final switch (elemType.kind) with (TypeKind)
       {
         case String:
           postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
@@ -229,15 +230,18 @@ class FuncWriter
           break;
         case Wrap, Boxed, Reffed:
           postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(_cretval[i], "
-            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ (
+                func.ownership == Ownership.Full).to!dstring ~ ");\n";
           break;
         case Object:
           postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], "
-            ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ (
+                func.ownership == Ownership.Full).to!dstring ~ ");\n";
           break;
         case Basic, BasicAlias, Callback, Enum, Unknown, Interface, Namespace:
-          assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
-            ~ ") for " ~ func.fullName.to!string);
+          assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
+              .kind.to!string
+              ~ ") for " ~ func.fullName.to!string);
       }
     }
 
@@ -297,8 +301,9 @@ class FuncWriter
       }
       else if (param.direction == ParamDirection.InOut)
       {
-        preCall ~= param.dType ~ " _" ~ param.dName ~ (" = " ~ arrayParam.dName ~ " ? " ~ arrayParam.dName
-          ~ ".length : 0;\n");
+        preCall ~= param.dType ~ " _" ~ param.dName ~ (
+            " = " ~ arrayParam.dName ~ " ? " ~ arrayParam.dName
+            ~ ".length : 0;\n");
         addCallParam("&_" ~ param.dName);
       }
       else // Input
@@ -314,8 +319,9 @@ class FuncWriter
     }
     else if (param.containerType == ContainerType.HashTable)
     {
-      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param.fullName.to!string
-        ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
+      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param
+          .fullName.to!string
+          ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
 
       auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
       addDeclParam(mapType ~ " " ~ param.dName);
@@ -328,7 +334,7 @@ class FuncWriter
     else if (param.containerType != ContainerType.None)
     {
       assert(param.ownership != Ownership.None, "Function container parameter '" ~ param.fullName.to!string
-        ~ "' ownership not supported '" ~ param.ownership.to!string ~ "'");
+          ~ "' ownership not supported '" ~ param.ownership.to!string ~ "'");
       addDeclParam(param.dType ~ " " ~ param.dName);
       addCallParam(param.dName ~ ".cPtr");
       return;
@@ -336,7 +342,7 @@ class FuncWriter
 
     auto isInput = param.direction == ParamDirection.In;
 
-    final switch(param.kind) with(TypeKind)
+    final switch (param.kind) with (TypeKind)
     {
       case Basic, BasicAlias:
         addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.dType
@@ -351,7 +357,7 @@ class FuncWriter
         addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.dType
           ~ " " ~ param.dName);
         preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ (param.direction != ParamDirection.Out ? "cast("
-          ~ param.cType ~ ")" ~ param.dName : "") ~ ";\n";
+            ~ param.cType ~ ")" ~ param.dName : "") ~ ";\n";
         addCallParam((!isInput ? "&_"d : "_") ~ param.dName);
 
         if (!isInput)
@@ -385,7 +391,8 @@ class FuncWriter
         if (param.direction == ParamDirection.In)
         {
           preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ param.dName ~ ".toCString("
-            ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ (
+                param.ownership == Ownership.Full).to!dstring ~ ");\n";
           addCallParam("_" ~ param.dName);
         }
         else if (param.direction == ParamDirection.Out)
@@ -393,7 +400,8 @@ class FuncWriter
           preCall ~= "char* _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = _" ~ param.dName ~ ".fromCString("
-            ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ (param.ownership == Ownership.Full)
+              .to!dstring ~ ");\n";
         }
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
@@ -430,14 +438,15 @@ class FuncWriter
             postCall ~= param.dName ~ " = " ~ "new " ~ param.dType ~ "(&_"d ~ param.dName ~ ");\n";
           else
             postCall ~= param.dName ~ " = " ~ "new " ~ param.dType ~ "(_" ~ param.dName ~ ", "
-              ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+              ~ (
+                  param.ownership == Ownership.Full).to!dstring ~ ");\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
         break;
       case Unknown, Interface, Namespace:
         assert(0, "Unsupported parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
-          ~ func.fullName.to!string);
+            ~ func.fullName.to!string);
     }
   }
 
@@ -464,13 +473,13 @@ class FuncWriter
     if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
     {
       assert(param.ownership == Ownership.None, "Function array parameter " ~ param.fullName.to!string
-        ~ " ownership not supported"); // FIXME - Support for ownership Full/Container
+          ~ " ownership not supported"); // FIXME - Support for ownership Full/Container
 
       if (param.fixedSize != ArrayNotFixed) // Add an array size assertion if fixed size does not match
         preCall ~= "assert(!" ~ param.dName ~ " || " ~ param.dName ~ ".length == "
           ~ param.fixedSize.to!dstring ~ ");\n";
 
-      final switch (elemType.kind) with(TypeKind)
+      final switch (elemType.kind) with (TypeKind)
       {
         case Basic, BasicAlias, Enum, Flags, Simple, Opaque:
           dstring ptrStr;
@@ -480,7 +489,7 @@ class FuncWriter
           else
             ptrStr = param.dName ~ ".ptr";
 
-          preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")" ~ valOrNull (param.dName, ptrStr) ~ ";\n";
+          preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")" ~ valOrNull(param.dName, ptrStr) ~ ";\n";
           break;
         case String:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
@@ -489,8 +498,8 @@ class FuncWriter
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
 
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName, "_tmp" ~ param.dName
-            ~ ".ptr") ~ ";\n\n";
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName
+              ~ ".ptr") ~ ";\n\n";
           break;
         case Wrap:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
@@ -499,7 +508,7 @@ class FuncWriter
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= " ~ elemType.cType ~ "();\n";
 
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName, "_tmp" ~ param.dName ~ ".ptr")
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName ~ ".ptr")
             ~ ";\n\n";
           break;
         case Boxed, Reffed, Object:
@@ -514,12 +523,12 @@ class FuncWriter
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
 
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull (param.dName, "_tmp" ~ param.dName ~ ".ptr")
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName ~ ".ptr")
             ~ ";\n\n";
           break;
         case Unknown, Callback, Interface, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
-            ~ ") for " ~ func.fullName.to!string);
+              ~ ") for " ~ func.fullName.to!string);
       }
     }
 
@@ -543,7 +552,7 @@ class FuncWriter
 
       preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
 
-      final switch (elemType.kind) with(TypeKind)
+      final switch (elemType.kind) with (TypeKind)
       {
         case Basic, BasicAlias, Enum, Flags, Simple, Opaque:
           postCall ~= param.dName ~ " = _" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
@@ -557,7 +566,8 @@ class FuncWriter
         case String:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= _" ~ param.dName ~ "[i].fromCString("
-            ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ (
+                param.ownership == Ownership.Full).to!dstring ~ ");\n";
 
           if (param.ownership != Ownership.None)
           {
@@ -589,7 +599,7 @@ class FuncWriter
           break;
         case Unknown, Callback, Interface, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
-            ~ ") for " ~ func.fullName.to!string);
+              ~ ") for " ~ func.fullName.to!string);
       }
     }
   }

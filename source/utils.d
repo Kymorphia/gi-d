@@ -113,10 +113,10 @@ dstring[] tokenizeType(dstring type)
 
 unittest
 {
-  assert(" const  char  * ".tokenizeType.equal(["const"d,"char","*"]));
-  assert(" const  (char)  *  *".tokenizeType.equal(["const"d,"(","char",")","*", "*"]));
-  assert("const char**".tokenizeType.equal(["const"d,"char","*","*"]));
-  assert("const char".tokenizeType.equal(["const"d,"char"]));
+  assert(" const  char  * ".tokenizeType.equal(["const"d, "char", "*"]));
+  assert(" const  (char)  *  *".tokenizeType.equal(["const"d, "(", "char", ")", "*", "*"]));
+  assert("const char**".tokenizeType.equal(["const"d, "char", "*", "*"]));
+  assert("const char".tokenizeType.equal(["const"d, "char"]));
 }
 
 /**
@@ -167,9 +167,15 @@ auto splitQuoted(dstring s)
 unittest
 {
   assert(splitQuoted("a b c  d").equal(["a"d, "b", "c", "d"]));
-  assert(splitQuoted("a \"double quoted value\"\t b c  d").equal(["a"d, "double quoted value", "b", "c", "d"]));
-  assert(splitQuoted("a 'single quoted value'\t b c  d").equal(["a"d, "single quoted value", "b", "c", "d"]));
-  assert(splitQuoted("a'single quoted value'\tb c  d").equal(["a"d, "single quoted value", "b", "c", "d"]));
+  assert(splitQuoted("a \"double quoted value\"\t b c  d").equal([
+    "a"d, "double quoted value", "b", "c", "d"
+  ]));
+  assert(splitQuoted("a 'single quoted value'\t b c  d").equal([
+    "a"d, "single quoted value", "b", "c", "d"
+  ]));
+  assert(splitQuoted("a'single quoted value'\tb c  d").equal([
+    "a"d, "single quoted value", "b", "c", "d"
+  ]));
 }
 
 /**
@@ -235,6 +241,8 @@ unittest
  */
 int countStars(dstring type)
 {
-  auto count = type.retro.filter!(x => x != ')').countUntil!(x => x != '*');
+  auto count = type.retro
+    .filter!(x => x != ')')
+    .countUntil!(x => x != '*');
   return count > 0 ? cast(int)count : 0;
 }

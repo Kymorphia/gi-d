@@ -144,14 +144,16 @@ final class Structure : TypeNode
 
     foreach (fn; functions) // Verify structure function/methods
     {
-      FuncType[] allowedTypes = [FuncType.Callback, FuncType.Function, FuncType.Constructor, FuncType.Signal,
-        FuncType.Method];
+      FuncType[] allowedTypes = [
+        FuncType.Callback, FuncType.Function, FuncType.Constructor, FuncType.Signal,
+        FuncType.Method
+      ];
 
       if (!allowedTypes.canFind(fn.funcType))
       {
         fn.disable = true;
         warning("Disabling function " ~ fn.fullName.to!string ~ " of type '" ~ fn.funcType.to!string
-          ~ "' which is not supported");
+            ~ "' which is not supported");
       }
       else
         fn.verify;
@@ -200,13 +202,13 @@ final class Structure : TypeNode
       {
         prop.disable = true;
         warning("Disabling property " ~ prop.fullName.to!string ~ " with unhandled type '"
-          ~ prop.dType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
+            ~ prop.dType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
       }
       else if (prop.writable && prop.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
       {
         prop.writable = false;
         warning("Setting writable to false for property " ~ prop.fullName.to!string
-          ~ " with unhandled type '" ~ prop.dType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
+            ~ " with unhandled type '" ~ prop.dType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
       }
     }
   }
@@ -295,9 +297,12 @@ final class Structure : TypeNode
     if (kind == TypeKind.Wrap) // Wrap a structure in a class with properties
     {
       writer ~= [cType ~ "* cPtr;", ""];
-      writer ~= ["this(" ~ cType ~ "* cPtr)", "{",
-        "if (!cPtr)", "throw new GidConstructException(\"Null struct pointer for " ~ fullName ~ "\");", "",
-        "this.cPtr = cPtr;", "}"];
+      writer ~= [
+        "this(" ~ cType ~ "* cPtr)", "{",
+        "if (!cPtr)", "throw new GidConstructException(\"Null struct pointer for " ~ fullName ~ "\");",
+        "",
+        "this.cPtr = cPtr;", "}"
+      ];
 
       if (freeFunction)
         writer ~= ["", "~this()", "{", freeFunction ~ "(cPtr);", "}"];
@@ -306,8 +311,10 @@ final class Structure : TypeNode
     }
     else if (kind == TypeKind.Boxed)
     {
-      writer ~= ["this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{",
-        "super(cast(void*)cPtr, ownedRef);", "}", ""];
+      writer ~= [
+        "this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{",
+        "super(cast(void*)cPtr, ownedRef);", "}", ""
+      ];
       writer ~= ["auto cPtr()", "{", "return cast(" ~ cType ~ "*)boxPtr;", "}", ""];
       writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
 
@@ -318,18 +325,24 @@ final class Structure : TypeNode
       if (!parentStruct) // Root fundamental reffed type?
       {
         writer ~= [cType ~ "* cPtr;", ""];
-        writer ~= ["this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{", "this.cPtr = cPtr;", "",
-          "if (!ownedRef)", glibRefFunc ~ "(cPtr);", "}", ""];
+        writer ~= [
+          "this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{", "this.cPtr = cPtr;", "",
+          "if (!ownedRef)", glibRefFunc ~ "(cPtr);", "}", ""
+        ];
         writer ~= ["~this()", "{", glibUnrefFunc ~ "(cPtr);", "}", ""];
       }
       else // Derived reffed type
-        writer ~= ["this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{",
-          "super(cast(" ~ parentStruct.cType ~ "*)cPtr, ownedRef);", "}", ""];
+        writer ~= [
+        "this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{",
+        "super(cast(" ~ parentStruct.cType ~ "*)cPtr, ownedRef);", "}", ""
+      ];
     }
     else if (kind == TypeKind.Object)
     {
       writer ~= ["this(void* cObj, bool ownedRef = false)", "{", "super(cObj, ownedRef);", "}", ""];
-      writer ~= ["T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)objPtr;", "}", ""];
+      writer ~= [
+        "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)objPtr;", "}", ""
+      ];
       writer ~= ["static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
     }
   }
@@ -339,13 +352,13 @@ final class Structure : TypeNode
   {
     dstring[] lines;
 
-    foreach(f; fields)
+    foreach (f; fields)
     {
       if (f.disable || f.private_)
         continue;
 
       assert(f.containerType == ContainerType.None, "Unsupported structure field " ~ f.fullName.to!string
-        ~ " with container type " ~ f.containerType.to!string);
+          ~ " with container type " ~ f.containerType.to!string);
 
       f.addImports(imports, repo);
 
@@ -353,7 +366,7 @@ final class Structure : TypeNode
 
       lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
 
-      final switch(fieldKind) with(TypeKind)
+      final switch (fieldKind) with (TypeKind)
       {
         case Basic, BasicAlias:
           lines ~= "return cPtr." ~ f.dName ~ ";";
@@ -384,8 +397,9 @@ final class Structure : TypeNode
           lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(cPtr!" ~ f.cTypeRemPtr ~ "." ~ f.dName ~ ", false);";
           break;
         case Unknown, Callback, Opaque, Interface, Namespace:
-          throw new Exception("Unhandled readable field property type '" ~ f.dType.to!string ~ "' (" ~ fieldKind.to!string
-            ~ ") for struct " ~ dType.to!string);
+          throw new Exception(
+              "Unhandled readable field property type '" ~ f.dType.to!string ~ "' (" ~ fieldKind.to!string
+              ~ ") for struct " ~ dType.to!string);
       }
 
       lines ~= "}";
@@ -395,13 +409,16 @@ final class Structure : TypeNode
 
       lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ " propval)", "{"];
 
-      final switch(fieldKind) with(TypeKind)
+      final switch (fieldKind) with (TypeKind)
       {
         case Basic, BasicAlias:
           lines ~= "cPtr." ~ f.dName ~ " = propval;";
           break;
         case String:
-          lines ~= ["g_free(cast(void*)cPtr." ~ f.dName ~ ");", "cPtr." ~ f.dName ~ " = propval.toCString(true);"];
+          lines ~= [
+            "g_free(cast(void*)cPtr." ~ f.dName ~ ");",
+            "cPtr." ~ f.dName ~ " = propval.toCString(true);"
+          ];
           imports.add("GLib.c.functions");
           break;
         case Enum:
@@ -417,8 +434,9 @@ final class Structure : TypeNode
           lines ~= "cPtr!" ~ f.cTypeRemPtr ~ "." ~ f.dName ~ " = propval.get" ~ f.dType ~ ";";
           break;
         case Boxed, Callback, Wrap, Reffed, Unknown, Opaque, Interface, Namespace:
-          throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ fieldKind.to!string
-            ~ ") for struct " ~ dType.to!string);
+          throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ fieldKind
+              .to!string
+              ~ ") for struct " ~ dType.to!string);
       }
 
       lines ~= "}";
@@ -469,4 +487,4 @@ enum StructType
   Union, /// A union
 }
 
-immutable dstring[] StructTypeValues = [ "class", "interface", "record", "union" ];
+immutable dstring[] StructTypeValues = ["class", "interface", "record", "union"];

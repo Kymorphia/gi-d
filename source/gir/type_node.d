@@ -84,7 +84,7 @@ class TypeNode : Base
     auto t = origDType.split('.');
     if (t.length > 1)
     {
-      if (t[0] !in repo.defs.repoHash)
+      if (t[0]!in repo.defs.repoHash)
       {
         typeRepo = repo;
         warning("Repo '" ~ t[0].to!string ~ "' not found for type '" ~ origDType.to!string ~ "'");
@@ -180,7 +180,7 @@ class TypeNode : Base
 
       if (cType.empty && fixedSize == 0) // No array C type and not fixed size?
         warning("No array c:type for array of D type '" ~ dType.to!string ~ "' in '"
-          ~ fullName.to!string ~ "'");
+            ~ fullName.to!string ~ "'");
 
       if (elemTypes[0].dType == "string")
       {
@@ -195,15 +195,16 @@ class TypeNode : Base
 
       if (elemTypes.length < reqElemTypes)
         throw new Exception(fullDType.to!string ~ " requires " ~ reqElemTypes.to!string ~ " container type(s), found "
-          ~ elemTypes.length.to!string);
+            ~ elemTypes.length.to!string);
 
       if (elemTypes.length > reqElemTypes)
-          warning(fullDType.to!string ~ " has excess container types");
+        warning(fullDType.to!string ~ " has excess container types");
 
       foreach (type; elemTypes)
         if (type.kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
-          throw new Exception("unhandled container type kind '" ~ type.kind.to!string ~ "' for type '"
-            ~ fullDType.to!string ~ "'");
+          throw new Exception(
+              "unhandled container type kind '" ~ type.kind.to!string ~ "' for type '"
+              ~ fullDType.to!string ~ "'");
     }
 
     if (containerType == ContainerType.None && kind != TypeKind.Namespace)
@@ -217,7 +218,7 @@ class TypeNode : Base
 
       if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
         throw new Exception("unhandled type kind '" ~ kind.to!string ~ "' for type '"
-          ~ dType.to!string ~ "'");
+            ~ dType.to!string ~ "'");
 
       if (!elemTypes.empty)
         warning("Unexpected element type in unrecognized container '" ~ fullName.to!string ~ "'");

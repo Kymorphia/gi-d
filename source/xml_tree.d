@@ -370,7 +370,7 @@ class XmlNode
     if (parent)
     {
       auto ndx = parent.children.countUntil!(x => x is this);
-      assert (ndx >= 0);
+      assert(ndx >= 0);
       parent.children = parent.children[0 .. ndx] ~ parent.children[(ndx + 1) .. $];
       parent = null;
     }
@@ -384,7 +384,7 @@ class XmlNode
     if (parent)
     {
       auto ndx = parent.children.countUntil!(x => x is this);
-      assert (ndx >= 0);
+      assert(ndx >= 0);
       parent.children[ndx] = newNode;
       newNode.parent = parent;
       parent = null;
