@@ -104,7 +104,7 @@ class FuncWriter
       preCall ~= "GHashTable* _cretval;\n";
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
-        ~ func.elemTypes[1].dType ~ ", " ~ (func.ownership == Ownership.Full).to!dstring ~ ")(_cretval) : null;\n";
+        ~ func.elemTypes[1].dType ~ ", " ~ func.fullOwnerStr ~ ")(_cretval) : null;\n";
       return;
     }
     else if (func.containerType != ContainerType.None)
@@ -128,7 +128,7 @@ class FuncWriter
         decl ~= "string ";
         preCall ~= func.cType ~ " _cretval;\n";
         call ~= "_cretval = ";
-        postCall ~= "string _retval = _cretval.fromCString("d ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+        postCall ~= "string _retval = _cretval.fromCString("d ~ func.fullOwnerStr ~ ");\n";
         break;
       case Enum, Flags:
         decl ~= func.dType ~ " ";
@@ -153,7 +153,7 @@ class FuncWriter
         call ~= "_cretval = ";
         postCall ~= func.dType ~ " _retval;\n_retval = new " ~ func.dType ~ "(_cretval);\n";
         break;
-      case Boxed, Reffed, Object:
+      case Boxed, Reffed, Object, Interface:
         if (!isCtor)
           decl ~= func.dType ~ " ";
 
@@ -162,15 +162,13 @@ class FuncWriter
 
         if (!isCtor)
         {
-          postCall ~= func.dType ~ " _retval = "d ~ (kind == Object ? "ObjectG.getDObject!"d : "new ")
-            ~ func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval, "
-            ~ (func.ownership == Ownership.Full)
-              .to!dstring ~ ");\n";
+          postCall ~= func.dType ~ (kind == Object || kind == Interface) ? " _retval = ObjectG.getDObject!"d : "new "d;
+          postCall ~= func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval, " ~ func.fullOwnerStr ~ ");\n";
         }
         else // Constructor method
-          postCall ~= "this(_cretval, " ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          postCall ~= "this(_cretval, " ~ func.fullOwnerStr ~ ");\n";
         break;
-      case Unknown, Interface, Namespace:
+      case Unknown, Namespace:
         assert(0, "Unsupported return value type '" ~ func.dType.to!string ~ "' (" ~ kind.to!string ~ ") for "
             ~ func.fullName.to!string);
     }
@@ -217,7 +215,7 @@ class FuncWriter
       final switch (elemType.kind) with (TypeKind)
       {
         case String:
-          postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ (func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ func.fullOwnerStr ~ ");\n";
           break;
         case Flags:
           postCall ~= "_retval[i] = cast(" ~ elemType.dType ~ ")(_cretval[i]);\n";
@@ -229,16 +227,12 @@ class FuncWriter
           postCall ~= "_retval[i] = cretval[i];\n";
           break;
         case Wrap, Boxed, Reffed:
-          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(_cretval[i], "
-            ~ (
-                func.ownership == Ownership.Full).to!dstring ~ ");\n";
+          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
           break;
-        case Object:
-          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], "
-            ~ (
-                func.ownership == Ownership.Full).to!dstring ~ ");\n";
+        case Object, Interface:
+          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
           break;
-        case Basic, BasicAlias, Callback, Enum, Unknown, Interface, Namespace:
+        case Basic, BasicAlias, Callback, Enum, Unknown, Namespace:
           assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
               .kind.to!string
               ~ ") for " ~ func.fullName.to!string);
@@ -276,7 +270,7 @@ class FuncWriter
     {
       call ~= (call.endsWith('(') ? ""d : ", ") ~ "cPtr";
 
-      if (param.kind == TypeKind.Object)
+      if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
         call ~= "!" ~ param.cTypeRemPtr;
 
       return;
@@ -329,7 +323,7 @@ class FuncWriter
       preCall ~= "GHashTable* _cretval;\n";
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
-        ~ func.elemTypes[1].dType ~ ", " ~ (func.ownership == Ownership.Full).to!dstring ~ ")(_cretval) : null;\n";
+        ~ func.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_cretval) : null;\n";
     }
     else if (param.containerType != ContainerType.None)
     {
@@ -418,12 +412,12 @@ class FuncWriter
           ~ " " ~ param.dName);
         addCallParam(param.dName);
         break;
-      case Wrap, Boxed, Reffed, Object:
+      case Wrap, Boxed, Reffed, Object, Interface:
         if (param.direction == ParamDirection.In)
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
 
-          if (param.kind == TypeKind.Object)
+          if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
             addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr!" ~ param.cTypeRemPtr ~ " : null");
           else
             addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr : null");
@@ -444,7 +438,7 @@ class FuncWriter
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
         break;
-      case Unknown, Interface, Namespace:
+      case Unknown, Namespace:
         assert(0, "Unsupported parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
             ~ func.fullName.to!string);
     }
@@ -511,10 +505,10 @@ class FuncWriter
           preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName ~ ".ptr")
             ~ ";\n\n";
           break;
-        case Boxed, Reffed, Object:
+        case Boxed, Reffed, Object, Interface:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
 
-          if (elemType.kind == TypeKind.Object)
+          if (elemType.kind == TypeKind.Object || elemType.kind == TypeKind.Interface)
             preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
               ~ elemType.cTypeRemPtr ~ " : null;\n";
           else
@@ -526,7 +520,7 @@ class FuncWriter
           preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName ~ ".ptr")
             ~ ";\n\n";
           break;
-        case Unknown, Callback, Interface, Namespace:
+        case Unknown, Callback, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
               ~ ") for " ~ func.fullName.to!string);
       }
@@ -586,7 +580,7 @@ class FuncWriter
             imports.add("GLib.c.functions");
           }
           break;
-        case Object:
+        case Object, Interface:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject(_" ~ param.dName
             ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
@@ -597,7 +591,7 @@ class FuncWriter
             imports.add("GLib.c.functions");
           }
           break;
-        case Unknown, Callback, Interface, Namespace:
+        case Unknown, Callback, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
               ~ ") for " ~ func.fullName.to!string);
       }
@@ -608,10 +602,17 @@ class FuncWriter
    * Write function binding to a CodeWriter.
    * Params:
    *   writer = Code writer to write to.
+   *   ifaceModule = Set to true when writing interface module (defaults to false which writes function for mixin template module)
    */
-  void write(CodeWriter writer)
+  void write(CodeWriter writer, bool ifaceModule = false)
   {
     func.writeDocs(writer);
+
+    if (ifaceModule)
+    {
+      writer ~= decl ~ ";";
+      return;
+    }
 
     writer ~= decl;
     writer ~= "{";

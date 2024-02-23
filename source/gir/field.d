@@ -60,22 +60,21 @@ final class Field : TypeNode
       kind = TypeKind.Callback;
       callback.fixup;
     }
+    else if (kind == TypeKind.Callback)
+      callback = cast(Func)typeObject;
   }
 
   override void verify()
   {
-    if (disable)
+    if (disable || private_)
       return;
-
-    if (callback)
-      throw new Exception("Callback fields not yet supported");
 
     super.verify;
 
     if (containerType != ContainerType.None)
       throw new Exception("Container type '" ~ containerType.to!string ~ "' not supported");
 
-    if (kind.among(TypeKind.Unknown, TypeKind.Callback, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
+    if (kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
       throw new Exception("Unhandled type '" ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
 
     if (writable && kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))

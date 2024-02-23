@@ -59,6 +59,7 @@ final class Structure : TypeNode
     freeFunction = node.get("free-function");
   }
 
+  // Calculate the structure type kind
   private TypeKind calcKind()
   {
     if (cType.empty)
@@ -114,6 +115,10 @@ final class Structure : TypeNode
     if (!parentType.empty)
       parentStruct = cast(Structure)repo.defs.findTypeObject(parentType, repo);
 
+    foreach (ifaceName; implements)
+      if (auto ifaceStruct = cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
+        implementStructs ~= ifaceStruct;
+
     foreach (fn; functions) // Fixup structure function/methods
       fn.fixup;
 
@@ -138,6 +143,10 @@ final class Structure : TypeNode
 
     if (!parentType.empty && !parentStruct)
       throw new Exception("Failed to resolve parent type '" ~ parentType.to!string ~ "'");
+
+    foreach (ifaceName; implements)
+      if (!cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
+        warning("Unable to resolve structure " ~ fullName.to!string ~ " interface " ~ ifaceName.to!string);
 
     foreach (fn; functions) // Verify structure function/methods
     {
@@ -188,12 +197,17 @@ final class Structure : TypeNode
   /**
    * Write structure module.
    * Params:
-   *   path = Path to the file to write to
+   *   path = Directory to store the structure file(s) to (interfaces have multiple files)
+   *   ifaceModule = Set to true to write interface module (defaults to false which writes the template mixin module for interfaces)
    */
-  void write(string path)
+  void write(string path, bool ifaceModule = false)
   {
-    auto writer = new CodeWriter(path);
-    writer ~= ["module " ~ fullName ~ ";", ""];
+    string postfix;
+    if (kind == TypeKind.Interface)
+      postfix = ifaceModule ? "IF" : "T"; // Interfaces use IF postfix for interface module and T for interface mixin template
+
+    auto writer = new CodeWriter(buildPath(path, dType.to!string ~ postfix ~ ".d"));
+    writer ~= ["module " ~ fullName ~ postfix.to!dstring ~ ";", ""];
 
     // Create the function writers first to construct the imports
     auto imports = new ImportSymbols(defCode.imports, repo.namespace);
@@ -217,7 +231,7 @@ final class Structure : TypeNode
       }
 
       if (kind == TypeKind.Wrap || kind == TypeKind.Boxed)
-        propMethods = constructPropMethods(imports); // Construct wrapper property methods in order to collect imports
+        propMethods = constructFieldProps(imports); // Construct wrapper property methods in order to collect imports
     }
 
     if (parentStruct)
@@ -234,14 +248,27 @@ final class Structure : TypeNode
     writeDocs(writer);
 
     if (defCode.classDecl.empty)
-      writer ~= "class " ~ dType ~ (parentStruct ? " : " ~ parentStruct.dType : "");
+    {
+      if (kind == TypeKind.Interface)
+      {
+        if (ifaceModule)
+          writer ~= "interface " ~ dType ~ "IF";
+        else
+          writer ~= "template " ~ dType ~ "T(TStruct)";
+      }
+      else
+      { // Create range of parent type and implemented interface types
+        auto parentAndIfaces = (parentStruct ? [parentStruct.dType] : []) ~ implementStructs.map!(x => x.dType).array;
+        writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.join(", ") : "");
+      }
+    }
     else
       writer ~= defCode.classDecl;
 
     writer ~= "{";
 
     if (defCode.genInit)
-      writeInitCode(writer, propMethods);
+      writeInitCode(writer, propMethods, ifaceModule);
 
     if (defCode.inClass.length > 0)
       writer ~= defCode.inClass;
@@ -251,7 +278,7 @@ final class Structure : TypeNode
       foreach (fnWriter; funcWriters)
       {
         writer ~= "";
-        fnWriter.write(writer);
+        fnWriter.write(writer, ifaceModule);
       }
     }
 
@@ -264,7 +291,7 @@ final class Structure : TypeNode
   }
 
   // Write class init code
-  private void writeInitCode(CodeWriter writer, dstring[] propMethods)
+  private void writeInitCode(CodeWriter writer, dstring[] propMethods, bool ifaceModule)
   {
     if (kind == TypeKind.Wrap) // Wrap a structure in a class with properties
     {
@@ -316,11 +343,29 @@ final class Structure : TypeNode
         "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)objPtr;", "}", ""
       ];
       writer ~= ["static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+
+      if (!implementStructs.empty)
+        writer ~= "";
+
+      foreach (iface; implementStructs)
+        writer ~= "mixin " ~ iface.dType ~ "!" ~ cType ~ ";";
+    }
+    else if (kind == TypeKind.Interface)
+    {
+      if (ifaceModule)
+      {
+        writer ~= ["T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "));", ""];
+        writer ~= ["static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+      }
+      else
+        writer ~= [
+        "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)objPtr;", "}", ""
+      ];
     }
   }
 
   // Construct struct wrapper property methods
-  private dstring[] constructPropMethods(ImportSymbols imports)
+  private dstring[] constructFieldProps(ImportSymbols imports)
   {
     dstring[] lines;
 
@@ -334,11 +379,14 @@ final class Structure : TypeNode
 
       f.addImports(imports, repo);
 
-      auto fieldKind = f.kind;
+      if (f.kind != TypeKind.Callback)
+        lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
+      else if (!f.typeObject) // Callback function type directly defined in field?
+        lines ~= [
+        "", "alias " ~ f.name.camelCase(true) ~ "FuncType = extern(C) " ~ f.callback.getCPrototype ~ ";"
+      ]; // Add a type alias, since extern(C) can't be used directly in arg definition
 
-      lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
-
-      final switch (fieldKind) with (TypeKind)
+      final switch (f.kind) with (TypeKind)
       {
         case Basic, BasicAlias:
           lines ~= "return cPtr." ~ f.dName ~ ";";
@@ -355,8 +403,16 @@ final class Structure : TypeNode
         case Simple:
           lines ~= "return *cPtr." ~ f.dName ~ ";";
           break;
-        case Boxed:
+        case Callback:
+          if (f.typeObject) // Callback function is an alias type?
+            lines ~= ["", "@property " ~ f.cType ~ " " ~ f.dName ~ "()", "{"];
+          else // Callback function type is directly defined in field
+            lines ~= ["", "@property " ~ f.name.camelCase(true) ~ "FuncType " ~ f.dName ~ "()", "{"];
+
+          lines ~= "return cPtr." ~ f.dName ~ ";";
+          break;
         case Wrap:
+        case Boxed:
         case Reffed:
           auto starCount = f.cType.retro.countUntil!(x => x != '*');
 
@@ -368,9 +424,9 @@ final class Structure : TypeNode
         case Object:
           lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(cPtr!" ~ f.cTypeRemPtr ~ "." ~ f.dName ~ ", false);";
           break;
-        case Unknown, Callback, Opaque, Interface, Namespace:
+        case Unknown, Opaque, Interface, Namespace:
           throw new Exception(
-              "Unhandled readable field property type '" ~ f.dType.to!string ~ "' (" ~ fieldKind.to!string
+              "Unhandled readable field property type '" ~ f.dType.to!string ~ "' (" ~ f.kind.to!string
               ~ ") for struct " ~ dType.to!string);
       }
 
@@ -379,9 +435,10 @@ final class Structure : TypeNode
       if (!f.writable)
         continue;
 
-      lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ " propval)", "{"];
+      if (f.kind != TypeKind.Callback)
+        lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ " propval)", "{"];
 
-      final switch (fieldKind) with (TypeKind)
+      final switch (f.kind) with (TypeKind)
       {
         case Basic, BasicAlias:
           lines ~= "cPtr." ~ f.dName ~ " = propval;";
@@ -402,11 +459,22 @@ final class Structure : TypeNode
         case Simple:
           lines ~= "cPtr." ~ f.dName ~ " = *propval;";
           break;
+        case Callback:
+          if (f.typeObject) // Callback function is an alias type?
+            lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.cType ~ " propval)", "{"];
+          else // Callback function type is directly defined in field
+            lines ~= [
+            "", "@property void " ~ f.dName ~ "(" ~ f.name.camelCase(true) ~ "FuncType propval)", "{"
+          ];
+
+          lines ~= "cPtr." ~ f.dName ~ " = propval;";
+          break;
         case Object:
           lines ~= "cPtr!" ~ f.cTypeRemPtr ~ "." ~ f.dName ~ " = propval.get" ~ f.dType ~ ";";
           break;
-        case Boxed, Callback, Wrap, Reffed, Unknown, Opaque, Interface, Namespace:
-          throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ fieldKind
+        case Boxed, Wrap, Reffed, Unknown, Opaque, Interface, Namespace:
+          throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ f
+              .kind
               .to!string
               ~ ") for struct " ~ dType.to!string);
       }
@@ -423,6 +491,7 @@ final class Structure : TypeNode
   Structure parentStruct; /// Resolved parent type object
 
   dstring[] implements; /// Interfaces implemented by structure
+  Structure[] implementStructs; /// Resolved interface implementation structures
   dstring[] prerequisites; /// Interface prerequisite types
   Func[] functions; /// Constructors, functions, methods, and virtual methods
   Func[] signals; /// Signals

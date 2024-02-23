@@ -8,7 +8,7 @@ public import std_includes;
 
 static this()
 {
-  sharedLog = new GidLogger(LogLevel.info);
+  sharedLog = new GidLogger;
 }
 
 /// Create our own logger to strip out some of the extra info

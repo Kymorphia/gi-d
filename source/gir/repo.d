@@ -382,8 +382,15 @@ final class Repo : Base
     writeGlobalModule(buildPath(sourcePath, "global.d"));
 
     foreach (st; structs)
+    {
       if (!st.disable && ((st.defCode && st.defCode.inClass) || st.kind.typeKindHasModule) && st !is globalStruct)
-        st.write(buildPath(sourcePath, st.dType.to!string ~ ".d"));
+      {
+        st.write(sourcePath);
+
+        if (st.kind == TypeKind.Interface)
+          st.write(sourcePath, true);
+      }
+    }
 
     writeDubJsonFile(buildPath(packagePath, "dub.json"));
   }
@@ -498,7 +505,7 @@ final class Repo : Base
             else
               f.xmlNode.warn("Struct array field is missing c:type attribute");
           }
-          else if (f.callback) // Callback field?
+          else if (f.callback && !f.typeObject) // Directly defined callback field?
             writer ~= "extern(C) " ~ f.callback.getCPrototype ~ " " ~ f.callback.dName ~ ";";
           else // A regular field
           {

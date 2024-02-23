@@ -40,6 +40,12 @@ class TypeNode : Base
       return cType;
   }
 
+  // Returns "true" if ownership is Full, "false" otherwise (help function)
+  dstring fullOwnerStr()
+  {
+    return ownership == Ownership.Full ? "true"d : "false"d;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
@@ -201,7 +207,7 @@ class TypeNode : Base
         warning(fullDType.to!string ~ " has excess container types");
 
       foreach (type; elemTypes)
-        if (type.kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
+        if (type.kind.among(TypeKind.Unknown, TypeKind.Namespace))
           throw new Exception(
               "unhandled container type kind '" ~ type.kind.to!string ~ "' for type '"
               ~ fullDType.to!string ~ "'");
@@ -209,14 +215,14 @@ class TypeNode : Base
 
     if (containerType == ContainerType.None && kind != TypeKind.Namespace)
     {
-      if (cType.empty) // Has no C type?
+      if (cType.empty && kind != TypeKind.Callback) // Has no C type and not a callback?
       {
         auto parentTypeNode = cast(TypeNode)parent;
         if (!parentTypeNode || parentTypeNode.containerType != ContainerType.Array) // Warn if not an array container type (handled separately)
           warning("No c:type for D type '" ~ dType.to!string ~ "' in '" ~ fullName.to!string ~ "'");
       }
 
-      if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
+      if (kind.among(TypeKind.Unknown, TypeKind.Namespace))
         throw new Exception("unhandled type kind '" ~ kind.to!string ~ "' for type '"
             ~ dType.to!string ~ "'");
 

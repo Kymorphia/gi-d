@@ -1,5 +1,6 @@
 module gid;
 
+import std.experimental.logger;
 import std.getopt;
 import std.stdio : writeln;
 
@@ -9,25 +10,38 @@ import gir.repo;
 import std_includes;
 import xml_patch;
 
-void main(string[] args)
+int main(string[] args)
 {
+  LogLevel logLevel = LogLevel.warning;
   string[] traps;
   arraySep = ","; // Allow comma separated values for array parameters (traps)
 
-  auto helpInformation = getopt(
-      args,
-      "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
-      "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
-      "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
-      "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
-      "trap", "Add gdb breakpoint in an output file in the form 'filename:line' (file paths match from the end)", &traps,
-  );
-
-  if (helpInformation.helpWanted)
+  try
   {
-    defaultGetoptPrinter("GObject Introspection Dlang binding generator", helpInformation.options);
-    return;
+    auto helpInformation = getopt(
+        args,
+        "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
+        "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
+        "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
+        "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string)
+        .join(", ") ~ ")", &logLevel,
+        "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
+        "trap", "Add gdb breakpoint in an output file in the form 'filename:line' (file paths match from the end)", &traps,
+    );
+
+    if (helpInformation.helpWanted)
+    {
+      defaultGetoptPrinter("GObject Introspection Dlang binding generator", helpInformation.options);
+      return 0;
+    }
   }
+  catch (Exception e)
+  {
+    error(e.msg);
+    return 1;
+  }
+
+  globalLogLevel(logLevel);
 
   foreach (tr; traps)
   {
@@ -72,4 +86,6 @@ void main(string[] args)
 
     writeln(dTypes.keys.array.sort.join("\n"));
   }
+
+  return 0;
 }

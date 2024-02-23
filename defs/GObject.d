@@ -4,6 +4,9 @@
 //!set record[Closure].method[invoke][disable] 1
 //!set class[Object].method[getv][disable] 1
 
+//# Disable binding of unuseful and problematic structures
+//!set record[TypePluginClass][disable] 1
+
 //# Rename Object and TypeInfo which conflict with the base D Object type
 //!subtype GObject ObjectC
 //!subtype Object ObjectG

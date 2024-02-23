@@ -18,10 +18,15 @@
 //!set record[HashTable][disable] 1
 //!set record[HashTableIter][disable] 1
 
-//# Disable unuseful problematic structures
+//# Disable binding of unuseful and problematic structures
 //!set record[Data][disable] 1
+//!set record[Queue][disable] 1
 //!set record[Hook][disable] 1
 //!set record[HookList][disable] 1
+//!set record[List][disable] 1
+//!set record[IOFuncs][disable] 1
+//!set record[MemVTable][disable] 1
+//!set record[SList][disable] 1
 //!set record[TestLogBuffer][disable] 1
 //!set record[TestLogMsg][disable] 1
 //!set record[ThreadPool][disable] 1
@@ -127,17 +132,7 @@
 //!set record[VariantBuilder][opaque] 1
 
 //# Some structures which should be opaque
-//!set record[PathBuf][opaque] 1
-//!set record[Private][opaque] 1
-//!set record[RecMutex][opaque] 1
-//!set record[RWLock][opaque] 1
-//!set record[Source][opaque] 1
-//!set record[UriParamsIter][opaque] 1
-//!set record[VariantIter][opaque] 1
 //!set union[Mutex][opaque] 1
-
-//!set record[HookList].field[dummy][disable] 1
-//!set record[Scanner].field[qdata][disable] 1
 
 //# Add missing parameter direction "out"
 //!set record[IOChannel].method[read].parameters.parameter[bytes_read][direction] out
@@ -195,6 +190,12 @@
 //!set function[utf8_to_ucs4_fast].parameters.parameter[str].type '<array length="1" zero-terminated="1" c:type="const gchar*"><type name="gchar" c:type="gchar"/></array>'
 //!set function[utf8_to_utf16].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
 //!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
+
+//# Set writable to false as it should be
+//!set record[Node].field[children][writable] 0
+//!set record[Node].field[next][writable] 0
+//!set record[Node].field[parent][writable] 0
+//!set record[Node].field[prev][writable] 0
 
 /**
  * Template to convert a GHashTable to a D associative array.
