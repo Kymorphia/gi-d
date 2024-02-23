@@ -127,9 +127,6 @@ final class Structure : TypeNode
       if (opaque)
         f.disable = true;
     }
-
-    foreach (prop; properties) // Fixup structure properties
-      prop.fixup;
   }
 
   override void verify()
@@ -184,31 +181,6 @@ final class Structure : TypeNode
         f.disable = true;
         warning("Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
         continue;
-      }
-    }
-
-    foreach (prop; properties) // Verify structure properties
-    {
-      try
-        prop.verify;
-      catch (Exception e)
-      {
-        prop.disable = true;
-        warning("Disabling property '" ~ prop.fullName.to!string ~ "': " ~ e.msg);
-        continue;
-      }
-
-      if (prop.kind.among(TypeKind.Unknown, TypeKind.Callback, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
-      {
-        prop.disable = true;
-        warning("Disabling property " ~ prop.fullName.to!string ~ " with unhandled type '"
-            ~ prop.dType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
-      }
-      else if (prop.writable && prop.kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
-      {
-        prop.writable = false;
-        warning("Setting writable to false for property " ~ prop.fullName.to!string
-            ~ " with unhandled type '" ~ prop.dType.to!string ~ "' (" ~ prop.kind.to!string ~ ")");
       }
     }
   }
