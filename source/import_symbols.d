@@ -124,8 +124,10 @@ final class ImportSymbols
 
   /**
    * Generate the import commands for the import symbol object.
+   * Params:
+   *   prefix = A prefix to add to each import line (defaults to empty string)
    */
-  dstring[] generate()
+  dstring[] generate(dstring prefix = null)
   {
     dstring[] importLines;
 
@@ -134,9 +136,9 @@ final class ImportSymbols
       auto syms = modSyms[mod];
 
       if (syms.empty)
-        importLines ~= "import " ~ mod ~ ";";
+        importLines ~= prefix ~ "import " ~ mod ~ ";";
       else
-        importLines ~= "import " ~ mod ~ " : "d ~ syms.keys.join(", ") ~ ";";
+        importLines ~= prefix ~ "import " ~ mod ~ " : "d ~ syms.keys.join(", ") ~ ";";
     }
 
     return importLines;
@@ -146,11 +148,12 @@ final class ImportSymbols
    * Write import statements to a code writer.
    * Params:
    *   writer = The code writer to write to
+   *   prefix = A prefix to add to each import line (defaults to empty string)
    * Returns: true if any imports lines were written, false if empty
    */
-  bool write(CodeWriter writer)
+  bool write(CodeWriter writer, dstring prefix = null)
   {
-    auto importLines = generate;
+    auto importLines = generate(prefix);
     writer ~= importLines;
     return !importLines.empty;
   }

@@ -62,6 +62,9 @@ final class Field : TypeNode
     }
     else if (kind == TypeKind.Callback)
       callback = cast(Func)typeObject;
+    else if (directStruct)
+      foreach (f; directStruct.fields)
+        f.fixup;
   }
 
   override void verify()
@@ -70,6 +73,12 @@ final class Field : TypeNode
       return;
 
     super.verify;
+
+    if (kind == TypeKind.String && cType.countStars > 1)
+      throw new Exception("Array of strings not supported");
+
+    if (directStruct)
+      throw new Exception("Embedded structure fields not supported");
 
     if (containerType != ContainerType.None)
       throw new Exception("Container type '" ~ containerType.to!string ~ "' not supported");
@@ -83,6 +92,12 @@ final class Field : TypeNode
       warning("Setting writable to false for field " ~ fullName.to!string ~ " with unhandled type '"
           ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
     }
+
+    if (callback)
+      callback.verify;
+    else if (directStruct)
+      foreach (f; directStruct.fields)
+        f.verify;
   }
 
   override void addImports(ImportSymbols imports, Repo repo)
@@ -95,6 +110,7 @@ final class Field : TypeNode
 
   private dstring _name; /// Field name
   Func callback; /// For callback fields
+  Structure directStruct; /// Directly embedded structure or union
   bool readable; /// Readable field?
   bool writable; /// Writable field?
   bool introspectable = true; /// Is field introspectable?

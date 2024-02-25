@@ -26,14 +26,12 @@ class FuncWriter
   // Process the function
   private void process()
   {
-    auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
-
-    if (func.funcType != FuncType.Method && !isCtor && func.parent !is func.repo.globalStruct)
+    if (func.funcType != FuncType.Method && !func.isCtor && func.parent !is func.repo.globalStruct)
       decl ~= "static "; // Function is "static" if it is not a method, constructor, or global function
 
     processReturn();
 
-    decl ~= isCtor ? "this(" : func.dName ~ "(";
+    decl ~= func.isCtor ? "this(" : func.dName ~ "(";
     call ~= func.cName ~ "(";
 
     foreach (param; func.params)
@@ -82,7 +80,7 @@ class FuncWriter
       return;
     }
 
-    func.addImports(imports, func.repo);
+    func.addImports(imports, func.repo); // Add imports required for return value type
 
     if (func.containerType == ContainerType.Array)
     {
@@ -95,6 +93,7 @@ class FuncWriter
       preCall ~= "GByteArray* _cretval;\n";
       call ~= "_cretval = ";
       postCall ~= "ByteArray _retval = _cretval ? new ByteArray(_cretval) : null;\n";
+      imports.add("GLib.ByteArray");
       return;
     }
     else if (func.containerType == ContainerType.HashTable)
@@ -105,6 +104,7 @@ class FuncWriter
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
         ~ func.elemTypes[1].dType ~ ", " ~ func.fullOwnerStr ~ ")(_cretval) : null;\n";
+      imports.add("GLib.global");
       return;
     }
     else if (func.containerType != ContainerType.None)
@@ -114,7 +114,6 @@ class FuncWriter
     }
 
     auto kind = func.kind;
-    auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
 
     final switch (kind) with (TypeKind)
     {
@@ -142,31 +141,33 @@ class FuncWriter
         call ~= "_cretval = ";
         postCall ~= func.dType ~ " _retval;\nif (_cretval)\n_retval = *_cretval;\n";
         break;
-      case Opaque:
       case Callback:
         decl ~= func.dType ~ "* ";
         call ~= func.dType ~ "* _retval = ";
         break;
-      case Wrap:
+      case Opaque:
         decl ~= func.dType ~ " ";
-        preCall ~= func.cType ~ " _cretval;\n";
-        call ~= "_cretval = ";
-        postCall ~= func.dType ~ " _retval;\n_retval = new " ~ func.dType ~ "(_cretval);\n";
+        call ~= func.dType ~ " _retval = ";
         break;
-      case Boxed, Reffed, Object, Interface:
-        if (!isCtor)
+      case Wrap, Boxed, Reffed, Object, Interface:
+        if (!func.isCtor)
           decl ~= func.dType ~ " ";
 
         preCall ~= func.cType ~ " _cretval;\n";
         call ~= "_cretval = ";
 
-        if (!isCtor)
+        if (!func.isCtor)
         {
-          postCall ~= func.dType ~ (kind == Object || kind == Interface) ? " _retval = ObjectG.getDObject!"d : "new "d;
-          postCall ~= func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval, " ~ func.fullOwnerStr ~ ");\n";
+          postCall ~= func.dType ~ " _retval = " ~ ((kind == Object || kind == Interface) ? "ObjectG.getDObject!"d :
+            "new "d);
+          postCall ~= func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval"
+            ~ (func.kind != TypeKind.Wrap ? ", " ~ func.fullOwnerStr : "") ~ ");\n";
         }
         else // Constructor method
-          postCall ~= "this(_cretval, " ~ func.fullOwnerStr ~ ");\n";
+          postCall ~= "this(_cretval" ~ (func.kind != TypeKind.Wrap ? ", " ~ func.fullOwnerStr : "") ~ ");\n";
+
+        if (func.kind == TypeKind.Object || func.kind == TypeKind.Interface)
+          imports.add("GObject.ObjectG");
         break;
       case Unknown, Namespace:
         assert(0, "Unsupported return value type '" ~ func.dType.to!string ~ "' (" ~ kind.to!string ~ ") for "
@@ -230,7 +231,9 @@ class FuncWriter
           postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
           break;
         case Object, Interface:
-          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
+          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], "
+            ~ func.fullOwnerStr ~ ");\n";
+          imports.add("GObject.ObjectG");
           break;
         case Basic, BasicAlias, Callback, Enum, Unknown, Namespace:
           assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
@@ -268,11 +271,7 @@ class FuncWriter
   {
     if (param.isInstanceParam) // Instance parameter?
     {
-      call ~= (call.endsWith('(') ? ""d : ", ") ~ "cPtr";
-
-      if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
-        call ~= "!" ~ param.cTypeRemPtr;
-
+      call ~= "cPtr" ~ "!" ~ param.cTypeRemPtr.stripConst;
       return;
     }
 
@@ -324,6 +323,7 @@ class FuncWriter
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
         ~ func.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_cretval) : null;\n";
+      imports.add("GLib.global");
     }
     else if (param.containerType != ContainerType.None)
     {
@@ -416,11 +416,7 @@ class FuncWriter
         if (param.direction == ParamDirection.In)
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
-
-          if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
-            addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr!" ~ param.cTypeRemPtr ~ " : null");
-          else
-            addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr : null");
+          addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr!" ~ param.cTypeRemPtr.stripConst ~ " : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
@@ -432,8 +428,7 @@ class FuncWriter
             postCall ~= param.dName ~ " = " ~ "new " ~ param.dType ~ "(&_"d ~ param.dName ~ ");\n";
           else
             postCall ~= param.dName ~ " = " ~ "new " ~ param.dType ~ "(_" ~ param.dName ~ ", "
-              ~ (
-                  param.ownership == Ownership.Full).to!dstring ~ ");\n";
+              ~ param.fullOwnerStr ~ ");\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
@@ -496,8 +491,8 @@ class FuncWriter
               ~ ".ptr") ~ ";\n\n";
           break;
         case Wrap:
-          preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
-          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= *obj.cPtr;\n";
+          preCall ~= elemType.cTypeRemPtr ~ "[] _tmp" ~ param.dName ~ ";\n";
+          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj.cInstance;\n";
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= " ~ elemType.cType ~ "();\n";
@@ -508,11 +503,8 @@ class FuncWriter
         case Boxed, Reffed, Object, Interface:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
 
-          if (elemType.kind == TypeKind.Object || elemType.kind == TypeKind.Interface)
-            preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
-              ~ elemType.cTypeRemPtr ~ " : null;\n";
-          else
-            preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr : null;\n";
+          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
+            ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
@@ -572,10 +564,10 @@ class FuncWriter
         case Wrap, Boxed, Reffed:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= new " ~ elemType.dType ~ "("
-            ~ param.dName ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
 
-          if (param.ownership != Ownership.None)
-          {
+          if (param.direction == ParamDirection.Out && param.ownership != Ownership.None)
+          { // Free the output array container (FIXME - Not positive on this and what about inout?)
             postCall ~= "g_free(_" ~ param.dName ~ ");\n";
             imports.add("GLib.c.functions");
           }
@@ -583,7 +575,8 @@ class FuncWriter
         case Object, Interface:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject(_" ~ param.dName
-            ~ "[i], " ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+          imports.add("GObject.ObjectG");
 
           if (param.ownership != Ownership.None)
           {
@@ -625,9 +618,7 @@ class FuncWriter
     if (postCall.length > 0)
       writer ~= postCall;
 
-    auto isCtor = func.funcType == FuncType.Constructor && func.name == "new";
-
-    if (func.origDType != "none" && !isCtor)
+    if (func.origDType != "none" && !func.isCtor)
       writer ~= "return _retval;";
 
     writer ~= "}";

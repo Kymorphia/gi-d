@@ -174,6 +174,7 @@ final class Func : TypeNode
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)
   Param[] params; /// Parameters
+  bool isCtor; /// Set for the primary constructor of an instance (not a Gir field)
 
   bool nullable; /// Nullable return value pointer
 

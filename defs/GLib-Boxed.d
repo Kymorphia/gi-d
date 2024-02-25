@@ -3,7 +3,7 @@ import GLib.Boxed;
 /// Class wrapper for boxed types
 abstract class Boxed
 {
-  void* boxPtr; /// Pointer to the C boxed value
+  void* cInstancePtr; /// Pointer to the C boxed value
 
   /**
     * Constructor for wrapping a GObject boxed value
@@ -16,7 +16,7 @@ abstract class Boxed
     if (!boxPtr)
       throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
 
-    this.boxPtr = owned ? boxPtr : glib_g_boxed_copy(getType, boxPtr);
+    this.cInstancePtr = owned ? boxPtr : glib_g_boxed_copy(getType, boxPtr);
   }
 
   /**
@@ -24,12 +24,12 @@ abstract class Boxed
     */
   this(Boxed boxed)
   {
-    this(boxed.boxPtr, false);
+    this(boxed.cInstancePtr, false);
   }
 
   ~this()
   {
-    glib_g_boxed_free(getType, boxPtr);
+    glib_g_boxed_free(getType, cInstancePtr);
   }
 
   /**

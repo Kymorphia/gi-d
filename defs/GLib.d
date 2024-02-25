@@ -18,19 +18,22 @@
 //!set record[HashTable][disable] 1
 //!set record[HashTableIter][disable] 1
 
+//# Fix Dir by specifying g_dir_close as the free function and g_dir_open as the constructor
+//!set record[Dir][free-function] g_dir_close
+//!set record[Dir].method[close][disable] 1
+//!set record[Dir].function[open][introspectable] 1
+//!rename record[Dir].function[open] constructor
+//!set record[Dir].constructor[open].return-value[][transfer-ownership] full
+
 //# Disable binding of unuseful and problematic structures
-//!set record[Data][disable] 1
-//!set record[Queue][disable] 1
 //!set record[Hook][disable] 1
 //!set record[HookList][disable] 1
 //!set record[List][disable] 1
-//!set record[IOFuncs][disable] 1
-//!set record[MemVTable][disable] 1
 //!set record[SList][disable] 1
-//!set record[TestLogBuffer][disable] 1
-//!set record[TestLogMsg][disable] 1
-//!set record[ThreadPool][disable] 1
 //!set record[TrashStack][disable] 1
+
+//# Disable TestLogMsg fields
+//!set record[TestLogMsg].*field[][disable] 1
 
 //# Disable datalist functions
 //!set *function[datalist_*][disable] 1
@@ -119,7 +122,6 @@
 //!set record[StrvBuilder][free-function] g_strv_builder_unref
 //!set record[TestCase][free-function] g_test_case_free
 //!set record[TestSuite][free-function] g_test_suite_free
-//!set record[ThreadPool][free-function] g_thread_pool_free
 //!set record[VariantIter][free-function] g_variant_iter_free
 
 //# Change Variant to a class, set to glib:fundamental, and add ref and unref functions
@@ -128,11 +130,10 @@
 //!set class[Variant][glib:ref-func] g_variant_ref
 //!set class[Variant][glib:unref-func] g_variant_unref
 
-//# VariantBuilder should be opaque
-//!set record[VariantBuilder][opaque] 1
-
-//# Some structures which should be opaque
-//!set union[Mutex][opaque] 1
+//# Add ref/unref functions to VariantBuilder
+//!set record[VariantBuilder][glib:ref-func] g_variant_builder_ref
+//!set record[VariantBuilder][glib:unref-func] g_variant_builder_unref
+//!set record[VariantBuilder].union[u][private] 1
 
 //# Add missing parameter direction "out"
 //!set record[IOChannel].method[read].parameters.parameter[bytes_read][direction] out
@@ -197,27 +198,35 @@
 //!set record[Node].field[parent][writable] 0
 //!set record[Node].field[prev][writable] 0
 
-/**
- * Template to convert a GHashTable to a D associative array.
- * Params:
- *   K = The key D type
- *   V = The value D type
- *   owned = Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
- * Returns: The D associative array which is a copy of the data in hash
- */
-V[K] hashTableToMap(K, V, bool owned = false)(GHashTable* hash)
-{
-  GHashTableIter iter;
-  void* key;
-  void* value;
-  V[K] map;
+  /**
+  * Template to convert a GHashTable to a D associative array.
+  * Params:
+  *   K = The key D type
+  *   V = The value D type
+  *   owned = Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
+  * Returns: The D associative array which is a copy of the data in hash
+  */
+  V[K] hashTableToMap(K, V, bool owned = false)(GHashTable* hash)
+  {
+    GHashTableIter iter;
+    void* key;
+    void* value;
+    V[K] map;
 
-  for (g_hash_table_iter_init(&iter, cPtr); g_hash_table_iter_next(&key, &key, &value); )
-    map[containerGetItem!K(key)] = containerGetItem!V(val);
+    for (g_hash_table_iter_init(&iter, cPtr); g_hash_table_iter_next(&key, &key, &value); )
+      map[containerGetItem!K(key)] = containerGetItem!V(val);
 
-  static if (owned)
-    g_hash_table_unref(hash);
+    static if (owned)
+      g_hash_table_unref(hash);
 
-  return map;
-}
+    return map;
+  }
 
+//# Use a custom free function since g_thread_pool_free takes 3 arguments
+//!set record[ThreadPool][free-function] freePool
+//!class ThreadPool
+
+  private static void freePool(GThreadPool* pool)
+  {
+    g_thread_pool_free(pool, true, false); // immediate, wait
+  }

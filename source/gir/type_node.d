@@ -115,7 +115,7 @@ class TypeNode : Base
     // HACK - Fix anonymous gpointer object parameters to have proper C types
     if (auto st = cast(Structure)typeObject) // Should only be set to a Structure for non-struct dependencies
     {
-      if (cType == "void*")
+      if (cType == "void*" || cType == "const(void)*")
       {
         cType = st.cType ~ "*";
         info("Using '" ~ cType ~ "' for anonymous gpointer parameter " ~ fullName);

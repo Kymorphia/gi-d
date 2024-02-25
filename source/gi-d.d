@@ -4,6 +4,7 @@ import std.experimental.logger;
 import std.getopt;
 import std.stdio : writeln;
 
+import code_traps;
 import code_writer;
 import defs;
 import gir.repo;
@@ -23,10 +24,11 @@ int main(string[] args)
         "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
         "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
         "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
+        "dump-traps", "Dump code trap actions", &codeTrapsDump,
         "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string)
         .join(", ") ~ ")", &logLevel,
         "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
-        "trap", "Add gdb breakpoint in an output file in the form 'filename:line' (file paths match from the end)", &traps,
+        "trap", "Add gdb breakpoint 'action:regex', action: domain (help to list), regex: pattern to match", &traps,
     );
 
     if (helpInformation.helpWanted)
@@ -46,7 +48,19 @@ int main(string[] args)
   foreach (tr; traps)
   {
     auto s = tr.split(":");
-    CodeWriter.setDebugTrap(s[0], s.length > 1 ? s[1].to!uint : 0);
+
+    try
+      addCodeTrap(s[0], s[1]);
+    catch (RangeError)
+    {
+      error("Invalid action:regex code trap");
+      return 1;
+    }
+    catch (Exception e)
+    {
+      error("Invalid regex match: ", e.msg);
+      return 1;
+    }
   }
 
   auto defs = new Defs();

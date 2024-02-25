@@ -13,7 +13,7 @@ shared static this()
 /// Base class wrapper for GObject types
 class ObjectG
 {
-  protected ObjectC* objPtr; // Pointer to wrapped C GObject
+  protected ObjectC* cInstancePtr; // Pointer to wrapped C GObject
 
   /**
     * Constructor to wrap a C GObject with a D proxy object.
@@ -26,31 +26,31 @@ class ObjectG
     if (!cObj)
       throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
 
-    objPtr = cast(ObjectC*)cObj;
+    cInstancePtr = cast(ObjectC*)cObj;
 
     // Add a data pointer to the D object from the C GObject
-    g_object_set_qdata(objPtr, gidObjectQuark, cast(void*)this);
+    g_object_set_qdata(cInstancePtr, gidObjectQuark, cast(void*)this);
 
     // Add a toggle reference to bind the GObject to this proxy D Object to prevent the GObject from being destroyed, while also preventing ref loops.
-    g_object_add_toggle_ref(objPtr, &_cObjToggleNotify, cast(void*)this);
+    g_object_add_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this);
 
     // Add D object as a root to garbage collector so that it doesn't get collected as long as the GObject has a strong reference on it (toggle ref + 1 or more other refs).
     // There will always be at least 2 references at this point, one from the caller and one for the toggle ref.
     GC.addRoot(cast(void*)this);
 
     // If object has a floating reference (GInitiallyOwned), take ownership of it
-    if (g_object_is_floating(objPtr))
-      g_object_ref_sink(objPtr);
+    if (g_object_is_floating(cInstancePtr))
+      g_object_ref_sink(cInstancePtr);
 
     // If taking ownership of the object, remove the extra reference. May trigger toggle notify if it is the last remaining ref,
     // which will call GC.removeRoot() allowing the D object to be garbage collected if it is no longer being accessed, resulting in the destruction of the GObject in dtor.
     if (owned)
-      g_object_unref(objPtr);
+      g_object_unref(cInstancePtr);
   }
 
   ~this()
   { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
-    g_object_remove_toggle_ref(objPtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
+    g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
   }
 
   extern(C)
@@ -73,7 +73,7 @@ class ObjectG
   T* cPtr(T)()
     if (is(T : ObjectC))
   {
-    return cast(T*)objPtr;
+    return cast(T*)cInstancePtr;
   }
 
   /**
@@ -97,8 +97,11 @@ class ObjectG
   {
     if (auto dObj = g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
       return cast(T)dObj;
-    else
+
+    static if (!is(T == interface))
       return new T(cptr, owned);
+    else
+      return null; // FIXME - Need to handle returning an object instance for an interface
   }
 }
 

@@ -68,7 +68,7 @@ final class Structure : TypeNode
     if (structType == StructType.Record && !glibGetType.empty)
       return TypeKind.Boxed;
 
-    if (structType == StructType.Record && opaque && functions.empty)
+    if (structType == StructType.Record && opaque && fields.empty)
       return TypeKind.Opaque;
 
     if (structType == StructType.Record || structType == StructType.Union)
@@ -77,7 +77,7 @@ final class Structure : TypeNode
         return TypeKind.Wrap;
 
       foreach (field; fields)
-        if (!field.callback && !field.kind.among(TypeKind.Basic, TypeKind.Enum, TypeKind.Flags))
+        if (!field.kind.among(TypeKind.Basic, TypeKind.Callback, TypeKind.Enum, TypeKind.Flags))
           return TypeKind.Wrap;
 
       return TypeKind.Simple;
@@ -102,6 +102,14 @@ final class Structure : TypeNode
   // Fixup base type only, not dependencies
   void fixupType()
   {
+    if (auto field = cast(Field)parent) // Structure as a field of another structure?
+    { // dType and cType are the field name (not an actual type)
+      dType = field.dName;
+      cType = repo.defs.symbolName(origCType);
+      kind = TypeKind.Simple;
+      return;
+    }
+
     super.fixup;
     kind = calcKind;
 
@@ -112,6 +120,9 @@ final class Structure : TypeNode
   // Fixup structure dependencies (separated so that all base types are resolved first with fixupType())
   void fixupDeps()
   {
+    if (cast(Field)parent) // Structure as a field of another structure?
+      return;
+
     if (!parentType.empty)
       parentStruct = cast(Structure)repo.defs.findTypeObject(parentType, repo);
 
@@ -120,7 +131,15 @@ final class Structure : TypeNode
         implementStructs ~= ifaceStruct;
 
     foreach (fn; functions) // Fixup structure function/methods
+    {
       fn.fixup;
+
+      if (fn.funcType == FuncType.Constructor && (!ctorFunc || fn.name == "new")) // Set "new" constructor as the primary constructor or the first one otherwise
+        ctorFunc = fn;
+    }
+
+    if (ctorFunc)
+      ctorFunc.isCtor = true;
 
     foreach (sg; signals) // Fixup structure signals
       sg.fixup;
@@ -136,7 +155,7 @@ final class Structure : TypeNode
 
   override void verify()
   {
-    if (disable) // Don't verify if structure is disabled
+    if (disable || cast(Field)parent) // Don't verify if structure is disabled or a field structure
       return;
 
     super.verify;
@@ -165,22 +184,6 @@ final class Structure : TypeNode
         fn.verify;
     }
 
-    if (kind == TypeKind.Wrap && !freeFunction)
-    {
-      warning("Wrapped structure " ~ fullName.to!string ~ " has no free-function");
-
-      if (repo.suggestDefCmds)
-      {
-        auto unrefFunc = functions.find!(x => x.name == "unref");
-
-        if (unrefFunc.empty)
-          unrefFunc = functions.find!(x => x.name == "free");
-
-        if (!unrefFunc.empty)
-          writeln("//!set " ~ xmlSelector ~ "[free-function] " ~ unrefFunc[0].cName);
-      }
-    }
-
     foreach (f; fields) // Verify structure fields
     {
       try
@@ -202,12 +205,9 @@ final class Structure : TypeNode
    */
   void write(string path, bool ifaceModule = false)
   {
-    string postfix;
-    if (kind == TypeKind.Interface)
-      postfix = ifaceModule ? "IF" : "T"; // Interfaces use IF postfix for interface module and T for interface mixin template
-
-    auto writer = new CodeWriter(buildPath(path, dType.to!string ~ postfix ~ ".d"));
-    writer ~= ["module " ~ fullName ~ postfix.to!dstring ~ ";", ""];
+    auto isIfaceTemplate = kind == TypeKind.Interface && !ifaceModule;
+    auto writer = new CodeWriter(buildPath(path, dType.to!string ~ (isIfaceTemplate ? "T" : "") ~ ".d")); // Append T to type name for interface mixin template module
+    writer ~= ["module " ~ fullName ~ (isIfaceTemplate ? "T;"d : ";"d), ""];
 
     // Create the function writers first to construct the imports
     auto imports = new ImportSymbols(defCode.imports, repo.namespace);
@@ -225,6 +225,7 @@ final class Structure : TypeNode
       {
         if (!fn.disable)
         {
+          codeTrap("struct.func", fn.fullName);
           funcWriters ~= new FuncWriter(fn);
           imports.merge(funcWriters[$ - 1].imports);
         }
@@ -235,11 +236,17 @@ final class Structure : TypeNode
     }
 
     if (parentStruct)
-      imports.add(parentStruct.fullDType);
+      parentStruct.addImports(imports, repo); // Add parent to imports
+
+    foreach (st; implementStructs) // Add implemented interfaces to imports
+    {
+      st.addImports(imports, repo);
+      imports.add(st.fullDType ~ "T"); // Import interface template module also
+    }
 
     imports.remove(fullDType);
 
-    if (imports.write(writer))
+    if (imports.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
       writer ~= "";
 
     if (defCode.preClass.length > 0)
@@ -252,12 +259,12 @@ final class Structure : TypeNode
       if (kind == TypeKind.Interface)
       {
         if (ifaceModule)
-          writer ~= "interface " ~ dType ~ "IF";
+          writer ~= "interface " ~ dType;
         else
           writer ~= "template " ~ dType ~ "T(TStruct)";
       }
-      else
-      { // Create range of parent type and implemented interface types
+      else // Create range of parent type and implemented interface types
+      {
         auto parentAndIfaces = (parentStruct ? [parentStruct.dType] : []) ~ implementStructs.map!(x => x.dType).array;
         writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.join(", ") : "");
       }
@@ -293,74 +300,57 @@ final class Structure : TypeNode
   // Write class init code
   private void writeInitCode(CodeWriter writer, dstring[] propMethods, bool ifaceModule)
   {
-    if (kind == TypeKind.Wrap) // Wrap a structure in a class with properties
-    {
-      writer ~= [cType ~ "* cPtr;", ""];
-      writer ~= [
-        "this(" ~ cType ~ "* cPtr)", "{",
-        "if (!cPtr)", "throw new GidConstructException(\"Null struct pointer for " ~ fullName ~ "\");",
-        "",
-        "this.cPtr = cPtr;", "}"
-      ];
+    if (kind == TypeKind.Opaque || (kind == TypeKind.Reffed && !parentStruct))
+      writer ~= [cTypeRemPtr ~ "* cInstancePtr;"];
+    else if (kind == TypeKind.Wrap)
+      writer ~= [cTypeRemPtr ~ " cInstance;"];
 
-      if (freeFunction)
-        writer ~= ["", "~this()", "{", freeFunction ~ "(cPtr);", "}"];
-
-      writer ~= propMethods;
-    }
-    else if (kind == TypeKind.Boxed)
-    {
-      writer ~= [
-        "this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{",
-        "super(cast(void*)cPtr, ownedRef);", "}", ""
-      ];
-      writer ~= ["auto cPtr()", "{", "return cast(" ~ cType ~ "*)boxPtr;", "}", ""];
-      writer ~= ["override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
-
-      writer ~= propMethods;
-    }
+    if (kind == TypeKind.Opaque || kind == TypeKind.Wrap)
+      writer ~= ["", "this(void* ptr)", "{",
+        "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
     else if (kind == TypeKind.Reffed)
-    {
-      if (!parentStruct) // Root fundamental reffed type?
-      {
-        writer ~= [cType ~ "* cPtr;", ""];
-        writer ~= [
-          "this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{", "this.cPtr = cPtr;", "",
-          "if (!ownedRef)", glibRefFunc ~ "(cPtr);", "}", ""
-        ];
-        writer ~= ["~this()", "{", glibUnrefFunc ~ "(cPtr);", "}", ""];
-      }
-      else // Derived reffed type
-        writer ~= [
-        "this(" ~ cType ~ "* cPtr, bool ownedRef = false)", "{",
-        "super(cast(" ~ parentStruct.cType ~ "*)cPtr, ownedRef);", "}", ""
-      ];
-    }
-    else if (kind == TypeKind.Object)
-    {
-      writer ~= ["this(void* cObj, bool ownedRef = false)", "{", "super(cObj, ownedRef);", "}", ""];
-      writer ~= [
-        "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)objPtr;", "}", ""
-      ];
-      writer ~= ["static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+      writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
+        "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
+    else if (kind == TypeKind.Boxed || kind == TypeKind.Object)
+      writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
+        "super(cast(void*)ptr, ownedRef);", "}"];
 
+    if (kind == TypeKind.Opaque)
+      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "}"];
+    else if (kind == TypeKind.Wrap)
+      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "}"];
+    else if (kind == TypeKind.Reffed && !parentStruct)
+      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (!ownedRef)", glibRefFunc
+        ~ "(cInstancePtr);", "}", "", "~this()", "{", glibUnrefFunc ~ "(cInstancePtr);", "}", ""];
+    else if (kind == TypeKind.Reffed && parentStruct)
+      writer ~= ["super(cast(" ~ parentStruct.cType ~ "*)ptr, ownedRef);", "}"];
+
+    if (kind == TypeKind.Opaque && freeFunction)
+      writer ~= ["", "~this()", "{", freeFunction ~ "(cInstancePtr);", "}"];
+    else if (kind == TypeKind.Wrap && freeFunction)
+      writer ~= ["", "~this()", "{", freeFunction ~ "(&cInstance);", "}"];
+
+    if (kind.among(TypeKind.Opaque, TypeKind.Reffed, TypeKind.Boxed, TypeKind.Object)
+        || (kind == TypeKind.Interface && !ifaceModule))
+      writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)cInstancePtr;", "}"];
+    else if (kind == TypeKind.Wrap)
+      writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)&cInstance;", "}"];
+    else if (kind == TypeKind.Interface && ifaceModule)
+      writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "));"];
+
+    if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && ifaceModule))
+      writer ~= ["", "static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+
+    if (kind.among(TypeKind.Opaque, TypeKind.Wrap, TypeKind.Boxed))
+      writer ~= propMethods;
+
+    if (kind == TypeKind.Object)
+    {
       if (!implementStructs.empty)
         writer ~= "";
 
       foreach (iface; implementStructs)
-        writer ~= "mixin " ~ iface.dType ~ "!" ~ cType ~ ";";
-    }
-    else if (kind == TypeKind.Interface)
-    {
-      if (ifaceModule)
-      {
-        writer ~= ["T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "));", ""];
-        writer ~= ["static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
-      }
-      else
-        writer ~= [
-        "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)objPtr;", "}", ""
-      ];
+        writer ~= "mixin " ~ iface.dType ~ "T!" ~ cType ~ ";";
     }
   }
 
@@ -369,10 +359,14 @@ final class Structure : TypeNode
   {
     dstring[] lines;
 
+    auto cPtr = "cPtr!" ~ cTypeRemPtr;
+
     foreach (f; fields)
     {
       if (f.disable || f.private_)
         continue;
+
+      assert(!f.directStruct, "Unsupported embedded structure field " ~ f.fullName.to!string);
 
       assert(f.containerType == ContainerType.None, "Unsupported structure field " ~ f.fullName.to!string
           ~ " with container type " ~ f.containerType.to!string);
@@ -389,19 +383,19 @@ final class Structure : TypeNode
       final switch (f.kind) with (TypeKind)
       {
         case Basic, BasicAlias:
-          lines ~= "return cPtr." ~ f.dName ~ ";";
+          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case String:
-          lines ~= "return cPtr." ~ f.dName ~ ".fromCString(false);";
+          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ".fromCString(false);";
           break;
         case Enum:
-          lines ~= "return cast(" ~ f.dType ~ ")cPtr." ~ f.dName ~ ";";
+          lines ~= "return cast(" ~ f.dType ~ ")" ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case Flags:
-          lines ~= "return " ~ f.dType ~ "(cPtr." ~ f.dName ~ ");";
+          lines ~= "return " ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ");";
           break;
         case Simple:
-          lines ~= "return *cPtr." ~ f.dName ~ ";";
+          lines ~= "return *" ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
@@ -409,7 +403,7 @@ final class Structure : TypeNode
           else // Callback function type is directly defined in field
             lines ~= ["", "@property " ~ f.name.camelCase(true) ~ "FuncType " ~ f.dName ~ "()", "{"];
 
-          lines ~= "return cPtr." ~ f.dName ~ ";";
+          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case Wrap:
         case Boxed:
@@ -417,12 +411,12 @@ final class Structure : TypeNode
           auto starCount = f.cType.retro.countUntil!(x => x != '*');
 
           if (starCount < 1) // The cast is for casting away "const"
-            lines ~= "return new " ~ f.dType ~ "(cast(" ~ f.cType.stripConst ~ "*)" ~ "&cPtr." ~ f.dName ~ ");";
+            lines ~= "return new " ~ f.dType ~ "(cast(" ~ f.cType.stripConst ~ "*)" ~ "&" ~ cPtr ~ "." ~ f.dName ~ ");";
           else
-            lines ~= "return new " ~ f.dType ~ "(cast(" ~ f.cType.stripConst ~ ")" ~ "cPtr." ~ f.dName ~ ");";
+            lines ~= "return new " ~ f.dType ~ "(cast(" ~ f.cType.stripConst ~ ")" ~ cPtr ~ "." ~ f.dName ~ ");";
           break;
         case Object:
-          lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(cPtr!" ~ f.cTypeRemPtr ~ "." ~ f.dName ~ ", false);";
+          lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
           break;
         case Unknown, Opaque, Interface, Namespace:
           throw new Exception(
@@ -441,23 +435,23 @@ final class Structure : TypeNode
       final switch (f.kind) with (TypeKind)
       {
         case Basic, BasicAlias:
-          lines ~= "cPtr." ~ f.dName ~ " = propval;";
+          lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
         case String:
           lines ~= [
-            "g_free(cast(void*)cPtr." ~ f.dName ~ ");",
-            "cPtr." ~ f.dName ~ " = propval.toCString(true);"
+            "g_free(cast(void*)" ~ cPtr ~ "." ~ f.dName ~ ");",
+            cPtr ~ "." ~ f.dName ~ " = propval.toCString(true);"
           ];
           imports.add("GLib.c.functions");
           break;
         case Enum:
-          lines ~= "cPtr." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";
+          lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";
           break;
         case Flags:
-          lines ~= "cPtr." ~ f.dName ~ " = cast(" ~ f.cType ~ ")cast(uint)propval;";
+          lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")cast(uint)propval;";
           break;
         case Simple:
-          lines ~= "cPtr." ~ f.dName ~ " = *propval;";
+          lines ~= cPtr ~ "." ~ f.dName ~ " = *propval;";
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
@@ -467,10 +461,10 @@ final class Structure : TypeNode
             "", "@property void " ~ f.dName ~ "(" ~ f.name.camelCase(true) ~ "FuncType propval)", "{"
           ];
 
-          lines ~= "cPtr." ~ f.dName ~ " = propval;";
+          lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
         case Object:
-          lines ~= "cPtr!" ~ f.cTypeRemPtr ~ "." ~ f.dName ~ " = propval.get" ~ f.dType ~ ";";
+          lines ~= cPtr ~ "." ~ f.dName ~ " = propval.get" ~ f.dType ~ ";";
           break;
         case Boxed, Wrap, Reffed, Unknown, Opaque, Interface, Namespace:
           throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ f
@@ -483,6 +477,66 @@ final class Structure : TypeNode
     }
 
     return lines;
+  }
+
+  /**
+   * Write a C structure definition
+   * Params:
+   *   writer = Code writer
+   */
+  void writeCStruct(CodeWriter writer)
+  { // Recursive function to process embedded struct/union fields
+    void recurseStruct(Structure st)
+    {
+      st.writeDocs(writer);
+
+      auto typeName = st == this ? st.cType : st.name.camelCase(true) ~ "Type";
+
+      writer ~= [(st.structType == StructType.Union ? "union "d : "struct "d) ~ typeName, "{"];
+
+      foreach (fi, f; st.fields)
+      {
+        f.writeDocs(writer);
+
+        if (f.directStruct)
+        {
+          recurseStruct(f.directStruct);
+        }
+        else if (f.containerType == ContainerType.Array)
+        {
+          if (f.fixedSize == ArrayNotFixed)
+          { // Use array cType if array is not a fixed size
+            if (!f.cType.empty)
+              writer ~= f.cType ~ " " ~ f.dName ~ ";";
+            else
+              f.xmlNode.warn("Struct array field is not fixed size and array c:type not set");
+          }
+          else if (!f.elemTypes.empty && !f.elemTypes[0].cType.empty)
+            writer ~= f.elemTypes[0].cType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ f.dName ~ ";";
+          else
+            f.xmlNode.warn("Struct array field is missing c:type attribute");
+        }
+        else if (f.callback && !f.typeObject) // Directly defined callback field?
+          writer ~= "extern(C) " ~ f.callback.getCPrototype ~ " " ~ f.callback.dName ~ ";";
+        else // A regular field
+        {
+          if (!f.cType.empty)
+            writer ~= f.cType ~ " " ~ f.dName ~ ";";
+          else
+            f.xmlNode.warn("Struct field is missing c:type attribute");
+        }
+
+        if (fi + 1 < st.fields.length)
+          writer ~= "";
+      }
+
+      writer ~= ["}", ""];
+
+      if (st != this)
+        writer ~= [typeName ~ " " ~ st.dType ~ ";"]; // dType is the field name
+    }
+
+    recurseStruct(this);
   }
 
   StructType structType; /// Type of structure
@@ -499,6 +553,7 @@ final class Structure : TypeNode
   Property[] properties; /// Properties
 
   DefCode defCode; /// Code from definitions file
+  Func ctorFunc; /// Primary instance constructor function in functions (not a Gir field)
 
   bool abstract_; /// Is abstract type?
   bool deprecated_; /// Deprecated?

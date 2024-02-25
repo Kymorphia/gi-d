@@ -4,6 +4,7 @@ import core.stdc.signal : raise;
 import core.sys.posix.signal : SIGTRAP;
 public import std.experimental.logger;
 
+public import code_traps;
 public import std_includes;
 
 static this()
@@ -127,6 +128,9 @@ unittest
  */
 dstring stripConst(dstring type)
 {
+  if (!type.startsWith("const")) // Optimization
+    return type;
+
   return tokenizeType(type).filter!(x => !x.among("const"d, "("d, ")"d)).join;
 }
 

@@ -275,6 +275,7 @@ class Defs
           break;
         case "class":
           curStructName = cmdTokens[1];
+          classState = ClassState.In; // FIXME - How to specify other sections of modules?
 
           if (curStructName !in curRepo.structDefCode)
             curRepo.structDefCode[curStructName] = new DefCode();
@@ -566,11 +567,11 @@ enum TypeKind
   Enum, /// Enumeration type
   Flags, /// Bitfield flags type
   Simple, /// Simple Record or Union with basic fields (Basic, Enum, Flags) and no methods (alias to C type)
-  Opaque, /// Opaque Record pointer type with no accessible fields or methods (alias to C type)
   Callback, /// Callback function type
-  Wrap, /// Record or Union with accessible fields and/or methods (wrap with a class)
-  Boxed, /// A GLib boxed Record type
-  Reffed, /// Referenced Class type with inheritence (not GObject derived)
+  Opaque, /// Opaque Record pointer type with no accessible fields or methods (alias to C type)
+  Wrap, /// Record or Union embedded in a D class with accessible fields and/or methods
+  Boxed, /// A GLib boxed Record type which can have fields
+  Reffed, /// Referenced Class type with possible inheritence (not GObject derived), can have fields
   Object, /// A GObject Class
   Interface, /// Interface type
   Namespace, /// Namespace structure (no C type, global module for example)
@@ -595,7 +596,7 @@ bool typeKindHasModule(TypeKind kind)
  */
 bool typeKindIsGlobal(TypeKind kind)
 {
-  return kind >= TypeKind.BasicAlias && kind <= TypeKind.Callback;
+  return kind >= TypeKind.BasicAlias && kind <= TypeKind.Opaque;
 }
 
 /// Manual code from a definitions file

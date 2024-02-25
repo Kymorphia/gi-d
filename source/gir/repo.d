@@ -73,17 +73,17 @@ final class Repo : Base
           else
             callbacks ~= new Func(this, node);
           break;
-        case "class", "interface", "record", "union": // Class, interfaces, structures, and unions
-          if (!node.parent || node.parent.id != "namespace")
-          { // Only warn if embedded structure is not marked as opaque
-            auto st = node.baseParentFromXmlNode!Structure;
-            if (!st || !st.opaque)
-              node.warn("Embedded structure types not supported");
-
-            goto noRecurse;
-          }
-
+        case "class", "interface": // Classes and interfaces
           structs ~= new Structure(this, node);
+          break;
+        case "record", "union": // Structures and unions
+          if (auto st = baseParentFromXmlNode!Structure(node))
+          { // Embedded union or structure field
+            st.fields ~= new Field(st, node);
+            st.fields[$-1].directStruct = new Structure(this, node);
+          }
+          else
+            structs ~= new Structure(this, node);
           break;
         case "constant": // Constants
           constants ~= new Constant(this, node);
@@ -477,50 +477,13 @@ final class Repo : Base
 
     foreach (st; structs)
     {
+      codeTrap("ctypes.struct", st.fullName);
+
       if (st.kind == TypeKind.Namespace)
         continue;
 
       if (st.fields.length > 0 && !st.opaque) // Regular structure?
-      {
-        if (st.kind == TypeKind.Simple)
-          st.writeDocs(writer);
-
-        writer ~= ["struct " ~ st.cType, "{"];
-
-        foreach (fi, f; st.fields)
-        {
-          f.writeDocs(writer);
-
-          if (f.containerType == ContainerType.Array)
-          {
-            if (f.fixedSize == ArrayNotFixed)
-            { // Use array cType if array is not a fixed size
-              if (!f.cType.empty)
-                writer ~= f.cType ~ " " ~ f.dName ~ ";";
-              else
-                f.xmlNode.warn("Struct array field is not fixed size and array c:type not set");
-            }
-            else if (!f.elemTypes.empty && !f.elemTypes[0].cType.empty)
-              writer ~= f.elemTypes[0].cType ~ "[" ~ f.fixedSize.to!dstring ~ "] " ~ f.dName ~ ";";
-            else
-              f.xmlNode.warn("Struct array field is missing c:type attribute");
-          }
-          else if (f.callback && !f.typeObject) // Directly defined callback field?
-            writer ~= "extern(C) " ~ f.callback.getCPrototype ~ " " ~ f.callback.dName ~ ";";
-          else // A regular field
-          {
-            if (!f.cType.empty)
-              writer ~= f.cType ~ " " ~ f.dName ~ ";";
-            else
-              f.xmlNode.warn("Struct field is missing c:type attribute");
-          }
-
-          if (fi + 1 < st.fields.length)
-            writer ~= "";
-        }
-
-        writer ~= ["}", ""];
-      }
+        st.writeCStruct(writer);
       else // Opaque structure
       {
         st.writeDocs(writer);
@@ -689,6 +652,8 @@ final class Repo : Base
       if (fn.disable)
         continue;
 
+      codeTrap("global.func", fn.fullName);
+
       funcWriters ~= new FuncWriter(fn);
       imports.merge(funcWriters[$ - 1].imports);
     }
@@ -764,7 +729,7 @@ final class Repo : Base
         preambleShown = true;
       }
 
-      writer ~= "alias " ~ st.name ~ " = " ~ st.cType ~ ";";
+      writer ~= "alias " ~ st.name ~ " = " ~ st.cType ~ (st.kind == TypeKind.Opaque ? "*;"d : ";"d);
     }
 
     preambleShown = false;

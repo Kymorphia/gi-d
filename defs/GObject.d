@@ -12,24 +12,14 @@
 //!subtype Object ObjectG
 //!subtype TypeInfo TypeInfoG
 
-//!set class[InitiallyUnowned][opaque] 1
-
-//!del union[_Value__data__union]
-
-//!set record[InitiallyUnownedClass][opaque] 1
-//!set record[ObjectClass][opaque] 1
-//!set record[Value][opaque] 1
-//!set record[WeakRef][opaque] 1
-
-//# Delete fields from some structures which can just be treated opaque
-//!del *class[ParamSpec*].*field
-//!del record[Parameter].*field
-//!del record[TypeModuleClass].*field
-
 //# Set ref/unref of ParamSpec
 //!set class[ParamSpec][glib:ref-func] g_param_spec_ref
 //!set class[ParamSpec][glib:unref-func] g_param_spec_unref
 //!del class[ParamSpec][glib:get-type]
+
+//# Designate ParamSpecPool.new as constructor and set as introspectable
+//!set record[ParamSpecPool].function[new][introspectable] 1
+//!rename record[ParamSpecPool].function[new] constructor
 
 //# Replace gpointer C types to actual type
 //!set record[TypeClass].method[peek_parent].return-value.type[][c:type] GTypeClass*
