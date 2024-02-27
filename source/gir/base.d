@@ -2,6 +2,7 @@ module gir.base;
 
 import code_writer;
 public import gir.repo;
+import gir.structure;
 import std_includes;
 public import xml_tree;
 
@@ -30,6 +31,7 @@ abstract class Base
   {
   }
 
+  /// Full name of object with ancestors separated by periods
   dstring fullName()
   {
     dstring full;
@@ -39,6 +41,18 @@ abstract class Base
         full = full.length > 0 ? s ~ "." ~ full : s;
 
     return full;
+  }
+
+  /// The GError domain type name (exception name)
+  dstring errorDomain()
+  {
+    if (auto st = getParentByType!Structure)
+    { // Not global struct and has an error quark function? (hopefully only one)
+      if (st != st.repo.globalStruct && !st.errorQuarks.empty)
+        return st.dType ~ "Exception";
+    }
+
+    return "ErrorG"; // Default error domain
   }
 
   @property XmlNode xmlNode()

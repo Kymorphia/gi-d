@@ -130,6 +130,9 @@
 //!set class[Variant][glib:ref-func] g_variant_ref
 //!set class[Variant][glib:unref-func] g_variant_unref
 
+//# Disable deprecated g_variant_parser_get_error_quark since it confuses the exception generator
+//!set class[Variant].function[parser_get_error_quark][disable] 1
+
 //# Add ref/unref functions to VariantBuilder
 //!set record[VariantBuilder][glib:ref-func] g_variant_builder_ref
 //!set record[VariantBuilder][glib:unref-func] g_variant_builder_unref

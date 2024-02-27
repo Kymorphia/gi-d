@@ -45,7 +45,7 @@ char* toCString(string dstr, bool transfer)
  * Convert a C string to a D string, with parameter to consume (free) the C string with g_free().
  * Params:
  *   cstr = Zero terminated C string
- *   transfer = true to transfer the string (free it with g_free()), false to just copy it
+ *   transfer = true to transfer the string (freed with g_free()), false to just copy it
  * Returns: The D string copy
  */
 string fromCString(const(char)* cstr, bool transfer)

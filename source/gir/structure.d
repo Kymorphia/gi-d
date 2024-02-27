@@ -136,6 +136,9 @@ final class Structure : TypeNode
 
       if (fn.funcType == FuncType.Constructor && (!ctorFunc || fn.name == "new")) // Set "new" constructor as the primary constructor or the first one otherwise
         ctorFunc = fn;
+
+      if (fn.funcType == FuncType.Function && fn.dType == "Quark" && fn.name.endsWith("error_quark"))
+        errorQuarks ~= fn; // Add exception error quark functions to array
     }
 
     if (ctorFunc)
@@ -291,6 +294,18 @@ final class Structure : TypeNode
 
     writer ~= "}";
 
+    if (defCode.genFuncs)
+    {
+      foreach (quarkFunc; errorQuarks) // Add error exceptions
+      {
+        if (!quarkFunc.disable)
+        {
+          writer ~= "";
+          writer ~= quarkFunc.constructException;
+        }
+      }
+    }
+
     if (defCode.postClass.length > 0)
       writer ~= defCode.postClass;
 
@@ -338,7 +353,9 @@ final class Structure : TypeNode
     else if (kind == TypeKind.Interface && ifaceModule)
       writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "));"];
 
-    if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && ifaceModule))
+    if (kind.among(TypeKind.Boxed, TypeKind.Object))
+      writer ~= ["", "override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+    else if (kind == TypeKind.Interface && ifaceModule)
       writer ~= ["", "static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
 
     if (kind.among(TypeKind.Opaque, TypeKind.Wrap, TypeKind.Boxed))
@@ -554,6 +571,7 @@ final class Structure : TypeNode
 
   DefCode defCode; /// Code from definitions file
   Func ctorFunc; /// Primary instance constructor function in functions (not a Gir field)
+  Func[] errorQuarks; /// List of GError quark functions for exceptions
 
   bool abstract_; /// Is abstract type?
   bool deprecated_; /// Deprecated?

@@ -5,6 +5,7 @@ import std.conv : to;
 import code_writer;
 import gir.param;
 import gir.repo;
+import gir.structure;
 import gir.type_node;
 import import_symbols;
 import utils;
@@ -167,7 +168,40 @@ final class Func : TypeNode
     foreach (i, p; params)
       fnptr ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
 
+    if (throws)
+      fnptr ~= (params.length > 0 ? ", "d : ""d) ~ "GError** _err";
+
     return fnptr ~ ")";
+  }
+
+  /**
+   * Construct a GError Exception class from a "error_quark" function.
+   * Returns: D code for the GError exception.
+   */
+  dstring constructException()
+  {
+    assert (name.endsWith("error_quark"));
+
+    dstring output;
+
+    auto exceptionName = name[0 .. $ - "error_quark".length];
+
+    auto st = getParentByType!Structure;
+
+    if (!st)
+      throw new Exception("Cannot construct exception class from function " ~ fullName.to!string);
+
+    if (!exceptionName.empty)
+      exceptionName = st.dType ~ exceptionName.stripRight("_").camelCase(true);
+    else
+      exceptionName = st.dType;
+
+    output = "class " ~ exceptionName ~ "Exception : ErrorG\n{\n";
+    output ~= "this(GError* err)\n{\nsuper(err);\n}\n\n";
+    output ~= "this(Code code, string msg)\n{\nsuper(" ~ st.dType ~ "." ~ dName ~ ", cast(int)code, msg);\n}\n";
+    output ~= "\nalias Code = G" ~ exceptionName ~ "Error;\n}";
+
+    return output;
   }
 
   private dstring _name; /// Name of function

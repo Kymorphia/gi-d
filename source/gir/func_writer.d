@@ -29,6 +29,12 @@ class FuncWriter
     if (func.funcType != FuncType.Method && !func.isCtor && func.parent !is func.repo.globalStruct)
       decl ~= "static "; // Function is "static" if it is not a method, constructor, or global function
 
+    if (func.throws)
+    { // postCall for exceptions is order sensitive and must be handled before output and return processing
+      postCall ~= "if (_err)\nthrow new " ~ func.errorDomain ~ "(_err);\n";
+      imports.add("GLib.ErrorG");
+    }
+
     processReturn();
 
     decl ~= func.isCtor ? "this(" : func.dName ~ "(";
@@ -36,6 +42,12 @@ class FuncWriter
 
     foreach (param; func.params)
       processParam(param);
+
+    if (func.throws)
+    {
+      preCall ~= "GError *_err;\n";
+      addCallParam("&_err");
+    }
 
     decl ~= ")";
     call ~= ");";

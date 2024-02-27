@@ -50,7 +50,8 @@ class ObjectG
 
   ~this()
   { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
-    g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
+    if (cInstancePtr) // Might be null if an exception occurred during construction
+      g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
   }
 
   extern(C)
@@ -80,7 +81,7 @@ class ObjectG
    * Get the GType of an object.
    * Returns: The GType
    */
-  static GType getType()
+  GType getType()
   {
     return g_object_get_type();
   }

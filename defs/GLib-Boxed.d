@@ -29,14 +29,18 @@ abstract class Boxed
 
   ~this()
   {
-    glib_g_boxed_free(getType, cInstancePtr);
+    if (cInstancePtr) // Might be null if an exception occurred during construction
+      glib_g_boxed_free(getType, cInstancePtr);
   }
 
   /**
     * Get the GType of this boxed type.
     * Returns: The GObject GType
     */
-  GType getType();
+  GType getType()
+  {
+    return cast(GType)0; // Gets overridden by derived boxed types
+  }
 }
 
 T containerGetItem(T, CT)(void* data)

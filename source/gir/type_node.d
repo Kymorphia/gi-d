@@ -23,6 +23,7 @@ class TypeNode : Base
     this.fromXml(node);
   }
 
+  /// Full name of the D type with the namespace followed by a period and then the D type
   dstring fullDType()
   {
     if (typeRepo && !dType.empty)
@@ -31,7 +32,7 @@ class TypeNode : Base
     return origDType.canFind('.') ? origDType : repo.namespace ~ "." ~ origDType;
   }
 
-  // cPtr with a single '*' removed (if it has any)
+  /// cPtr with a single '*' removed (if it has any)
   dstring cTypeRemPtr()
   {
     if (cType.endsWith("*"))
@@ -40,7 +41,7 @@ class TypeNode : Base
       return cType;
   }
 
-  // Returns "true" if ownership is Full, "false" otherwise (help function)
+  /// Returns "true" if ownership is Full, "false" otherwise (help function)
   dstring fullOwnerStr()
   {
     return ownership == Ownership.Full ? "true"d : "false"d;
