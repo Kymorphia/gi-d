@@ -127,8 +127,15 @@ class TypeNode : Base
       typ.fixup;
 
     if (containerType == ContainerType.Array)
-    {
-      if (!elemTypes.empty && elemTypes[0].cType.empty) // Missing array element C type? Try and derive it from array C type
+    { // If there is a length parameter, dType is "ubyte", and array type uses char - treat it as a ubyte array
+      if (lengthParamIndex != ArrayNoLengthParam && !elemTypes.empty && elemTypes[0].dType == "ubyte"
+        && cType.stripConst.startsWith("char"))
+      {
+        info("Changing array cType from " ~ cType.to!string ~ " to ubyte for " ~ fullName.to!string);
+        elemTypes[0].cType = "ubyte";
+        cType = cType.replace("char", "ubyte");
+      }
+      else if (!elemTypes.empty && elemTypes[0].cType.empty) // Missing array element C type? Try and derive it from array C type
       {
         auto elemType = cType;
         auto isConst = cType.startsWith("const");
@@ -195,6 +202,11 @@ class TypeNode : Base
         if (count < 2)
           throw new Exception("Array type '" ~ cType.to!string ~ "' is probably a string, not an array of strings");
       }
+
+      if (elemTypes[0].dType == "ubyte" && cType.canFind("char"))
+        throw new Exception("Unsure if array is a null terminated string or not for array cType "
+          ~ cType.to!string ~ " element cType " ~ elemTypes[0].cType.to!string ~ " dType "
+          ~ elemTypes[0].dType.to!string);
     }
     else if (containerType != ContainerType.None) // Another container type?
     {
@@ -243,7 +255,10 @@ class TypeNode : Base
     imports.add(typeRepo.namespace ~ ".c.types");
 
     if (kind.typeKindHasModule)
-      imports.add(fullDType);
+    {
+      if (!typeObject || !typeObject.disable)
+        imports.add(fullDType);
+    }
     else if (kind.typeKindIsGlobal)
       imports.add(typeRepo.namespace ~ ".global");
 

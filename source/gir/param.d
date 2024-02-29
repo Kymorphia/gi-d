@@ -32,6 +32,20 @@ final class Param : TypeNode
     return repo.defs.symbolName(name.camelCase);
   }
 
+  /// Get direction string (empty for input, "out ", or "inout "). Intended for use directly in code generation.
+  dstring directionStr()
+  {
+    final switch (direction) with(ParamDirection)
+    {
+      case In:
+        return "";
+      case Out:
+        return "out ";
+      case InOut:
+        return "inout ";
+    }
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
@@ -91,8 +105,12 @@ final class Param : TypeNode
       if (direction != ParamDirection.Out)
         throw new Exception("HashTable " ~ direction.to!string ~ " parameters not supported");
     }
-    else if (containerType != ContainerType.None && ownership != Ownership.None)
-      throw new Exception("Container " ~ containerType.to!string ~ " parameter with ownership not supported");
+    else if (containerType != ContainerType.None)
+    {
+      if ((direction == ParamDirection.In && ownership != Ownership.None) || direction == ParamDirection.InOut)
+        throw new Exception("Container " ~ containerType.to!string ~ " parameter with direction "
+          ~ direction.to!string ~ " ownership " ~ ownership.to!string ~ " not supported");
+    }
 
     if (containerType == ContainerType.None && kind == TypeKind.Basic && direction == ParamDirection.In
         && cType.countStars > 0 && dType != cType)
@@ -109,10 +127,10 @@ final class Param : TypeNode
 
       auto lengthParam = typeFunc.params[lengthParamIndex];
 
-      if (lengthParam.direction != direction)
+      if ((direction == ParamDirection.In && lengthParam.direction == ParamDirection.Out)
+          || (direction == ParamDirection.InOut && lengthParam.direction == ParamDirection.Out))
         throw new Exception("Array length parameter direction '" ~ to!string(
-            lengthParam.direction)
-            ~ "' does not match array direction '" ~ direction.to!string ~ "'");
+            lengthParam.direction) ~ "' is incompatible with array direction '" ~ direction.to!string ~ "'");
     }
   }
 

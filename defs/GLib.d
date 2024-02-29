@@ -1,5 +1,10 @@
 //!repo GLib-2.0
 
+//# These methods are passed buffers to be filled, which currently has issues
+//!set record[IOChannel].method[read][disable] 1
+//!set record[IOChannel].method[read_chars][disable] 1
+//!set record[MainContext].method[query][disable] 1
+
 //# Not introspectable, but could be implemented manually
 //!set function[base64_encode_close][introspectable] 0
 //!set function[base64_encode_step][introspectable] 0
@@ -7,6 +12,13 @@
 //!set function[strfreev][introspectable] 0
 //!set function[unichar_to_utf8][introspectable] 0
 //!set record[Variant].function[parse][introspectable] 0
+
+//# Disable ByteArray functions and methods, since this type is handled by a custom range type
+//!set record[ByteArray].*function[][disable] 1
+
+//# Disable problematic functions (memory allocation issues)
+//!set record[Bytes].constructor[new_take][disable] 1
+//!set function[base64_decode_inplace][disable] 1
 
 //# Error conflicts with the base D Error type, rename to ErrorG
 //!subtype Error ErrorG
@@ -32,6 +44,10 @@
 //!set record[SList][disable] 1
 //!set record[TrashStack][disable] 1
 
+//# Disable Queue fields
+//!set record[Queue].field[head][disable] 1
+//!set record[Queue].field[tail][disable] 1
+
 //# Disable TestLogMsg fields
 //!set record[TestLogMsg].*field[][disable] 1
 
@@ -50,6 +66,11 @@
 
 //# IOChannel should be opaque
 //!set record[IOChannel][opaque] 1
+
+//# Set field callback parameters to out
+//!set record[IOFuncs].field[io_read].callback[io_read].parameters.parameter[bytes_read][direction] out
+//!set record[IOFuncs].field[io_write].callback[io_write].parameters.parameter[bytes_written][direction] out
+//!set record[SourceFuncs].field[prepare].callback[prepare].parameters.parameter[timeout_][direction] out
 
 //# FIXME - This contains a union which isn't currently supported
 //!set record[VariantDict][opaque] 1
@@ -78,12 +99,8 @@
 //!set function[spawn_async_with_pipes_and_fds].parameters.parameter[envp].array[][zero-terminated] 1
 //!set function[spawn_async_with_pipes].parameters.parameter[argv].array[][zero-terminated] 1
 //!set function[spawn_async_with_pipes].parameters.parameter[envp].array[][zero-terminated] 1
-//!set function[spawn_command_line_sync].parameters.parameter[standard_error].array[][zero-terminated] 1
-//!set function[spawn_command_line_sync].parameters.parameter[standard_output].array[][zero-terminated] 1
 //!set function[spawn_sync].parameters.parameter[argv].array[][zero-terminated] 1
 //!set function[spawn_sync].parameters.parameter[envp].array[][zero-terminated] 1
-//!set function[spawn_sync].parameters.parameter[standard_error].array[][zero-terminated] 1
-//!set function[spawn_sync].parameters.parameter[standard_output].array[][zero-terminated] 1
 //!set function[strsplit].return-value.array[][zero-terminated] 1
 //!set function[strsplit_set].return-value.array[][zero-terminated] 1
 //!set function[str_tokenize_and_fold].return-value.array[][zero-terminated] 1
@@ -98,11 +115,17 @@
 //!set record[StrvBuilder].method[addv].parameters.parameter[value].array[][zero-terminated] 1
 //!set record[StrvBuilder].method[end].return-value.array[][zero-terminated] 1
 //!set record[Uri].function[list_extract_uris].return-value.array[][zero-terminated] 1
-//!set record[Variant].method[get_bytestring].return-value.array[][zero-terminated] 1
-//!set record[Variant].constructor[new_bytestring].parameters.parameter[string].array[][zero-terminated] 1
 //!set record[Regex].method[split].return-value.array[][zero-terminated] 1
 //!set record[Regex].method[split_full].return-value.array[][zero-terminated] 1
 //!set record[Regex].function[split_simple].return-value.array[][zero-terminated] 1
+
+//# Change arrays of chars to strings
+//!set function[spawn_command_line_sync].parameters.parameter[standard_error].array '<type name="utf8" c:type="char**"/>'
+//!set function[spawn_command_line_sync].parameters.parameter[standard_output].array '<type name="utf8" c:type="char**"/>'
+//!set function[spawn_sync].parameters.parameter[standard_error].array '<type name="utf8" c:type="char**"/>'
+//!set function[spawn_sync].parameters.parameter[standard_output].array '<type name="utf8" c:type="char**"/>'
+//!set record[Variant].method[get_bytestring].return-value.array '<type name="string" c:type="const char*"/>'
+//!set record[Variant].constructor[new_bytestring].parameters.parameter[string].array '<type name="string" c:type="const char*"/>'
 
 //# Missing array argument length
 //!set record[IOChannel].method[write_chars].parameters.parameter[buf].array[][length] 1
@@ -181,6 +204,7 @@
 //!set function[assertion_message_cmpstrv].parameters.parameter[arg1].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
 //!set function[assertion_message_cmpstrv].parameters.parameter[arg2].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
 //!set function[slice_get_config_state].return-value.type '<array length="2" zero-terminated="0" c:type="const gint64*"><type name="gint64" c:type="gint64"/></array>'
+//!set function[slice_get_config_state].parameters.parameter[n_values][direction] out
 //!set function[strjoinv].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="gchar**"><type name="utf8" c:type="gchar*"/></array>'
 //!set function[strv_contains].parameters.parameter[strv].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
 //!set function[strv_equal].parameters.parameter[strv1].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
@@ -188,18 +212,26 @@
 //!set function[strv_length].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
 //!set function[ucs4_to_utf16].return-value.type '<array zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
 //!set function[unicode_canonical_decomposition].return-value.type '<array length="1" zero-terminated="0" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
+//!set function[unicode_canonical_decomposition].parameters.parameter[result_len][direction] out
 //!set function[utf16_to_ucs4].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4_fast].return-value.type '<array length="2" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4_fast].parameters.parameter[str].type '<array length="1" zero-terminated="1" c:type="const gchar*"><type name="gchar" c:type="gchar"/></array>'
 //!set function[utf8_to_utf16].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
 //!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
+//!set record[TestLogBuffer].method[push].parameters.parameter[bytes].type '<array length="0" zero-terminated="0" c:type="const guint8*"><type name="guint8" c:type="guint8"/></array>'
+//!set record[StrvBuilder].method[end].return-value.array '<array zero-terminated="1" c:type="char**"><type name="utf8" c:type="char*"/></array>'
 
 //# Set writable to false as it should be
 //!set record[Node].field[children][writable] 0
 //!set record[Node].field[next][writable] 0
 //!set record[Node].field[parent][writable] 0
 //!set record[Node].field[prev][writable] 0
+//!set record[Scanner].field[config][writable] 0
+//!set record[Scanner].field[next_value][writable] 0
+//!set record[Scanner].field[value][writable] 0
+
+//!class global
 
   /**
   * Template to convert a GHashTable to a D associative array.
@@ -216,8 +248,8 @@
     void* value;
     V[K] map;
 
-    for (g_hash_table_iter_init(&iter, cPtr); g_hash_table_iter_next(&key, &key, &value); )
-      map[containerGetItem!K(key)] = containerGetItem!V(val);
+    for (g_hash_table_iter_init(&iter, hash); g_hash_table_iter_next(&iter, &key, &value); )
+      map[containerGetItem!K(key)] = containerGetItem!V(value);
 
     static if (owned)
       g_hash_table_unref(hash);

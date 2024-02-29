@@ -72,7 +72,7 @@ T containerGetItem(T)(void* data)
   if (is(T : string) || is(T : void*))
 {
   static if (is(T : string))
-    return fromCString(data, false);
+    return fromCString(cast(const(char)*)data, false);
   else static if (is(T : void*))
     return data;
 }

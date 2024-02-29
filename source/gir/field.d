@@ -83,7 +83,7 @@ final class Field : TypeNode
     if (containerType != ContainerType.None)
       throw new Exception("Container type '" ~ containerType.to!string ~ "' not supported");
 
-    if (kind.among(TypeKind.Unknown, TypeKind.Opaque, TypeKind.Interface, TypeKind.Namespace))
+    if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
       throw new Exception("Unhandled type '" ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
 
     if (writable && kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))

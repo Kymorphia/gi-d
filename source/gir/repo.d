@@ -154,7 +154,7 @@ final class Repo : Base
 
           // Add global namespace structure
           globalStruct = new Structure(this);
-          globalStruct.origDType = namespace;
+          globalStruct.origDType = "global";
           globalStruct.structType = StructType.Class;
           structs ~= globalStruct;
           break;
@@ -197,16 +197,9 @@ final class Repo : Base
           }
           break;
         case "type": // Type information
-          TypeNode parent;
-
-          if (node.parent && node.parent.id == "type") // Is parent XML node also a <type>? Then it is a container type (GList, GHashTable, etc)
-            parent = node.baseParentFromXmlNode!TypeNode;
-
-          if (!parent && node.parent && node.parent.id == "array") // Is parent XML node an <array>?
-            parent = node.parent.baseParentFromXmlNode!TypeNode;
-
-          if (parent) // Add the element type to the container
-            parent.elemTypes ~= new TypeNode(parent, node);
+          if (node.parent && node.parent.id.among("array"d, "type"d)) // Check for array or type (container) XML node parent
+            if (auto parent = node.parent.baseParentFromXmlNode!TypeNode) // Get the parent of the array which contains the type information
+              parent.elemTypes ~= new TypeNode(parent, node); // Add the element type to the container
 
           if (dumpCTypes && "c:type" in node.attrs && !node["c:type"].canFind('.'))
             cTypeHash[node["c:type"]] = true;
@@ -758,6 +751,9 @@ final class Repo : Base
       writer ~= "";
       fnWriter.write(writer);
     }
+
+    if (globalStruct.defCode.postClass.length > 0)
+      writer ~= globalStruct.defCode.postClass;
 
     writer.write();
   }

@@ -317,56 +317,34 @@ class FuncWriter
       return;
     }
 
-    if (param.containerType == ContainerType.Array)
+    if (param.containerType == ContainerType.Array) // Array container?
     {
       processArrayParam(param);
       return;
     }
-    else if (param.containerType == ContainerType.HashTable)
+    else if (param.containerType != ContainerType.None) // Other type of container?
     {
-      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param
-          .fullName.to!string
-          ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
-
-      auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
-      addDeclParam(mapType ~ " " ~ param.dName);
-
-      preCall ~= "GHashTable* _cretval;\n";
-      call ~= "_cretval = ";
-      postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
-        ~ func.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_cretval) : null;\n";
-      imports.add("GLib.global");
-    }
-    else if (param.containerType != ContainerType.None)
-    {
-      assert(param.ownership != Ownership.None, "Function container parameter '" ~ param.fullName.to!string
-          ~ "' ownership not supported '" ~ param.ownership.to!string ~ "'");
-      addDeclParam(param.dType ~ " " ~ param.dName);
-      addCallParam(param.dName ~ ".cPtr");
+      processContainerParam(param);
       return;
     }
-
-    auto isInput = param.direction == ParamDirection.In;
 
     final switch (param.kind) with (TypeKind)
     {
       case Basic, BasicAlias:
-        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.dType
-          ~ " " ~ param.dName);
+        addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
 
-        if (isInput)
+        if (param.direction == ParamDirection.In)
           addCallParam(param.dName);
         else
           addCallParam("cast(" ~ param.cType ~ ")&" ~ param.dName);
         break;
       case Enum:
-        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.dType
-          ~ " " ~ param.dName);
+        addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ (param.direction != ParamDirection.Out ? "cast("
             ~ param.cType ~ ")" ~ param.dName : "") ~ ";\n";
-        addCallParam((!isInput ? "&_"d : "_") ~ param.dName);
+        addCallParam((param.direction != ParamDirection.In ? "&_"d : "_") ~ param.dName);
 
-        if (!isInput)
+        if (param.direction != ParamDirection.In)
           postCall ~= param.dName ~ " = cast(" ~ param.dType ~ ")_" ~ param.dName ~ ";\n";
         break;
       case Flags:
@@ -392,7 +370,7 @@ class FuncWriter
         }
         break;
       case String:
-        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ "string " ~ param.dName);
+        addDeclParam(param.directionStr ~ "string " ~ param.dName);
 
         if (param.direction == ParamDirection.In)
         {
@@ -414,14 +392,12 @@ class FuncWriter
 
         break;
       case Simple:
-        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.dType
-          ~ " " ~ param.dName);
+        addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         addCallParam("&" ~ param.dName);
         break;
       case Opaque:
       case Callback:
-        addDeclParam((!isInput ? ParamDirectionValues[param.direction] ~ " " : "") ~ param.dType
-          ~ " " ~ param.dName);
+        addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         addCallParam(param.dName);
         break;
       case Wrap, Boxed, Reffed, Object, Interface:
@@ -600,6 +576,58 @@ class FuncWriter
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
               ~ ") for " ~ func.fullName.to!string);
       }
+    }
+  }
+
+  // Process a container parameter (except array)
+  private void processContainerParam(Param param)
+  {
+    if (param.containerType == ContainerType.HashTable) // Hash tables are converted into dlang associative arrays
+    {
+      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param
+          .fullName.to!string
+          ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
+
+      auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
+      addDeclParam(mapType ~ " " ~ param.dName);
+
+      preCall ~= "GHashTable* _cretval;\n";
+      call ~= "_cretval = ";
+      postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
+        ~ func.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_cretval) : null;\n";
+      imports.add("GLib.global");
+      return;
+    }
+
+    addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
+    auto elemType = param.elemTypes[0];
+
+    final switch(param.direction) with(ParamDirection)
+    {
+      case In:
+        final switch(param.ownership) with(Ownership)
+        {
+          case None:
+            addCallParam(param.dName ~ ".cPtr");
+            break;
+          case Container, Full, Unset:
+            assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
+              ~ param.direction.to!string);
+        }
+        break;
+      case Out:
+        preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
+        addCallParam("&_" ~ param.dName);
+        postCall ~= param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
+          ~ ")(_" ~ param.dName ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ");\n";
+        break;
+      case InOut:
+        final switch(param.ownership) with(Ownership)
+        {
+          case None, Container, Full, Unset:
+            assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
+              ~ param.direction.to!string);
+        }
     }
   }
 

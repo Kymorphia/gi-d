@@ -400,6 +400,7 @@ final class Structure : TypeNode
       final switch (f.kind) with (TypeKind)
       {
         case Basic, BasicAlias:
+        case Opaque:
           lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case String:
@@ -435,7 +436,7 @@ final class Structure : TypeNode
         case Object:
           lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
           break;
-        case Unknown, Opaque, Interface, Namespace:
+        case Unknown, Interface, Namespace:
           throw new Exception(
               "Unhandled readable field property type '" ~ f.dType.to!string ~ "' (" ~ f.kind.to!string
               ~ ") for struct " ~ dType.to!string);
@@ -451,7 +452,7 @@ final class Structure : TypeNode
 
       final switch (f.kind) with (TypeKind)
       {
-        case Basic, BasicAlias:
+        case Basic, BasicAlias, Opaque:
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
         case String:
@@ -483,7 +484,7 @@ final class Structure : TypeNode
         case Object:
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval.get" ~ f.dType ~ ";";
           break;
-        case Boxed, Wrap, Reffed, Unknown, Opaque, Interface, Namespace:
+        case Boxed, Wrap, Reffed, Unknown, Interface, Namespace:
           throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ f
               .kind
               .to!string
