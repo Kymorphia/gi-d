@@ -32,18 +32,17 @@ final class Param : TypeNode
     return repo.defs.symbolName(name.camelCase);
   }
 
-  /// Get direction string (empty for input, "out ", or "inout "). Intended for use directly in code generation.
+  /// Get direction string (empty for input, "ref " if callerAllocates=1, "out ", or "inout "). Intended for use directly in code generation.
   dstring directionStr()
   {
-    final switch (direction) with(ParamDirection)
-    {
-      case In:
-        return "";
-      case Out:
-        return "out ";
-      case InOut:
-        return "inout ";
-    }
+    if (direction == ParamDirection.In)
+      return "";
+    else if (callerAllocates && containerType == ContainerType.Array)
+      return "ref ";
+    else if (direction == ParamDirection.Out)
+      return "out ";
+    else
+      return "inout ";
   }
 
   override void fromXml(XmlNode node)

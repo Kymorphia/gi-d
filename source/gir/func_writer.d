@@ -71,18 +71,6 @@ class FuncWriter
     decl ~= paramStr;
   }
 
-  /**
-   * Ternary helper function
-   * Params:
-   *   expr = Expression to check
-   *   ptr = Pointer value to use if val is not null (if this argument is null, expr is used)
-   * Returns: A ternary operator string
-   */
-  private dstring valOrNull(dstring expr, dstring ptr = null)
-  {
-    return expr ~ " ? " ~ ptr ? ptr : expr ~ " : null";
-  }
-
   /// Process return value
   private void processReturn()
   {
@@ -432,21 +420,20 @@ class FuncWriter
   {
     auto elemType = param.elemTypes[0];
 
-    if (param.direction != ParamDirection.In)
-    {
-      addDeclParam(ParamDirectionValues[param.direction] ~ " " ~ elemType.dType ~ "[] " ~ param.dName);
-      addCallParam("&_"d ~ param.dName);
-    }
+    if (param.direction == ParamDirection.In && elemType.dType == "char") // char[] arrays are sometimes used for strings with a length parameter
+      addDeclParam("string " ~ param.dName);
     else
-    {
-      if (elemType.dType == "char") // char[] arrays are sometimes used for strings with a length parameter
-        addDeclParam("string " ~ param.dName);
-      else
-        addDeclParam(elemType.dType ~ "[] " ~ param.dName);
+      addDeclParam(param.directionStr ~ elemType.dType ~ "[] " ~ param.dName);
 
-      addCallParam("_" ~ param.dName);
+    if (param.direction != ParamDirection.In && param.callerAllocates)
+    {
+      addCallParam(param.dName ~ ".ptr");
+      return;
     }
 
+    addCallParam((param.direction == ParamDirection.In ? "_" :"&_"d) ~ param.dName);
+
+    // Pre C function call processing
     if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
     {
       assert(param.ownership == Ownership.None, "Function array parameter " ~ param.fullName.to!string
@@ -462,11 +449,11 @@ class FuncWriter
           dstring ptrStr;
 
           if (param.zeroTerminated) // If zero terminated, append a null or 0 value to the array and use the pointer to pass to the C function call
-            ptrStr = "(" ~ param.dName ~ " ~ " ~ elemType.cType.endsWith("*") ? "null" : "0" ~ ").ptr";
+            ptrStr = "(" ~ param.dName ~ " ~ " ~ (elemType.cType.endsWith("*") ? "null"d : "0"d) ~ ").ptr";
           else
             ptrStr = param.dName ~ ".ptr";
 
-          preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")" ~ valOrNull(param.dName, ptrStr) ~ ";\n";
+          preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")" ~ ptrStr ~ ";\n";
           break;
         case String:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
@@ -475,8 +462,7 @@ class FuncWriter
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
 
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName
-              ~ ".ptr") ~ ";\n\n";
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ "_tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
           break;
         case Wrap:
           preCall ~= elemType.cTypeRemPtr ~ "[] _tmp" ~ param.dName ~ ";\n";
@@ -485,8 +471,7 @@ class FuncWriter
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= " ~ elemType.cType ~ "();\n";
 
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName ~ ".ptr")
-            ~ ";\n\n";
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
           break;
         case Boxed, Reffed, Object, Interface:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
@@ -497,8 +482,7 @@ class FuncWriter
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
 
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ valOrNull(param.dName, "_tmp" ~ param.dName ~ ".ptr")
-            ~ ";\n\n";
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
           break;
         case Unknown, Callback, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
@@ -506,6 +490,7 @@ class FuncWriter
       }
     }
 
+    // Post C function call processing
     if (param.direction == ParamDirection.Out || param.direction == ParamDirection.InOut)
     {
       dstring lengthStr;

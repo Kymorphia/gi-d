@@ -1,10 +1,5 @@
 //!repo GLib-2.0
 
-//# These methods are passed buffers to be filled, which currently has issues
-//!set record[IOChannel].method[read][disable] 1
-//!set record[IOChannel].method[read_chars][disable] 1
-//!set record[MainContext].method[query][disable] 1
-
 //# Not introspectable, but could be implemented manually
 //!set function[base64_encode_close][introspectable] 0
 //!set function[base64_encode_step][introspectable] 0
@@ -218,6 +213,9 @@
 //!set function[utf8_to_ucs4_fast].return-value.type '<array length="2" zero-terminated="1" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[utf8_to_ucs4_fast].parameters.parameter[str].type '<array length="1" zero-terminated="1" c:type="const gchar*"><type name="gchar" c:type="gchar"/></array>'
 //!set function[utf8_to_utf16].return-value.type '<array length="3" zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
+//!set record[IOChannel].method[read].parameters.parameter[buf].type '<array length="1" zero-terminated="0" c:type="guint8*"><type name="guint8" c:type="guint8"/></array>'
+//!set record[IOChannel].method[read].parameters.parameter[buf][caller-allocates] 1
+//!set record[IOChannel].method[read].parameters.parameter[buf][direction] out
 //!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
 //!set record[TestLogBuffer].method[push].parameters.parameter[bytes].type '<array length="0" zero-terminated="0" c:type="const guint8*"><type name="guint8" c:type="guint8"/></array>'
 //!set record[StrvBuilder].method[end].return-value.array '<array zero-terminated="1" c:type="char**"><type name="utf8" c:type="char*"/></array>'
