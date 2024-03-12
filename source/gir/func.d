@@ -3,6 +3,7 @@ module gir.func;
 import std.conv : to;
 
 import code_writer;
+import defs;
 import gir.param;
 import gir.repo;
 import gir.structure;
@@ -82,7 +83,8 @@ final class Func : TypeNode
   {
     super.fixup;
 
-    if (!introspectable || !movedTo.empty || funcType == FuncType.VirtualMethod || funcType == FuncType.FuncMacro)
+    if (!introspectable || !movedTo.empty || funcType == FuncType.VirtualMethod || funcType == FuncType.FuncMacro
+        || !shadowedBy.empty)
       disable = true;
 
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
@@ -98,8 +100,13 @@ final class Func : TypeNode
       }
     }
 
-    foreach (pi, pa; params) // Fixup parameters
+    foreach (pa; params) // Fixup parameters
+    {
       pa.fixup;
+
+      if (pa.isClosure)
+        closureParam = pa;
+    }
   }
 
   override void verify()
@@ -111,6 +118,12 @@ final class Func : TypeNode
     {
       disable = true;
       warning("Disabling function '" ~ fullName.to!string ~ "': " ~ msg);
+    }
+
+    if (!shadows.empty && !shadowsFunc)
+    {
+      disableFunc("Could not resolve shadows function name " ~ shadows.to!string);
+      return;
     }
 
     try
@@ -142,6 +155,9 @@ final class Func : TypeNode
       if (pa.isInstanceParam && pi != 0)
         disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'");
 
+      if (pa.isClosure && pa != closureParam)
+        disableFunc("multiple closure parameters");
+
       try
         pa.verify; // Verify parameter
       catch (Exception e)
@@ -161,17 +177,41 @@ final class Func : TypeNode
    * Get function prototype string for function.
    * Returns: Function prototype string which intentially omits the function name for definition by the caller.
    */
-  dstring getCPrototype()
+  dstring getCPrototype(dstring funcName = "function")
   {
-    dstring fnptr = cType ~ " function(";
+    dstring proto = cType ~ " " ~ funcName ~ "(";
 
     foreach (i, p; params)
-      fnptr ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
+      proto ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
 
     if (throws)
-      fnptr ~= (params.length > 0 ? ", "d : ""d) ~ "GError** _err";
+      proto ~= (params.length > 0 ? ", "d : ""d) ~ "GError** _err";
 
-    return fnptr ~ ")";
+    return proto ~ ")";
+  }
+
+  /**
+   * Get delegate prototype for a callback.
+   */
+  dstring getDelegPrototype()
+  {
+    dstring proto = "alias " ~ dName ~ " = " ~ dType ~ " delegate(";
+
+    foreach (p; params)
+    {
+      if (p.isClosure || p.isArrayLength)
+        continue;
+
+      if (proto[$ - 1] != '(')
+        proto ~= ", ";
+
+      if (p.containerType == ContainerType.Array)
+        proto ~= p.elemTypes[0].dType ~ "[] " ~ p.dName;
+      else
+        proto ~= p.dType ~ " " ~ p.dName;
+    }
+
+    return proto ~ ");";
   }
 
   /**
@@ -208,7 +248,9 @@ final class Func : TypeNode
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)
   Param[] params; /// Parameters
+  Param closureParam; /// Closure data parameter or null
   bool isCtor; /// Set for the primary constructor of an instance (not a Gir field)
+  Func shadowsFunc; /// Resolved function object for shadows
 
   bool nullable; /// Nullable return value pointer
 

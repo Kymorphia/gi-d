@@ -59,6 +59,17 @@ final class Structure : TypeNode
     freeFunction = node.get("free-function");
   }
 
+  /**
+   * Add a function to a structure.
+   * Params:
+   *   func = The function to add
+   */
+  void addFunc(Func func)
+  {
+    functions ~= func;
+    funcNameHash[func.name] = func;
+  }
+
   // Calculate the structure type kind
   private TypeKind calcKind()
   {
@@ -133,6 +144,9 @@ final class Structure : TypeNode
     foreach (fn; functions) // Fixup structure function/methods
     {
       fn.fixup;
+
+      if (!fn.shadows.empty)
+        fn.shadowsFunc = funcNameHash.get(fn.shadows, null);
 
       if (fn.funcType == FuncType.Constructor && (!ctorFunc || fn.name == "new")) // Set "new" constructor as the primary constructor or the first one otherwise
         ctorFunc = fn;
@@ -218,6 +232,9 @@ final class Structure : TypeNode
     imports.add("gid");
     imports.add(repo.namespace ~ ".c.functions");
     imports.add(repo.namespace ~ ".c.types");
+
+    if (kind == TypeKind.Wrap)
+      imports.add("GLib.c.functions"); // For g_free()
 
     FuncWriter[] funcWriters;
     dstring[] propMethods;
@@ -320,10 +337,10 @@ final class Structure : TypeNode
     else if (kind == TypeKind.Wrap)
       writer ~= [cTypeRemPtr ~ " cInstance;"];
 
-    if (kind == TypeKind.Opaque || kind == TypeKind.Wrap)
+    if (kind == TypeKind.Opaque)
       writer ~= ["", "this(void* ptr)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
-    else if (kind == TypeKind.Reffed)
+    else if (kind == TypeKind.Wrap || kind == TypeKind.Reffed)
       writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
     else if (kind == TypeKind.Boxed || kind == TypeKind.Object)
@@ -333,7 +350,7 @@ final class Structure : TypeNode
     if (kind == TypeKind.Opaque)
       writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "}"];
     else if (kind == TypeKind.Wrap)
-      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "}"];
+      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (ownedRef)", "g_free(ptr);", "}"];
     else if (kind == TypeKind.Reffed && !parentStruct)
       writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (!ownedRef)", glibRefFunc
         ~ "(cInstancePtr);", "}", "", "~this()", "{", glibUnrefFunc ~ "(cInstancePtr);", "}", ""];
@@ -417,7 +434,12 @@ final class Structure : TypeNode
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
+          {
             lines ~= ["", "@property " ~ f.cType ~ " " ~ f.dName ~ "()", "{"];
+
+            if (auto typeNode = cast(TypeNode)f.typeObject)
+              typeNode.addImports(imports, repo);
+          }
           else // Callback function type is directly defined in field
             lines ~= ["", "@property " ~ f.name.camelCase(true) ~ "FuncType " ~ f.dName ~ "()", "{"];
 
@@ -473,11 +495,13 @@ final class Structure : TypeNode
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
+          {
             lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.cType ~ " propval)", "{"];
+            if (auto typeNode = cast(TypeNode)f.typeObject)
+              typeNode.addImports(imports, repo);
+          }
           else // Callback function type is directly defined in field
-            lines ~= [
-            "", "@property void " ~ f.dName ~ "(" ~ f.name.camelCase(true) ~ "FuncType propval)", "{"
-          ];
+            lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.name.camelCase(true) ~ "FuncType propval)", "{"];
 
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
@@ -573,6 +597,7 @@ final class Structure : TypeNode
   DefCode defCode; /// Code from definitions file
   Func ctorFunc; /// Primary instance constructor function in functions (not a Gir field)
   Func[] errorQuarks; /// List of GError quark functions for exceptions
+  Func[dstring] funcNameHash; /// Hash of functions by name
 
   bool abstract_; /// Is abstract type?
   bool deprecated_; /// Deprecated?

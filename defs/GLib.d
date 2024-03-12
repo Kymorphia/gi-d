@@ -5,7 +5,9 @@
 //!set function[base64_encode_step][introspectable] 0
 //!set function[prefix_error_literal][introspectable] 0
 //!set function[strfreev][introspectable] 0
+//!set function[test_add_data_func_full][introspectable] 0
 //!set function[unichar_to_utf8][introspectable] 0
+//!set record[Variant].constructor[new_from_data][introspectable] 0
 //!set record[Variant].function[parse][introspectable] 0
 
 //# Disable ByteArray functions and methods, since this type is handled by a custom range type
@@ -14,6 +16,12 @@
 //# Disable problematic functions (memory allocation issues)
 //!set record[Bytes].constructor[new_take][disable] 1
 //!set function[base64_decode_inplace][disable] 1
+
+//# Disable functions which don't have proper closures (solutions may be possible)
+//!set function[atexit][disable] 1
+//!set function[test_add_func][disable] 1
+//!set function[test_queue_destroy][disable] 1
+//!set record[Tree].constructor[new_full][disable] 1
 
 //# Error conflicts with the base D Error type, rename to ErrorG
 //!subtype Error ErrorG
@@ -33,8 +41,6 @@
 //!set record[Dir].constructor[open].return-value[][transfer-ownership] full
 
 //# Disable binding of unuseful and problematic structures
-//!set record[Hook][disable] 1
-//!set record[HookList][disable] 1
 //!set record[List][disable] 1
 //!set record[SList][disable] 1
 //!set record[TrashStack][disable] 1
@@ -128,7 +134,6 @@
 //# Add missing free functions
 //!set record[AsyncQueue][free-function] g_async_queue_unref
 //!set record[Hmac][free-function] g_hmac_unref
-//!set record[Hook][free-function] g_hook_free
 //!set record[List][free-function] g_list_free
 //!set record[OptionContext][free-function] g_option_context_free
 //!set record[Queue][free-function] g_queue_free
@@ -229,16 +234,28 @@
 //!set record[Scanner].field[next_value][writable] 0
 //!set record[Scanner].field[value][writable] 0
 
+//# Add missing closure parameter designations
+//!set callback[IOFunc].parameters.parameter[data][closure] 2
+//!set callback[SpawnChildSetupFunc].parameters.parameter[data][closure] 0
+//!set callback[ThreadFunc].parameters.parameter[data][closure] 0
+//!set callback[TranslateFunc].parameters.parameter[data][closure] 1
+
+//# Set proper callback scopes
+//!set record[Queue].method[clear_full].parameters.parameter[free_func][scope] call
+//!set record[Queue].method[free_full].parameters.parameter[free_func][scope] call
+//!set function[atomic_rc_box_release_full].parameters.parameter[clear_func][scope] call
+//!set function[rc_box_release_full].parameters.parameter[clear_func][scope] call
+
 //!class global
 
   /**
-  * Template to convert a GHashTable to a D associative array.
-  * Params:
-  *   K = The key D type
-  *   V = The value D type
-  *   owned = Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
-  * Returns: The D associative array which is a copy of the data in hash
-  */
+   * Template to convert a GHashTable to a D associative array.
+   * Params:
+   *   K = The key D type
+   *   V = The value D type
+   *   owned = Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
+   * Returns: The D associative array which is a copy of the data in hash
+   */
   V[K] hashTableToMap(K, V, bool owned = false)(GHashTable* hash)
   {
     GHashTableIter iter;
@@ -253,6 +270,55 @@
       g_hash_table_unref(hash);
 
     return map;
+  }
+
+  /**
+   * Convert a D map to a GHashTable.
+   * Params:
+   *   K = The key type
+   *   V = The value type
+   *   map = The D map
+   * Returns: A newly allocated GHashTable.
+   */
+  GHashTable* mapToHashTable(K, V)(V[K] map)
+  {
+    GDestroyNotify valDestroyFunc;
+
+    static if (is(V : ObjectG))
+      valDestroyFunc = g_object_unref;
+    else static if (is(V : string))
+      valDestroyFunc = g_free;
+
+    static if (is(K : string))
+      g_hash_table_new_full(g_str_hash, g_str_equal, g_free, valDestroyFunc);
+    else
+      g_hash_table_new_full(g_direct_hash, g_direct_equal, null, valDestroyFunc);
+  }
+
+//# g_markup_parse_context_new() has unnecessary closure and destroy notify, override the new() method
+//!set record[MarkupParseContext].constructor[new][disable] 1
+//!class MarkupParseContext
+
+  this(MarkupParser parser, MarkupParseFlags flags)
+  {
+    GMarkupParseContext* _cretval;
+    GMarkupParseFlags _flags = cast(GMarkupParseFlags)cast(uint)flags;
+    _cretval = g_markup_parse_context_new(parser ? parser.cPtr!GMarkupParser : null, _flags, null, null);
+    this(&_cretval, true);
+  }
+
+//# g_option_group_new() has unnecessary closure and destroy notify, override the new() method
+//!set record[OptionGroup].constructor[new][disable] 1
+//!class OptionGroup
+
+  this(string name, string description, string helpDescription)
+  {
+    GOptionGroup* _cretval;
+    const(char)* _name = name.toCString(false);
+    const(char)* _description = description.toCString(false);
+    const(char)* _helpDescription = helpDescription.toCString(false);
+    _cretval = g_option_group_new(_name, _description, _helpDescription, null, null);
+    this(&_cretval, true);
   }
 
 //# Use a custom free function since g_thread_pool_free takes 3 arguments

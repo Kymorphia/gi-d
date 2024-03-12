@@ -79,18 +79,60 @@ final class Param : TypeNode
 
     super.fixup; // Fixup the type node state
 
+    auto func = getParentByType!Func;
+
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
     {
-      auto typeFunc = getParentByType!Func;
-
-      if (typeFunc.hasInstanceParam) // Array length parameter indexes don't count instance parameters
+      if (func.hasInstanceParam) // Instance parameters don't count towards index
         lengthParamIndex++;
 
-      if (lengthParamIndex < typeFunc.params.length)
+      if (lengthParamIndex < func.params.length)
       {
-        auto lengthParam = typeFunc.params[lengthParamIndex];
-        lengthParam.arrayParamIndex = cast(int)typeFunc.params.countUntil!(x => x is this);
+        auto lengthParam = func.params[lengthParamIndex];
+        lengthParam.arrayParamIndex = cast(int)func.params.countUntil!(x => x is this);
         lengthParam.isArrayLength = true;
+      }
+    }
+
+    if (closureIndex != NoClosure)
+    {
+      if (dType != "void*" && dType != "const(void)*") // Is this the callback? (not the closure data parameter)
+      {
+        if (func.hasInstanceParam) // Instance parameters don't count towards index
+          closureIndex++;
+
+        if (closureIndex < func.params.length)
+        {
+          auto closureParam = func.params[closureIndex];
+          closureParam.isClosure = true;
+          closureParam.callbackIndex = cast(int)func.params.countUntil!(x => x is this);
+        }
+      }
+      else // Some closure data parameters reference themselves or the callback, ignore such references, but mark parameter as closure data
+      {
+        isClosure = true;
+        closureIndex = NoClosure;
+      }
+    }
+
+    if (destroyIndex != NoDestroy)
+    {
+      if (dType != "DestroyNotify") // Is this the callback? (not destroy notify parameter)
+      {
+        if (func.hasInstanceParam) // Instance parameters don't count towards index
+          destroyIndex++;
+
+        if (destroyIndex < func.params.length)
+        {
+          auto destroyParam = func.params[destroyIndex];
+          destroyParam.isDestroy = true;
+          destroyParam.callbackIndex = cast(int)func.params.countUntil!(x => x is this);
+        }
+      }
+      else // Some destroy notify parameters reference themselves or the callback, ignore such references, but mark parameter as a destroy notify
+      {
+        isDestroy = true;
+        destroyIndex = NoDestroy; // Ignore destroy notify parameter references to itself or the callback
       }
     }
   }
@@ -117,20 +159,56 @@ final class Param : TypeNode
           "Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
           ~ cType.to!string ~ "'");
 
+    auto func = getParentByType!Func;
+
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
     {
-      auto typeFunc = getParentByType!Func;
-
-      if (lengthParamIndex >= typeFunc.params.length)
+      if (lengthParamIndex >= func.params.length)
         throw new Exception("Invalid array length parameter index");
 
-      auto lengthParam = typeFunc.params[lengthParamIndex];
+      auto lengthParam = func.params[lengthParamIndex];
 
       if ((direction == ParamDirection.In && lengthParam.direction == ParamDirection.Out)
           || (direction == ParamDirection.InOut && lengthParam.direction == ParamDirection.Out))
         throw new Exception("Array length parameter direction '" ~ to!string(
             lengthParam.direction) ~ "' is incompatible with array direction '" ~ direction.to!string ~ "'");
     }
+
+    if (closureIndex != NoClosure)
+    {
+      if (kind != TypeKind.Callback)
+        throw new Exception("Non-callback parameter has closure");
+
+      if (closureIndex >= func.params.length)
+        throw new Exception("Invalid closure data parameter index");
+
+      auto closureParam = func.params[closureIndex];
+
+      if (closureParam.direction != ParamDirection.In || closureParam.dType != "void*")
+        throw new Exception("Closure data should be a void* input parameter");
+
+      auto closureCount = (cast(Func)typeObject).params.count!(x => x.isClosure);
+      if (closureCount != 1)
+        throw new Exception("Parameter callback must have one closure argument");
+
+      if (destroyIndex != NoDestroy)
+      {
+        if (destroyIndex >= func.params.length)
+          throw new Exception("Invalid destroy notify callback parameter index");
+
+        auto destroyParam = func.params[destroyIndex];
+
+        if (destroyParam.direction != ParamDirection.In || destroyParam.dType != "DestroyNotify")
+          throw new Exception("Destroy notify callback should be a DestroyNotify input parameter");
+      }
+    }
+    else if (destroyIndex != NoDestroy)
+      throw new Exception("Parameter without a closure has a destroy notify");
+
+    if (auto cb = cast(Func)typeObject)
+      if (!isDestroy && !cb.closureParam && scope_ != ParamScope.Call)
+        throw new Exception ("Callback parameters with scope '" ~ scope_.to!string
+          ~ "' should have a closure parameter");
   }
 
   private dstring _name; /// Name of parameter
@@ -143,10 +221,12 @@ final class Param : TypeNode
   bool allowNone; /// Allow none (FIXME - how does this differ from nullable?)
   bool callerAllocates; /// Caller allocates value
   bool varargs; /// Indicates a parameter is a varargs ... elipsis
-
-  int closureIndex = NoClosure; /// Closure parameter index
-  int destroyIndex = NoDestroy; /// Destroy parameter index
-  ParamScope scope_; /// FIXME
+  bool isClosure; /// Is this a closure user_data parameter?
+  bool isDestroy; /// Is this a destroy notification callback parameter?
+  int closureIndex = NoClosure; /// Closure parameter index (user data for a callback parameter)
+  int destroyIndex = NoDestroy; /// Destroy parameter index (destroy notify for a callback parameter)
+  int callbackIndex = NoCallback; /// If isClosure or isDestroy is true then this is the callback parameter index
+  ParamScope scope_; /// Scope of the callback closure data
 }
 
 /// Value used for arrayParamIndex to indicate it is the length for the return value
@@ -162,16 +242,18 @@ enum ParamDirection
 
 immutable dstring[] ParamDirectionValues = ["out", "inout"];
 
-/// Parameter scope
+/// Callback parameter closure data scope (how long it should remain frozen, so that it is not collected)
 enum ParamScope
 {
-  Unset = -1,
-  Call, /// FIXME
-  Async, /// FIXME
-  Notified, /// FIXME
+  Unset = -1, // FIXME - What should the default be?
+  Call, /// For the duration of the function call
+  Async, /// Until a single call to the callback function (possibly after the function returns)
+  Notified, /// Until the destroy notify function is called
+  Forever, /// Should be allocated for the duration of the program
 }
 
-immutable dstring[] ParamScopeValues = ["call", "async", "notified"];
+immutable dstring[] ParamScopeValues = ["call", "async", "notified", "forever"];
 
 enum NoClosure = -1;
 enum NoDestroy = -1;
+enum NoCallback = -1;

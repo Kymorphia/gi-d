@@ -6,10 +6,6 @@
 //!set record[Value].field[data].array.type[_Value__data__union][c:type] _Value__data__union
 //!set record[Value].field[data][private] 1
 
-// FIXME - Temporarily disable functions requiring GValue definition
-//!set record[Closure].method[invoke][disable] 1
-//!set class[Object].method[getv][disable] 1
-
 //# Disable binding of unuseful and problematic structures
 //!set record[TypePluginClass][disable] 1
 
@@ -43,6 +39,7 @@
 //# Not introspectable, but could be implemented manually
 //!set function[signal_chain_from_overridden][introspectable] 0
 //!set function[signal_emitv][introspectable] 0
+//!set class[SignalGroup].method[connect_data][introspectable] 0
 
 //!set function[clear_signal_handler].parameters.parameter[handler_id_ptr][direction] inout
 //!set record[TypeClass].function[adjust_private_offset].parameters.parameter[private_size_or_offset][direction] inout
@@ -56,3 +53,9 @@
 //!set record[EnumClass].field[values][writable] 0
 //!set record[FlagsClass].field[g_type_class][writable] 0
 //!set record[FlagsClass].field[values][writable] 0
+
+//# Set some methods to not introspectable as they should be
+//!set class[SignalGroup].method[connect_swapped][introspectable] 0
+
+//# Add missing closure parameter designations
+//!set callback[SignalEmissionHook].parameters.parameter[data][closure] 3

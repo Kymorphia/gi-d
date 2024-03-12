@@ -91,12 +91,12 @@ final class Repo : Base
         case "constructor": // Constructor method (class and record)
         case "function": // Function (class, enumeration, namespace, interface, record)
         case "method": // Method function (class, interface, record)
-          if (auto cl = node.baseParentFromXmlNode!Structure)
-            cl.functions ~= new Func(cl, node);
+          if (auto st = node.baseParentFromXmlNode!Structure)
+            st.addFunc(new Func(st, node));
           else if (auto en = node.baseParentFromXmlNode!Enumeration)
             en.functions ~= new Func(en, node);
           else
-            globalStruct.functions ~= new Func(globalStruct, node);
+            globalStruct.addFunc(new Func(globalStruct, node));
           break;
         case "disable": // Not an actual Gir attribute, used for disabling arbitrary nodes
           break;
@@ -651,6 +651,10 @@ final class Repo : Base
       imports.merge(funcWriters[$ - 1].imports);
     }
 
+    foreach (cb; callbacks) // Add imports for callback types
+      if (!cb.disable)
+        cb.addImports(imports, this);
+
     imports.remove("global");
 
     if (imports.write(writer))
@@ -726,7 +730,7 @@ final class Repo : Base
     }
 
     preambleShown = false;
-    foreach (cb; callbacks) // Write out callback aliases
+    foreach (cb; callbacks) // Add imports for callback types
     {
       if (cb.disable)
         continue;
@@ -740,7 +744,7 @@ final class Repo : Base
         preambleShown = true;
       }
 
-      writer ~= "alias " ~ cb.dName ~ " = " ~ cb.cName ~ ";";
+      writer ~= cb.getDelegPrototype;
     }
 
     if (globalStruct.defCode.inClass.length > 0)

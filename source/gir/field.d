@@ -53,7 +53,7 @@ final class Field : TypeNode
   {
     super.fixup;
 
-    if (callback)
+    if (callback) // Embedded callback type
     {
       cType = origCType = null;
       dType = origDType = null;
@@ -62,7 +62,7 @@ final class Field : TypeNode
     }
     else if (kind == TypeKind.Callback)
       callback = cast(Func)typeObject;
-    else if (directStruct)
+    else if (directStruct) // Embedded structure
       foreach (f; directStruct.fields)
         f.fixup;
   }
@@ -109,7 +109,7 @@ final class Field : TypeNode
   }
 
   private dstring _name; /// Field name
-  Func callback; /// For callback fields
+  Func callback; /// For callback fields (embedded callback type or alias reference)
   Structure directStruct; /// Directly embedded structure or union
   bool readable; /// Readable field?
   bool writable; /// Writable field?

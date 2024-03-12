@@ -1,5 +1,4 @@
 //!generate funcs
-import core.memory;
 import GLib.global;
 import GLib.c.functions;
 
@@ -36,7 +35,7 @@ class ObjectG
 
     // Add D object as a root to garbage collector so that it doesn't get collected as long as the GObject has a strong reference on it (toggle ref + 1 or more other refs).
     // There will always be at least 2 references at this point, one from the caller and one for the toggle ref.
-    GC.addRoot(cast(void*)this);
+    ptrFreezeGC(cast(void*)this);
 
     // If object has a floating reference (GInitiallyOwned), take ownership of it
     if (g_object_is_floating(cInstancePtr))
@@ -59,9 +58,9 @@ class ObjectG
     static void _cObjToggleNotify(void *dObj, ObjectC* gObj, bool isLastRef)
     {
       if (isLastRef) // Is the toggle reference the only reference?
-        GC.removeRoot(dObj);
+        ptrThawGC(dObj);
       else // Toggle reference was the last reference, but now there is an additional one
-        GC.addRoot(dObj);
+        ptrFreezeGC(dObj);
     }
   }
 
@@ -75,6 +74,18 @@ class ObjectG
     if (is(T : ObjectC))
   {
     return cast(T*)cInstancePtr;
+  }
+
+  /**
+   * Get a pointer to the underlying C object and add a C reference to it.
+   * Params:
+   *   T = The type of C object to get (must be a valid C type for the D object or one of it's ancestors)
+   * Returns: The C object (a reference is added)
+   */
+  T* cPtrRef(T)()
+    if (is(T : ObjectC))
+  {
+    return cast(T*)g_object_ref(cInstancePtr);
   }
 
   /**
