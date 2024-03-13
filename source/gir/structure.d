@@ -148,7 +148,7 @@ final class Structure : TypeNode
       if (!fn.shadows.empty)
         fn.shadowsFunc = funcNameHash.get(fn.shadows, null);
 
-      if (fn.funcType == FuncType.Constructor && (!ctorFunc || fn.name == "new")) // Set "new" constructor as the primary constructor or the first one otherwise
+      if (fn.funcType == FuncType.Constructor && fn.name == "new") // Set "new" constructor as the primary constructor
         ctorFunc = fn;
 
       if (fn.funcType == FuncType.Function && fn.dType == "Quark" && fn.name.endsWith("error_quark"))
