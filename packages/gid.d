@@ -5,7 +5,7 @@ import core.memory : GC;
 import core.stdc.stdlib : free, malloc;
 import core.stdc.string : memset, strlen;
 import std.string : toStringz;
-public import std.typecons : BitFlags, Flag, No, Yes;
+public import std.typecons : Flag, No, Yes;
 
 /// Container ownership
 enum GidOwnership

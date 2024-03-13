@@ -160,8 +160,8 @@ class DelegWriter
         case String:
           postCall ~= "_retval[i] = _dretval[i].toCString(true);\n";
           break;
-        case Flags:
-          postCall ~= "_retval[i] = cast(" ~ elemType.cType ~ ")cast(uint)_dretval[i];\n";
+        case Enum, Flags:
+          postCall ~= "_retval[i] = cast(" ~ elemType.cType ~ ")_dretval[i];\n";
           break;
         case Simple:
         case Opaque:
@@ -170,7 +170,7 @@ class DelegWriter
         case Wrap, Boxed, Reffed, Object, Interface:
           postCall ~= "_retval[i] = _dretval[i].cPtr!" ~ elemType.cTypeRemPtr ~ "(" ~ callback.fullOwnerStr ~ ");\n";
           break;
-        case Basic, BasicAlias, Callback, Enum, Unknown, Namespace:
+        case Basic, BasicAlias, Callback, Unknown, Namespace:
           assert(0, "Unsupported delegate return value array type '" ~ elemType.dType.to!string
             ~ "' (" ~ elemType.kind.to!string ~ ") for " ~ callback.fullName.to!string);
       }
@@ -239,19 +239,8 @@ class DelegWriter
 
     final switch (param.kind) with (TypeKind)
     {
-      case Basic, BasicAlias, Enum:
+      case Basic, BasicAlias, Enum, Flags:
         addCallParam(param.dName);
-        break;
-      case Flags:
-        if (param.direction == ParamDirection.Out)
-          preCall ~= param.dType ~ " _" ~ param.dName ~ ";\n";
-        else
-          preCall ~= param.dType ~ " _" ~ param.dName ~ " = cast(" ~ param.dType ~ ")" ~ param.dName ~ ";\n";
-
-        addCallParam("_" ~ param.dName);
-
-        if (param.direction != ParamDirection.In)
-          postCall ~= "*" ~ param.dName ~ " = cast(" ~ param.cType ~ ")cast(uint)_" ~ param.dName ~ ";\n";
         break;
       case String:
         if (param.direction == ParamDirection.In)

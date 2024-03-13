@@ -676,11 +676,8 @@ final class Repo : Base
     }
 
     preambleShown = false;
-    foreach (en; enums) // Write out enum aliases
+    foreach (en; enums) // Write out enum and flag aliases
     {
-      if (en.bitfield)
-        continue;
-
       if (!preambleShown)
       {
         if (writer.lines[$ - 1] != "{")
@@ -691,24 +688,6 @@ final class Repo : Base
       }
 
       writer ~= "alias " ~ en.name ~ " = " ~ en.cName ~ ";";
-    }
-
-    preambleShown = false;
-    foreach (en; enums) // Write out bitfield aliases
-    {
-      if (!en.bitfield)
-        continue;
-
-      if (!preambleShown)
-      {
-        if (writer.lines[$ - 1] != "{")
-          writer ~= "";
-
-        writer ~= "// Flags";
-        preambleShown = true;
-      }
-
-      writer ~= "alias " ~ en.name ~ " = BitFlags!(" ~ en.cName ~ ", Yes.unsafe);";
     }
 
     preambleShown = false;

@@ -642,7 +642,7 @@ immutable DefCmd[] defCommandInfo = [
   {"class", 1, DefCmdFlags.ReqRepo, "class <Class> - Select the current structure/class"},
   {"del", 1, DefCmdFlags.None, "del <XmlSelect> - Delete an XML attribute or node"},
   {
-    "generate", 1, DefCmdFlags.ReqClass, "generate <'Init' | 'Funcs'> - Force generation of Init or Function code"
+    "generate", 1, DefCmdFlags.ReqClass, "generate <'init' | 'funcs'> - Force generation of Init or Function code"
   },
   {"import", 1, DefCmdFlags.ReqClass, "import <Import> - Add a D import"},
   {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},

@@ -18,7 +18,7 @@ unittest
     capturedLogData = message.dup;
   }
 
-  logSetHandler(null, LogLevelFlags(GLogLevelFlags.LevelWarning), &logFunc);
+  logSetHandler(null, LogLevelFlags.LevelWarning, &logFunc);
   g_log(cast(const(char)*)null, GLogLevelFlags.LevelWarning, testMsg.ptr);
 
   assert(capturedLogData == testMsg);

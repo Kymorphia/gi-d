@@ -423,11 +423,8 @@ final class Structure : TypeNode
         case String:
           lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ".fromCString(false);";
           break;
-        case Enum:
+        case Enum, Flags:
           lines ~= "return cast(" ~ f.dType ~ ")" ~ cPtr ~ "." ~ f.dName ~ ";";
-          break;
-        case Flags:
-          lines ~= "return " ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ");";
           break;
         case Simple:
           lines ~= "return *" ~ cPtr ~ "." ~ f.dName ~ ";";
@@ -484,11 +481,8 @@ final class Structure : TypeNode
           ];
           imports.add("GLib.c.functions");
           break;
-        case Enum:
+        case Enum, Flags:
           lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";
-          break;
-        case Flags:
-          lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")cast(uint)propval;";
           break;
         case Simple:
           lines ~= cPtr ~ "." ~ f.dName ~ " = *propval;";

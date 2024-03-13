@@ -235,7 +235,7 @@ class FuncWriter
         case String:
           postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ func.fullOwnerStr ~ ");\n";
           break;
-        case Flags:
+        case Enum, Flags:
           postCall ~= "_retval[i] = cast(" ~ elemType.dType ~ ")(_cretval[i]);\n";
           break;
         case Simple:
@@ -252,7 +252,7 @@ class FuncWriter
             ~ func.fullOwnerStr ~ ");\n";
           imports.add("GObject.ObjectG");
           break;
-        case Basic, BasicAlias, Callback, Enum, Unknown, Namespace:
+        case Basic, BasicAlias, Callback, Unknown, Namespace:
           assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
               .kind.to!string
               ~ ") for " ~ func.fullName.to!string);
@@ -389,7 +389,7 @@ class FuncWriter
         else
           addCallParam("cast(" ~ param.cType ~ ")&" ~ param.dName);
         break;
-      case Enum:
+      case Enum, Flags:
         addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ (param.direction != ParamDirection.Out ? "cast("
             ~ param.cType ~ ")" ~ param.dName : "") ~ ";\n";
@@ -397,28 +397,6 @@ class FuncWriter
 
         if (param.direction != ParamDirection.In)
           postCall ~= param.dName ~ " = cast(" ~ param.dType ~ ")_" ~ param.dName ~ ";\n";
-        break;
-      case Flags:
-        if (param.direction == ParamDirection.In)
-        {
-          addDeclParam(param.dType ~ " " ~ param.dName);
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")cast(uint)" ~ param.dName ~ ";\n";
-          addCallParam("_" ~ param.dName);
-        }
-        else if (param.direction == ParamDirection.Out)
-        {
-          addDeclParam("out " ~ param.dType ~ " " ~ param.dName);
-          preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
-          addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = cast(" ~ param.dType ~ ")_" ~ param.dName ~ ";\n";
-        }
-        else // InOut
-        {
-          addDeclParam("inout " ~ param.dType ~ " " ~ param.dName);
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")cast(uint)" ~ param.dName ~ ";\n";
-          addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = cast(" ~ param.dType ~ ")_" ~ param.dName ~ ";\n";
-        }
         break;
       case String:
         addDeclParam(param.directionStr ~ "string " ~ param.dName);
