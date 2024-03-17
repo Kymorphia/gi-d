@@ -35,7 +35,7 @@ void breakpoint()
 }
 
 /**
- * Changes snake case to camelCase.
+ * Changes snake or kabob case to camelCase.
  * Params:
  *   snakeCase = snake_case string
  * Returns: camelCase string
@@ -48,7 +48,7 @@ dstring camelCase(dstring snakeCase, bool firstUpper = false)
 
   foreach (i, c; snakeCase)
   {
-    if (c == '_')
+    if (c == '_' || c == '-')
     {
       upperNext = true;
       camelStr ~= snakeCase[lastPos .. i];
@@ -77,6 +77,11 @@ unittest
   assert("i_am__snake".camelCase.equal("iAmSnake"));
   assert("_i_am__snake_".camelCase.equal("IAmSnake"));
   assert("i_am__snake".camelCase(true).equal("IAmSnake"));
+  assert("i-am-kabob".camelCase.equal("iAmKabob"));
+  assert("i-am--kabob".camelCase.equal("iAmKabob"));
+  assert("-i-am--kabob-".camelCase.equal("IAmKabob"));
+  assert("i-am--kabob".camelCase(true).equal("IAmKabob"));
+  assert("i_am_snake-kabob".camelCase.equal("iAmSnakeKabob"));
   assert("blah".camelCase().equal("blah"));
   assert("blah".camelCase(true).equal("Blah"));
 }

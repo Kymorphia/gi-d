@@ -48,6 +48,7 @@
 //!reserved immutable
 //!reserved import
 //!reserved in
+//!reserved init
 //!reserved inout
 //!reserved int
 //!reserved interface
@@ -140,8 +141,11 @@
 //!subtype "long double" real
 //!subtype none void
 //!subtype passwd void
+//!subtype pid_t int
 //!subtype time_t long
 //!subtype tm void
+//!subtype uid_t uint
+//!subtype unsigned uint
 //!subtype "unsigned int" uint
 //!subtype utf8 string
 //!subtype va_list void*

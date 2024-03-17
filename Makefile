@@ -1,10 +1,10 @@
 .PHONY: build
 build:
-	dub build --parallel --compiler=ldc2 --debug debug
+	dub build --parallel --build-mode=singleFile --compiler=ldc2 --debug debug
 
 .PHONY: coverage
 coverage:
-	dub build --parallel --compiler=ldc2 --build unittest-cov
+	dub build --parallel --build-mode=singleFile --compiler=ldc2 --build unittest-cov
 
 .PHONY: test
 test: coverage run-test

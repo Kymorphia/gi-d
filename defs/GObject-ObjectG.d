@@ -1,6 +1,7 @@
 //!generate funcs
 import GLib.global;
 import GLib.c.functions;
+import GObject.DClosure;
 
 private immutable Quark gidObjectQuark;
 
@@ -53,39 +54,26 @@ class ObjectG
       g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
   }
 
-  extern(C)
-  { // Toggle ref callback
-    static void _cObjToggleNotify(void *dObj, ObjectC* gObj, bool isLastRef)
-    {
-      if (isLastRef) // Is the toggle reference the only reference?
-        ptrThawGC(dObj);
-      else // Toggle reference was the last reference, but now there is an additional one
-        ptrFreezeGC(dObj);
-    }
+  
+  // Toggle ref callback
+  extern(C) static void _cObjToggleNotify(void *dObj, ObjectC* gObj, bool isLastRef)
+  {
+    if (isLastRef) // Is the toggle reference the only reference?
+      ptrThawGC(dObj);
+    else // Toggle reference was the last reference, but now there is an additional one
+      ptrFreezeGC(dObj);
   }
 
   /**
    * Get a pointer to the underlying C object.
    * Params:
    *   T = The type of C object to get (must be a valid C type for the D object or one of it's ancestors)
+   *   addRef = true to add a reference with g_object_ref(), false otherwise (default)
    * Returns: The C object (no reference is added)
    */
-  T* cPtr(T)()
-    if (is(T : ObjectC))
+  T* cPtr(T)(bool addRef = false)
   {
-    return cast(T*)cInstancePtr;
-  }
-
-  /**
-   * Get a pointer to the underlying C object and add a C reference to it.
-   * Params:
-   *   T = The type of C object to get (must be a valid C type for the D object or one of it's ancestors)
-   * Returns: The C object (a reference is added)
-   */
-  T* cPtrRef(T)()
-    if (is(T : ObjectC))
-  {
-    return cast(T*)g_object_ref(cInstancePtr);
+    return cast(T*)(addRef ? g_object_ref(cInstancePtr) : cInstancePtr);
   }
 
   /**
@@ -114,6 +102,19 @@ class ObjectG
       return new T(cptr, owned);
     else
       return null; // FIXME - Need to handle returning an object instance for an interface
+  }
+
+  /**
+   * Connect a D closure to an object signal.
+   * Params:
+   *   signalDetail = Signal name and optional detail separated by '::'
+   *   closure = Closure to connect signal to
+   *   after = true invoke the signal after the default handler, false to execute before (default)
+   * Returns: The signal connection ID
+   */
+  ulong connectSignalClosure(string signalDetail, DClosure closure, bool after = false)
+  {
+    return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), (cast(Closure)closure).cPtr!GClosure, after);
   }
 }
 

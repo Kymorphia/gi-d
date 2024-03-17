@@ -9,7 +9,7 @@ class PtrArray(T, CT)
   GPtrArray* cPtr; // The pointer array
   GidOwnership ownership; // Ownership of the array and data
 
-  this(GPtrArray* array, GidOwnership ownership)
+  this(GPtrArray* array, GidOwnership ownership = GidOwnership.None)
   {
     cPtr = array;
     this.ownership = ownership;

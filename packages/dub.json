@@ -6,10 +6,12 @@
 	"license": "MIT",
 	"targetType": "none",
 	"dependencies": {
+		":gio": "*",
 		":glib": "*",
 		":gobject": "*"
 	},
 	"subPackages" : [
+		"./gio/",
 		"./glib/",
 		"./gobject/"
 	]

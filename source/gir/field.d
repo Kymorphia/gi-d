@@ -74,8 +74,14 @@ final class Field : TypeNode
 
     super.verify;
 
-    if (kind == TypeKind.String && cType.countStars > 1)
+    auto starCount = cType.countStars;
+
+    if (kind == TypeKind.String && starCount > 1)
       throw new Exception("Array of strings not supported");
+
+    with(TypeKind) if ((kind.among(Basic, BasicAlias, Enum, Flags, Callback) && starCount != 0)
+        || (kind.among(String, Simple, Opaque, Wrap, Boxed, Reffed, Object, Interface) && starCount != 1))
+      throw new Exception("Unexpected number of pointer references for field " ~ fullName.to!string);
 
     if (directStruct)
       throw new Exception("Embedded structure fields not supported");
@@ -86,7 +92,7 @@ final class Field : TypeNode
     if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
       throw new Exception("Unhandled type '" ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
 
-    if (writable && kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed))
+    if (writable && kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed, TypeKind.Object))
     {
       writable = false;
       warning("Setting writable to false for field " ~ fullName.to!string ~ " with unhandled type '"

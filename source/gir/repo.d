@@ -427,7 +427,7 @@ final class Repo : Base
 
     writer ~= ["module " ~ namespace ~ ".c.types;", ""];
 
-    writer ~= includes.map!(x => "import " ~ x.name ~ ".c.types;\n").array;
+    writer ~= includes.map!(x => "public import " ~ x.name ~ ".c.types;\n").array;
 
     if (!includes.empty)
       writer ~= "";
@@ -515,7 +515,7 @@ final class Repo : Base
     writer ~= ["module " ~ namespace ~ ".c.functions;", ""];
 
     writer ~= ["import " ~ namespace ~ ".c.types;"];
-    writer ~= includes.map!(x => "import " ~ x.name ~ ".c.types;\n").array;
+    writer ~= includes.map!(x => "public import " ~ x.name ~ ".c.types;\n").array;
     writer ~= "";
 
     writeSharedLibs(writer);

@@ -33,10 +33,14 @@ final class Func : TypeNode
     _name = val;
   }
 
-  /// Get the function name formatted in D camelCase
-  dstring dName()
+  /**
+   * Get the function name formatted in D camelCase
+   * Params:
+   *   firstUpper = true to make first character uppercase also (defaults to false)
+   */
+  dstring dName(bool firstUpper = false)
   {
-    return repo.defs.symbolName(_name.camelCase);
+    return repo.defs.symbolName(_name.camelCase(firstUpper));
   }
 
   /// Returns true if function has an instance parameter
@@ -132,6 +136,21 @@ final class Func : TypeNode
     {
       disableFunc("Return type error: " ~ e.msg);
       return;
+    }
+
+    if (funcType == FuncType.Signal)
+    {
+      if (containerType != ContainerType.None)
+      {
+        disableFunc("signal container return type '" ~ containerType.to!string ~ "' not supported");
+        return;
+      }
+
+      with(TypeKind) if (kind.among(Simple, Callback, Opaque, Unknown, Namespace))
+      {
+        disableFunc("signal return type '" ~ kind.to!string ~ "' is not supported");
+        return;
+      }
     }
 
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?

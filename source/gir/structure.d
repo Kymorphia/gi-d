@@ -9,6 +9,7 @@ import gir.func;
 import gir.func_writer;
 import gir.property;
 import gir.repo;
+import gir.signal_writer;
 import gir.type_node;
 import utils;
 
@@ -68,6 +69,21 @@ final class Structure : TypeNode
   {
     functions ~= func;
     funcNameHash[func.name] = func;
+  }
+
+  /**
+   * Look through a class structure's parent object ancestry to see which one implements a given interface.
+   * Params:
+   *   iface = The interface structure to find an implementation of
+   * Returns: The ancestor structure that implements the interface or null if not found.
+   */
+  Structure getIfaceAncestor(Structure iface)
+  {
+    for (auto cl = parentStruct; cl; cl = cl.parentStruct)
+      if (cl.implementStructs.canFind(iface))
+        return cl;
+
+    return null;
   }
 
   // Calculate the structure type kind
@@ -186,12 +202,7 @@ final class Structure : TypeNode
 
     foreach (fn; functions) // Verify structure function/methods
     {
-      FuncType[] allowedTypes = [
-        FuncType.Callback, FuncType.Function, FuncType.Constructor, FuncType.Signal,
-        FuncType.Method
-      ];
-
-      if (!allowedTypes.canFind(fn.funcType))
+      with(FuncType) if (!fn.funcType.among(Callback, Function, Constructor, Signal, Method))
       {
         fn.disable = true;
         warning("Disabling function " ~ fn.fullName.to!string ~ " of type '" ~ fn.funcType.to!string
@@ -199,6 +210,17 @@ final class Structure : TypeNode
       }
       else
         fn.verify;
+    }
+
+    foreach (sig; signals) // Verify structure signals
+    {
+      try
+        sig.verify;
+      catch (Exception e)
+      {
+        sig.disable = true;
+        warning("Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
+      }
     }
 
     foreach (f; fields) // Verify structure fields
@@ -209,7 +231,6 @@ final class Structure : TypeNode
       {
         f.disable = true;
         warning("Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
-        continue;
       }
     }
   }
@@ -226,7 +247,6 @@ final class Structure : TypeNode
     auto writer = new CodeWriter(buildPath(path, dType.to!string ~ (isIfaceTemplate ? "T" : "") ~ ".d")); // Append T to type name for interface mixin template module
     writer ~= ["module " ~ fullName ~ (isIfaceTemplate ? "T;"d : ";"d), ""];
 
-    // Create the function writers first to construct the imports
     auto imports = new ImportSymbols(defCode.imports, repo.namespace);
 
     imports.add("gid");
@@ -236,11 +256,16 @@ final class Structure : TypeNode
     if (kind == TypeKind.Wrap)
       imports.add("GLib.c.functions"); // For g_free()
 
-    FuncWriter[] funcWriters;
     dstring[] propMethods;
+    FuncWriter[] funcWriters;
+    SignalWriter[] signalWriters;
 
+    // Create the function and signal writers first to construct the imports
     if (defCode.genFuncs)
     {
+      if (kind == TypeKind.Wrap || kind == TypeKind.Boxed)
+        propMethods = constructFieldProps(imports); // Construct wrapper property methods in order to collect imports
+
       foreach (fn; functions)
       {
         if (!fn.disable)
@@ -251,8 +276,17 @@ final class Structure : TypeNode
         }
       }
 
-      if (kind == TypeKind.Wrap || kind == TypeKind.Boxed)
-        propMethods = constructFieldProps(imports); // Construct wrapper property methods in order to collect imports
+      foreach (sig; signals)
+      {
+        if (!sig.disable)
+        {
+          codeTrap("struct.signal", sig.fullName);
+          signalWriters ~= new SignalWriter(sig);
+          imports.merge(signalWriters[$ - 1].imports);
+          imports.add("GObject.DClosure");
+          imports.add("GObject.global");
+        }
+      }
     }
 
     if (parentStruct)
@@ -283,9 +317,10 @@ final class Structure : TypeNode
         else
           writer ~= "template " ~ dType ~ "T(TStruct)";
       }
-      else // Create range of parent type and implemented interface types
-      {
-        auto parentAndIfaces = (parentStruct ? [parentStruct.dType] : []) ~ implementStructs.map!(x => x.dType).array;
+      else
+      { // Create range of parent type and implemented interface types, but filter out interfaces already implemented by ancestors
+        auto parentAndIfaces = (parentStruct ? [parentStruct.dType] : [])
+          ~ implementStructs.filter!(x => !getIfaceAncestor(x)).map!(x => x.dType).array;
         writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.join(", ") : "");
       }
     }
@@ -306,6 +341,12 @@ final class Structure : TypeNode
       {
         writer ~= "";
         fnWriter.write(writer, ifaceModule);
+      }
+
+      foreach (sigWriter; signalWriters)
+      {
+        writer ~= "";
+        sigWriter.write(writer, ifaceModule);
       }
     }
 
@@ -362,13 +403,18 @@ final class Structure : TypeNode
     else if (kind == TypeKind.Wrap && freeFunction)
       writer ~= ["", "~this()", "{", freeFunction ~ "(&cInstance);", "}"];
 
-    if (kind.among(TypeKind.Opaque, TypeKind.Reffed, TypeKind.Boxed, TypeKind.Object)
-        || (kind == TypeKind.Interface && !ifaceModule))
-      writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)cInstancePtr;", "}"];
+    if (kind == TypeKind.Opaque)
+      writer ~= ["", "T* cPtr(T)()", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
+        "return cast(T*)cInstancePtr;", "}"];
+    else if (kind == TypeKind.Reffed)
+      writer ~= ["", "T* cPtr(T)(bool addRef = false)", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
+        "if (addRef)", glibRefFunc ~ "(cInstancePtr);", "", "return cast(T*)cInstancePtr;", "}"];
+    else if (kind == TypeKind.Boxed)
+      writer ~= ["", "T* cPtr(T)(bool makeCopy = false)", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
+        "return makeCopy ? boxCopy!T : cast(T*)cInstancePtr;", "}"];
     else if (kind == TypeKind.Wrap)
-      writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "))", "{", "return cast(T*)&cInstance;", "}"];
-    else if (kind == TypeKind.Interface && ifaceModule)
-      writer ~= ["", "T* cPtr(T)()", "if (is(T : " ~ cTypeRemPtr ~ "));"];
+      writer ~= ["", "T* cPtr(T)()", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
+        "return cast(T*)&cInstance;", "}"];
 
     if (kind.among(TypeKind.Boxed, TypeKind.Object))
       writer ~= ["", "override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
@@ -454,6 +500,7 @@ final class Structure : TypeNode
           break;
         case Object:
           lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
+          imports.add("GObject.ObjectG");
           break;
         case Unknown, Interface, Namespace:
           throw new Exception(
@@ -499,14 +546,9 @@ final class Structure : TypeNode
 
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
-        case Object:
-          lines ~= cPtr ~ "." ~ f.dName ~ " = propval.get" ~ f.dType ~ ";";
-          break;
-        case Boxed, Wrap, Reffed, Unknown, Interface, Namespace:
+        case Boxed, Wrap, Reffed, Object, Interface, Namespace, Unknown:
           throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ f
-              .kind
-              .to!string
-              ~ ") for struct " ~ dType.to!string);
+              .kind.to!string ~ ") for struct " ~ dType.to!string);
       }
 
       lines ~= "}";

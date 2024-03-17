@@ -286,22 +286,13 @@ class FuncWriter
       return;
     }
 
-    auto dContainer = func.dType ~ "!(";
-
-    foreach (i, elemType; func.elemTypes)
-    {
-      if (i != 0)
-        dContainer ~= ", ";
-
-      dContainer ~= elemType.dType ~ ", " ~ elemType.cType;
-    }
-
-    dContainer ~= ")";
-
+    auto dContainer = func.fullContainerType;
     decl ~= dContainer ~ " ";
-    preCall ~= func.cType ~ "* _cretval;\n";
+    preCall ~= func.cType ~ " _cretval;\n";
     call ~= "_cretval = ";
-    postCall ~= dContainer ~ " _retval = _cretval ? new " ~ dContainer ~ "(_cretval) : null;\n";
+    postCall ~= dContainer ~ " _retval = _cretval ? new " ~ dContainer ~ "(_cretval, GidOwnership."
+      ~ func.ownership.to!dstring ~ ") : null;\n";
+    imports.add(ContainerTypeValues[cast(int)func.containerType]);
   }
 
   /// Process parameter
@@ -391,12 +382,7 @@ class FuncWriter
         break;
       case Enum, Flags:
         addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
-        preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ (param.direction != ParamDirection.Out ? "cast("
-            ~ param.cType ~ ")" ~ param.dName : "") ~ ";\n";
-        addCallParam((param.direction != ParamDirection.In ? "&_"d : "_") ~ param.dName);
-
-        if (param.direction != ParamDirection.In)
-          postCall ~= param.dName ~ " = cast(" ~ param.dType ~ ")_" ~ param.dName ~ ";\n";
+        addCallParam((param.direction != ParamDirection.In ? "&"d : "") ~ param.dName);
         break;
       case String:
         addDeclParam(param.directionStr ~ "string " ~ param.dName);
@@ -440,7 +426,7 @@ class FuncWriter
           addCallParam(param.dName);
         }
         break;
-      case Wrap, Boxed, Reffed, Object, Interface:
+      case Wrap, Boxed, Reffed, Object:
         if (param.direction == ParamDirection.In)
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
@@ -452,8 +438,26 @@ class FuncWriter
           preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = " ~ "new " ~ param.dType;
-          postCall ~= (param.cTypeRemPtr.endsWith('*') ? "(_"d : "(&_"d) ~ param.dName;
+          postCall ~= "(cast(void*)" ~ (param.cTypeRemPtr.endsWith('*') ? "_"d : "&_"d) ~ param.dName;
           postCall ~= (param.kind != TypeKind.Wrap ? (", " ~ param.fullOwnerStr) : "") ~ ");\n";
+        }
+        else // InOut
+          assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
+        break;
+      case Interface:
+        if (param.direction == ParamDirection.In)
+        {
+          addDeclParam(param.dType ~ " " ~ param.dName);
+          addCallParam(param.dName ~ " ? (cast(ObjectG)" ~ param.dName ~ ").cPtr!" ~ param.cTypeRemPtr.stripConst
+            ~ " : null");
+        }
+        else if (param.direction == ParamDirection.Out)
+        {
+          addDeclParam("out " ~ param.dType ~ " " ~ param.dName);
+          preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
+          addCallParam("&_" ~ param.dName);
+          postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? ObjectG.getDObject!" ~ param.dType ~ "(_"
+            ~ param.dName ~ ", " ~ param.fullOwnerStr ~ ") : null;\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
@@ -534,11 +538,23 @@ class FuncWriter
 
           preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
           break;
-        case Reffed, Object, Interface:
+        case Reffed, Object:
           preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
 
           preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
             ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
+
+          if (param.zeroTerminated)
+            preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
+
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")_tmp"
+            ~ param.dName ~ ".ptr" ~ ";\n\n";
+          break;
+        case Interface:
+          preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
+
+          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName
+            ~ " ~= obj ? (cast(ObjectG)obj).cPtr!" ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
 
           if (param.zeroTerminated)
             preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
@@ -608,8 +624,8 @@ class FuncWriter
           break;
         case Object, Interface:
           postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject(_" ~ param.dName
-            ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject!" ~ elemType.dType
+            ~ "(_" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
           imports.add("GObject.ObjectG");
 
           if (param.ownership != Ownership.None)
@@ -628,53 +644,66 @@ class FuncWriter
   // Process a container parameter (except array)
   private void processContainerParam(Param param)
   {
-    if (param.containerType == ContainerType.HashTable) // Hash tables are converted into dlang associative arrays
+    if (func.containerType == ContainerType.ByteArray)
     {
-      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param
-          .fullName.to!string
-          ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
+      addDeclParam(param.directionStr ~ "ByteArray " ~ param.dName);
 
-      auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
-      addDeclParam(mapType ~ " " ~ param.dName);
+      if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
+      {
+        assert(param.ownership == Ownership.None, "Unsupported parameter container " ~ param.dType.to!string
+          ~ " direction " ~ param.direction.to!string);
+        addCallParam(param.dName ~ ".cPtr");
+      }
+      else if (param.direction == ParamDirection.Out) // Only use of out ByteArray found seems to actually be InOut (passed in to populate data), corrected in fixup()
+      {
+        preCall ~= "GByteArray* _" ~ param.dName ~ ";\n";
+        addCallParam("&_" ~ param.dName);
+        postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? new ByteArray(_" ~ param.dName ~ ", GidOwnership."
+          ~ param.ownership.to!dstring ~ ") : null;\n";
+      }
 
-      preCall ~= "GHashTable* _cretval;\n";
-      call ~= "_cretval = ";
-      postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
-        ~ func.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_cretval) : null;\n";
+      imports.add("GLib.ByteArray");
+      return;
+    }
+    else if (param.containerType == ContainerType.HashTable) // Hash tables are converted into dlang associative arrays
+    {
+      auto mapType = param.fullContainerType;
+      addDeclParam(param.directionStr ~ mapType ~ " " ~ param.dName);
+
+      if (param.direction == ParamDirection.Out)
+      {
+        preCall ~= "GHashTable* _" ~ param.dName ~ ";\n";
+        addCallParam("&_" ~ param.dName);
+        postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
+          ~ func.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_" ~ param.dName ~ ") : null;\n";
+      }
+      else
+        assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
+          ~ param.direction.to!string);
+
       imports.add("GLib.global");
       return;
     }
 
-    addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
+    addDeclParam(param.directionStr ~ param.fullContainerType ~ " " ~ param.dName);
     auto elemType = param.elemTypes[0];
 
-    final switch(param.direction) with(ParamDirection)
+    if (param.direction == ParamDirection.In)
     {
-      case In:
-        final switch(param.ownership) with(Ownership)
-        {
-          case None:
-            addCallParam(param.dName ~ ".cPtr");
-            break;
-          case Container, Full, Unset:
-            assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
-              ~ param.direction.to!string);
-        }
-        break;
-      case Out:
-        preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
-        addCallParam("&_" ~ param.dName);
-        postCall ~= param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
-          ~ ")(_" ~ param.dName ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ");\n";
-        break;
-      case InOut:
-        final switch(param.ownership) with(Ownership)
-        {
-          case None, Container, Full, Unset:
-            assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
-              ~ param.direction.to!string);
-        }
+      assert(param.ownership == Ownership.None, "Unsupported parameter container " ~ param.dType.to!string
+        ~ " direction " ~ param.direction.to!string);
+      addCallParam(param.dName ~ ".cPtr");
     }
+    else if (param.direction == ParamDirection.Out)
+    {
+      preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
+      addCallParam("&_" ~ param.dName);
+      postCall ~= param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
+        ~ ")(_" ~ param.dName ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ");\n";
+    }
+    else
+      assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
+        ~ param.direction.to!string);
   }
 
   /**
@@ -693,7 +722,13 @@ class FuncWriter
       return;
     }
 
-    writer ~= decl;
+    auto parentNode = cast(TypeNode)func.parent; // Add "override" for methods of an interface mixin template
+
+    if (parentNode && parentNode.kind == TypeKind.Interface && !decl.startsWith("static"))
+      writer ~= "override " ~ decl;
+    else
+      writer ~= decl;
+
     writer ~= "{";
 
     if (preCall.length > 0)

@@ -41,6 +41,17 @@ abstract class Boxed
   {
     return cast(GType)0; // Gets overridden by derived boxed types
   }
+
+  /**
+   * Make a copy of the C boxed data.
+   * Params:
+   *   T = Type of the C boxed structure
+   * Returns: Copy of the boxed type
+   */
+  T* boxCopy(T)()
+  {
+    return cast(T*)glib_g_boxed_copy(getType, cInstancePtr);
+  }
 }
 
 T containerGetItem(T, CT)(void* data)

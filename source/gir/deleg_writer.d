@@ -114,7 +114,7 @@ class DelegWriter
         preCall ~= callback.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
 
-        postCall ~= callback.cType ~ " _retval = _cretval.cPtr!" ~ callback.cTypeRemPtr
+        postCall ~= callback.cType ~ " _retval = _dretval.cPtr!" ~ callback.cTypeRemPtr
           ~ "(" ~ callback.fullOwnerStr ~ ");\n";
         break;
       case Callback, Unknown, Namespace:

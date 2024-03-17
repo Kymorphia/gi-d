@@ -135,11 +135,33 @@ final class Param : TypeNode
         destroyIndex = NoDestroy; // Ignore destroy notify parameter references to itself or the callback
       }
     }
+
+    if (cType == "GByteArray*" && direction == ParamDirection.Out) // HACK?: Out GByteArray* is more like InOut
+    {
+      direction = ParamDirection.InOut;
+      info("Using InOut direction for GByteArray* parameter instead of Out");
+    }
   }
 
   override void verify()
   {
     super.verify;
+
+    auto func = getParentByType!Func;
+
+    if (func.funcType == FuncType.Signal)
+    {
+      if (containerType != ContainerType.None)
+        throw new Exception("Signal parameter container type '" ~ containerType.to!string ~ "' not supported");
+
+      if (direction != ParamDirection.In)
+        throw new Exception("Signal parameter direction '" ~ direction.to!string ~ "' not supported");
+
+      with(TypeKind) if (kind.among(Simple, Opaque, Callback, Unknown, Namespace))
+        throw new Exception("Signal parameter kind '" ~ kind.to!string ~ "' not supported");
+
+      return;
+    }
 
     if (containerType == ContainerType.HashTable)
     {
@@ -158,8 +180,6 @@ final class Param : TypeNode
       throw new Exception(
           "Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
           ~ cType.to!string ~ "'");
-
-    auto func = getParentByType!Func;
 
     if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
     {

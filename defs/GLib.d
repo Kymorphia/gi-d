@@ -41,8 +41,6 @@
 //!set record[Dir].constructor[open].return-value[][transfer-ownership] full
 
 //# Disable binding of unuseful and problematic structures
-//!set record[List][disable] 1
-//!set record[SList][disable] 1
 //!set record[TrashStack][disable] 1
 
 //# Disable Queue fields

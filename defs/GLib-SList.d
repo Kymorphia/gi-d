@@ -34,7 +34,7 @@ class SList(T, CT)
 
   T front()
   {
-    return containerGetItem(cPtr);
+    return containerGetItem!(T, CT)(cPtr);
   }
 
   void popFront()
@@ -44,17 +44,17 @@ class SList(T, CT)
       auto p = cPtr;
       cPtr = cPtr.next;
 
-      containerFreeItem(p);
+      containerFreeItem!(T, CT)(p.data);
       g_slist_free_1(p);
     }
   }
 
-  List!(T, CT) save() const
+  List!(T, CT) save()
   {
     GSList* newList;
 
     for (auto p = cPtr; p; p = p.next)
-      newList = g_slist_prepend(newList, containerCopyItem(p.data));
+      newList = g_slist_prepend(newList, containerCopyItem!(T, CT)(p.data));
 
     return new SList!(T, CT)(g_slist_reverse(newList), GidOwnership.Full);
   }

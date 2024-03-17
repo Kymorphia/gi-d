@@ -35,16 +35,33 @@ class TypeNode : Base
   /// cPtr with a single '*' removed (if it has any)
   dstring cTypeRemPtr()
   {
-    if (cType.endsWith("*"))
-      return cType[0 .. $ - 1];
-    else
+    if (!cType.endsWith("*"))
       return cType;
+
+    if (cType.length > 3 && cType[$ - 3 .. $ - 1] == "*)") // Move * out of const(TYPE*) parenthesis if it is the last one
+      return cType[0 .. $ - 3] ~ ")*";
+
+    return cType[0 .. $ - 1];
   }
 
   /// Returns "true" if ownership is Full, "false" otherwise (help function)
   dstring fullOwnerStr()
   {
     return ownership == Ownership.Full ? "true"d : "false"d;
+  }
+
+  /// Get the full template container type. This type node must be a container type.
+  dstring fullContainerType()
+  {
+    assert(!elemTypes.empty);
+
+    if (dType == "ByteArray")
+      return dType;
+
+    if (dType == "HashTable")
+      return elemTypes[1].dType ~ "[" ~ elemTypes[0].dType ~ "]";
+
+    return dType ~ "!(" ~ elemTypes.map!(x => x.dType ~ ", " ~ x.cType).join(", ") ~ ")";
   }
 
   override void fromXml(XmlNode node)
@@ -113,14 +130,24 @@ class TypeNode : Base
     if (dType == "void*" && cType == "const(void)*")
       dType = "const(void)*";
 
-    // HACK - Fix anonymous gpointer object parameters to have proper C types
     if (auto st = cast(Structure)typeObject) // Should only be set to a Structure for non-struct dependencies
     {
-      if (cType == "void*" || cType == "const(void)*")
+      if (cType == "void*" || cType == "const(void)*") // HACK? - Fix anonymous gpointer object parameters to have proper C types
       {
         cType = st.cType ~ "*";
-        info("Using '" ~ cType ~ "' for anonymous gpointer parameter " ~ fullName);
+        info(fullName ~ ": Using '" ~ cType ~ "' for anonymous pointer cType");
       }
+      else if (cType.empty) // HACK? - Use structure cType if cType is missing
+      {
+        cType = st.cType ~ "*";
+        info(fullName ~ ": Using '" ~ cType ~ "' for missing cType");
+      }
+    }
+
+    if (cType.empty && kind == TypeKind.String)
+    {
+      cType = "char*";
+      info(fullName ~ ": Using char* for missing cType");
     }
 
     foreach (typ; elemTypes)

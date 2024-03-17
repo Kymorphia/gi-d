@@ -35,7 +35,7 @@ class List(T, CT)
 
   T front()
   {
-    return containerGetItem(T, CT)(cPtr.data);
+    return containerGetItem!(T, CT)(cPtr.data);
   }
 
   T back()
@@ -43,7 +43,7 @@ class List(T, CT)
     if (!_backItem && cPtr)
       _backItem = g_list_last(cPtr);
 
-    return containerGetItem(T, CT)(_backItem.data);
+    return containerGetItem!(T, CT)(_backItem.data);
   }
 
   void popFront()
@@ -56,7 +56,7 @@ class List(T, CT)
       if (cPtr)
         cPtr.prev = null;
 
-      containerFreeItem(C, T)(p.data);
+      containerFreeItem!(T, CT)(p.data);
       g_list_free_1(p);
     }
   }
@@ -74,17 +74,17 @@ class List(T, CT)
       if (_backItem)
         _backItem.next = null;
 
-      containerFreeItem(T, CT)(p.data);
+      containerFreeItem!(T, CT)(p.data);
       g_list_free_1(p);
     }
   }
 
-  List!(T, CT) save() const
+  List!(T, CT) save()
   {
     GList* newList;
 
     for (auto p = cPtr; p; p = p.next)
-      newList = g_list_prepend(newList, containerCopyItem(C, T)(p.data));
+      newList = g_list_prepend(newList, containerCopyItem!(T, CT)(p.data));
 
     return new List!(T, CT)(g_list_reverse(newList), GidOwnership.Full);
   }
