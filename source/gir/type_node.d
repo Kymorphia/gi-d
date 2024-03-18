@@ -1,6 +1,7 @@
 module gir.type_node;
 
 import defs;
+import gir.alias_;
 public import gir.base;
 import gir.field;
 import gir.structure;
@@ -125,6 +126,11 @@ class TypeNode : Base
     cType = repo.defs.subTypeStr(origCType, typeRepo.typeSubs);
     kind = repo.defs.typeKind(dType, typeRepo);
     typeObject = typeRepo.typeObjectHash.get(dType, null);
+
+    if (auto al = cast(Alias)typeObject)
+      typeObject = typeRepo.typeObjectHash.get(al.dType, null);
+
+    codeTrap("type.fixup", fullName);
 
     // HACK - gpointer is used in place of gconstpointer in Gir files, just use gconstpointer
     if (dType == "void*" && cType == "const(void)*")

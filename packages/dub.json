@@ -7,12 +7,10 @@
 	"targetType": "none",
 	"dependencies": {
 		":gio": "*",
-		":glib": "*",
-		":gobject": "*"
+		":glib": "*"
 	},
 	"subPackages" : [
 		"./gio/",
-		"./glib/",
-		"./gobject/"
+		"./glib/"
 	]
 }

@@ -43,33 +43,38 @@ abstract class Boxed
   }
 
   /**
-   * Make a copy of the C boxed data.
+   * Make a copy of the wrapped C boxed data.
    * Params:
    *   T = Type of the C boxed structure
    * Returns: Copy of the boxed type
    */
-  T* boxCopy(T)()
+  T* copy_(T)()
   {
     return cast(T*)glib_g_boxed_copy(getType, cInstancePtr);
   }
-}
 
-T containerGetItem(T, CT)(void* data)
-  if (is(T : Boxed))
-{
-  return new T(cast(CT)data, ownership == GidOwnership.Full);
-}
+  /**
+   * Copy a C boxed value using g_boxed_copy.
+   * Params:
+   *   T = The D boxed type
+   *   cBoxed = The C boxed pointer
+   * Returns: A copy of the boxed type
+   */
+  static void* boxCopy(T)(void* cBoxed)
+  {
+    return glib_g_boxed_copy(T.getType, cBoxed);
+  }
 
-void* containerCopyItem(T, CT)(void* data)
-  if (is(T : Boxed))
-{
-  return glib_g_boxed_copy(T.getType, data);
-}
-
-void containerFreeItem(T, CT)(void* data)
-  if (is(T : Boxed))
-{
-  glib_g_boxed_free(T.getType, data);
+  /**
+   * Free a C boxed value using g_boxed_free.
+   * Params:
+   *   T = The D boxed type
+   *   cBoxed = The C boxed pointer
+   */
+  static void boxFree(T)(void* cBoxed)
+  {
+    glib_g_boxed_free(T.getType, cBoxed);
+  }
 }
 
 // GLib binding also depends on libgobject for boxed functions

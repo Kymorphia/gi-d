@@ -77,6 +77,27 @@ class ObjectG
   }
 
   /**
+   * Calls g_object_ref() on a GObject.
+   * Params:
+   *   gObj = The GObject to reference
+   * Returns: The GObject
+   */
+  static void* ref_(void* gObj)
+  {
+    return g_object_ref(cast(ObjectC*)gObj);
+  }
+
+  /**
+   * Calls g_object_unref() on a GObject.
+   * Params:
+   *   gObj = The GObject to reference
+   */
+  static unref(void* gObj)
+  {
+    g_object_unref(cast(ObjectC*)gObj);
+  }
+
+  /**
    * Get the GType of an object.
    * Returns: The GType
    */
@@ -116,22 +137,4 @@ class ObjectG
   {
     return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), (cast(Closure)closure).cPtr!GClosure, after);
   }
-}
-
-T containerGetItem(T, CT)(void* data)
-  if (is(T : ObjectG) || is(T == interface))
-{
-  return new T(cast(CT)data, ownership == GidOwnership.Full);
-}
-
-void* containerCopyItem(T, CT)(void* data)
-  if (is(T : ObjectG) || is(T == interface))
-{
-  return data ? g_object_ref(data) : null;
-}
-
-void containerFreeItem(T, CT)(void* data)
-  if (is(T : ObjectG) || is(T == interface))
-{
-  T.free(cast(CT)data);
 }

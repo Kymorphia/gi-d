@@ -308,6 +308,8 @@ final class Structure : TypeNode
 
     writeDocs(writer);
 
+    dstring[] objIfaces;
+
     if (defCode.classDecl.empty)
     {
       if (kind == TypeKind.Interface)
@@ -319,8 +321,8 @@ final class Structure : TypeNode
       }
       else
       { // Create range of parent type and implemented interface types, but filter out interfaces already implemented by ancestors
-        auto parentAndIfaces = (parentStruct ? [parentStruct.dType] : [])
-          ~ implementStructs.filter!(x => !getIfaceAncestor(x)).map!(x => x.dType).array;
+        objIfaces = implementStructs.filter!(x => !getIfaceAncestor(x)).map!(x => x.dType).array;
+        auto parentAndIfaces = (parentStruct ? [parentStruct.dType] : []) ~ objIfaces;
         writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.join(", ") : "");
       }
     }
@@ -331,6 +333,14 @@ final class Structure : TypeNode
 
     if (defCode.genInit)
       writeInitCode(writer, propMethods, ifaceModule);
+
+    if (kind == TypeKind.Object && !objIfaces.empty)
+    {
+      writer ~= "";
+
+      foreach (iface; objIfaces)
+        writer ~= "mixin " ~ iface ~ "T!" ~ cType ~ ";";
+    }
 
     if (defCode.inClass.length > 0)
       writer ~= defCode.inClass;
@@ -411,27 +421,16 @@ final class Structure : TypeNode
         "if (addRef)", glibRefFunc ~ "(cInstancePtr);", "", "return cast(T*)cInstancePtr;", "}"];
     else if (kind == TypeKind.Boxed)
       writer ~= ["", "T* cPtr(T)(bool makeCopy = false)", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
-        "return makeCopy ? boxCopy!T : cast(T*)cInstancePtr;", "}"];
+        "return makeCopy ? copy_!T : cast(T*)cInstancePtr;", "}"];
     else if (kind == TypeKind.Wrap)
       writer ~= ["", "T* cPtr(T)()", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
         "return cast(T*)&cInstance;", "}"];
 
-    if (kind.among(TypeKind.Boxed, TypeKind.Object))
-      writer ~= ["", "override GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
-    else if (kind == TypeKind.Interface && ifaceModule)
+    if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && ifaceModule))
       writer ~= ["", "static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
 
     if (kind.among(TypeKind.Opaque, TypeKind.Wrap, TypeKind.Boxed))
       writer ~= propMethods;
-
-    if (kind == TypeKind.Object)
-    {
-      if (!implementStructs.empty)
-        writer ~= "";
-
-      foreach (iface; implementStructs)
-        writer ~= "mixin " ~ iface.dType ~ "T!" ~ cType ~ ";";
-    }
   }
 
   // Construct struct wrapper property methods

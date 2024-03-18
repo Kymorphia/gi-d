@@ -4,10 +4,10 @@ class ErrorG : Exception
 {
   private GError* errPtr;
 
-  this(GError *err, bool unused=false)
+  this(void* err, bool unused=false)
   {
-    errPtr = err;
-    super(err.message.fromCString(false));
+    errPtr = cast(GError*)err;
+    super(errPtr.message.fromCString(false));
   }
 
   this(Quark domain, int code, string message)

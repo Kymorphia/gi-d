@@ -56,7 +56,12 @@ class XmlPatch
     parseSelector(sel);
 
     if (selAttrId.empty) // Set XML node?
+    {
       nodeValue = new XmlTree(val, "<VALUE>");
+
+      if (!nodeValue.root)
+        throw new XmlPatchError("Expected XML data but found empty value");
+    }
     else // Set XML attribute value
       strValue = val;
   }
@@ -96,6 +101,9 @@ class XmlPatch
     op = XmlPatchOp.Add;
     parseSelector(sel);
     nodeValue = new XmlTree(xmlVal, "<VALUE>");
+
+    if (!nodeValue.root)
+      throw new XmlPatchError("Expected XML data but found empty value");
   }
 
   /**

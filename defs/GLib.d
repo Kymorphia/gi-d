@@ -293,6 +293,79 @@
       g_hash_table_new_full(g_direct_hash, g_direct_equal, null, valDestroyFunc);
   }
 
+  import GObject.ObjectG;
+  import GLib.Boxed;
+
+  /**
+  * Template to get a D item from a container C data item. Used internally for binding containers.
+  * Params:
+  *   T = The D item type
+  *   data = The container C data pointer
+  * Returns: The D item which is a copy of the C item
+  */
+  T containerGetItem(T)(void* data)
+  {
+    static if (is(T : ObjectG) || is(T == interface) || is(T : Boxed))
+      return ObjectG.getDObject!T(data, false);
+    else static if (is(T : string))
+      return fromCString(cast(const(char)*)data, false);
+    else static if (__traits(compiles, new T(data, false)))
+      return new T(data, false);
+    else static if (is(T : void*))
+      return data;
+    else
+      assert(0);
+  }
+
+  /**
+   * Template to copy a container C item to another C item. Used internally for binding containers.
+   * Params:
+   *   T = The D item type
+   *   data = The container C data pointer
+   * Returns: A copy of the C item
+   */
+  void* containerCopyItem(T)(void* data)
+  {
+    if (!data)
+      return null;
+
+    static if (is(T : ObjectG) || is(T == interface))
+      return ObjectG.ref_(data);
+    else static if (is(T : Boxed))
+      return Boxed.boxCopy!T(data);
+    else static if (is(T : string))
+      return g_strdup(cast(const(char)*)data);
+    else static if (__traits(compiles, T.ref_(data)))
+      return T.ref_(data);
+    else static if (is(T : void*))
+      return data;
+    else
+      assert(0);
+  }
+
+  /**
+   * Free a container C item. Used internally for binding containers.
+   * Params:
+   *   T = The D item type
+   *   data = The container C data pointer
+   */
+  void containerFreeItem(T)(void* data)
+  {
+    static if (is(T : ObjectG) || is(T == interface))
+      ObjectG.unref(data);
+    else static if (is(T : Boxed))
+      Boxed.boxFree!T(data);
+    else static if (is(T : string))
+      g_free(data);
+    else static if (__traits(compiles, T.unref(data)))
+      T.unref(data);
+    else static if (is(T : void*))
+    {
+    }
+    else
+      assert(0);
+  }
+
 //# g_markup_parse_context_new() has unnecessary closure and destroy notify, override the new() method
 //!set record[MarkupParseContext].constructor[new][disable] 1
 //!class MarkupParseContext

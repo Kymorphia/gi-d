@@ -34,7 +34,7 @@ class Defs
   {
     string[] classFiles;
 
-    foreach (string filename; dirEntries(path, "*.d", SpanMode.shallow))
+    foreach (string filename; dirEntries(path, "*.d", SpanMode.shallow).array.sort)
     { // Process class files, which contain a dash in the filename, after the main repo files
       if (filename.baseName.canFind('-'))
         classFiles ~= filename;
@@ -316,6 +316,9 @@ class Defs
 
           curRepo.kindSubs[cmdTokens[1]] = kind;
           break;
+        case "merge":
+          curRepo.merge = cmdTokens[1];
+          break;
         case "repo":
           curRepo = new Repo(this, cmdTokens[1].to!string);
           curRepo.namespace = repoName.to!dstring;
@@ -346,6 +349,8 @@ class Defs
    */
   void loadRepos(string[] girPaths = ["/usr/share/gir-1.0"])
   {
+    repos = repos.sort!((x, y) => x.namespace < y.namespace).array;
+
     foreach (repo; repos)
     {
       string filePath;
@@ -646,6 +651,7 @@ immutable DefCmd[] defCommandInfo = [
   },
   {"import", 1, DefCmdFlags.ReqClass, "import <Import> - Add a D import"},
   {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},
+  {"merge", 1, DefCmdFlags.ReqRepo, "merge <Namespace> - Merge current repo into the package identified by Namespace"},
   {
     "rename", 2, DefCmdFlags.None, "rename <XmlSelect> <AttributeName | XmlNodeId> - Rename an XML attribute or node ID"
   },

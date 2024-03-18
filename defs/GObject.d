@@ -1,5 +1,8 @@
 //!repo GObject-2.0
 
+//# Merge GObject into GLib package to simplify interdependencies
+//!merge GLib
+
 //# Add c:type for the _Value__data__union used within GValue
 //!set union[_Value__data__union][c:type] _Value__data__union
 //!set union[_Value__data__union][disable] 1

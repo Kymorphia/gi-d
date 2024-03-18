@@ -23,7 +23,7 @@ class PtrArray(T, CT)
     if (ownership == GidOwnership.Full)
     {
       foreach (i; 0 .. cPtr.len)
-        containerFreeItem!(T, CT)(cPtr.pdata[i]);
+        containerFreeItem!T(cPtr.pdata[i]);
     }
 
     g_ptr_array_free(cPtr, true);
@@ -36,12 +36,12 @@ class PtrArray(T, CT)
 
   T front()
   {
-    return containerGetItem!(T, CT)(cPtr.pdata[0]);
+    return containerGetItem!T(cPtr.pdata[0]);
   }
 
   T back()
   {
-    return containerGetItem!(T, CT)(cPtr.pdata[cPtr.len - 1]);
+    return containerGetItem!T(cPtr.pdata[cPtr.len - 1]);
   }
 
   void popFront()
@@ -54,19 +54,19 @@ class PtrArray(T, CT)
     g_ptr_array_remove_index(cPtr, cPtr.len - 1);
   }
 
-  PtrArray!(T, CT) save() const
+  PtrArray!(T, CT) save()
   {
     GPtrArray* newArray;
 
     foreach (i; 0 .. cPtr.len)
-      g_ptr_array_add(containerCopyItem!(T, CT)(cPtr.pdata[i]));
+      g_ptr_array_add(cPtr, containerCopyItem!T(cPtr.pdata[i]));
 
     return new PtrArray!(T, CT)(newArray, GidOwnership.Full);
   }
 
-  T opIndex(size_t index) const
+  T opIndex(size_t index)
   {
-    return containerGetItem!(T, CT)(cPtr.pdata[index]);
+    return containerGetItem!T(cPtr.pdata[index]);
   }
 
   size_t length() const

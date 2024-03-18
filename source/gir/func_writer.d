@@ -722,9 +722,11 @@ class FuncWriter
       return;
     }
 
-    auto parentNode = cast(TypeNode)func.parent; // Add "override" for methods of an interface mixin template
+    auto parentNode = cast(TypeNode)func.parent;
 
-    if (parentNode && parentNode.kind == TypeKind.Interface && !decl.startsWith("static"))
+    // Add "override" for methods of an interface mixin template or if an ancestor/iface has a method with the same name
+    if (parentNode && (parentNode.kind == TypeKind.Interface || func.needOverride)
+        && !decl.startsWith("static"))
       writer ~= "override " ~ decl;
     else
       writer ~= decl;

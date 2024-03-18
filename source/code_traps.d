@@ -22,7 +22,7 @@ bool codeTrapsDump;
  */
 void addCodeTrap(string action, string match)
 {
-  codeTraps.require(action, cast(Regex!char[])[]) ~= regex(".*" ~ match); // FIXME - Assume regex always matches end of string for now
+  codeTraps.require(action, cast(Regex!char[])[]) ~= regex(match ~ "$"); // FIXME - Assume regex always matches end of string for now
 }
 
 /**
@@ -43,12 +43,14 @@ void codeTrap(string action, lazy dstring name)
 
   auto nameStr = name.to!string; // Evaluate lazy argument once here and convert it to string
 
-  foreach (match; matchList)
+  foreach (i; 0 .. matchList.length)
   {
-    if (!nameStr.matchFirst(match).empty)
+    if (!nameStr.matchFirst(matchList[i]).empty)
     {
       writeln("TRAP: ", action, " ", nameStr);
+      matchList = matchList.remove(i);
       breakpoint;
+      return;
     }
   }
 }

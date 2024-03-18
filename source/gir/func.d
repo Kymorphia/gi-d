@@ -263,6 +263,33 @@ final class Func : TypeNode
     return output;
   }
 
+  /**
+   * Check if a function needs an "override", i.e., has an ancestor or interface with the same name and return/argument types.
+   * Returns: true if the function declaration should include "override"
+   */
+  bool needOverride()
+  {
+    auto parentClass = cast(Structure)parent ? (cast(Structure)parent).parentStruct : null; // Class type ancestor
+
+    if (funcType != FuncType.Method || !parentClass || parentClass.structType != StructType.Class)
+      return false;
+
+    auto funcName = dName;
+
+    for (auto klass = parentClass; klass; klass = klass.parentStruct)
+    {
+      auto cmpFunc = klass.funcNameHash.get(funcName, null);
+
+      if (!cmpFunc || cmpFunc.disable || dType != cmpFunc.dType || params.length != cmpFunc.params.length)
+        continue;
+
+      if (params.map!(x => x.dType).equal(cmpFunc.params.map!(x => x.dType))) // Compare dTypes of both functions
+        return true;
+    }
+
+    return false;
+  }
+
   private dstring _name; /// Name of function
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)

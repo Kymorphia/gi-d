@@ -307,6 +307,12 @@ final class Repo : Base
   /// Ensure consistent state of repo data
   void verify()
   {
+    if (namespace.empty)
+      throw new Exception("Repo '" ~ filename ~ "' has empty namespace");
+
+    if (!merge.empty && merge !in defs.repoHash)
+      throw new Exception("Repo '" ~ merge.to!string ~ "' not found to merge '" ~ namespace.to!string ~ "' into");
+
     foreach (al; aliases) // Verify aliases
     {
       try
@@ -365,8 +371,8 @@ final class Repo : Base
    */
   void writePackage(string basePath = "packages")
   {
-    assert(namespace.length > 0);
-    auto packagePath = buildPath(basePath, namespace.toLower.to!string);
+    auto packageName = (!merge.empty ? merge : namespace).toLower.to!string; // Use the package of the merge namespace if merge specified
+    auto packagePath = buildPath(basePath, packageName);
     auto sourcePath = buildPath(packagePath, namespace.to!string);
     auto cSourcePath = buildPath(sourcePath, "c");
 
@@ -385,7 +391,8 @@ final class Repo : Base
       }
     }
 
-    writeDubJsonFile(buildPath(packagePath, "dub.json"));
+    if (merge.empty)
+      writeDubJsonFile(buildPath(packagePath, "dub.json"));
   }
 
   /**
@@ -409,9 +416,17 @@ final class Repo : Base
 `;
     string deps;
     if (!includes.empty)
-      deps = ",\n  \"dependencies\": {\n" ~ includes.map!(x => `    "gid:` ~ x.name.to!string.toLower ~ `": "*"`)
-        .join(",\n")
-        ~ "\n  }";
+    { // Use merge repo names as needed
+      string depFunc(Include inc)
+      {
+        string s = `    "gid:`;
+        auto incRepo = defs.repoHash.get(inc.name, null);
+        s ~= ((incRepo && incRepo.merge) ? incRepo.merge : inc.name).to!string.toLower;
+        return s ~ `": "*"`;
+      }
+
+      deps = ",\n  \"dependencies\": {\n" ~ includes.map!depFunc.join(",\n") ~ "\n  }";
+    }
 
     write(path, content.format(namespace.toLower.to!string, namespace.to!string, namespace.to!string, deps));
   }
@@ -768,6 +783,7 @@ final class Repo : Base
   dstring[dstring] typeSubs; /// Type substitutions defined in the definitions file
   TypeKind[dstring] kindSubs; /// Type kind substitutions defined in the definitions file
   DefCode[dstring] structDefCode; /// Code defined in definition file for structures
+  dstring merge; /// Package to merge this repo into identified by its namespace
 
   Base[dstring] typeObjectHash; /// Hash of type objects by name (Alias, Func (callback), Constant, Enumeration, or Structure)
 
