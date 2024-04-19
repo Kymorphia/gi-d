@@ -16,9 +16,10 @@
 //!set record[WeakRef].union[priv][disable] 1
 
 //# Rename Object and TypeInfo which conflict with the base D Object type
-//!subtype GObject ObjectC
-//!subtype Object ObjectG
-//!subtype TypeInfo TypeInfoG
+//!subctype GObject ObjectC
+//!subdtype Object ObjectG
+//!subdtype TypeInfo TypeInfoG
+//!subdtype Type GType
 
 //# Set ref/unref of ParamSpec
 //!set class[ParamSpec][glib:ref-func] g_param_spec_ref
@@ -63,7 +64,7 @@
 //# Add missing closure parameter designations
 //!set callback[SignalEmissionHook].parameters.parameter[data][closure] 3
 
-//!class global
+//!class Global
 
   /// Fundamental GType values as an enum
   enum GTypeEnum

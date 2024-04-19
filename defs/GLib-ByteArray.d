@@ -1,4 +1,3 @@
-import gid;
 import GLib.c.functions;
 import GLib.c.types;
 

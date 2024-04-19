@@ -1,5 +1,5 @@
 import GLib.Boxed;
-import GLib.global;
+import GLib.Global;
 
 /**
  * List BidirectionalRange template. Creates an object which wraps a GList of C type (CT) items into a D type (T) items.

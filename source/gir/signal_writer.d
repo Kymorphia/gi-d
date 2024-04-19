@@ -16,8 +16,8 @@ class SignalWriter
   this(Func signal)
   {
     this.imports = new ImportSymbols(signal.repo.namespace);
-    imports.add("gid");
-    imports.add("global");
+    imports.add("Global");
+    imports.add("GLib.Global");
     imports.add(signal.repo.namespace ~ ".c.functions");
     imports.add(signal.repo.namespace ~ ".c.types");
     this.signal = signal;
@@ -132,7 +132,7 @@ class SignalWriter
         if (signal.kind == TypeKind.Object || signal.kind == TypeKind.Interface)
           imports.add("GObject.ObjectG");
         break;
-      case Simple, Callback, Opaque, Unknown, Namespace:
+      case Simple, Pointer, Callback, Opaque, Unknown, Container, Namespace:
         assert(0, "Unsupported signal return value type '" ~ signal.dType.to!string ~ "' (" ~ signal.kind.to!string ~ ") for "
             ~ signal.fullName.to!string);
     }
@@ -170,7 +170,7 @@ class SignalWriter
       case Wrap, Boxed, Reffed, Object, Interface:
         addDeclParam(param.dType ~ " " ~ param.dName);
         break;
-      case Simple, Opaque, Callback, Unknown, Namespace:
+      case Simple, Pointer, Opaque, Callback, Unknown, Container, Namespace:
         assert(0, "Unsupported signal parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
             ~ signal.fullName.to!string);
     }

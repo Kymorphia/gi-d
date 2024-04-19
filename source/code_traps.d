@@ -36,7 +36,7 @@ void codeTrap(string action, lazy dstring name)
   auto matchList = codeTraps.get(action, null);
 
   if (codeTrapsDump)
-    writeln("TRAP: ", action, " ", name.to!string);
+    writeln("TRAP: ", action, ":", name.to!string);
 
   if (!matchList)
     return;
@@ -47,7 +47,7 @@ void codeTrap(string action, lazy dstring name)
   {
     if (!nameStr.matchFirst(matchList[i]).empty)
     {
-      writeln("TRAP: ", action, " ", nameStr);
+      writeln("TRAP: ", action, ":", nameStr);
       matchList = matchList.remove(i);
       breakpoint;
       return;

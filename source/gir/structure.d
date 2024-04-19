@@ -33,6 +33,16 @@ final class Structure : TypeNode
     return dType;
   }
 
+  override @property bool inModule()
+  {
+    with (TypeKind) return kind.among(Opaque, Wrap, Boxed, Reffed, Object, Interface, Namespace) != 0;
+  }
+
+  override @property bool inGlobal()
+  {
+    with (TypeKind) return kind.among(Simple, Pointer) != 0;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
@@ -45,6 +55,7 @@ final class Structure : TypeNode
     abstract_ = node.get("abstract") == "1";
     deprecated_ = node.get("deprecated") == "1";
     opaque = node.get("opaque") == "1";
+    pointer = node.get("pointer") == "1";
     glibFundamental = node.get("glib:fundamental") == "1";
 
     deprecatedVersion = node.get("deprecated-version");
@@ -95,19 +106,28 @@ final class Structure : TypeNode
     if (structType == StructType.Record && !glibGetType.empty)
       return TypeKind.Boxed;
 
-    if (structType == StructType.Record && opaque && fields.empty)
-      return TypeKind.Opaque;
+    if (structType == StructType.Record && (opaque || pointer))
+      return functions.empty ? TypeKind.Pointer : TypeKind.Opaque;
 
     if (structType == StructType.Record || structType == StructType.Union)
     {
       if (!functions.empty)
         return TypeKind.Wrap;
 
-      foreach (field; fields)
-        if (!field.kind.among(TypeKind.Basic, TypeKind.Callback, TypeKind.Enum, TypeKind.Flags))
-          return TypeKind.Wrap;
+      auto retKind = TypeKind.Simple;
+      foreach (field; fields) // HACK: Check for field.callback since it is set before the kind is resolved (fixup dependency issue)
+      {
+        if (field.kind == TypeKind.Unknown)
+          retKind = TypeKind.Unknown;
+        else if (!field.callback && !field.kind.among(TypeKind.Basic, TypeKind.BasicAlias, TypeKind.Callback,
+          TypeKind.Enum, TypeKind.Flags))
+        {
+          retKind = TypeKind.Wrap;
+          break;
+        }
+      }
 
-      return TypeKind.Simple;
+      return retKind;
     }
 
     if (structType == StructType.Class && glibFundamental
@@ -120,14 +140,13 @@ final class Structure : TypeNode
     if (structType == StructType.Interface)
       return TypeKind.Interface;
 
-    if (dType == "ObjectG") // HACK: ObjectG is the OG Object
+    if (dType == "ObjectG") // Minor HACK: ObjectG is the OG Object
       return TypeKind.Object;
 
     return TypeKind.Unknown;
   }
 
-  // Fixup base type only, not dependencies
-  void fixupType()
+  override void fixup()
   {
     if (auto field = cast(Field)parent) // Structure as a field of another structure?
     { // dType and cType are the field name (not an actual type)
@@ -138,24 +157,14 @@ final class Structure : TypeNode
     }
 
     super.fixup;
-    kind = calcKind;
 
-    if (kind == TypeKind.Boxed && parentType.empty)
-      parentType = "GLib.Boxed";
-  }
+    foreach (f; fields) // Fixup structure fields
+    {
+      f.fixup;
 
-  // Fixup structure dependencies (separated so that all base types are resolved first with fixupType())
-  void fixupDeps()
-  {
-    if (cast(Field)parent) // Structure as a field of another structure?
-      return;
-
-    if (!parentType.empty)
-      parentStruct = cast(Structure)repo.defs.findTypeObject(parentType, repo);
-
-    foreach (ifaceName; implements)
-      if (auto ifaceStruct = cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
-        implementStructs ~= ifaceStruct;
+      if (opaque || pointer)
+        f.disable = true;
+    }
 
     foreach (fn; functions) // Fixup structure function/methods
     {
@@ -176,14 +185,29 @@ final class Structure : TypeNode
 
     foreach (sg; signals) // Fixup structure signals
       sg.fixup;
+  }
 
-    foreach (f; fields) // Fixup structure fields
+  override void resolve()
+  {
+    if (kind == TypeKind.Unknown)
+      kind = calcKind;
+
+    super.resolve;
+
+    if (kind == TypeKind.Boxed && parentType.empty)
+      parentType = "GLib.Boxed";
+
+    if (!parentType.empty)
     {
-      f.fixup;
-
-      if (opaque)
-        f.disable = true;
+      parentStruct = cast(Structure)repo.defs.findTypeObject(parentType, repo);
+      updateUnresolvedFlags(UnresolvedFlags.ParentStruct, parentStruct is null);
     }
+
+    implementStructs.length = 0;
+
+    foreach (ifaceName; implements)
+      if (auto ifaceStruct = cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
+        implementStructs ~= ifaceStruct;
   }
 
   override void verify()
@@ -198,14 +222,17 @@ final class Structure : TypeNode
 
     foreach (ifaceName; implements)
       if (!cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
-        warning("Unable to resolve structure " ~ fullName.to!string ~ " interface " ~ ifaceName.to!string);
+        warning(xmlLocation ~ "Unable to resolve structure " ~ fullName.to!string ~ " interface " ~ ifaceName.to!string);
+
+    if (!defCode.genFuncs) // Skip verification of functions, signals, and fields if they aren't being generated
+      return;
 
     foreach (fn; functions) // Verify structure function/methods
     {
       with(FuncType) if (!fn.funcType.among(Callback, Function, Constructor, Signal, Method))
       {
         fn.disable = true;
-        warning("Disabling function " ~ fn.fullName.to!string ~ " of type '" ~ fn.funcType.to!string
+        warning(fn.xmlLocation ~ "Disabling function '" ~ fn.fullName.to!string ~ "' of type '" ~ fn.funcType.to!string
             ~ "' which is not supported");
       }
       else
@@ -219,7 +246,7 @@ final class Structure : TypeNode
       catch (Exception e)
       {
         sig.disable = true;
-        warning("Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
+        warning(sig.xmlLocation ~ "Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
       }
     }
 
@@ -230,7 +257,7 @@ final class Structure : TypeNode
       catch (Exception e)
       {
         f.disable = true;
-        warning("Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
+        warning(f.xmlLocation ~ "Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
       }
     }
   }
@@ -243,13 +270,15 @@ final class Structure : TypeNode
    */
   void write(string path, bool ifaceModule = false)
   {
+    codeTrap("struct.write", fullName);
+
     auto isIfaceTemplate = kind == TypeKind.Interface && !ifaceModule;
     auto writer = new CodeWriter(buildPath(path, dType.to!string ~ (isIfaceTemplate ? "T" : "") ~ ".d")); // Append T to type name for interface mixin template module
     writer ~= ["module " ~ fullName ~ (isIfaceTemplate ? "T;"d : ";"d), ""];
 
     auto imports = new ImportSymbols(defCode.imports, repo.namespace);
 
-    imports.add("gid");
+    imports.add("GLib.Global");
     imports.add(repo.namespace ~ ".c.functions");
     imports.add(repo.namespace ~ ".c.types");
 
@@ -270,7 +299,6 @@ final class Structure : TypeNode
       {
         if (!fn.disable)
         {
-          codeTrap("struct.func", fn.fullName);
           funcWriters ~= new FuncWriter(fn);
           imports.merge(funcWriters[$ - 1].imports);
         }
@@ -284,7 +312,7 @@ final class Structure : TypeNode
           signalWriters ~= new SignalWriter(sig);
           imports.merge(signalWriters[$ - 1].imports);
           imports.add("GObject.DClosure");
-          imports.add("GObject.global");
+          imports.add("GObject.Global");
         }
       }
     }
@@ -297,6 +325,9 @@ final class Structure : TypeNode
       st.addImports(imports, repo);
       imports.add(st.fullDType ~ "T"); // Import interface template module also
     }
+
+    if (!errorQuarks.empty)
+      imports.add("GLib.ErrorG");
 
     imports.remove(fullDType);
 
@@ -389,7 +420,10 @@ final class Structure : TypeNode
       writer ~= [cTypeRemPtr ~ " cInstance;"];
 
     if (kind == TypeKind.Opaque)
-      writer ~= ["", "this(void* ptr)", "{",
+      writer ~= "bool owned;";
+
+    if (kind == TypeKind.Opaque)
+      writer ~= ["", "this(void* ptr, bool owned = false)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
     else if (kind == TypeKind.Wrap || kind == TypeKind.Reffed)
       writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
@@ -399,7 +433,7 @@ final class Structure : TypeNode
         "super(cast(void*)ptr, ownedRef);", "}"];
 
     if (kind == TypeKind.Opaque)
-      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "}"];
+      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "this.owned = owned;", "}"];
     else if (kind == TypeKind.Wrap)
       writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (ownedRef)", "g_free(ptr);", "}"];
     else if (kind == TypeKind.Reffed && !parentStruct)
@@ -409,7 +443,7 @@ final class Structure : TypeNode
       writer ~= ["super(cast(" ~ parentStruct.cType ~ "*)ptr, ownedRef);", "}"];
 
     if (kind == TypeKind.Opaque && freeFunction)
-      writer ~= ["", "~this()", "{", freeFunction ~ "(cInstancePtr);", "}"];
+      writer ~= ["", "~this()", "{", "if (owned)", freeFunction ~ "(cInstancePtr);", "}"];
     else if (kind == TypeKind.Wrap && freeFunction)
       writer ~= ["", "~this()", "{", freeFunction ~ "(&cInstance);", "}"];
 
@@ -452,7 +486,7 @@ final class Structure : TypeNode
 
       f.addImports(imports, repo);
 
-      if (f.kind != TypeKind.Callback)
+      if (f.kind != TypeKind.Callback && f.kind != TypeKind.Simple)
         lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
       else if (!f.typeObject) // Callback function type directly defined in field?
         lines ~= [
@@ -461,8 +495,7 @@ final class Structure : TypeNode
 
       final switch (f.kind) with (TypeKind)
       {
-        case Basic, BasicAlias:
-        case Opaque:
+        case Basic, BasicAlias, Pointer:
           lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case String:
@@ -472,7 +505,8 @@ final class Structure : TypeNode
           lines ~= "return cast(" ~ f.dType ~ ")" ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case Simple:
-          lines ~= "return *" ~ cPtr ~ "." ~ f.dName ~ ";";
+          lines ~= ["", "@property " ~ f.dType ~ "* " ~ f.dName ~ "()", "{"];
+          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
@@ -487,9 +521,7 @@ final class Structure : TypeNode
 
           lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
-        case Wrap:
-        case Boxed:
-        case Reffed:
+        case Opaque, Wrap, Boxed, Reffed:
           auto starCount = f.cType.retro.countUntil!(x => x != '*');
 
           if (starCount < 1) // The cast is for casting away "const"
@@ -501,7 +533,7 @@ final class Structure : TypeNode
           lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
           imports.add("GObject.ObjectG");
           break;
-        case Unknown, Interface, Namespace:
+        case Unknown, Interface, Container, Namespace:
           throw new Exception(
               "Unhandled readable field property type '" ~ f.dType.to!string ~ "' (" ~ f.kind.to!string
               ~ ") for struct " ~ dType.to!string);
@@ -512,12 +544,12 @@ final class Structure : TypeNode
       if (!f.writable)
         continue;
 
-      if (f.kind != TypeKind.Callback)
+      if (f.kind != TypeKind.Callback && f.kind != TypeKind.Simple)
         lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ " propval)", "{"];
 
       final switch (f.kind) with (TypeKind)
       {
-        case Basic, BasicAlias, Opaque:
+        case Basic, BasicAlias, Pointer:
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
         case String:
@@ -531,12 +563,14 @@ final class Structure : TypeNode
           lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";
           break;
         case Simple:
-          lines ~= cPtr ~ "." ~ f.dName ~ " = *propval;";
+          lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ "* propval)", "{"];
+          lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
           {
             lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.cType ~ " propval)", "{"];
+
             if (auto typeNode = cast(TypeNode)f.typeObject)
               typeNode.addImports(imports, repo);
           }
@@ -545,7 +579,7 @@ final class Structure : TypeNode
 
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
-        case Boxed, Wrap, Reffed, Object, Interface, Namespace, Unknown:
+        case Opaque, Boxed, Wrap, Reffed, Object, Interface, Container, Namespace, Unknown:
           throw new Exception("Unhandled writable field property type '" ~ f.dType.to!string ~ "' (" ~ f
               .kind.to!string ~ ") for struct " ~ dType.to!string);
       }
@@ -637,6 +671,7 @@ final class Structure : TypeNode
   bool abstract_; /// Is abstract type?
   bool deprecated_; /// Deprecated?
   bool opaque; /// Opaque structure type
+  bool pointer; /// Structure pointer type
   dstring version_; /// Version
   dstring deprecatedVersion; /// Deprecated version
 

@@ -4,6 +4,7 @@ import std.conv : to;
 
 import code_writer;
 import defs;
+import gir.field;
 import gir.param;
 import gir.repo;
 import gir.structure;
@@ -60,7 +61,7 @@ final class Func : TypeNode
 
     Base.fromXml(node);
 
-    _name = node.get("name");
+    _name = origName = node.get("name");
     funcType = cast(FuncType)FuncTypeValues.countUntil(node.id);
     cName = node.get("c:identifier");
 
@@ -85,6 +86,14 @@ final class Func : TypeNode
 
   override void fixup()
   {
+    if (!cast(Field)parent)
+    {
+      _name = repo.defs.subTypeStr(origName, repo.defs.dTypeSubs, repo.dTypeSubs);
+
+      if (funcType == FuncType.Callback && _name == origName)
+        _name = _name.normalizeDTypeName();
+    }
+
     super.fixup;
 
     if (!introspectable || !movedTo.empty || funcType == FuncType.VirtualMethod || funcType == FuncType.FuncMacro
@@ -111,6 +120,19 @@ final class Func : TypeNode
       if (pa.isClosure)
         closureParam = pa;
     }
+
+    if (funcType == FuncType.Callback && !closureParam)
+    { // Search for closure parameter if it is not explicitly designated
+      foreach (pa; params.retro) // Look in reverse, since it is more likely to be an end parameter
+      {
+        if (pa.dType == "void*" && pa.name.toLower.canFind("data"))
+        {
+          pa.isClosure = true;
+          closureParam = pa;
+          info("Designating parameter '" ~ pa.fullName.to!string ~ "' as closure");
+        }
+      }
+    }
   }
 
   override void verify()
@@ -121,7 +143,8 @@ final class Func : TypeNode
     void disableFunc(string msg)
     {
       disable = true;
-      warning("Disabling function '" ~ fullName.to!string ~ "': " ~ msg);
+      warning(xmlLocation ~ "Disabling " ~ (funcType == FuncType.Signal ? "signal '" : "function '" )
+        ~ fullName.to!string ~ "': " ~ msg);
     }
 
     if (!shadows.empty && !shadowsFunc)
@@ -138,6 +161,13 @@ final class Func : TypeNode
       return;
     }
 
+    if (containerType == ContainerType.None && kind.among(TypeKind.Basic, TypeKind.BasicAlias) && cType.countStars != 0
+        && !cType.among("void*"d, "const(void)*"d))
+      disableFunc("Unexpected basic return type '" ~ cType.to!string ~ "'");
+
+    if (!resolved)
+      disableFunc("Unresolved return type '" ~ dType.to!string ~ "'");
+
     if (funcType == FuncType.Signal)
     {
       if (containerType != ContainerType.None)
@@ -146,7 +176,7 @@ final class Func : TypeNode
         return;
       }
 
-      with(TypeKind) if (kind.among(Simple, Callback, Opaque, Unknown, Namespace))
+      with(TypeKind) if (kind.among(Simple, Pointer, Callback, Opaque, Unknown, Namespace))
       {
         disableFunc("signal return type '" ~ kind.to!string ~ "' is not supported");
         return;
@@ -181,15 +211,24 @@ final class Func : TypeNode
         pa.verify; // Verify parameter
       catch (Exception e)
         disableFunc("Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg);
+
+      if (!pa.resolved)
+        disableFunc("Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ dType.to!string ~ "'");
+
+      if (pa.disable || (pa.typeObject && pa.typeObject.disable))
+        disableFunc("Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled");
     }
   }
 
-  override void addImports(ImportSymbols imports, Repo repo)
+  override void addImports(ImportSymbols imports, Repo curRepo)
   {
-    super.addImports(imports, repo);
+    super.addImports(imports, curRepo);
+
+    if (funcType == FuncType.Callback)
+      imports.add(repo.namespace ~ ".Global");
 
     foreach (param; params)
-      param.addImports(imports, repo);
+      param.addImports(imports, curRepo);
   }
 
   /**
@@ -224,10 +263,7 @@ final class Func : TypeNode
       if (proto[$ - 1] != '(')
         proto ~= ", ";
 
-      if (p.containerType == ContainerType.Array)
-        proto ~= p.elemTypes[0].dType ~ "[] " ~ p.dName;
-      else
-        proto ~= p.dType ~ " " ~ p.dName;
+      proto ~= p.directionStr ~ p.dType ~ " " ~ p.dName;
     }
 
     return proto ~ ");";
@@ -291,6 +327,7 @@ final class Func : TypeNode
   }
 
   private dstring _name; /// Name of function
+  dstring origName; /// Original name
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)
   Param[] params; /// Parameters

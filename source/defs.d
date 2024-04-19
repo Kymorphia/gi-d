@@ -302,6 +302,12 @@ class Defs
         case "import":
           curRepo.structDefCode[curStructName].imports.add(cmdTokens[1]);
           break;
+        case "info":
+          if (curRepo)
+            curRepo.dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2].to!string;
+          else
+            dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2].to!string;
+          break;
         case "kind":
           TypeKind kind;
 
@@ -321,6 +327,7 @@ class Defs
           break;
         case "repo":
           curRepo = new Repo(this, cmdTokens[1].to!string);
+          curRepo.defsFilename = filename;
           curRepo.namespace = repoName.to!dstring;
           repos ~= curRepo;
           curStructName = null;
@@ -328,13 +335,22 @@ class Defs
         case "reserved":
           reservedWords[cmdTokens[1]] = true;
           break;
-        case "subtype":
-          typeof(typeSubs)* subs = curRepo ? &curRepo.typeSubs : &typeSubs;
+        case "subctype", "subdtype", "subtype":
+          dstring[dstring]*[] subs;
 
-          if (cmdTokens[1]!in *subs)
-            (*subs)[cmdTokens[1]] = cmdTokens[2];
-          else
-            warning("subtype '", cmdTokens[1], "' already exists ", posInfo);
+          if (cmd == "subctype" || cmd == "subtype")
+            subs ~= curRepo ? &curRepo.cTypeSubs : &cTypeSubs;
+
+          if (cmd == "subdtype" || cmd == "subtype")
+            subs ~= curRepo ? &curRepo.dTypeSubs : &dTypeSubs;
+
+          foreach (subMap; subs)
+          {
+            if (cmdTokens[1] !in (*subMap))
+              (*subMap)[cmdTokens[1]] = cmdTokens[2];
+            else
+              warning(cmd, " '", cmdTokens[1], "' already exists ", posInfo);
+          }
           break;
         default:
           assert(0);
@@ -409,10 +425,22 @@ class Defs
     repoHash = repos.map!(x => tuple(x.namespace, x)).assocArray;
 
     foreach (repo; repos)
-      repo.fixupTypes;
+      repo.fixup;
 
-    foreach (repo; repos)
-      repo.fixupDeps;
+    // Keep trying to resolve types until there are no more or no progress is made
+    while (true)
+    {
+      auto count = unresolvedTypes.length;
+
+      foreach (typeNode; unresolvedTypes.keys)
+        typeNode.resolve;
+
+      if (count == unresolvedTypes.length)
+        break;
+    }
+
+//    if (!unresolvedTypes.empty)
+//      unresolvedTypes.keys.map!(x => x.fullName ~ ", " ~ x.dType ~ ", " ~ x.to!dstring ~ ", " ~ unresolvedTypes[x].to!uint.to!dstring).array.sort.join("\n").writeln;
 
     foreach (repo; repos)
       repo.verify;
@@ -428,21 +456,61 @@ class Defs
   {
     foreach (repo; repos)
       repo.writePackage(basePath);
+
+    writeDubJsonFile(basePath);
+  }
+
+  /**
+   * Write master packages dub JSON file.
+   * Params:
+   *   path = The path to the packages directory
+   */
+  private void writeDubJsonFile(string path)
+  {
+    string output = "{\n";
+
+    foreach (key; ["name", "description", "copyright", "authors", "license"])
+    {
+      if (auto val = dubInfo.get(key, null))
+      {
+        if (key == "authors")
+          output ~= `  "authors": [` ~ val.map!(x => `"` ~ x ~ `"`).join(", ") ~ "],\n";
+        else
+          output ~= `  "` ~ key ~ `": "` ~ val[0] ~ "\",\n";
+      }
+    }
+
+    output ~= `  "targetType": "none",` ~ "\n";
+	  output ~= `  "dependencies": {` ~ "\n";
+
+    auto sortedRepos = repos.filter!(x => x.merge.empty).map!(x => x.name.to!string.toLower).array.sort;
+
+    output ~= sortedRepos.map!(x => `    ":` ~ x ~ `": "*"`).join(",\n");
+    output ~= "\n  },\n";
+
+    output ~= `  "subPackages": [` ~ "\n";
+    output ~= sortedRepos.map!(x => `    "./` ~ x ~ `/"`).join(",\n");
+    output ~= "\n  ]\n}\n";
+
+    write(buildPath(path, "dub.json"), output);
   }
 
   /**
    * Get the kind classification of a type string
    * Params:
-   *   type = The type string (a C or D type)
+   *   type = The D type string
    *   repo = The repo the type was found in
    * Returns: The type classification, falls back to TypeKind.Basic if no other type applies
    */
   TypeKind typeKind(dstring type, Repo repo)
   {
-    foreach (i; 0 .. 2) // Resolve up to 1 alias dereference
+    foreach (i; 0 .. 4) // Resolve up to 4 alias dereferences
     {
       if (type.among("char*"d, "const char*"d, "string"d, "utf8"d))
         return TypeKind.String;
+
+      if (type.isBasicType)
+        return i > 0 ? TypeKind.BasicAlias : TypeKind.Basic;
 
       if (auto obj = repo.typeObjectHash.get(type, null))
       {
@@ -463,11 +531,9 @@ class Defs
         else
           return TypeKind.Unknown;
       }
-
-      return i > 0 ? TypeKind.BasicAlias : TypeKind.Basic;
     }
 
-    return TypeKind.Unknown; // Multiple alias dereferences
+    return TypeKind.Unknown; // Too many alias dereferences
   }
 
   /**
@@ -491,7 +557,7 @@ class Defs
       typeName = t[1];
     }
 
-    return repo.typeObjectHash.get(subTypeStr(typeName, repo.typeSubs), null);
+    return repo.typeObjectHash.get(subTypeStr(typeName, dTypeSubs, repo.dTypeSubs), null);
   }
 
   /**
@@ -514,11 +580,15 @@ class Defs
    * Substitute type.
    * Params:
    *   type = Type string
+   *   subs = Primary substitution map (usually dTypeSubs or cTypeSubs)
    *   localSubs = Local substitution map or null (default)
    * Returns: Type string with any relevant substitutions
    */
-  dstring subTypeStr(dstring type, dstring[dstring] localSubs = null)
+  dstring subTypeStr(dstring type, dstring[dstring] subs, dstring[dstring] localSubs = null)
   {
+    if (auto s = subs.get(type, null)) // See if the type exactly matches a substitution (handles multi word substitions too)
+      return s;
+
     auto tok = tokenizeType(type).filter!(x => x != "volatile").array;
 
     if (tok.empty)
@@ -536,7 +606,7 @@ class Defs
           if (t in localSubs)
             t = localSubs[t];
           else
-            t = typeSubs.get(t, t);
+            t = subs.get(t, t);
 
           return t ~ s[i + 1 .. $];
         }
@@ -555,53 +625,13 @@ class Defs
   }
 
   bool[dstring] reservedWords; /// Reserved words (_ appended)
-  dstring[dstring] typeSubs; /// Global type substitutions
+  dstring[dstring] cTypeSubs; /// Global C type substitutions
+  dstring[dstring] dTypeSubs; /// Global D type substitutions
+  string[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
   XmlPatch[] patches; /// Global XML patches specified in definitions file
   Repo[] repos; /// Gir repositories
-
   Repo[dstring] repoHash; /// Hash of repositories by namespace
-}
-
-/// Kind of a type
-enum TypeKind
-{
-  Unknown, /// Unknown type
-  Basic, /// A basic data type
-  String, /// A string
-  BasicAlias, /// An alias to a basic type
-  Enum, /// Enumeration type
-  Flags, /// Bitfield flags type
-  Simple, /// Simple Record or Union with basic fields (Basic, Enum, Flags) and no methods (alias to C type)
-  Callback, /// Callback function type
-  Opaque, /// Opaque Record pointer type with no accessible fields or methods (alias to C type)
-  Wrap, /// Record or Union embedded in a D class with accessible fields and/or methods
-  Boxed, /// A GLib boxed Record type which can have fields
-  Reffed, /// Referenced Class type with possible inheritence (not GObject derived), can have fields
-  Object, /// A GObject Class
-  Interface, /// Interface type
-  Namespace, /// Namespace structure (no C type, global module for example)
-}
-
-/**
- * Check if a type kind has a module file.
- * Params:
- *   kind = The type kind
- * Returns: true if the given type kind is implemented with its own module
- */
-bool typeKindHasModule(TypeKind kind)
-{
-  return kind >= TypeKind.Wrap;
-}
-
-/**
- * Check if a type kind is defined in a global module.
- * Params:
- *   kind = The type kind
- * Returns: true if the given type kind is defined in a global module
- */
-bool typeKindIsGlobal(TypeKind kind)
-{
-  return kind >= TypeKind.BasicAlias && kind <= TypeKind.Opaque;
+  UnresolvedFlags[TypeNode] unresolvedTypes; /// TypeNode objects which have an unresolved type (for recursive type resolution)
 }
 
 /// Manual code from a definitions file
@@ -650,6 +680,8 @@ immutable DefCmd[] defCommandInfo = [
     "generate", 1, DefCmdFlags.ReqClass, "generate <'init' | 'funcs'> - Force generation of Init or Function code"
   },
   {"import", 1, DefCmdFlags.ReqClass, "import <Import> - Add a D import"},
+  {"info", 2, DefCmdFlags.None, "info <name> <value> - Set JSON dub info for repo or master package"
+    ~ " (name, description, copyright, authors, license), multiple authors values can be given"},
   {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},
   {"merge", 1, DefCmdFlags.ReqRepo, "merge <Namespace> - Merge current repo into the package identified by Namespace"},
   {
@@ -662,5 +694,7 @@ immutable DefCmd[] defCommandInfo = [
   {
     "set", 2, DefCmdFlags.AllowBlock, "set <XmlSelect> <AttributeValue | Xml> - Set an XML attribute or node"
   },
-  {"subtype", 2, DefCmdFlags.None, "subtype <FromTypeName> <ToTypeName> - Substitute a type name"},
+  {"subtype", 2, DefCmdFlags.None, "subtype <FromTypeName> <ToTypeName> - Substitute a type name (D and C types)"},
+  {"subctype", 2, DefCmdFlags.None, "subctype <FromTypeName> <ToTypeName> - Substitute a C type name"},
+  {"subdtype", 2, DefCmdFlags.None, "subdtype <FromTypeName> <ToTypeName> - Substitute a D type name"},
 ];

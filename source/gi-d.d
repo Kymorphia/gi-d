@@ -7,7 +7,9 @@ import std.stdio : writeln;
 import code_traps;
 import code_writer;
 import defs;
-import gir.repo;
+import gir.enumeration;
+import gir.func;
+import gir.type_node;
 import std_includes;
 import xml_patch;
 
@@ -70,35 +72,56 @@ int main(string[] args)
 
   defs.repos.sort!((a, b) => a.namespace < b.namespace);
 
-  if (Repo.dumpCTypes)
+  dstring cTypeAndKind(Base baseObj)
   {
-    bool[dstring] cTypes;
+    if (auto fn = cast(Func)baseObj)
+      return fn.repo.namespace ~ "." ~ fn.cName ~ " " ~ fn.kind.to!dstring;
+    else if (auto typeNode = cast(TypeNode)baseObj)
+      return typeNode.repo.namespace ~ "." ~ (typeNode.cType.empty ? typeNode.name : typeNode.cType) ~ " "
+        ~ typeNode.kind.to!dstring;
+    else if (auto en = cast(Enumeration)baseObj)
+      return en.repo.namespace ~ "." ~ en.cName ~ " Enum";
+    else
+      return baseObj.fullName ~ " Unknown";
+  }
 
-    foreach (repo; defs.repos)
-      foreach (typeName; repo.cTypeHash.keys)
-        cTypes[typeName] = true;
+  if (Repo.dumpCTypes)
+    writeln(defs.repos.map!(repo => repo.typeObjectHash.values)
+      .join.map!(baseObj => cTypeAndKind(baseObj))
+      .array.sort.uniq.join("\n"));
 
-    writeln(cTypes.keys.array.sort.join("\n"));
+  dstring dTypeAndKind(Base baseObj)
+  {
+    if (auto typeNode = cast(TypeNode)baseObj)
+      return typeNode.fullName ~ " " ~ typeNode.kind.to!dstring;
+    else if (auto en = cast(Enumeration)baseObj)
+      return en.fullName ~ " Enum";
+    else
+      return baseObj.fullName ~ " Unknown";
   }
 
   if (Repo.dumpDTypes)
+    writeln(defs.repos.map!(repo => repo.typeObjectHash.values)
+      .join.map!(baseObj => dTypeAndKind(baseObj))
+      .array.sort.uniq.join("\n"));
+
+  if (Repo.suggestDefCmds) // Display suggestions if enabled
   {
-    bool[dstring] dTypes;
+    writeln("\nDefinition suggestions:");
 
     foreach (repo; defs.repos)
     {
-      foreach (typeName; repo.dTypeHash.keys)
+      if (!repo.suggestions.empty)
+        writeln("\nFile: " ~ repo.defsFilename);
+
+      foreach (suggTopic, suggList; repo.suggestions)
       {
-        auto kind = defs.typeKind(typeName, repo);
+        writeln("\n//# " ~ suggTopic ~ "");
 
-        if (kind != TypeKind.Basic)
-          typeName = repo.namespace ~ "." ~ typeName;
-
-        dTypes[typeName ~ "," ~ kind.to!dstring] = true;
+        foreach (sugg; suggList)
+          writeln("//!" ~ sugg ~ "");
       }
     }
-
-    writeln(dTypes.keys.array.sort.join("\n"));
   }
 
   return 0;

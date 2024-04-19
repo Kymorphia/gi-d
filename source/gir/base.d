@@ -88,6 +88,19 @@ abstract class Base
     return s;
   }
 
+  /**
+   * Returns a "file:line " location string from where this node was parsed from or empty string if not set.
+   * A space is appended to the file location for convenience for logging.
+   * Returns: Location information in the form of file:line
+   */
+  string xmlLocation()
+  {
+    if (!_node || _node.parseFile.empty)
+      return "";
+
+    return _node.parseFile ~ (_node.parseLine != 0 ? (":" ~ _node.parseLine.to!string) : "") ~ " ";
+  }
+
   void writeDocs(CodeWriter writer)
   {
     if (docContent.length == 0)

@@ -92,7 +92,7 @@ class DelegWriter
 
     final switch (callback.kind) with (TypeKind)
     {
-      case Basic, BasicAlias, Opaque:
+      case Basic, BasicAlias, Pointer:
         call ~= callback.cType ~ " _retval = ";
         break;
       case String:
@@ -110,15 +110,15 @@ class DelegWriter
         call ~= "_dretval = ";
         postCall ~= callback.cType ~ " _retval;\nif (_dretval)\n_retval = *_dretval;\n";
         break;
-      case Wrap, Boxed, Reffed, Object, Interface:
+      case Opaque, Wrap, Boxed, Reffed, Object, Interface:
         preCall ~= callback.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
 
         postCall ~= callback.cType ~ " _retval = _dretval.cPtr!" ~ callback.cTypeRemPtr
           ~ "(" ~ callback.fullOwnerStr ~ ");\n";
         break;
-      case Callback, Unknown, Namespace:
-        assert(0, "Unsupported delegate return value type '" ~ callback.cType.to!string
+      case Callback, Unknown, Container, Namespace:
+        assert(0, "Unsupported delegate return value type '" ~ callback.dType.to!string
           ~ "' (" ~ callback.kind.to!string ~ ") for " ~ callback.fullName.to!string);
     }
   }
@@ -164,13 +164,13 @@ class DelegWriter
           postCall ~= "_retval[i] = cast(" ~ elemType.cType ~ ")_dretval[i];\n";
           break;
         case Simple:
-        case Opaque:
+        case Pointer:
           postCall ~= "_retval[i] = _dretval[i];\n";
           break;
-        case Wrap, Boxed, Reffed, Object, Interface:
+        case Opaque, Wrap, Boxed, Reffed, Object, Interface:
           postCall ~= "_retval[i] = _dretval[i].cPtr!" ~ elemType.cTypeRemPtr ~ "(" ~ callback.fullOwnerStr ~ ");\n";
           break;
-        case Basic, BasicAlias, Callback, Unknown, Namespace:
+        case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported delegate return value array type '" ~ elemType.dType.to!string
             ~ "' (" ~ elemType.kind.to!string ~ ") for " ~ callback.fullName.to!string);
       }
@@ -239,8 +239,8 @@ class DelegWriter
 
     final switch (param.kind) with (TypeKind)
     {
-      case Basic, BasicAlias, Enum, Flags:
-        addCallParam(param.dName);
+      case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
+        addCallParam(param.direction == ParamDirection.In ? param.dName : "*" ~ param.dName);
         break;
       case String:
         if (param.direction == ParamDirection.In)
@@ -257,18 +257,14 @@ class DelegWriter
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
         break;
-      case Simple:
-      case Opaque:
-        addCallParam(param.dName);
-        break;
-      case Wrap, Boxed, Reffed, Object, Interface:
+      case Opaque, Wrap, Boxed, Reffed, Object, Interface:
         if (param.direction == ParamDirection.In)
         {
-          addCallParam(param.dName ~ " ? " ~ ((callback.kind == Object || callback.kind == Interface)
+          addCallParam(param.dName ~ " ? " ~ ((param.kind == Object || param.kind == Interface)
             ? "ObjectG.getDObject!"d : "new "d) ~ param.dType ~ "(" ~ param.dName ~ ", " ~ param.fullOwnerStr
             ~ ") : null");
 
-          if (callback.kind == TypeKind.Object || callback.kind == TypeKind.Interface)
+          if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
             imports.add("GObject.ObjectG");
         }
         else if (param.direction == ParamDirection.Out)
@@ -280,7 +276,7 @@ class DelegWriter
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
         break;
-      case Callback, Unknown, Namespace:
+      case Callback, Unknown, Container, Namespace:
         assert(0, "Unsupported parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
             ~ callback.fullName.to!string);
     }
@@ -321,14 +317,14 @@ class DelegWriter
 
       final switch (elemType.kind) with (TypeKind)
       {
-        case Basic, BasicAlias, Enum, Flags, Simple, Opaque:
-          preCall ~= "_" ~ param.dName ~ " = " ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
+        case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
+          preCall ~= "_" ~ param.dName ~ " = cast(" ~ elemType.dType ~ "[])" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
           break;
         case String:
           preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ param.dName ~ "[i].fromCString("
             ~ param.fullOwnerStr ~ ");\n";
           break;
-        case Boxed, Wrap, Reffed:
+        case Opaque, Boxed, Wrap, Reffed:
           preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= new " ~ elemType.dType ~ "(cast("
             ~ elemType.cType.stripConst ~ "*)&" ~ param.dName ~ "[i]"
             ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
@@ -338,7 +334,7 @@ class DelegWriter
             ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
           imports.add("GObject.ObjectG");
           break;
-        case Unknown, Callback, Namespace:
+        case Unknown, Callback, Container, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
               ~ ") for " ~ callback.fullName.to!string);
       }
@@ -347,16 +343,19 @@ class DelegWriter
     if (param.direction == ParamDirection.Out || param.direction == ParamDirection.InOut)
     {
       if (param.lengthParamIndex >= 0) // Array has length parameter?
-        postCall ~= callback.params[param.lengthParamIndex].dName ~ " = _" ~ param.dName ~ ".length"
+      {
+        auto lengthParam = callback.params[param.lengthParamIndex];
+        postCall ~= lengthParam.dName ~ " = cast(" ~ lengthParam.cType  ~ ")_" ~ param.dName ~ ".length"
           ~ (param.zeroTerminated ? " - 1;\n"d : ";\n"d);
+      }
 
       final switch (elemType.kind) with (TypeKind)
       {
-        case Basic, String, BasicAlias, Enum, Flags, Simple, Opaque, Wrap, Boxed, Reffed, Object, Interface:
+        case Basic, String, BasicAlias, Enum, Flags, Simple, Pointer, Opaque, Wrap, Boxed, Reffed, Object, Interface:
           postCall ~= param.dName ~ " = arrayDtoC!(" ~ elemType.dType ~ ", Yes.Malloc, "
             ~ (param.zeroTerminated ? "Yes"d : "No"d) ~ ".ZeroTerm)(_" ~ param.dName ~ ");\n";
           break;
-        case Unknown, Callback, Namespace:
+        case Unknown, Callback, Container, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
             ~ ") for " ~ callback.fullName.to!string);
       }
@@ -380,7 +379,7 @@ class DelegWriter
       postCall ~= "*" ~ param.dName ~ " = mapToHashTable!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType
         ~ ")(_" ~ param.dName ~ ");\n";
 
-      imports.add("GLib.global");
+      imports.add("GLib.Global");
       return;
     }
 

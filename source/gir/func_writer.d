@@ -16,8 +16,8 @@ class FuncWriter
   this(Func func)
   {
     this.imports = new ImportSymbols(func.repo.namespace);
-    imports.add("gid");
-    imports.add("global");
+    imports.add("Global");
+    imports.add("GLib.Global");
     imports.add(func.repo.namespace ~ ".c.functions");
     imports.add(func.repo.namespace ~ ".c.types");
     this.func = func;
@@ -27,6 +27,8 @@ class FuncWriter
   // Process the function
   private void process()
   {
+    codeTrap("func.write", func.fullName);
+
     if (func.funcType != FuncType.Method && !func.isCtor && func.parent !is func.repo.globalStruct)
       decl ~= "static "; // Function is "static" if it is not a method, constructor, or global function
 
@@ -149,9 +151,11 @@ class FuncWriter
         decl ~= func.dType ~ "* ";
         call ~= func.dType ~ "* _retval = ";
         break;
-      case Opaque:
-        decl ~= func.dType ~ " ";
-        call ~= func.dType ~ " _retval = ";
+      case Pointer:
+        if (!func.isCtor)
+          decl ~= func.dType ~ " ";
+
+        call ~= "auto _retval = ";
         break;
       case Boxed:
         if (!func.isCtor)
@@ -166,7 +170,7 @@ class FuncWriter
         else // Constructor method
           postCall ~= "this(_cretval, " ~ func.fullOwnerStr ~ ");\n";
         break;
-      case Wrap, Reffed, Object, Interface:
+      case Opaque, Wrap, Reffed, Object, Interface:
         if (!func.isCtor)
           decl ~= func.dType ~ " ";
 
@@ -186,7 +190,7 @@ class FuncWriter
         if (func.kind == TypeKind.Object || func.kind == TypeKind.Interface)
           imports.add("GObject.ObjectG");
         break;
-      case Unknown, Namespace:
+      case Unknown, Container, Namespace:
         assert(0, "Unsupported return value type '" ~ func.dType.to!string ~ "' (" ~ func.kind.to!string ~ ") for "
             ~ func.fullName.to!string);
     }
@@ -196,11 +200,12 @@ class FuncWriter
   private void processReturnArray()
   {
     auto elemType = func.elemTypes[0];
+    auto retType = elemType.dType == "char" ? "string " : (elemType.dType ~ "[] "); // Use string for char[] with length
 
-    decl ~= elemType.dType ~ "[] ";
+    decl ~= retType;
     preCall ~= func.cType ~ " _cretval;\n";
     call ~= "_cretval = ";
-    postCall ~= elemType.dType ~ "[] _retval;\n";
+    postCall ~= (elemType.dType == "char" ? "string" : (elemType.dType ~ "[]")) ~ " _retval;\n";
 
     dstring lengthStr;
 
@@ -224,7 +229,7 @@ class FuncWriter
       assert(0, "Function '" ~ func.fullName.to!string ~ "' return array has indeterminate length"); // This should be prevented by defs.fixupRepos()
 
     if (elemType.kind.among(TypeKind.Basic, TypeKind.BasicAlias, TypeKind.Enum))
-      postCall ~= "_retval = cast(" ~ elemType.dType ~ "[])_cretval[0 .. " ~ lengthStr ~ "];\n";
+      postCall ~= "_retval = cast(" ~ retType ~ ")_cretval[0 .. " ~ lengthStr ~ "];\n";
     else
     {
       postCall ~= "_retval = new " ~ elemType.dType ~ "[" ~ lengthStr ~ "];\nforeach (i; 0 .. "
@@ -241,18 +246,19 @@ class FuncWriter
         case Simple:
           postCall ~= "_retval[i] = *cretval[i];\n";
           break;
-        case Opaque:
+        case Pointer:
           postCall ~= "_retval[i] = cretval[i];\n";
           break;
-        case Wrap, Boxed, Reffed:
-          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
+        case Opaque, Wrap, Boxed, Reffed:
+          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(" ~ (func.cType.countStars == 1 ? "&"d : "")
+            ~ "_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
           break;
         case Object, Interface:
           postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], "
             ~ func.fullOwnerStr ~ ");\n";
           imports.add("GObject.ObjectG");
           break;
-        case Basic, BasicAlias, Callback, Unknown, Namespace:
+        case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
               .kind.to!string
               ~ ") for " ~ func.fullName.to!string);
@@ -282,17 +288,16 @@ class FuncWriter
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
         ~ func.elemTypes[1].dType ~ ", " ~ func.fullOwnerStr ~ ")(_cretval) : null;\n";
-      imports.add("GLib.global");
+      imports.add("GLib.Global");
       return;
     }
 
-    auto dContainer = func.fullContainerType;
-    decl ~= dContainer ~ " ";
+    decl ~= func.dType ~ " ";
     preCall ~= func.cType ~ " _cretval;\n";
     call ~= "_cretval = ";
-    postCall ~= dContainer ~ " _retval = _cretval ? new " ~ dContainer ~ "(_cretval, GidOwnership."
+    postCall ~= func.dType ~ " _retval = _cretval ? new " ~ func.dType ~ "(_cretval, GidOwnership."
       ~ func.ownership.to!dstring ~ ") : null;\n";
-    imports.add(ContainerTypeValues[cast(int)func.containerType]);
+    imports.add(func.containerType.getModule);
   }
 
   /// Process parameter
@@ -323,9 +328,8 @@ class FuncWriter
       }
       else if (param.direction == ParamDirection.InOut)
       {
-        preCall ~= param.dType ~ " _" ~ param.dName ~ (
-            " = " ~ arrayParam.dName ~ " ? " ~ arrayParam.dName
-            ~ ".length : 0;\n");
+        preCall ~= "auto _" ~ param.dName ~ (" = " ~ arrayParam.dName ~ " ? cast(" ~ param.dType ~ ")"
+          ~ arrayParam.dName ~ ".length : 0;\n");
         addCallParam("&_" ~ param.dName);
       }
       else // Input
@@ -336,7 +340,12 @@ class FuncWriter
 
     if (param.containerType == ContainerType.Array) // Array container?
     {
-      processArrayParam(param);
+      if (param.direction == ParamDirection.In)
+        processArrayInParam(param);
+      else if (param.direction == ParamDirection.Out)
+        processArrayOutParam(param);
+      else
+        assert(0); // Should be prevented by verify()
       return;
     }
     else if (param.containerType != ContainerType.None) // Other type of container?
@@ -410,7 +419,7 @@ class FuncWriter
         addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         addCallParam("&" ~ param.dName);
         break;
-      case Opaque:
+      case Pointer:
         addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         addCallParam(param.dName);
         break;
@@ -426,7 +435,7 @@ class FuncWriter
           addCallParam(param.dName);
         }
         break;
-      case Wrap, Boxed, Reffed, Object:
+      case Opaque, Wrap, Boxed, Reffed, Object:
         if (param.direction == ParamDirection.In)
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
@@ -462,189 +471,240 @@ class FuncWriter
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
         break;
-      case Unknown, Namespace:
+      case Unknown, Container, Namespace:
         assert(0, "Unsupported parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
             ~ func.fullName.to!string);
     }
   }
 
-  // Process an array parameter
-  private void processArrayParam(Param param)
+  // Process an array input parameter
+  private void processArrayInParam(Param param)
   {
     auto elemType = param.elemTypes[0];
 
-    if (param.direction == ParamDirection.In && elemType.dType == "char") // char[] arrays are sometimes used for strings with a length parameter
+    if (elemType.dType == "char") // char[] arrays are sometimes used for strings with a length parameter
       addDeclParam("string " ~ param.dName);
     else
-      addDeclParam(param.directionStr ~ elemType.dType ~ "[] " ~ param.dName);
+      addDeclParam(elemType.dType ~ "[] " ~ param.dName);
 
-    if (param.direction != ParamDirection.In && param.callerAllocates)
+    addCallParam("_" ~ param.dName);
+
+    assert(param.ownership == Ownership.None, "Function array parameter " ~ param.fullName.to!string
+        ~ " ownership not supported"); // FIXME - Support for ownership Full/Container
+
+    if (param.fixedSize != ArrayNotFixed) // Add an array size assertion if fixed size does not match
+      preCall ~= "assert(!" ~ param.dName ~ " || " ~ param.dName ~ ".length == "
+        ~ param.fixedSize.to!dstring ~ ");\n";
+
+    final switch (elemType.kind) with (TypeKind)
     {
-      addCallParam(param.dName ~ ".ptr");
-      return;
+      case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
+        preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")";
+
+        if (param.zeroTerminated) // If zero terminated, append a null or 0 value to the array and use the pointer to pass to the C function call
+          preCall ~= "(" ~ param.dName ~ " ~ " ~ (elemType.cType.endsWith("*") ? "null"d : "0"d) ~ ").ptr";
+        else
+          preCall ~= param.dName ~ ".ptr";
+
+        preCall ~= ";\n";
+        break;
+      case String:
+        preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
+        preCall ~= "foreach (s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
+
+        if (param.zeroTerminated)
+          preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
+
+        preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ "_tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
+        break;
+      case Wrap:
+        preCall ~= elemType.cTypeRemPtr ~ "[] _tmp" ~ param.dName ~ ";\n";
+        preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj.cInstance;\n";
+
+        if (param.zeroTerminated)
+          preCall ~= "_tmp" ~ param.dName ~ " ~= " ~ elemType.cTypeRemPtr ~ "();\n";
+
+        preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
+        break;
+      case Boxed:
+        preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
+
+        preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= "
+          ~ (elemType.cType.endsWith('*') ? ""d : "*"d) ~ "obj.cPtr!"
+          ~ elemType.cTypeRemPtr.stripConst ~ ";\n";
+
+        if (param.zeroTerminated)
+          preCall ~= "_tmp" ~ param.dName ~ ".length++;\n";
+
+        preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
+        break;
+      case Opaque, Reffed, Object:
+        preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
+
+        preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
+          ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
+
+        if (param.zeroTerminated)
+          preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
+
+        preCall ~= param.cType ~ " _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")_tmp"
+          ~ param.dName ~ ".ptr" ~ ";\n\n";
+        break;
+      case Interface:
+        preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
+
+        preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName
+          ~ " ~= obj ? (cast(ObjectG)obj).cPtr!" ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
+
+        if (param.zeroTerminated)
+          preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
+
+        preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
+        break;
+      case Unknown, Callback, Container, Namespace:
+        assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
+            ~ ") for " ~ func.fullName.to!string);
     }
+  }
 
-    addCallParam((param.direction == ParamDirection.In ? "_" :"&_"d) ~ param.dName);
+  // Process an array output parameter
+  private void processArrayOutParam(Param param)
+  {
+    auto elemType = param.elemTypes[0];
 
-    // Pre C function call processing
-    if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
+    addDeclParam(param.directionStr ~ elemType.dType ~ "[] " ~ param.dName);
+
+    dstring lengthStr;
+    Param lengthParam;
+
+    if (param.lengthParamIndex >= 0) // Array has length parameter?
     {
-      assert(param.ownership == Ownership.None, "Function array parameter " ~ param.fullName.to!string
-          ~ " ownership not supported"); // FIXME - Support for ownership Full/Container
-
-      if (param.fixedSize != ArrayNotFixed) // Add an array size assertion if fixed size does not match
-        preCall ~= "assert(!" ~ param.dName ~ " || " ~ param.dName ~ ".length == "
-          ~ param.fixedSize.to!dstring ~ ");\n";
-
-      final switch (elemType.kind) with (TypeKind)
-      {
-        case Basic, BasicAlias, Enum, Flags, Simple, Opaque:
-          dstring ptrStr;
-
-          if (param.zeroTerminated) // If zero terminated, append a null or 0 value to the array and use the pointer to pass to the C function call
-            ptrStr = "(" ~ param.dName ~ " ~ " ~ (elemType.cType.endsWith("*") ? "null"d : "0"d) ~ ").ptr";
-          else
-            ptrStr = param.dName ~ ".ptr";
-
-          preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")" ~ ptrStr ~ ";\n";
-          break;
-        case String:
-          preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
-          preCall ~= "foreach (s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
-
-          if (param.zeroTerminated)
-            preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
-
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ "_tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
-          break;
-        case Wrap:
-          preCall ~= elemType.cTypeRemPtr ~ "[] _tmp" ~ param.dName ~ ";\n";
-          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj.cInstance;\n";
-
-          if (param.zeroTerminated)
-            preCall ~= "_tmp" ~ param.dName ~ " ~= " ~ elemType.cType ~ "();\n";
-
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
-          break;
-        case Boxed:
-          preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
-
-          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= "
-            ~ (elemType.cType.endsWith('*') ? ""d : "*"d) ~ "obj.cPtr!"
-            ~ elemType.cTypeRemPtr.stripConst ~ ";\n";
-
-          if (param.zeroTerminated)
-            preCall ~= "_tmp" ~ param.dName ~ ".length++;\n";
-
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
-          break;
-        case Reffed, Object:
-          preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
-
-          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
-            ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
-
-          if (param.zeroTerminated)
-            preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
-
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")_tmp"
-            ~ param.dName ~ ".ptr" ~ ";\n\n";
-          break;
-        case Interface:
-          preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
-
-          preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName
-            ~ " ~= obj ? (cast(ObjectG)obj).cPtr!" ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
-
-          if (param.zeroTerminated)
-            preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
-
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = _tmp" ~ param.dName ~ ".ptr" ~ ";\n\n";
-          break;
-        case Unknown, Callback, Namespace:
-          assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
-              ~ ") for " ~ func.fullName.to!string);
-      }
+      lengthParam = func.params[param.lengthParamIndex];
+      lengthStr = "_" ~ lengthParam.dName;
     }
-
-    // Post C function call processing
-    if (param.direction == ParamDirection.Out || param.direction == ParamDirection.InOut)
+    else if (param.fixedSize != ArrayNotFixed) // Array is a fixed size?
+      lengthStr = param.fixedSize.to!dstring;
+    else if (param.zeroTerminated) // Array is zero terminated?
     {
-      dstring lengthStr;
+      postCall ~= "uint _len" ~ param.dName ~ ";\nif (_" ~ param.dName ~ ")\n{\nfor (; _" ~ param.dName
+        ~ "[_len" ~ param.dName ~ "] != " ~ (elemType.cType.endsWith("*") ? "null"d : "0") ~ "; _len" ~ param.dName
+        ~ "++)\n{\n}\n}\n";
+      lengthStr = "_len" ~ param.dName;
+    }
+    else
+      assert(0); // This should be prevented by verify()
 
-      if (param.lengthParamIndex >= 0) // Array has length parameter?
-        lengthStr = "_" ~ func.params[param.lengthParamIndex].dName;
-      else if (param.fixedSize != ArrayNotFixed) // Array is a fixed size?
-        lengthStr = param.fixedSize.to!dstring;
-      else if (param.zeroTerminated) // Array is zero terminated?
-      {
-        postCall ~= "uint _len" ~ param.dName ~ ";\nif (_" ~ param.dName ~ ")\nfor (; _" ~ param.dName
-          ~ "[_len" ~ param.dName ~ "] != " ~ (elemType.cType.endsWith("*") ? "null"d : "0") ~ "; _len" ~ param.dName
-          ~ "++)\nbreak;\n";
-        lengthStr = "_len" ~ param.dName;
-      }
-      else
-        assert(0); // This should be prevented by defs.fixupRepos()
-
-      preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
-
-      final switch (elemType.kind) with (TypeKind)
-      {
-        case Basic, BasicAlias, Enum, Flags, Simple, Opaque:
+    final switch (elemType.kind) with (TypeKind)
+    {
+      case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
+        if (!param.callerAllocates)
+        {
+          preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
+          addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = _" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
 
           if (param.ownership != Ownership.None)
           {
-            postCall ~= "g_free(_" ~ param.dName ~ ");\n";
+            postCall ~= "g_free(cast(void*)_" ~ param.dName ~ ");\n";
             imports.add("GLib.c.functions");
           }
-          break;
-        case String:
-          postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= _" ~ param.dName ~ "[i].fromCString("
-            ~ (
-                param.ownership == Ownership.Full).to!dstring ~ ");\n";
+        }
+        else
+          addCallParam(param.dName ~ ".ptr");
+        break;
+      case String:
+        if (!param.callerAllocates)
+        {
+          preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
+          addCallParam("&_" ~ param.dName);
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = _" ~ param.dName ~ "[i].fromCString("
+            ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
 
           if (param.ownership != Ownership.None)
           {
-            postCall ~= "g_free(_" ~ param.dName ~ ");\n";
+            postCall ~= "g_free(cast(void*)_" ~ param.dName ~ ");\n";
             imports.add("GLib.c.functions");
           }
-          break;
-        case Wrap, Boxed, Reffed:
-          postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= new " ~ elemType.dType ~ "("
+        }
+        else
+        {
+          preCall ~= elemType.cType ~ "[] _" ~ param.dName ~ ";\n";
+          preCall ~= "_" ~ param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          addCallParam("_" ~ param.dName ~ ".ptr");
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = _" ~ param.dName
+            ~ "[i].fromCString(" ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+        }
+        break;
+      case Opaque, Wrap, Boxed, Reffed:
+        if (!param.callerAllocates)
+        {
+          preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
+          addCallParam("&_" ~ param.dName);
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = new " ~ elemType.dType ~ "(cast(void*)_"
             ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
 
-          if (param.direction == ParamDirection.Out && param.ownership != Ownership.None)
-          { // Free the output array container (FIXME - Not positive on this and what about inout?)
-            postCall ~= "g_free(_" ~ param.dName ~ ");\n";
+          if (param.ownership != Ownership.None)
+          {
+            postCall ~= "g_free(cast(void*)_" ~ param.dName ~ ");\n";
             imports.add("GLib.c.functions");
           }
-          break;
-        case Object, Interface:
-          postCall ~= param.dName ~ ".length = 0;\n"; // Set the output array parameter to 0 length
-          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ " ~= ObjectG.getDObject!" ~ elemType.dType
+        }
+        else
+        {
+          preCall ~= elemType.cType ~ "[] _" ~ param.dName ~ ";\n";
+          preCall ~= "_" ~ param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          addCallParam("_" ~ param.dName ~ ".ptr");
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = new " ~ elemType.dType
+            ~ "(cast(void*)&_" ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
+
+          if (param.ownership != Ownership.None)
+          {
+            postCall ~= "g_free(cast(void*)_" ~ param.dName ~ ");\n";
+            imports.add("GLib.c.functions");
+          }
+        }
+        break;
+      case Object, Interface:
+        if (!param.callerAllocates)
+        {
+          preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
+          addCallParam("&_" ~ param.dName);
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = ObjectG.getDObject!" ~ elemType.dType
             ~ "(_" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
           imports.add("GObject.ObjectG");
 
-          if (param.ownership != Ownership.None)
+          if (!param.callerAllocates && param.ownership != Ownership.None)
           {
-            postCall ~= "g_free(_" ~ param.dName ~ ");\n";
+            postCall ~= "g_free(cast(void*)_" ~ param.dName ~ ");\n";
             imports.add("GLib.c.functions");
           }
-          break;
-        case Unknown, Callback, Namespace:
-          assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
-              ~ ") for " ~ func.fullName.to!string);
-      }
+        }
+        else
+        {
+          preCall ~= elemType.cType ~ "[] _" ~ param.dName ~ ";\n";
+          preCall ~= "_" ~ param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          addCallParam("_" ~ param.dName ~ ".ptr");
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = ObjectG.getDObject!" ~ elemType.dType
+            ~ "(cast(void*)&_" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+          imports.add("GObject.ObjectG");
+        }
+        break;
+      case Unknown, Callback, Container, Namespace:
+        assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
+            ~ ") for " ~ func.fullName.to!string);
     }
   }
 
   // Process a container parameter (except array)
   private void processContainerParam(Param param)
   {
-    if (func.containerType == ContainerType.ByteArray)
+    if (param.containerType == ContainerType.ByteArray)
     {
       addDeclParam(param.directionStr ~ "ByteArray " ~ param.dName);
 
@@ -667,8 +727,7 @@ class FuncWriter
     }
     else if (param.containerType == ContainerType.HashTable) // Hash tables are converted into dlang associative arrays
     {
-      auto mapType = param.fullContainerType;
-      addDeclParam(param.directionStr ~ mapType ~ " " ~ param.dName);
+      addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
 
       if (param.direction == ParamDirection.Out)
       {
@@ -681,11 +740,11 @@ class FuncWriter
         assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
           ~ param.direction.to!string);
 
-      imports.add("GLib.global");
+      imports.add("GLib.Global");
       return;
     }
 
-    addDeclParam(param.directionStr ~ param.fullContainerType ~ " " ~ param.dName);
+    addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
     auto elemType = param.elemTypes[0];
 
     if (param.direction == ParamDirection.In)

@@ -6,7 +6,6 @@ import GLib.c.functions;
 import GLib.c.types;
 import GLib.global;
 import GLib.LogField;
-import gid;
 
 unittest
 {

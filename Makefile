@@ -1,6 +1,17 @@
+all: build binding packages
+
 .PHONY: build
 build:
 	dub build --parallel --build-mode=singleFile --compiler=ldc2 --debug debug
+
+.PHONY: binding
+binding:
+	./gi-d
+
+.PHONY: packages
+packages:
+	-mkdir -p packages
+	cd packages && dub build --parallel --compiler=ldc2 --debug debug
 
 .PHONY: coverage
 coverage:
@@ -16,3 +27,8 @@ run-test:
 .PHONY: format
 format:
 	dub run dfmt --compiler=ldc2 -- --inplace source
+
+.PHONY: clean
+clean:
+	dub clean
+	-rm -rf packages

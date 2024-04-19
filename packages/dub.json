@@ -1,16 +1,24 @@
 {
-	"name": "gid",
-	"description": "GObject introspection D binding repository",
-	"copyright": "Copyright © 2024, Kymorphia, PBC",
-	"authors": ["Element Green <element@kymorphia.com>"],
-	"license": "MIT",
-	"targetType": "none",
-	"dependencies": {
-		":gio": "*",
-		":glib": "*"
-	},
-	"subPackages" : [
-		"./gio/",
-		"./glib/"
-	]
+  "name": "gid",
+  "description": "GObject introspection D binding repository",
+  "copyright": "Copyright © 2024, Kymorphia, PBC",
+  "authors": ["Element Green <element@kymorphia.com>"],
+  "license": "MIT",
+  "targetType": "none",
+  "dependencies": {
+    ":cairo": "*",
+    ":freetype2": "*",
+    ":gio": "*",
+    ":glib": "*",
+    ":gmodule": "*",
+    ":harfbuzz": "*"
+  },
+  "subPackages": [
+    "./cairo/",
+    "./freetype2/",
+    "./gio/",
+    "./glib/",
+    "./gmodule/",
+    "./harfbuzz/"
+  ]
 }

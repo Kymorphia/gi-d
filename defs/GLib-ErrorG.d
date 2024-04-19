@@ -1,4 +1,4 @@
-import GLib.global;
+import GLib.Global;
 
 class ErrorG : Exception
 {

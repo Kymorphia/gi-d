@@ -1,5 +1,5 @@
 import GLib.Boxed;
-import GLib.global;
+import GLib.Global;
 
 /**
  * SList ForwardRange template. Creates an object which wraps a GSList of C type (CT) items into a D type (T) items.

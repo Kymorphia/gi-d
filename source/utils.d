@@ -35,6 +35,17 @@ void breakpoint()
 }
 
 /**
+ * Normalize a D type by removing any trailing "_t" and converting to SnakeCase.
+ * Params:
+ *   typeStr = The D type string to normalize
+ * Returns: Normalized D type string
+ */
+dstring normalizeDTypeName(dstring typeStr)
+{
+  return (typeStr.endsWith("_t") ? typeStr[0 .. $ - 2] : typeStr).camelCase(true);
+}
+
+/**
  * Changes snake or kabob case to camelCase.
  * Params:
  *   snakeCase = snake_case string
@@ -137,6 +148,20 @@ dstring stripConst(dstring type)
     return type;
 
   return tokenizeType(type).filter!(x => !x.among("const"d, "("d, ")"d)).join;
+}
+
+/**
+ * Strip "const", parenthesis, and pointer '*' from a type.
+ * Params:
+ *   type = The type string
+ * Returns: Type string with all "const" and parenthesis stripped out
+ */
+dstring stripConstPtr(dstring type)
+{
+  if (!type.startsWith("const")) // Optimization
+    return type;
+
+  return tokenizeType(type).filter!(x => !x.among("const"d, "("d, ")"d, "*"d)).join;
 }
 
 /**

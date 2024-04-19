@@ -41,8 +41,10 @@ final class ImportSymbols
    */
   void add(dstring mod, dstring[] symbols)
   {
-    if (!mod.canFind('.') && mod != "gid" && defaultNamespace)
+    if (!mod.canFind('.') && defaultNamespace)
       mod = defaultNamespace ~ "." ~ mod;
+
+    codeTrap("import.add", mod);
 
     if (mod in modSyms) // Module name already exists?
     {
@@ -72,7 +74,7 @@ final class ImportSymbols
    */
   bool remove(dstring mod, dstring symbol = null)
   {
-    if (!mod.canFind('.') && mod != "gid" && defaultNamespace)
+    if (!mod.canFind('.') && defaultNamespace)
       mod = defaultNamespace ~ "." ~ mod;
 
     if (mod !in modSyms)

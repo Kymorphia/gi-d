@@ -32,6 +32,21 @@ final class Param : TypeNode
     return repo.defs.symbolName(name.camelCase);
   }
 
+  override @property TypeKind kind()
+  {
+    auto curKind = super.kind;
+    auto tn = cast(TypeNode)typeObject;
+    if (curKind != TypeKind.Unknown && curKind != TypeKind.Callback && tn)
+      return tn.kind;
+
+    return super.kind;
+  }
+
+  override @property void kind(TypeKind kind)
+  {
+    super.kind(kind);
+  }
+
   /// Get direction string (empty for input, "ref " if callerAllocates=1, "out ", or "inout "). Intended for use directly in code generation.
   dstring directionStr()
   {
@@ -157,11 +172,14 @@ final class Param : TypeNode
       if (direction != ParamDirection.In)
         throw new Exception("Signal parameter direction '" ~ direction.to!string ~ "' not supported");
 
-      with(TypeKind) if (kind.among(Simple, Opaque, Callback, Unknown, Namespace))
+      with(TypeKind) if (kind.among(Simple, Pointer, Opaque, Callback, Unknown, Namespace))
         throw new Exception("Signal parameter kind '" ~ kind.to!string ~ "' not supported");
 
       return;
     }
+
+    if (kind == TypeKind.Unknown)
+      throw new Exception("Unresolved type for parameter '" ~ fullName.to!string ~ "'");
 
     if (containerType == ContainerType.HashTable)
     {
@@ -175,23 +193,72 @@ final class Param : TypeNode
           ~ direction.to!string ~ " ownership " ~ ownership.to!string ~ " not supported");
     }
 
-    if (containerType == ContainerType.None && kind == TypeKind.Basic && direction == ParamDirection.In
-        && cType.countStars > 0 && dType != cType)
-      throw new Exception(
-          "Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
+    if (containerType == ContainerType.None && kind.among(TypeKind.Basic, TypeKind.BasicAlias))
+    {
+      if (direction == ParamDirection.In && cType.countStars > 0 && cType != "void*" && cType != "const(void)*")
+        throw new Exception("Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
           ~ cType.to!string ~ "'");
 
-    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+      if (direction == ParamDirection.Out && !callerAllocates && cType.countStars == 0)
+        throw new Exception("Basic output parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
+          ~ cType.to!string ~ "'");
+
+      if (direction == ParamDirection.Out && callerAllocates && cType.countStars == 0)
+        throw new Exception("Basic output parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
+          ~ cType.to!string ~ "'");
+    }
+
+    if (kind == TypeKind.Boxed && direction == ParamDirection.Out && cType.countStars != 2)
+      throw new Exception("Unsupported boxed type Out parameter of type '" ~ dType.to!string
+        ~ "' requiring caller allocation");
+
+    with (ParamDirection) if (containerType == ContainerType.Array)
     {
-      if (lengthParamIndex >= func.params.length)
-        throw new Exception("Invalid array length parameter index");
+      Param lengthParam;
 
-      auto lengthParam = func.params[lengthParamIndex];
+      if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+      {
+        if (lengthParamIndex >= func.params.length)
+          throw new Exception("Invalid array length parameter index");
 
-      if ((direction == ParamDirection.In && lengthParam.direction == ParamDirection.Out)
-          || (direction == ParamDirection.InOut && lengthParam.direction == ParamDirection.Out))
-        throw new Exception("Array length parameter direction '" ~ to!string(
-            lengthParam.direction) ~ "' is incompatible with array direction '" ~ direction.to!string ~ "'");
+        lengthParam = func.params[lengthParamIndex];
+      }
+
+      if (direction == In)
+      {
+        if (lengthParam && lengthParam.direction != In)
+          throw new Exception("Input array has unsupported length parameter direction '"
+            ~ lengthParam.direction.to!string ~ "'");
+
+        if (cType.countStars < 1)
+          throw new Exception("Input array has unexpected C type '" ~ cType.to!string ~ "'");
+      }
+      else if (direction == Out)
+      {
+        if (callerAllocates)
+        {
+          if (cType.countStars != 1)
+            throw new Exception("Caller allocated output array has unexpected C type '" ~ cType.to!string ~ "'");
+
+          if (!lengthParam)
+            throw new Exception("Caller allocated output array has no length parameter");
+
+          if (lengthParam.direction == Out)
+            throw new Exception("Caller allocated output array has unsupported length parameter direction '"
+              ~ lengthParam.direction.to!string ~ "'");
+        }
+        else // Caller does not allocate
+        {
+          if (cType.countStars < 2)
+            throw new Exception("Callee allocated output array has unexpected C type '" ~ cType.to!string ~ "'");
+
+          if (lengthParam && lengthParam.direction != Out)
+            throw new Exception("Callee allocated output array has unsupported length parameter direction '"
+              ~ lengthParam.direction.to!string ~ "'");
+        }
+      }
+      else if (direction == InOut)
+        throw new Exception("InOut arrays not currently supported");
     }
 
     if (closureIndex != NoClosure)
@@ -218,8 +285,9 @@ final class Param : TypeNode
 
         auto destroyParam = func.params[destroyIndex];
 
-        if (destroyParam.direction != ParamDirection.In || destroyParam.dType != "DestroyNotify")
-          throw new Exception("Destroy notify callback should be a DestroyNotify input parameter");
+        if (destroyParam.direction != ParamDirection.In || !cast(Func)destroyParam.typeObject
+            || (cast(Func)destroyParam.typeObject).funcType != FuncType.Callback)
+          throw new Exception("Unsupported destroy notify callback parameter");
       }
     }
     else if (destroyIndex != NoDestroy)

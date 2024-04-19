@@ -154,7 +154,7 @@ final class Repo : Base
 
           // Add global namespace structure
           globalStruct = new Structure(this);
-          globalStruct.origDType = "global";
+          globalStruct.origDType = "Global";
           globalStruct.structType = StructType.Class;
           structs ~= globalStruct;
           break;
@@ -200,13 +200,6 @@ final class Repo : Base
           if (node.parent && node.parent.id.among("array"d, "type"d)) // Check for array or type (container) XML node parent
             if (auto parent = node.parent.baseParentFromXmlNode!TypeNode) // Get the parent of the array which contains the type information
               parent.elemTypes ~= new TypeNode(parent, node); // Add the element type to the container
-
-          if (dumpCTypes && "c:type" in node.attrs && !node["c:type"].canFind('.'))
-            cTypeHash[node["c:type"]] = true;
-
-          if (dumpDTypes && "name" in node.attrs && !node["name"].canFind('.'))
-            dTypeHash[defs.subTypeStr(node["name"], typeSubs)] = true;
-
           break;
         case "varargs": // Varargs enable
           if (auto par = node.baseParentFromXmlNodeWarn!Param)
@@ -234,48 +227,65 @@ final class Repo : Base
     recurseXml(tree.root);
   }
 
-  /// Fixup types
-  void fixupTypes()
+  /// Fixup dependent data
+  void fixup()
   {
     foreach (al; aliases) // Fixup aliases
     {
       al.fixup;
       typeObjectHash[al.name] = al;
+
+      if (al.origName != al.name)
+        typeObjectHash[al.origName] = al;
     }
 
-    foreach (con; constants) // Fixup constants
+    foreach (con; constants) // Hash constants (can reference other types, which are fixed up in fixupDeps())
     {
       con.fixup;
       typeObjectHash[con.name] = con;
     }
 
     foreach (en; enums) // Hash enums
+    {
       typeObjectHash[en.name] = en;
 
+      if (en.origName != en.name)
+        typeObjectHash[en.origName] = en;
+    }
+
     foreach (cb; callbacks) // Hash callbacks
+    {
+      cb.fixup;
       typeObjectHash[cb.name] = cb;
+
+      if (cb.origName != cb.name)
+        typeObjectHash[cb.origName] = cb;
+    }
 
     foreach (st; structs) // Fixup structures (base type only, not dependencies which are fixed up below)
     {
-      st.fixupType;
-      typeObjectHash[st.name] = st;
+      st.fixup;
+      typeObjectHash[st.dType] = st;
+
+      if (st.origDType != st.dType)
+        typeObjectHash[st.origDType] = st;
     }
 
-    foreach (dcArray; structDefCode.byKeyValue) // Loop on structure definitions and assign to structs
+    foreach (stKey, stValue; structDefCode) // Loop on structure definitions and assign to structs
     {
-      auto st = cast(Structure)typeObjectHash.get(dcArray.key, null);
+      auto st = cast(Structure)typeObjectHash.get(stKey, null);
 
       if (!st) // Create new class structures if non-existant, fixup base type, and hash
       {
         st = new Structure(this);
-        st.dType = st.origDType = dcArray.key;
+        st.dType = st.origDType = stKey;
         st.structType = StructType.Class;
         structs ~= st;
-        st.fixupType;
+        st.fixup;
         typeObjectHash[st.name] = st;
       }
 
-      st.defCode = dcArray.value;
+      st.defCode = stValue;
     }
 
     structs.sort!((x, y) => x.name < y.name); // Sort structures by name
@@ -287,21 +297,11 @@ final class Repo : Base
         if (auto node = cast(TypeNode)obj)
           node.kind = sub.value;
         else
-          warning("Type '" ~ repo.name ~ "." ~ sub.key ~ "' kind cannot be substituted");
+          warning("Type '" ~ name ~ "." ~ sub.key ~ "' kind cannot be substituted");
       }
       else
-        warning("Type kind substitution '" ~ repo.name ~ "." ~ sub.key ~ "' not found");
+        warning("Type kind substitution '" ~ name ~ "." ~ sub.key ~ "' not found");
     }
-  }
-
-  // Fixup additional type dependencies (after fixupTypes() is called)
-  void fixupDeps()
-  {
-    foreach (cb; callbacks) // Fixup callbacks
-      cb.fixup;
-
-    foreach (st; structs) // Do a full fixup of structure dependencies now that all type bases have been fixed up
-      st.fixupDeps;
   }
 
   /// Ensure consistent state of repo data
@@ -320,7 +320,7 @@ final class Repo : Base
       catch (Exception e)
       {
         al.disable = true;
-        warning("Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
+        warning(al.xmlLocation ~ "Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
       }
     }
 
@@ -331,7 +331,7 @@ final class Repo : Base
       catch (Exception e)
       {
         con.disable = true;
-        warning("Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
+        warning(con.xmlLocation ~ "Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
       }
     }
 
@@ -347,7 +347,7 @@ final class Repo : Base
       catch (Exception e)
       {
         cb.disable = true;
-        warning("Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
+        warning(cb.xmlLocation ~ "Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
       }
     }
 
@@ -358,7 +358,7 @@ final class Repo : Base
       catch (Exception e)
       {
         st.disable = true;
-        warning("Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
+        warning(st.xmlLocation ~ "Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
       }
     }
   }
@@ -378,11 +378,11 @@ final class Repo : Base
 
     writeCTypes(buildPath(cSourcePath, "types.d"));
     writeCFuncs(buildPath(cSourcePath, "functions.d"));
-    writeGlobalModule(buildPath(sourcePath, "global.d"));
+    writeGlobalModule(buildPath(sourcePath, "Global.d"));
 
     foreach (st; structs)
     {
-      if (!st.disable && ((st.defCode && st.defCode.inClass) || st.kind.typeKindHasModule) && st !is globalStruct)
+      if (!st.disable && ((st.defCode && st.defCode.inClass) || st.inModule) && st !is globalStruct)
       {
         st.write(sourcePath);
 
@@ -402,19 +402,27 @@ final class Repo : Base
    */
   private void writeDubJsonFile(string path)
   {
-    auto content = `{
-  "name": "%s",
-  "description": "%s library gi-d binding",
-  "copyright": "Copyright © 2024, Kymorphia, PBC",
-	"authors": ["Element Green <element@kymorphia.com>"],
-  "license": "MIT",
-  "targetType": "library",
-  "importPaths": [".", ".."],
-  "sourcePaths": ["%s", ".."],
-  "sourceFiles": ["../gid.d"]%s
-}
-`;
-    string deps;
+    string output = "{\n";
+    output ~= `  "name": "` ~ namespace.toLower.to!string ~ "\",\n";
+
+    if ("description" !in dubInfo)
+      dubInfo["description"] ~= namespace.to!string ~ " library gi-d binding";
+
+    foreach (key; ["description", "copyright", "authors", "license"])
+    {
+      if (auto val = dubInfo.get(key, defs.dubInfo.get(key, null))) // Fall back to master dub info
+      {
+        if (key == "authors")
+          output ~= `  "authors": [` ~ val.map!(x => `"` ~ x ~ `"`).join(", ") ~ "],\n";
+        else
+          output ~= `  "` ~ key ~ `": "` ~ val[0] ~ "\",\n";
+      }
+    }
+
+    output ~= `  "targetType": "library",` ~ "\n";
+    output ~= `  "importPaths": [".", ".."],` ~ "\n";
+    output ~= `  "sourcePaths": ["` ~ namespace.to!string ~ `", ".."]`;
+
     if (!includes.empty)
     { // Use merge repo names as needed
       string depFunc(Include inc)
@@ -425,10 +433,11 @@ final class Repo : Base
         return s ~ `": "*"`;
       }
 
-      deps = ",\n  \"dependencies\": {\n" ~ includes.map!depFunc.join(",\n") ~ "\n  }";
+      output ~= ",\n  \"dependencies\": {\n" ~ includes.map!depFunc.join(",\n") ~ "\n  }";
     }
 
-    write(path, content.format(namespace.toLower.to!string, namespace.to!string, namespace.to!string, deps));
+    output ~= "\n}\n";
+    write(path, output);
   }
 
   /**
@@ -490,12 +499,18 @@ final class Repo : Base
       if (st.kind == TypeKind.Namespace)
         continue;
 
-      if (st.fields.length > 0 && !st.opaque) // Regular structure?
+      if (st.fields.length > 0 && !st.opaque && !st.pointer) // Regular structure?
         st.writeCStruct(writer);
-      else // Opaque structure
+      else if (st.pointer)
       {
         st.writeDocs(writer);
-        writer ~= ["struct " ~ st.cType ~ ";", ""];
+        writer ~= ["alias " ~ st.cType ~ " = " ~ st.cType ~ "_st*;", ""];
+        writer ~= ["struct " ~ st.cType ~ "_st;", ""];
+      }
+      else // Opaque structure or pointer to opaque structure
+      {
+        st.writeDocs(writer);
+        writer ~= ["struct " ~ st.cType ~ ";"d, ""];
       }
     }
 
@@ -503,16 +518,6 @@ final class Repo : Base
     {
       cb.writeDocs(writer);
       writer ~= ["alias extern(C) " ~ cb.getCPrototype ~ " " ~ cb.cName ~ ";", ""];
-    }
-
-    foreach (con; constants)
-    {
-      con.writeDocs(writer);
-
-      if (con.kind == TypeKind.String)
-        writer ~= ["enum " ~ con.cName ~ " = \"" ~ con.value ~ "\";", ""];
-      else
-        writer ~= ["enum " ~ con.cName ~ " = " ~ con.value ~ ";", ""];
     }
 
     writer.write();
@@ -649,18 +654,20 @@ final class Repo : Base
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ namespace ~ ".global;", ""];
+    writer ~= ["module " ~ namespace ~ ".Global;", ""];
 
     // Create the function writers first to construct the imports
     auto imports = new ImportSymbols(globalStruct.defCode.imports, namespace);
+    imports.add("GLib.Global");
+    imports.add(namespace ~ ".c.functions");
+    imports.add(namespace ~ ".c.types");
+
     FuncWriter[] funcWriters;
 
     foreach (fn; globalStruct.functions)
     {
       if (fn.disable)
         continue;
-
-      codeTrap("global.func", fn.fullName);
 
       funcWriters ~= new FuncWriter(fn);
       imports.merge(funcWriters[$ - 1].imports);
@@ -670,7 +677,7 @@ final class Repo : Base
       if (!cb.disable)
         cb.addImports(imports, this);
 
-    imports.remove("global");
+    imports.remove("Global");
 
     if (imports.write(writer))
       writer ~= "";
@@ -678,73 +685,48 @@ final class Repo : Base
     if (globalStruct.defCode.preClass.length > 0)
       writer ~= globalStruct.defCode.preClass;
 
-    bool preambleShown;
-    foreach (al; aliases) // Write out aliases
+    foreach (i, al; aliases.filter!(x => !x.disable).enumerate) // Write out aliases
     {
-      if (!preambleShown)
-      {
-        writer ~= "// Aliases";
-        preambleShown = true;
-      }
-
-      writer ~= "alias " ~ al.name ~ " = " ~ al.cName ~ ";";
-    }
-
-    preambleShown = false;
-    foreach (en; enums) // Write out enum and flag aliases
-    {
-      if (!preambleShown)
-      {
-        if (writer.lines[$ - 1] != "{")
-          writer ~= "";
-
-        writer ~= "// Enums";
-        preambleShown = true;
-      }
-
-      writer ~= "alias " ~ en.name ~ " = " ~ en.cName ~ ";";
-    }
-
-    preambleShown = false;
-    foreach (st; structs) // Write out simple struct aliases (not classes)
-    {
-      if (st.kind != TypeKind.Simple && st.kind != TypeKind.Opaque)
+      if (al.typeObject && al.typeObject.disable)
         continue;
 
-      if (!preambleShown)
-      {
-        if (writer.lines[$ - 1] != "{")
-          writer ~= "";
+      if (i == 0)
+        writer ~= [""d, "// Aliases"];
 
-        writer ~= "// Structs";
-        preambleShown = true;
-      }
+      auto fn = cast(Func)al.typeObject;
 
-      writer ~= "alias " ~ st.name ~ " = " ~ st.cType ~ (st.kind == TypeKind.Opaque ? "*;"d : ";"d);
+      if (fn && fn.funcType == FuncType.Callback) // Callback aliases should alias to D callback delegates, not C functions
+        writer ~= ["alias " ~ al.name ~ " = " ~ fn.dName ~ ";"];
+      else if (al.name == al.cName)
+        writer ~= ["alias " ~ al.name ~ " = " ~ namespace ~ ".c.types." ~ al.cName ~ ";"];
+      else
+        writer ~= ["alias " ~ al.name ~ " = " ~ al.cName ~ ";"];
     }
 
-    preambleShown = false;
-    foreach (cb; callbacks) // Add imports for callback types
+    foreach (i, en; enums.filter!(x => !x.disable).enumerate) // Write out enums
+      writer ~= (i == 0 ? [""d, "// Enums"] : []) ~ ["alias " ~ en.name ~ " = " ~ en.cName ~ ";"];
+
+    auto simpleStructs = structs.filter!(x => !x.disable && !x.inModule).enumerate;
+
+    foreach (i, st; simpleStructs) // Write out simple struct aliases (not classes)
+      writer ~= (i == 0 ? [""d, "// Structs"] : []) ~ ["alias " ~ st.name ~ " = " ~ st.cType
+        ~ (st.kind == TypeKind.Pointer ? "*;"d : ";"d)];
+
+    foreach (i, cb; callbacks.filter!(x => !x.disable).enumerate) // Write out callback delegate types
+      writer ~= (i == 0 ? [""d, "// Callbacks"] : []) ~ cb.getDelegPrototype;
+
+    foreach (i, con; constants.filter!(x => !x.disable).enumerate) // Write out constants
     {
-      if (cb.disable)
-        continue;
-
-      if (!preambleShown)
-      {
-        if (writer.lines[$ - 1] != "{")
-          writer ~= "";
-
-        writer ~= "// Callbacks";
-        preambleShown = true;
-      }
-
-      writer ~= cb.getDelegPrototype;
+      writer ~= "";
+      con.writeDocs(writer);
+      writer ~= ["enum " ~ con.name ~ (con.kind == TypeKind.String ? (" = \"" ~ con.value ~ "\";")
+        : (" = " ~ con.value ~ ";")), ""];
     }
 
     if (globalStruct.defCode.inClass.length > 0)
       writer ~= globalStruct.defCode.inClass;
 
-    foreach (fnWriter; funcWriters)
+    foreach (fnWriter; funcWriters) // Write out functions
     {
       writer ~= "";
       fnWriter.write(writer);
@@ -780,10 +762,12 @@ final class Repo : Base
   DocSection[] docSections; /// Documentation sections
 
   XmlPatch[] patches; /// XML patches specified in definitions file
-  dstring[dstring] typeSubs; /// Type substitutions defined in the definitions file
+  dstring[dstring] cTypeSubs; /// C type substitutions defined in the definitions file
+  dstring[dstring] dTypeSubs; /// D type substitutions defined in the definitions file
   TypeKind[dstring] kindSubs; /// Type kind substitutions defined in the definitions file
   DefCode[dstring] structDefCode; /// Code defined in definition file for structures
   dstring merge; /// Package to merge this repo into identified by its namespace
+  string[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
 
   Base[dstring] typeObjectHash; /// Hash of type objects by name (Alias, Func (callback), Constant, Enumeration, or Structure)
 
@@ -791,12 +775,10 @@ final class Repo : Base
   dstring xmlnsC;
   dstring xmlnsGlib;
 
-  bool[dstring] cTypeHash; /// Hash of local C types
-  bool[dstring] dTypeHash; /// Hash of local D types
-
   static bool dumpCTypes; /// Set to true to dump C types
   static bool dumpDTypes; /// Set to true to dump D types
   static bool suggestDefCmds; /// Output definition command suggestions
+  string[][string] suggestions; /// Suggested definitions (if suggestDefCmds is enabled), keyed by type of suggestion
 }
 
 /// Package include

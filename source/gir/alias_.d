@@ -1,6 +1,7 @@
 module gir.alias_;
 
 import gir.type_node;
+import utils;
 
 /**
  * Gir type alias object.
@@ -27,10 +28,17 @@ final class Alias : TypeNode
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
-    _name = node.get("name");
+
+    origName = node.get("name");
+    _name = repo.defs.subTypeStr(origName, repo.defs.dTypeSubs, repo.dTypeSubs);
+
+    if (_name == origName)
+      _name = _name.normalizeDTypeName();
+
     cName = node.get("c:type");
   }
 
   private dstring _name; /// D type name for the alias (Gir "name" attribute)
+  dstring origName; /// Original alias name
   dstring cName; /// C type name for the alias (Gir "c:type" attribute)
 }

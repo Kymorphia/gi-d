@@ -65,6 +65,16 @@ final class Field : TypeNode
     else if (directStruct) // Embedded structure
       foreach (f; directStruct.fields)
         f.fixup;
+
+    foreach (s; ["reserved"d, "dummy"d])
+    {
+      if (!disable && name.toLower.canFind(s))
+      {
+        disable = true;
+        info("Disabling field '" ~ name.to!string ~ "' containing '" ~ s.to!string ~ "'");
+        break;
+      }
+    }
   }
 
   override void verify()
@@ -80,7 +90,7 @@ final class Field : TypeNode
       throw new Exception("Array of strings not supported");
 
     with(TypeKind) if ((kind.among(Basic, BasicAlias, Enum, Flags, Callback) && starCount != 0)
-        || (kind.among(String, Simple, Opaque, Wrap, Boxed, Reffed, Object, Interface) && starCount != 1))
+        || (kind.among(String, Simple, Pointer, Opaque, Wrap, Boxed, Reffed, Object, Interface) && starCount > 1))
       throw new Exception("Unexpected number of pointer references for field " ~ fullName.to!string);
 
     if (directStruct)
@@ -92,15 +102,20 @@ final class Field : TypeNode
     if (kind.among(TypeKind.Unknown, TypeKind.Interface, TypeKind.Namespace))
       throw new Exception("Unhandled type '" ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
 
-    if (writable && kind.among(TypeKind.Boxed, TypeKind.Wrap, TypeKind.Reffed, TypeKind.Object))
+    with (TypeKind) if (writable && kind.among(Opaque, Boxed, Wrap, Reffed, Object, Interface))
     {
       writable = false;
-      warning("Setting writable to false for field " ~ fullName.to!string ~ " with unhandled type '"
+      warning(xmlLocation ~ "Setting writable to false for field '" ~ fullName.to!string ~ "' with unhandled type '"
           ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
     }
 
     if (callback)
-      callback.verify;
+    {
+      if (!callback.disable)
+        callback.verify;
+      else
+        throw new Exception("Field callback type is disabled");
+    }
     else if (directStruct)
       foreach (f; directStruct.fields)
         f.verify;

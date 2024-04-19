@@ -1,3 +1,9 @@
+//!info name gid
+//!info description "GObject introspection D binding repository"
+//!info copyright "Copyright © 2024, Kymorphia, PBC"
+//!info authors "Element Green <element@kymorphia.com>"
+//!info license MIT
+
 //# Dlang reserved words
 //!reserved abstract
 //!reserved alias
@@ -138,6 +144,10 @@
 //!subtype gunichar dchar
 //!subtype gunichar2 ushort
 //!subtype gushort ushort
+//!subtype int8_t byte
+//!subtype int16_t short
+//!subtype int32 int
+//!subtype int32_t int
 //!subtype "long double" real
 //!subtype none void
 //!subtype passwd void
@@ -145,6 +155,9 @@
 //!subtype time_t long
 //!subtype tm void
 //!subtype uid_t uint
+//!subtype uint8_t ubyte
+//!subtype uint16_t ushort
+//!subtype uint32_t uint
 //!subtype unsigned uint
 //!subtype "unsigned int" uint
 //!subtype utf8 string
@@ -153,6 +166,9 @@
 //# FIXME - Need to use int/uint on Windows
 //!subtype glong long
 //!subtype gulong ulong
+
+//# GType is used for D type when it should be Type
+//!subdtype GType GObject.GType
 
 //# Global XML patches
 
