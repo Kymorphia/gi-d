@@ -250,7 +250,7 @@ class FuncWriter
           postCall ~= "_retval[i] = cretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed:
-          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(" ~ (func.cType.countStars == 1 ? "&"d : "")
+          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(cast(void*)" ~ (func.cType.countStars == 1 ? "&"d : "")
             ~ "_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
           break;
         case Object, Interface:
@@ -599,7 +599,7 @@ class FuncWriter
       case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
         if (!param.callerAllocates)
         {
-          preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
+          preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = _" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
 

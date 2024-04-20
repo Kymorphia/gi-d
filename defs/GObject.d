@@ -3,6 +3,10 @@
 //# Merge GObject into GLib package to simplify interdependencies
 //!merge GLib
 
+//# Disable TypePlugin.use() and unuse() since they conflict with IOModule
+//!set interface[TypePlugin].method[use][disable] 1
+//!set interface[TypePlugin].method[unuse][disable] 1
+
 //# Add c:type for the _Value__data__union used within GValue
 //!set union[_Value__data__union][c:type] _Value__data__union
 //!set union[_Value__data__union][disable] 1

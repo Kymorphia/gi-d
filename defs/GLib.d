@@ -3,6 +3,9 @@
 //# Change Array to ArrayG
 //!subtype Array ArrayG
 
+//!set function[malloc][name] gmalloc
+//!set function[free][name] gfree
+
 //# Not introspectable, but could be implemented manually
 //!set function[base64_encode_close][introspectable] 0
 //!set function[base64_encode_step][introspectable] 0
@@ -545,11 +548,11 @@
 //!set record[MarkupParseContext].constructor[new][disable] 1
 //!class MarkupParseContext
 
-  this(MarkupParser parser, MarkupParseFlags flags)
+  this(ref MarkupParser parser, MarkupParseFlags flags)
   {
     GMarkupParseContext* _cretval;
     GMarkupParseFlags _flags = cast(GMarkupParseFlags)cast(uint)flags;
-    _cretval = g_markup_parse_context_new(parser ? parser.cPtr!GMarkupParser : null, _flags, null, null);
+    _cretval = g_markup_parse_context_new(&parser, _flags, null, null);
     this(&_cretval, true);
   }
 

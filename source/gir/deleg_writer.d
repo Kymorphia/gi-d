@@ -239,7 +239,7 @@ class DelegWriter
 
     final switch (param.kind) with (TypeKind)
     {
-      case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
+      case Basic, BasicAlias, Enum, Flags, Pointer:
         addCallParam(param.direction == ParamDirection.In ? param.dName : "*" ~ param.dName);
         break;
       case String:
@@ -256,6 +256,9 @@ class DelegWriter
         }
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
+        break;
+      case Simple:
+        addCallParam("*"d ~ param.dName);
         break;
       case Opaque, Wrap, Boxed, Reffed, Object, Interface:
         if (param.direction == ParamDirection.In)

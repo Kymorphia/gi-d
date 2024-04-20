@@ -709,8 +709,7 @@ final class Repo : Base
     auto simpleStructs = structs.filter!(x => !x.disable && !x.inModule).enumerate;
 
     foreach (i, st; simpleStructs) // Write out simple struct aliases (not classes)
-      writer ~= (i == 0 ? [""d, "// Structs"] : []) ~ ["alias " ~ st.name ~ " = " ~ st.cType
-        ~ (st.kind == TypeKind.Pointer ? "*;"d : ";"d)];
+      writer ~= (i == 0 ? [""d, "// Structs"] : []) ~ ["alias " ~ st.name ~ " = " ~ st.cType ~ ";"];
 
     foreach (i, cb; callbacks.filter!(x => !x.disable).enumerate) // Write out callback delegate types
       writer ~= (i == 0 ? [""d, "// Callbacks"] : []) ~ cb.getDelegPrototype;

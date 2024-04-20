@@ -414,8 +414,10 @@ final class Structure : TypeNode
   // Write class init code
   private void writeInitCode(CodeWriter writer, dstring[] propMethods, bool ifaceModule)
   {
-    if (kind == TypeKind.Opaque || (kind == TypeKind.Reffed && !parentStruct))
+    if ((kind == TypeKind.Opaque && !pointer) || (kind == TypeKind.Reffed && !parentStruct))
       writer ~= [cTypeRemPtr ~ "* cInstancePtr;"];
+    else if (kind == TypeKind.Opaque && pointer)
+      writer ~= [cType ~ " cInstancePtr;"];
     else if (kind == TypeKind.Wrap)
       writer ~= [cTypeRemPtr ~ " cInstance;"];
 
@@ -432,8 +434,10 @@ final class Structure : TypeNode
       writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
         "super(cast(void*)ptr, ownedRef);", "}"];
 
-    if (kind == TypeKind.Opaque)
+    if (kind == TypeKind.Opaque && !pointer)
       writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "this.owned = owned;", "}"];
+    else if (kind == TypeKind.Opaque && pointer)
+      writer ~= ["cInstancePtr = cast(" ~ cType ~ ")ptr;", "", "this.owned = owned;", "}"];
     else if (kind == TypeKind.Wrap)
       writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (ownedRef)", "g_free(ptr);", "}"];
     else if (kind == TypeKind.Reffed && !parentStruct)
@@ -447,9 +451,12 @@ final class Structure : TypeNode
     else if (kind == TypeKind.Wrap && freeFunction)
       writer ~= ["", "~this()", "{", freeFunction ~ "(&cInstance);", "}"];
 
-    if (kind == TypeKind.Opaque)
+    if (kind == TypeKind.Opaque && !pointer)
       writer ~= ["", "T* cPtr(T)()", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
         "return cast(T*)cInstancePtr;", "}"];
+    else if (kind == TypeKind.Opaque && pointer)
+      writer ~= ["", "T cPtr(T)()", "if (is(T == " ~ cType ~ "))", "{",
+        "return cast(T)cInstancePtr;", "}"];
     else if (kind == TypeKind.Reffed)
       writer ~= ["", "T* cPtr(T)(bool addRef = false)", "if (is(T == " ~ cTypeRemPtr ~ "))", "{",
         "if (addRef)", glibRefFunc ~ "(cInstancePtr);", "", "return cast(T*)cInstancePtr;", "}"];
@@ -486,8 +493,8 @@ final class Structure : TypeNode
 
       f.addImports(imports, repo);
 
-      if (f.kind != TypeKind.Callback && f.kind != TypeKind.Simple)
-        lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
+      with (TypeKind) if (!f.kind.among(Callback, Simple))
+        lines ~= ["", "@property " ~ f.dType ~ (f.kind == TypeKind.Pointer ? "* "d : " "d) ~ f.dName ~ "()", "{"];
       else if (!f.typeObject) // Callback function type directly defined in field?
         lines ~= [
         "", "alias " ~ f.name.camelCase(true) ~ "FuncType = extern(C) " ~ f.callback.getCPrototype ~ ";"
@@ -545,7 +552,8 @@ final class Structure : TypeNode
         continue;
 
       if (f.kind != TypeKind.Callback && f.kind != TypeKind.Simple)
-        lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ " propval)", "{"];
+        lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ (f.kind == TypeKind.Pointer ? "*"d : ""d)
+          ~ " propval)", "{"];
 
       final switch (f.kind) with (TypeKind)
       {
