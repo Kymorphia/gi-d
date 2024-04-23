@@ -278,12 +278,12 @@ final class Structure : TypeNode
 
     auto imports = new ImportSymbols(defCode.imports, repo.namespace);
 
-    imports.add("GLib.Global");
+    imports.add("Gid.Gid");
     imports.add(repo.namespace ~ ".c.functions");
     imports.add(repo.namespace ~ ".c.types");
 
     if (kind == TypeKind.Wrap)
-      imports.add("GLib.c.functions"); // For g_free()
+      imports.add("GLib.c.functions"); // For g_free() - FIXME: probably shouldn't pull in everything here
 
     dstring[] propMethods;
     FuncWriter[] funcWriters;
@@ -312,7 +312,6 @@ final class Structure : TypeNode
           signalWriters ~= new SignalWriter(sig);
           imports.merge(signalWriters[$ - 1].imports);
           imports.add("GObject.DClosure");
-          imports.add("GObject.Global");
         }
       }
     }

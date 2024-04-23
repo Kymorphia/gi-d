@@ -325,6 +325,13 @@ class Defs
         case "merge":
           curRepo.merge = cmdTokens[1];
           break;
+        case "namespace":
+          curRepo = new Repo(this, null);
+          curRepo.defsFilename = filename;
+          curRepo.namespace = cmdTokens[1];
+          repos ~= curRepo;
+          curStructName = null;
+          break;
         case "repo":
           curRepo = new Repo(this, cmdTokens[1].to!string);
           curRepo.defsFilename = filename;
@@ -369,23 +376,20 @@ class Defs
 
     foreach (repo; repos)
     {
-      string filePath;
-      foreach (search; girPaths) // Search for Gir file in search paths
-      {
-        auto p = buildPath(search, repo.filename ~ ".gir");
-        if (isFile(p))
-        {
-          filePath = p;
-          break;
-        }
-      }
+      if (repo.filename.empty)
+        continue;
 
-      if (filePath.empty)
-        throw new Exception(
-            "Repository Gir file '" ~ repo.filename ~ "' not found (search paths = "
-            ~ girPaths.join(":") ~ ")");
+      auto repoPaths = girPaths.map!(path => buildPath(path, repo.filename ~ ".gir")).filter!(x => x.exists);
 
-      repo.filename = filePath;
+      if (repoPaths.empty)
+        throw new Exception("Repository Gir file '" ~ repo.filename ~ "' not found (search paths = "
+          ~ girPaths.join(":") ~ ")");
+
+      repo.filename = repoPaths.front;
+
+      if (repoPaths.count > 1)
+        warning("Multiple matches found for repository in path, using " ~ repo.filename);
+
       auto tree = new XmlTree();
       tree.parse(readText(repo.filename).toUTF32, repo.filename); // Load the Gir XML file
 
@@ -684,6 +688,7 @@ immutable DefCmd[] defCommandInfo = [
     ~ " (name, description, copyright, authors, license), multiple authors values can be given"},
   {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},
   {"merge", 1, DefCmdFlags.ReqRepo, "merge <Namespace> - Merge current repo into the package identified by Namespace"},
+  {"namespace", 1, DefCmdFlags.None, "namespace <Namespace> - Create a repository from a namespace instead of a Gir file"},
   {
     "rename", 2, DefCmdFlags.None, "rename <XmlSelect> <AttributeName | XmlNodeId> - Rename an XML attribute or node ID"
   },

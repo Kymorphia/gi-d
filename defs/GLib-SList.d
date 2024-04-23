@@ -1,5 +1,5 @@
 import GLib.Boxed;
-import GLib.Global;
+import GLib.Types;
 
 /**
  * SList ForwardRange template. Creates an object which wraps a GSList of C type (CT) items into a D type (T) items.
@@ -9,7 +9,7 @@ class SList(T, CT)
   GSList* cPtr; // Front of list
   GidOwnership ownership; // Ownership of the list elements and data
 
-  this(GList* list, GidOwnership ownership = GidOwnership.None)
+  this(GSList* list, GidOwnership ownership = GidOwnership.None)
   {
     cPtr = list;
     self.ownership = ownership;
@@ -49,7 +49,7 @@ class SList(T, CT)
     }
   }
 
-  List!(T, CT) save()
+  SList!(T, CT) save()
   {
     GSList* newList;
 

@@ -1,5 +1,5 @@
 import GLib.Boxed;
-import GLib.Global;
+import GLib.Types;
 
 /**
  * PtrArray finite RandomAccessRange template.

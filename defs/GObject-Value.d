@@ -3,6 +3,8 @@
 
 import std.traits : isPointer;
 
+import GObject.Types;
+
 class Value : Boxed
 {
 }

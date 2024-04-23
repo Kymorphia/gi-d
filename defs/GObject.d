@@ -68,7 +68,7 @@
 //# Add missing closure parameter designations
 //!set callback[SignalEmissionHook].parameters.parameter[data][closure] 3
 
-//!class Global
+//!class Types
 
   /// Fundamental GType values as an enum
   enum GTypeEnum

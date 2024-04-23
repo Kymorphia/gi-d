@@ -1,5 +1,5 @@
 //!generate funcs
-import GLib.Global;
+import GLib.Types;
 import GLib.c.functions;
 import GObject.DClosure;
 

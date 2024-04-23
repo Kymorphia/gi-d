@@ -1,5 +1,5 @@
 import GLib.Boxed;
-import GLib.Global;
+import GLib.Types;
 
 /**
  * Array finite RandomAccessRange template for accessing a GArray.

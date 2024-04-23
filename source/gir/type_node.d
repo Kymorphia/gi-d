@@ -415,7 +415,7 @@ class TypeNode : Base
     if (typeObject && typeObject.disable)
       return;
 
-    imports.add(typeRepo.namespace ~ ".c.types");
+    imports.add(typeRepo.namespace ~ ".Types");
 
     if (containerType != ContainerType.None)
     {
@@ -427,8 +427,6 @@ class TypeNode : Base
     }
     else if (cast(TypeNode)typeObject ? (cast(TypeNode)typeObject).inModule : inModule)
       imports.add(fullDType);
-    else if (cast(TypeNode)typeObject ? (cast(TypeNode)typeObject).inGlobal : inGlobal)
-      imports.add(typeRepo.namespace ~ ".Global");
   }
 
   Repo typeRepo; /// Repo containing the dType (can be this.repo)

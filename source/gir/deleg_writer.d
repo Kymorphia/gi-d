@@ -355,7 +355,7 @@ class DelegWriter
       final switch (elemType.kind) with (TypeKind)
       {
         case Basic, String, BasicAlias, Enum, Flags, Simple, Pointer, Opaque, Wrap, Boxed, Reffed, Object, Interface:
-          postCall ~= param.dName ~ " = arrayDtoC!(" ~ elemType.dType ~ ", Yes.Malloc, "
+          postCall ~= param.dName ~ " = arrayDtoC!(" ~ elemType.dType ~ ", Yes.UseMalloc, "
             ~ (param.zeroTerminated ? "Yes"d : "No"d) ~ ".ZeroTerm)(_" ~ param.dName ~ ");\n";
           break;
         case Unknown, Callback, Container, Namespace:
@@ -382,7 +382,7 @@ class DelegWriter
       postCall ~= "*" ~ param.dName ~ " = mapToHashTable!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType
         ~ ")(_" ~ param.dName ~ ");\n";
 
-      imports.add("GLib.Global");
+      imports.add("Gid.gid");
       return;
     }
 

@@ -225,7 +225,7 @@ final class Func : TypeNode
     super.addImports(imports, curRepo);
 
     if (funcType == FuncType.Callback)
-      imports.add(repo.namespace ~ ".Global");
+      imports.add(repo.namespace ~ ".Types");
 
     foreach (param; params)
       param.addImports(imports, curRepo);

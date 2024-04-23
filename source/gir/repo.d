@@ -157,6 +157,12 @@ final class Repo : Base
           globalStruct.origDType = "Global";
           globalStruct.structType = StructType.Class;
           structs ~= globalStruct;
+
+          // Add global Types structure
+          typesStruct = new Structure(this);
+          typesStruct.origDType = "Types";
+          typesStruct.structType = StructType.Class;
+          structs ~= typesStruct;
           break;
         case "package": // Package name
           packageName = node.get("name");
@@ -378,11 +384,17 @@ final class Repo : Base
 
     writeCTypes(buildPath(cSourcePath, "types.d"));
     writeCFuncs(buildPath(cSourcePath, "functions.d"));
-    writeGlobalModule(buildPath(sourcePath, "Global.d"));
+
+    if (typesStruct)
+      writeTypesModule(buildPath(sourcePath, "Types.d"));
+
+    if (globalStruct)
+      writeGlobalModule(buildPath(sourcePath, "Global.d"));
 
     foreach (st; structs)
     {
-      if (!st.disable && ((st.defCode && st.defCode.inClass) || st.inModule) && st !is globalStruct)
+      if (!st.disable && ((st.defCode && st.defCode.inClass) || st.inModule) && st !is globalStruct
+        && st !is typesStruct)
       {
         st.write(sourcePath);
 
@@ -419,7 +431,7 @@ final class Repo : Base
       }
     }
 
-    output ~= `  "targetType": "library",` ~ "\n";
+    output ~= `  "targetType": "dynamicLibrary",` ~ "\n";
     output ~= `  "importPaths": [".", ".."],` ~ "\n";
     output ~= `  "sourcePaths": ["` ~ namespace.to!string ~ `", ".."]`;
 
@@ -646,44 +658,28 @@ final class Repo : Base
   }
 
   /**
-   * Write the global module for a package which has the same name as the namespace.
+   * Write the global types module for a package.
    * Params:
    *   path = Path to the file to write the global module to
    */
-  private void writeGlobalModule(string path)
+  private void writeTypesModule(string path)
   {
     auto writer = new CodeWriter(path);
 
-    writer ~= ["module " ~ namespace ~ ".Global;", ""];
+    writer ~= ["module " ~ namespace ~ ".Types;", ""];
 
-    // Create the function writers first to construct the imports
-    auto imports = new ImportSymbols(globalStruct.defCode.imports, namespace);
-    imports.add("GLib.Global");
-    imports.add(namespace ~ ".c.functions");
+    auto imports = new ImportSymbols(typesStruct.defCode.imports, namespace);
+    imports.add("Gid.Gid");
     imports.add(namespace ~ ".c.types");
-
-    FuncWriter[] funcWriters;
-
-    foreach (fn; globalStruct.functions)
-    {
-      if (fn.disable)
-        continue;
-
-      funcWriters ~= new FuncWriter(fn);
-      imports.merge(funcWriters[$ - 1].imports);
-    }
 
     foreach (cb; callbacks) // Add imports for callback types
       if (!cb.disable)
         cb.addImports(imports, this);
 
-    imports.remove("Global");
+    imports.remove("Types");
 
     if (imports.write(writer))
       writer ~= "";
-
-    if (globalStruct.defCode.preClass.length > 0)
-      writer ~= globalStruct.defCode.preClass;
 
     foreach (i, al; aliases.filter!(x => !x.disable).enumerate) // Write out aliases
     {
@@ -722,6 +718,51 @@ final class Repo : Base
         : (" = " ~ con.value ~ ";")), ""];
     }
 
+    if (typesStruct.defCode.preClass.length > 0)
+      writer ~= typesStruct.defCode.preClass;
+
+    if (typesStruct.defCode.inClass.length > 0)
+      writer ~= typesStruct.defCode.inClass;
+
+    writer.write();
+  }
+
+  /**
+   * Write the global module for a package containing global functions.
+   * Params:
+   *   path = Path to the file to write the global module to
+   */
+  private void writeGlobalModule(string path)
+  {
+    auto writer = new CodeWriter(path);
+
+    writer ~= ["module " ~ namespace ~ ".Global;", ""];
+
+    // Create the function writers first to construct the imports
+    auto imports = new ImportSymbols(globalStruct.defCode.imports, namespace);
+    imports.add("Gid.Gid");
+    imports.add(namespace ~ ".c.functions");
+    imports.add(namespace ~ ".c.types");
+
+    FuncWriter[] funcWriters;
+
+    foreach (fn; globalStruct.functions)
+    {
+      if (fn.disable)
+        continue;
+
+      funcWriters ~= new FuncWriter(fn);
+      imports.merge(funcWriters[$ - 1].imports);
+    }
+
+    imports.remove("Global");
+
+    if (imports.write(writer))
+      writer ~= "";
+
+    if (globalStruct.defCode.preClass.length > 0)
+      writer ~= globalStruct.defCode.preClass;
+
     if (globalStruct.defCode.inClass.length > 0)
       writer ~= globalStruct.defCode.inClass;
 
@@ -756,6 +797,7 @@ final class Repo : Base
   Func[] callbacks; /// Callback function types
   Structure[] structs; /// Structures
   Structure globalStruct; /// Global namespace structure
+  Structure typesStruct; /// Global Types module structure
   Include[] includes; /// Package includes
   dstring[] cIncludes; /// C header includes
   DocSection[] docSections; /// Documentation sections

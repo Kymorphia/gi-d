@@ -16,10 +16,8 @@ class SignalWriter
   this(Func signal)
   {
     this.imports = new ImportSymbols(signal.repo.namespace);
-    imports.add("Global");
-    imports.add("GLib.Global");
-    imports.add(signal.repo.namespace ~ ".c.functions");
-    imports.add(signal.repo.namespace ~ ".c.types");
+    imports.add("Types");
+    imports.add("GObject.Types");
     this.signal = signal;
 
     owningClass = cast(Structure)signal.parent;

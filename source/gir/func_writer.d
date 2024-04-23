@@ -16,10 +16,9 @@ class FuncWriter
   this(Func func)
   {
     this.imports = new ImportSymbols(func.repo.namespace);
-    imports.add("Global");
-    imports.add("GLib.Global");
+    imports.add("Gid.Gid");
+    imports.add("Types");
     imports.add(func.repo.namespace ~ ".c.functions");
-    imports.add(func.repo.namespace ~ ".c.types");
     this.func = func;
     process();
   }
@@ -47,6 +46,7 @@ class FuncWriter
           preCall ~= "static " ~ param.dType ~ " _static_" ~ param.dName ~ ";\n\n";
 
         auto delegWriter = new DelegWriter(param);
+        imports.merge(delegWriter.imports);
         preCall ~= delegWriter.generate() ~ "\n";
 
         if (param.scope_ == ParamScope.Call)
@@ -288,7 +288,7 @@ class FuncWriter
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
         ~ func.elemTypes[1].dType ~ ", " ~ func.fullOwnerStr ~ ")(_cretval) : null;\n";
-      imports.add("GLib.Global");
+      imports.add("Gid.Gid");
       return;
     }
 
@@ -740,7 +740,7 @@ class FuncWriter
         assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
           ~ param.direction.to!string);
 
-      imports.add("GLib.Global");
+      imports.add("Gid.Gid");
       return;
     }
 
