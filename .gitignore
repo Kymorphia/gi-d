@@ -3,3 +3,4 @@ dub.selections.json
 gi-d
 packages/gid-*
 *.o
+*.so

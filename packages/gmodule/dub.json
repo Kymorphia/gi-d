@@ -1,0 +1,13 @@
+{
+  "name": "gmodule",
+  "description": "GModule library gi-d binding",
+  "copyright": "Copyright © 2024, Kymorphia, PBC",
+  "authors": ["Element Green <element@kymorphia.com>"],
+  "license": "MIT",
+  "targetType": "dynamicLibrary",
+  "importPaths": [".", ".."],
+  "sourcePaths": ["GModule", ".."],
+  "dependencies": {
+    "gid:glib": "*"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "cairo",
+  "description": "cairo library gi-d binding",
+  "copyright": "Copyright © 2024, Kymorphia, PBC",
+  "authors": ["Element Green <element@kymorphia.com>"],
+  "license": "MIT",
+  "targetType": "dynamicLibrary",
+  "importPaths": [".", ".."],
+  "sourcePaths": ["cairo", ".."],
+  "dependencies": {
+    "gid:glib": "*"
+  }
+}
