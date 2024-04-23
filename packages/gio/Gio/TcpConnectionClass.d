@@ -1,0 +1,35 @@
+module Gio.TcpConnectionClass;
+
+import GLib.c.functions;
+import Gid.Gid;
+import Gio.SocketConnectionClass;
+import Gio.Types;
+import Gio.c.functions;
+import Gio.c.types;
+
+class TcpConnectionClass
+{
+  GTcpConnectionClass cInstance;
+
+  this(void* ptr, bool ownedRef = false)
+  {
+    if (!ptr)
+      throw new GidConstructException("Null instance pointer for Gio.TcpConnectionClass");
+
+    cInstance = *cast(GTcpConnectionClass*)ptr;
+
+    if (ownedRef)
+      g_free(ptr);
+  }
+
+  T* cPtr(T)()
+  if (is(T == GTcpConnectionClass))
+  {
+    return cast(T*)&cInstance;
+  }
+
+  @property SocketConnectionClass parentClass()
+  {
+    return new SocketConnectionClass(cast(GSocketConnectionClass*)&cPtr!GTcpConnectionClass.parentClass);
+  }
+}
