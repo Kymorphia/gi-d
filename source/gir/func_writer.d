@@ -16,7 +16,7 @@ class FuncWriter
   this(Func func)
   {
     this.imports = new ImportSymbols(func.repo.namespace);
-    imports.add("Gid.Gid");
+    imports.add("Gid.gid");
     imports.add("Types");
     imports.add(func.repo.namespace ~ ".c.functions");
     this.func = func;
@@ -288,7 +288,7 @@ class FuncWriter
       call ~= "_cretval = ";
       postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ func.elemTypes[0].dType ~ ", "
         ~ func.elemTypes[1].dType ~ ", " ~ func.fullOwnerStr ~ ")(_cretval) : null;\n";
-      imports.add("Gid.Gid");
+      imports.add("Gid.gid");
       return;
     }
 
@@ -740,7 +740,7 @@ class FuncWriter
         assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
           ~ param.direction.to!string);
 
-      imports.add("Gid.Gid");
+      imports.add("Gid.gid");
       return;
     }
 

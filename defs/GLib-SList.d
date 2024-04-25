@@ -12,7 +12,7 @@ class SList(T, CT)
   this(GSList* list, GidOwnership ownership = GidOwnership.None)
   {
     cPtr = list;
-    self.ownership = ownership;
+    this.ownership = ownership;
   }
 
   ~this()

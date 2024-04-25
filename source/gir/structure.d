@@ -100,9 +100,6 @@ final class Structure : TypeNode
   // Calculate the structure type kind
   private TypeKind calcKind()
   {
-    if (cType.empty)
-      return TypeKind.Namespace;
-
     if (structType == StructType.Record && !glibGetType.empty)
       return TypeKind.Boxed;
 
@@ -278,7 +275,7 @@ final class Structure : TypeNode
 
     auto imports = new ImportSymbols(defCode.imports, repo.namespace);
 
-    imports.add("Gid.Gid");
+    imports.add("Gid.gid");
     imports.add(repo.namespace ~ ".c.functions");
     imports.add(repo.namespace ~ ".c.types");
 

@@ -154,12 +154,14 @@ final class Repo : Base
 
           // Add global namespace structure
           globalStruct = new Structure(this);
+          globalStruct.kind = TypeKind.Namespace;
           globalStruct.origDType = "Global";
           globalStruct.structType = StructType.Class;
           structs ~= globalStruct;
 
           // Add global Types structure
           typesStruct = new Structure(this);
+          typesStruct.kind = TypeKind.Namespace;
           typesStruct.origDType = "Types";
           typesStruct.structType = StructType.Class;
           structs ~= typesStruct;
@@ -508,7 +510,7 @@ final class Repo : Base
     {
       codeTrap("ctypes.struct", st.fullName);
 
-      if (st.kind == TypeKind.Namespace)
+      if (st.kind == TypeKind.Namespace || st.cType.empty)
         continue;
 
       if (st.fields.length > 0 && !st.opaque && !st.pointer) // Regular structure?
@@ -669,7 +671,7 @@ final class Repo : Base
     writer ~= ["module " ~ namespace ~ ".Types;", ""];
 
     auto imports = new ImportSymbols(typesStruct.defCode.imports, namespace);
-    imports.add("Gid.Gid");
+    imports.add("Gid.gid");
     imports.add(namespace ~ ".c.types");
 
     foreach (cb; callbacks) // Add imports for callback types
@@ -740,7 +742,7 @@ final class Repo : Base
 
     // Create the function writers first to construct the imports
     auto imports = new ImportSymbols(globalStruct.defCode.imports, namespace);
-    imports.add("Gid.Gid");
+    imports.add("Gid.gid");
     imports.add(namespace ~ ".c.functions");
     imports.add(namespace ~ ".c.types");
 

@@ -3,6 +3,9 @@
 //# Merge GObject into GLib package to simplify interdependencies
 //!merge GLib
 
+//# Add DClosure class type which is defined in GObject-DClosure.d
+//!add repository.namespace '<class name="DClosure" parent="Closure"></class>'
+
 //# Disable TypePlugin.use() and unuse() since they conflict with IOModule
 //!set interface[TypePlugin].method[use][disable] 1
 //!set interface[TypePlugin].method[unuse][disable] 1

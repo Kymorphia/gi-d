@@ -1,3 +1,5 @@
+//!kind gid Namespace
+
 import core.exception : OutOfMemoryError;
 import core.memory : GC;
 import core.stdc.stdlib : free, malloc;

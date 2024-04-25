@@ -1,3 +1,5 @@
+//!kind DClosure Opaque
+
 import GObject.Closure;
 public import GObject.Value;
 

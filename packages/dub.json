@@ -8,6 +8,7 @@
   "dependencies": {
     ":cairo": "*",
     ":freetype2": "*",
+    ":gdkpixbuf": "*",
     ":gio": "*",
     ":glib": "*",
     ":gmodule": "*",
@@ -16,6 +17,7 @@
   "subPackages": [
     "./cairo/",
     "./freetype2/",
+    "./gdkpixbuf/",
     "./gio/",
     "./glib/",
     "./gmodule/",

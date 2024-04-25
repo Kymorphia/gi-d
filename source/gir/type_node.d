@@ -292,7 +292,7 @@ class TypeNode : Base
         info(fullName ~ ": Using char* for missing cType");
       }
 
-      with (TypeKind) if (!kind.among(Basic, String))
+      with (TypeKind) if (!kind.among(Unknown, Basic, String, Namespace))
         dType = dType.normalizeDTypeName(); // Strip _t from type name and CamelCase it
 
       if (auto st = cast(Structure)typeObject) // Should only be set to a Structure for non-struct dependencies
@@ -302,7 +302,7 @@ class TypeNode : Base
           cType = st.cType ~ "*";
           info(fullName ~ ": Using '" ~ cType ~ "' for anonymous pointer cType");
         }
-        else if (cType.empty) // HACK? - Use structure cType if cType is missing
+        else if (cType.empty && !st.cType.empty) // HACK? - Use structure cType if cType is missing
         {
           cType = st.cType ~ "*";
           info(fullName ~ ": Using '" ~ cType ~ "' for missing cType");
