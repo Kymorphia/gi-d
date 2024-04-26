@@ -211,10 +211,9 @@ class FuncWriter
 
     postCall ~= "\nif (_cretval)\n{\n";
 
-    if (func.lengthParamIndex >= 0) // Array has length parameter?
+    if (func.lengthParam) // Array has length parameter?
     {
-      auto lengthParam = func.params[func.lengthParamIndex];
-      preCall ~= lengthParam.dType ~ " _cretlength;\n";
+      preCall ~= func.lengthParam.dType ~ " _cretlength;\n";
       lengthStr = "_cretlength";
     }
     else if (func.fixedSize != ArrayNotFixed) // Array is a fixed size?
@@ -244,10 +243,10 @@ class FuncWriter
           postCall ~= "_retval[i] = cast(" ~ elemType.dType ~ ")(_cretval[i]);\n";
           break;
         case Simple:
-          postCall ~= "_retval[i] = *cretval[i];\n";
+          postCall ~= "_retval[i] = _cretval[i];\n";
           break;
         case Pointer:
-          postCall ~= "_retval[i] = cretval[i];\n";
+          postCall ~= "_retval[i] = _cretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed:
           postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(cast(void*)" ~ (func.cType.countStars == 1 ? "&"d : "")
@@ -311,35 +310,31 @@ class FuncWriter
 
     param.addImports(imports, func.repo);
 
-    if (param.isArrayLength) // Array length parameter?
+    if (param.isLengthReturnArray) // Return array length parameter is handled in processReturnArray()
     {
-      if (param.arrayParamIndex == ParamIndexReturnVal) // Return array length parameter is handled in processReturnArray()
-      {
-        addCallParam("&_cretlength");
-        return;
-      }
+      addCallParam("&_cretlength");
+      return;
+    }
 
-      auto arrayParam = func.params[param.arrayParamIndex];
-
-      if (param.direction == ParamDirection.Out)
-      {
-        preCall ~= param.dType ~ " _" ~ param.dName ~ ";\n";
-        addCallParam("&_" ~ param.dName);
-      }
-      else if (param.direction == ParamDirection.InOut)
-      {
-        preCall ~= "auto _" ~ param.dName ~ (" = " ~ arrayParam.dName ~ " ? cast(" ~ param.dType ~ ")"
-          ~ arrayParam.dName ~ ".length : 0;\n");
-        addCallParam("&_" ~ param.dName);
-      }
-      else // Input
-        addCallParam(arrayParam.dName ~ " ? cast(" ~ param.cType ~ ")" ~ arrayParam.dName ~ ".length : 0");
-
+    if (param.lengthArrayParams.length > 0)
+    {
+      addCallParam((param.direction == ParamDirection.In ? "_"d : "&_"d) ~ param.dName);
       return;
     }
 
     if (param.containerType == ContainerType.Array) // Array container?
-    {
+    { // Declare length variable before the array in case it is used by the array
+      if (param.lengthParam)
+      {
+        // Only declare length parameter for first array
+        if (param == param.lengthParam.lengthArrayParams[0])
+          preCall ~= param.lengthParam.dType ~ " _" ~ param.lengthParam.dName ~ ";\n";
+
+        if (param.direction != ParamDirection.Out) // Set length if parameter is non-null, handles multiple optional array arguments
+          preCall ~= "if (" ~ param.dName ~ ")\n_" ~ param.lengthParam.dName ~ " = cast(" ~ param.lengthParam.dType
+            ~ ")" ~ param.dName ~ ".length;\n\n";
+      }
+
       if (param.direction == ParamDirection.In)
         processArrayInParam(param);
       else if (param.direction == ParamDirection.Out)
@@ -575,13 +570,9 @@ class FuncWriter
     addDeclParam(param.directionStr ~ elemType.dType ~ "[] " ~ param.dName);
 
     dstring lengthStr;
-    Param lengthParam;
 
-    if (param.lengthParamIndex >= 0) // Array has length parameter?
-    {
-      lengthParam = func.params[param.lengthParamIndex];
-      lengthStr = "_" ~ lengthParam.dName;
-    }
+    if (param.lengthParam) // Array has length parameter?
+      lengthStr = "_" ~ param.lengthParam.dName;
     else if (param.fixedSize != ArrayNotFixed) // Array is a fixed size?
       lengthStr = param.fixedSize.to!dstring;
     else if (param.zeroTerminated) // Array is zero terminated?
@@ -745,7 +736,6 @@ class FuncWriter
     }
 
     addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
-    auto elemType = param.elemTypes[0];
 
     if (param.direction == ParamDirection.In)
     {
@@ -755,10 +745,10 @@ class FuncWriter
     }
     else if (param.direction == ParamDirection.Out)
     {
-      preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
+      preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
       addCallParam("&_" ~ param.dName);
-      postCall ~= param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
-        ~ ")(_" ~ param.dName ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ");\n";
+      postCall ~= param.dName ~ " = new " ~ param.dType ~ "(_" ~ param.dName ~ ", GidOwnership."
+        ~ param.ownership.to!dstring ~ ");\n";
     }
     else
       assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "

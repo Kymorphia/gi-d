@@ -12,7 +12,9 @@
     ":gio": "*",
     ":glib": "*",
     ":gmodule": "*",
-    ":harfbuzz": "*"
+    ":harfbuzz": "*",
+    ":pango": "*",
+    ":pangocairo": "*"
   },
   "subPackages": [
     "./cairo/",
@@ -21,6 +23,8 @@
     "./gio/",
     "./glib/",
     "./gmodule/",
-    "./harfbuzz/"
+    "./harfbuzz/",
+    "./pango/",
+    "./pangocairo/"
   ]
 }

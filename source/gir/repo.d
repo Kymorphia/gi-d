@@ -405,6 +405,24 @@ final class Repo : Base
       }
     }
 
+    foreach (al; aliases) // Write modules for aliases to structure types in modules
+    {
+      auto st = cast(Structure)al.typeObject;
+
+      if (!al.disable && st && st.inModule)
+      {
+        auto codeWriter = new CodeWriter(buildPath(sourcePath, al.name.to!string ~ ".d"), [
+          "module " ~ al.fullName ~ ";",
+          "",
+          "import " ~ st.fullName ~ ";",
+          "",
+          "alias " ~ al.name ~ " = " ~ st.name ~ ";"
+        ]);
+
+        codeWriter.write;
+      }
+    }
+
     if (merge.empty)
       writeDubJsonFile(buildPath(packagePath, "dub.json"));
   }
@@ -685,7 +703,9 @@ final class Repo : Base
 
     foreach (i, al; aliases.filter!(x => !x.disable).enumerate) // Write out aliases
     {
-      if (al.typeObject && al.typeObject.disable)
+      auto st = cast(Structure)al.typeObject;
+
+      if ((al.typeObject && al.typeObject.disable) || (st && st.inModule)) // Skip if target type is disabled or an alias of a type in a module (alias is written as a module in writePackage())
         continue;
 
       if (i == 0)

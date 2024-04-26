@@ -100,16 +100,15 @@ final class Func : TypeNode
         || !shadowedBy.empty)
       disable = true;
 
-    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+    if (lengthParamIndex != ArrayNoLengthParam) // Return array has a length argument?
     {
       if (hasInstanceParam) // Array length parameter indexes don't count instance parameters
         lengthParamIndex++;
 
       if (lengthParamIndex < params.length)
       {
-        auto lengthParam = params[lengthParamIndex];
-        lengthParam.arrayParamIndex = ParamIndexReturnVal;
-        lengthParam.isArrayLength = true;
+        lengthParam = params[lengthParamIndex];
+        lengthParam.isLengthReturnArray = true;
       }
     }
 
@@ -183,15 +182,14 @@ final class Func : TypeNode
       }
     }
 
-    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+    if (lengthParamIndex != ArrayNoLengthParam)
     {
-      if (lengthParamIndex >= params.length)
+      if (!lengthParam) // Return array has invalid length argument?
       {
         disableFunc("invalid return array length parameter index");
         return;
       }
 
-      auto lengthParam = params[lengthParamIndex];
       if (lengthParam.direction != ParamDirection.Out)
       {
         disableFunc("return array length parameter direction must be Out");

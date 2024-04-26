@@ -178,11 +178,8 @@ class DelegWriter
 
     postCall ~= "}\n\n";
 
-    if (callback.lengthParamIndex >= 0) // Array has length parameter?
-    {
-      auto lengthParam = callback.params[callback.lengthParamIndex];
-      postCall ~= lengthParam.dName ~ " = cast(" ~ lengthParam.dName ~ ".typeof)_dretval.length;\n";
-    }
+    if (callback.lengthParam) // Array has length parameter?
+      postCall ~= callback.lengthParam.dName ~ " = cast(" ~ callback.lengthParam.dName ~ ".typeof)_dretval.length;\n";
   }
 
   /// Process a return container (not Array)
@@ -304,8 +301,8 @@ class DelegWriter
     {
       dstring lengthStr;
 
-      if (param.lengthParamIndex >= 0) // Array has length parameter?
-        lengthStr = callback.params[param.lengthParamIndex].dName;
+      if (param.lengthParam) // Array has length parameter?
+        lengthStr = param.lengthParam.dName;
       else if (param.fixedSize != ArrayNotFixed) // Array is a fixed size?
         lengthStr = param.fixedSize.to!dstring;
       else if (param.zeroTerminated) // Array is zero terminated?
@@ -345,12 +342,9 @@ class DelegWriter
 
     if (param.direction == ParamDirection.Out || param.direction == ParamDirection.InOut)
     {
-      if (param.lengthParamIndex >= 0) // Array has length parameter?
-      {
-        auto lengthParam = callback.params[param.lengthParamIndex];
-        postCall ~= lengthParam.dName ~ " = cast(" ~ lengthParam.cType  ~ ")_" ~ param.dName ~ ".length"
+      if (param.lengthParam) // Array has length parameter?
+        postCall ~= param.lengthParam.dName ~ " = cast(" ~ param.lengthParam.cType  ~ ")_" ~ param.dName ~ ".length"
           ~ (param.zeroTerminated ? " - 1;\n"d : ";\n"d);
-      }
 
       final switch (elemType.kind) with (TypeKind)
       {

@@ -508,8 +508,8 @@ final class Structure : TypeNode
           lines ~= "return cast(" ~ f.dType ~ ")" ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case Simple:
-          lines ~= ["", "@property " ~ f.dType ~ "* " ~ f.dName ~ "()", "{"];
-          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
+          lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
+          lines ~= "return " ~ (f.cType.countStars == 1 ? "*"d : "") ~ cPtr ~ "." ~ f.dName ~ ";"; // Copy structure (dereference if it is a pointer to a structure)
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
@@ -567,8 +567,8 @@ final class Structure : TypeNode
           lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";
           break;
         case Simple:
-          lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ "* propval)", "{"];
-          lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
+          lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.dType ~ " propval)", "{"];
+          lines ~= cPtr ~ "." ~ f.dName ~ " = " ~ (f.cType.countStars == 1 ? "&"d : ""d) ~ "propval;"; // If field is a pointer, use the address of the structure
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?

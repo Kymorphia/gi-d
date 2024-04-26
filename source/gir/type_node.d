@@ -202,18 +202,18 @@ class TypeNode : Base
 
     if (dType == "void*" && cType == "const(void)*") // If dType is void* and cType is const(void)*, make the dType const as well
       dType = "const(void)*";
-    else if (elemTypes.length == 1 && elemTypes[0].cType == "char"
-      && lengthParamIndex != ArrayNoLengthParam) // If this is a char[] array, set element type to Basic char, but FuncWriter will consider it as a string.
-    {
-      elemTypes[0].kind = TypeKind.Basic;
-      elemTypes[0].dType = "char";
-      info("'" ~ fullName.to!string ~ "' using string for char array with length");
-    }
 
     if (containerType == ContainerType.Array)
-    { // If there is a length parameter, dType is "ubyte", and array type uses char - treat it as a ubyte array
-      if (lengthParamIndex != ArrayNoLengthParam && !elemTypes.empty && elemTypes[0].dType == "ubyte"
-        && cType.stripConst.startsWith("char"))
+    {
+      if (elemTypes.length == 1 && elemTypes[0].cType == "char"
+        && lengthParamIndex != ArrayNoLengthParam) // If this is a char[] array, set element type to Basic char, but FuncWriter will consider it as a string.
+      {
+        elemTypes[0].kind = TypeKind.Basic;
+        elemTypes[0].dType = "char";
+        info("'" ~ fullName.to!string ~ "' using string for char array with length");
+      }
+      else if (lengthParamIndex != ArrayNoLengthParam && !elemTypes.empty && elemTypes[0].dType == "ubyte"
+        && cType.stripConst.startsWith("char")) // If there is a length parameter, dType is "ubyte", and array type uses char - treat it as a ubyte array
       {
         info("Changing array cType from " ~ cType.to!string ~ " to ubyte for " ~ fullName.to!string);
         elemTypes[0].cType = "ubyte";
@@ -439,6 +439,7 @@ class TypeNode : Base
   TypeNode[] elemTypes; /// Container element types (2 for HashTable, 1 for other container types)
   Ownership ownership; /// Ownership of passed value (return values, parameters, and properties)
   ContainerType containerType; /// The type of container or None
+  Param lengthParam; /// Set to a length parameter for arrays
   UnresolvedFlags unresolvedFlags; /// Flags of what type references are unresolved (0 if none)
   bool zeroTerminated; /// true if array is zero terminated
   int fixedSize = ArrayNotFixed; /// Non-zero if array is a fixed size

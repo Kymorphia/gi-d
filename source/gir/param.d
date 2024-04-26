@@ -57,7 +57,13 @@ final class Param : TypeNode
     else if (direction == ParamDirection.Out)
       return "out ";
     else
-      return "inout ";
+      return "ref ";
+  }
+
+  /// Is this parameter a length for a return array and/or one or more array parameters
+  @property bool isArrayLength()
+  {
+    return isLengthReturnArray || lengthArrayParams.length > 0;
   }
 
   override void fromXml(XmlNode node)
@@ -103,9 +109,8 @@ final class Param : TypeNode
 
       if (lengthParamIndex < func.params.length)
       {
-        auto lengthParam = func.params[lengthParamIndex];
-        lengthParam.arrayParamIndex = cast(int)func.params.countUntil!(x => x is this);
-        lengthParam.isArrayLength = true;
+        lengthParam = func.params[lengthParamIndex];
+        lengthParam.lengthArrayParams ~= this;
       }
     }
 
@@ -208,21 +213,17 @@ final class Param : TypeNode
           ~ cType.to!string ~ "'");
     }
 
+    if (kind == TypeKind.String && direction == ParamDirection.InOut)
+      throw new Exception("Unsupported string InOut parameter");
+
     if (kind == TypeKind.Boxed && direction == ParamDirection.Out && cType.countStars != 2)
       throw new Exception("Unsupported boxed type Out parameter of type '" ~ dType.to!string
         ~ "' requiring caller allocation");
 
     with (ParamDirection) if (containerType == ContainerType.Array)
     {
-      Param lengthParam;
-
-      if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
-      {
-        if (lengthParamIndex >= func.params.length)
-          throw new Exception("Invalid array length parameter index");
-
-        lengthParam = func.params[lengthParamIndex];
-      }
+      if (lengthParamIndex != ArrayNoLengthParam && !lengthParam) // Array has invalid length argument?
+        throw new Exception("Invalid array length parameter index");
 
       if (direction == In)
       {
@@ -301,8 +302,8 @@ final class Param : TypeNode
 
   private dstring _name; /// Name of parameter
   bool isInstanceParam; /// true if this parameter is the instance parameter
-  bool isArrayLength; /// true if this parameter is an array length
-  int arrayParamIndex; /// If isArrayLength is true, the parameter index of the array or ParamIndexReturnVal if the array is the return value
+  bool isLengthReturnArray; /// true if this is a length parameter for a return array
+  Param[] lengthArrayParams; /// Array parameters which use this one as a length
   ParamDirection direction; /// Parameter direction
   bool nullable; /// Nullable pointer
   bool optional; /// Optional pointer
@@ -316,9 +317,6 @@ final class Param : TypeNode
   int callbackIndex = NoCallback; /// If isClosure or isDestroy is true then this is the callback parameter index
   ParamScope scope_; /// Scope of the callback closure data
 }
-
-/// Value used for arrayParamIndex to indicate it is the length for the return value
-enum ParamIndexReturnVal = -1;
 
 /// Direction of a parameter
 enum ParamDirection
