@@ -544,10 +544,10 @@ class Defs
    * Find type object by D type name which may include the namespace separated by a period.
    * Params:
    *   typeName = Type name string
-   *   namespace = Default namespace or null
+   *   repo = Repo to use if typeName does not contain a namespace (optional if typeName has a namespace)
    * Returns: The matching type object or null if not found (possible basic type), throws an exception if typeName has a namespace that wasn't resolved
    */
-  Base findTypeObject(dstring typeName, Repo repo)
+  Base findTypeObject(dstring typeName, Repo repo = null)
   {
     auto t = typeName.split('.');
     if (t.length > 1)
@@ -560,6 +560,8 @@ class Defs
 
       typeName = t[1];
     }
+
+    assert(repo);
 
     return repo.typeObjectHash.get(subTypeStr(typeName, dTypeSubs, repo.dTypeSubs), null);
   }

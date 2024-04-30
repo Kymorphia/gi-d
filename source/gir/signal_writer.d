@@ -13,9 +13,9 @@ import utils;
 /// Signal writer class
 class SignalWriter
 {
-  this(Func signal)
+  this(Func signal, ImportSymbols imports)
   {
-    this.imports = new ImportSymbols(signal.repo.namespace);
+    this.imports = imports;
     imports.add("Types");
     imports.add("GObject.Types");
     this.signal = signal;
@@ -40,7 +40,7 @@ class SignalWriter
 
     processReturn();
 
-    auto instanceParamName = owningClass.dType[0].toLower ~ owningClass.dType[1 .. $];
+    auto instanceParamName = signal.repo.defs.symbolName(owningClass.dType[0].toLower ~ owningClass.dType[1 .. $]);
     preCall ~= "auto " ~ instanceParamName ~ " = getVal!" ~ owningClass.dType ~ "(_paramVals);\n"; // Instance parameter is the first value
     decl ~= "delegate(";
     call ~= "_dgClosure.dlg(";

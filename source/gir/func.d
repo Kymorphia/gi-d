@@ -134,6 +134,14 @@ final class Func : TypeNode
     }
   }
 
+  override void resolve()
+  {
+    super.resolve;
+
+    foreach (pa; params) // Fixup parameters
+      pa.resolve;
+  }
+
   override void verify()
   {
     if (disable)
@@ -261,7 +269,7 @@ final class Func : TypeNode
       if (proto[$ - 1] != '(')
         proto ~= ", ";
 
-      proto ~= p.directionStr ~ p.dType ~ " " ~ p.dName;
+      proto ~= p.directionStr ~ p.dType ~ " " ~ repo.defs.symbolName(p.dName);
     }
 
     return proto ~ ");";
@@ -308,7 +316,7 @@ final class Func : TypeNode
     if (funcType != FuncType.Method || !parentClass || parentClass.structType != StructType.Class)
       return false;
 
-    auto funcName = dName;
+    auto funcName = name;
 
     for (auto klass = parentClass; klass; klass = klass.parentStruct)
     {
@@ -317,7 +325,8 @@ final class Func : TypeNode
       if (!cmpFunc || cmpFunc.disable || dType != cmpFunc.dType || params.length != cmpFunc.params.length)
         continue;
 
-      if (params.map!(x => x.dType).equal(cmpFunc.params.map!(x => x.dType))) // Compare dTypes of both functions
+      if (params.filter!(x => !x.isInstanceParam).map!(x => x.dType) // Compare dTypes of both functions (skip instance param)
+          .equal(cmpFunc.params.filter!(x => !x.isInstanceParam).map!(x => x.dType)))
         return true;
     }
 

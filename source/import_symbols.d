@@ -4,8 +4,23 @@ import code_writer;
 import std_includes;
 import utils;
 
+import gir.structure;
+
 final class ImportSymbols
 {
+  this(Structure klassModule)
+  {
+    this.klassModule = klassModule;
+    this.defaultNamespace = klassModule.repo.namespace;
+    this.classNames = [klassModule.name : klassModule];
+  }
+
+  this(ImportSymbols imSyms, Structure klassModule)
+  {
+    this(klassModule);
+    merge(imSyms);
+  }
+
   this(dstring defaultNamespace = null)
   {
     this.defaultNamespace = defaultNamespace;
@@ -14,13 +29,33 @@ final class ImportSymbols
   this(ImportSymbols imSyms, dstring defaultNamespace = null)
   {
     this(defaultNamespace);
-
-    foreach (m; imSyms.modSyms.byKeyValue)
-      add(m.key, m.value.keys);
+    merge(imSyms);
   }
 
   /**
-   * Add an import symbol.
+   * Add class structure import to an import symbols object. Class names are aliased if there are conflicts.
+   * Params:
+   *   klass = The class structure to add a module import for
+   */
+  void add(Structure klass)
+  {
+    if (klass in classAliases || klass == klassModule)
+      return;
+
+    codeTrap("import.add", klass.fullName);
+
+    dstring name;
+
+    if (klass.name in classNames) // Check for class name conflicts
+      name = "D" ~ klass.repo.namespace ~ klass.name; // Create an alias to use in local module
+    else
+      classNames[klass.name] = klass;
+
+    classAliases[klass] = name;
+  }
+
+  /**
+   * Add import module as a string with an optional symbol to an import symbols object. Should only be used if there is no associated Structure object for the import.
    * Params:
    *   mod = The import module name (default namespace is used if not present)
    *   symbol = Optional symbol in the module to import
@@ -34,41 +69,56 @@ final class ImportSymbols
   }
 
   /**
-   * Add import symbols to an import array.
+   * Add import module as a string with symbols to an import symbols object. Should only be used if there is no associated Structure object for the import.
    * Params:
-   *   mod = The import module name 
+   *   mod = The import module name in the form namespace.module (if namespace is not supplied the supplied default is used)
    *   symbols = Array of symbols to add (empty to indicate all symbols wildcard)
    */
   void add(dstring mod, dstring[] symbols)
   {
+    codeTrap("import.add", mod);
+
     if (!mod.canFind('.') && defaultNamespace)
       mod = defaultNamespace ~ "." ~ mod;
 
-    codeTrap("import.add", mod);
-
-    if (mod in modSyms) // Module name already exists?
+    if (mod !in stringImports) // Module name doesn't already exist?
+      stringImports[mod] = symbols.map!(x => tuple(x, true)).assocArray; // Add module and symbols (can be empty)
+    else if (!stringImports[mod].empty) // Module symbol array not wildcard?
     {
-      if (!modSyms[mod].empty) // Module symbol array not empty?
+      if (!symbols.empty)
       {
-        if (!symbols.empty)
-        {
-          foreach (sym; symbols)
-            modSyms[mod][sym] = true; // Add symbol to symbol map
-        }
-        else
-          modSyms[mod].clear; // All symbols requested, empty the symbol array
-      } // Module import is all symbols
-    }
-    else if (!symbols.empty)
-      modSyms[mod] = symbols.map!(x => tuple(x, true)).assocArray; // Add module and symbols
-    else
-      modSyms[mod] = cast(bool[dstring])null; // Add module for all symbols (empty array)
+        foreach (sym; symbols)
+          stringImports[mod][sym] = true; // Add symbol to symbol map
+      }
+      else
+        stringImports[mod].clear; // All symbols requested, empty the symbol array
+    } // Module import is all symbols, doesn't matter if symbols were specified or not, will still be wildcard
   }
 
   /**
-   * Remove an import module or import module symbol from an import array.
+   * Remove an import class from an import object.
    * Params:
-   *   mod = Module name
+   *   klass = Class structure to remove
+   * Returns: true if removed, false if no match was found
+   */
+  bool remove(Structure klass)
+  {
+    if (klass !in classAliases)
+      return false;
+
+    classAliases.remove(klass);
+
+    foreach (name, cmpKlass; classNames)
+      if (cmpKlass == klass)
+        classNames.remove(name);
+
+    return true;
+  }
+
+  /**
+   * Remove an import module by string or import module symbol from an import object.
+   * Params:
+   *   mod = The import module name in the form namespace.module (if namespace is not supplied the supplied default is used)
    *   symbol = The symbol to remove or null (default) to remove all symbols
    * Returns: true if removed, false if no match was found
    */
@@ -77,19 +127,19 @@ final class ImportSymbols
     if (!mod.canFind('.') && defaultNamespace)
       mod = defaultNamespace ~ "." ~ mod;
 
-    if (mod !in modSyms)
+    if (mod !in stringImports)
       return false;
 
     if (!symbol.empty)
     {
-      if (symbol !in modSyms[mod])
+      if (symbol !in stringImports[mod])
         return false;
 
-      modSyms[mod].remove(symbol);
+      stringImports[mod].remove(symbol);
       return true;
     }
 
-    modSyms.remove(mod);
+    stringImports.remove(mod);
     return true;
   }
 
@@ -100,8 +150,11 @@ final class ImportSymbols
    */
   void merge(ImportSymbols mergeSyms)
   {
-    foreach (m; mergeSyms.modSyms.byKeyValue)
-      add(m.key, m.value.keys);
+    foreach (st, aliasName; mergeSyms.classAliases) // Add structure imports from other ImportSymbols object
+      add(st);
+
+    foreach (s, syms; mergeSyms.stringImports) // Add string imports from other ImportSymbols object
+      add(s, syms.keys);
   }
 
   /**
@@ -125,6 +178,20 @@ final class ImportSymbols
   }
 
   /**
+   * Resolve a class name for the given imports, using aliases created by createClassAliases() or the plain class name if not aliased.
+   * Params:
+   *   klass = The class structure to get the name of
+   * Returns: The class name or an alias if there are conflicts in the current module imports.
+   */
+  dstring resolveClassName(Structure klass)
+  {
+    if (auto aliasName = classAliases.get(klass, null))
+      return aliasName;
+
+    return klass.dType;
+  }
+
+  /**
    * Generate the import commands for the import symbol object.
    * Params:
    *   prefix = A prefix to add to each import line (defaults to empty string)
@@ -133,17 +200,23 @@ final class ImportSymbols
   {
     dstring[] importLines;
 
-    foreach (mod; modSyms.keys.array.sort)
+    foreach (klass, aliasName; classAliases)
     {
-      auto syms = modSyms[mod];
+      if (!aliasName.empty)
+        importLines ~= prefix ~ "import " ~ klass.fullName ~ " : " ~ aliasName ~ " = " ~ klass.name ~ ";";
+      else
+        importLines ~= prefix ~ "import " ~ klass.fullName ~ ";";
+    }
 
+    foreach (mod, syms; stringImports)
+    {
       if (syms.empty)
         importLines ~= prefix ~ "import " ~ mod ~ ";";
       else
         importLines ~= prefix ~ "import " ~ mod ~ " : "d ~ syms.keys.join(", ") ~ ";";
     }
 
-    return importLines;
+    return importLines.sort.array;
   }
 
   /**
@@ -160,7 +233,13 @@ final class ImportSymbols
     return !importLines.empty;
   }
 
-  /// moduleName => (Symbol => true)
-  private bool[dstring][dstring] modSyms;
-  private dstring defaultNamespace;
+private:
+  immutable dstring[] notClassMods = [".Types", ".Global", ".c.types", ".c.functions"]; // Modules which aren't class modules (matches end of module name)
+
+  Structure klassModule; /// The current class module or null if not a class module
+  dstring[Structure] classAliases; /// Structure => Alias (or null if no alias)
+  Structure[dstring] classNames; /// Hash of ClassName -> Structure to detect conflicts
+
+  bool[dstring][dstring] stringImports; /// moduleName => (Symbol => true)
+  dstring defaultNamespace; /// Default namespace to use if not provided when adding imports
 }

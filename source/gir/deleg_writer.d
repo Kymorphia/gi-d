@@ -5,6 +5,7 @@ import defs;
 import import_symbols;
 import gir.func;
 import gir.param;
+import gir.structure;
 import gir.type_node;
 import std_includes;
 import utils;
@@ -12,10 +13,10 @@ import utils;
 /// Delegate C callback marshal writer class
 class DelegWriter
 {
-  this(Param delegParam)
+  this(Param delegParam, ImportSymbols imports)
   {
     this.delegParam = delegParam;
-    imports = new ImportSymbols(delegParam.repo.namespace);
+    this.imports = imports;
     callback = cast(Func)delegParam.typeObject;
 
     assert(this.callback, "DelegWriter parameter " ~ delegParam.fullName.to!string ~ " has "
@@ -113,9 +114,8 @@ class DelegWriter
       case Opaque, Wrap, Boxed, Reffed, Object, Interface:
         preCall ~= callback.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-
-        postCall ~= callback.cType ~ " _retval = _dretval.cPtr!" ~ callback.cTypeRemPtr
-          ~ "(" ~ callback.fullOwnerStr ~ ");\n";
+        postCall ~= callback.cType ~ " _retval = cast(" ~ callback.cTypeRemPtr ~ "*)_dretval.cPtr("
+          ~ callback.fullOwnerStr ~ ");\n";
         break;
       case Callback, Unknown, Container, Namespace:
         assert(0, "Unsupported delegate return value type '" ~ callback.dType.to!string
@@ -168,7 +168,7 @@ class DelegWriter
           postCall ~= "_retval[i] = _dretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed, Object, Interface:
-          postCall ~= "_retval[i] = _dretval[i].cPtr!" ~ elemType.cTypeRemPtr ~ "(" ~ callback.fullOwnerStr ~ ");\n";
+          postCall ~= "_retval[i] = _dretval[i].cPtr(" ~ callback.fullOwnerStr ~ ");\n";
           break;
         case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported delegate return value array type '" ~ elemType.dType.to!string
@@ -258,10 +258,12 @@ class DelegWriter
         addCallParam("*"d ~ param.dName);
         break;
       case Opaque, Wrap, Boxed, Reffed, Object, Interface:
+        auto className = imports.resolveClassName(cast(Structure)param.typeObject);
+
         if (param.direction == ParamDirection.In)
         {
           addCallParam(param.dName ~ " ? " ~ ((param.kind == Object || param.kind == Interface)
-            ? "ObjectG.getDObject!"d : "new "d) ~ param.dType ~ "(" ~ param.dName ~ ", " ~ param.fullOwnerStr
+            ? "ObjectG.getDObject!"d : "new "d) ~ className ~ "(cast(void*)" ~ param.dName ~ ", " ~ param.fullOwnerStr
             ~ ") : null");
 
           if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
@@ -269,9 +271,9 @@ class DelegWriter
         }
         else if (param.direction == ParamDirection.Out)
         {
-          preCall ~= param.dType ~ " _" ~ param.dName ~ ";\n";
+          preCall ~= className ~ " _" ~ param.dName ~ ";\n";
           addCallParam("_" ~ param.dName);
-          postCall ~= "*" ~ param.dName ~ " = _" ~ param.dName ~ ".cPtr!(" ~ param.cTypeRemPtr ~ ", true);\n";
+          postCall ~= "*" ~ param.dName ~ " = _" ~ param.dName ~ ".cPtr(true);\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?

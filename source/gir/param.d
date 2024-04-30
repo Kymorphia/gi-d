@@ -163,6 +163,14 @@ final class Param : TypeNode
     }
   }
 
+  override void resolve()
+  {
+    if (origDType == "...") // Skip variable args elipsis
+      return;
+
+    super.resolve;
+  }
+
   override void verify()
   {
     super.verify;

@@ -49,9 +49,9 @@ abstract class Boxed
    *   T = Type of the C boxed structure
    * Returns: Copy of the boxed type
    */
-  T* copy_(T)()
+  void* copy_()
   {
-    return cast(T*)glib_g_boxed_copy(getType, cInstancePtr);
+    return cast(void*)glib_g_boxed_copy(getType, cInstancePtr);
   }
 
   /**

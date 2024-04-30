@@ -241,6 +241,7 @@ final class Repo : Base
     foreach (al; aliases) // Fixup aliases
     {
       al.fixup;
+      al.resolve;
       typeObjectHash[al.name] = al;
 
       if (al.origName != al.name)
@@ -250,6 +251,7 @@ final class Repo : Base
     foreach (con; constants) // Hash constants (can reference other types, which are fixed up in fixupDeps())
     {
       con.fixup;
+      con.resolve;
       typeObjectHash[con.name] = con;
     }
 
@@ -264,6 +266,7 @@ final class Repo : Base
     foreach (cb; callbacks) // Hash callbacks
     {
       cb.fixup;
+      cb.resolve;
       typeObjectHash[cb.name] = cb;
 
       if (cb.origName != cb.name)
@@ -273,6 +276,7 @@ final class Repo : Base
     foreach (st; structs) // Fixup structures (base type only, not dependencies which are fixed up below)
     {
       st.fixup;
+      st.resolve;
       typeObjectHash[st.dType] = st;
 
       if (st.origDType != st.dType)
@@ -290,6 +294,7 @@ final class Repo : Base
         st.structType = StructType.Class;
         structs ~= st;
         st.fixup;
+        st.resolve;
         typeObjectHash[st.name] = st;
       }
 
@@ -688,7 +693,7 @@ final class Repo : Base
 
     writer ~= ["module " ~ namespace ~ ".Types;", ""];
 
-    auto imports = new ImportSymbols(typesStruct.defCode.imports, namespace);
+    auto imports = new ImportSymbols(typesStruct.defCode.imports, typesStruct);
     imports.add("Gid.gid");
     imports.add(namespace ~ ".c.types");
 
@@ -727,7 +732,13 @@ final class Repo : Base
     auto simpleStructs = structs.filter!(x => !x.disable && !x.inModule).enumerate;
 
     foreach (i, st; simpleStructs) // Write out simple struct aliases (not classes)
-      writer ~= (i == 0 ? [""d, "// Structs"] : []) ~ ["alias " ~ st.name ~ " = " ~ st.cType ~ ";"];
+    {
+      if (i == 0)
+        writer ~= [""d, "// Structs"];
+
+      writer ~= ["alias " ~ st.name ~ " = " ~ st.cType ~ (st.kind == TypeKind.Pointer && !st.pointer ? "*"d : "")
+        ~ ";"];
+    }
 
     foreach (i, cb; callbacks.filter!(x => !x.disable).enumerate) // Write out callback delegate types
       writer ~= (i == 0 ? [""d, "// Callbacks"] : []) ~ cb.getDelegPrototype;
@@ -761,7 +772,7 @@ final class Repo : Base
     writer ~= ["module " ~ namespace ~ ".Global;", ""];
 
     // Create the function writers first to construct the imports
-    auto imports = new ImportSymbols(globalStruct.defCode.imports, namespace);
+    auto imports = new ImportSymbols(globalStruct.defCode.imports, globalStruct);
     imports.add("Gid.gid");
     imports.add(namespace ~ ".c.functions");
     imports.add(namespace ~ ".c.types");
@@ -773,8 +784,7 @@ final class Repo : Base
       if (fn.disable)
         continue;
 
-      funcWriters ~= new FuncWriter(fn);
-      imports.merge(funcWriters[$ - 1].imports);
+      funcWriters ~= new FuncWriter(fn, imports);
     }
 
     imports.remove("Global");

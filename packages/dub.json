@@ -8,10 +8,14 @@
   "dependencies": {
     ":cairo": "*",
     ":freetype2": "*",
+    ":gdk": "*",
     ":gdkpixbuf": "*",
     ":gio": "*",
     ":glib": "*",
     ":gmodule": "*",
+    ":graphene": "*",
+    ":gsk": "*",
+    ":gtk": "*",
     ":harfbuzz": "*",
     ":pango": "*",
     ":pangocairo": "*"
@@ -19,10 +23,14 @@
   "subPackages": [
     "./cairo/",
     "./freetype2/",
+    "./gdk/",
     "./gdkpixbuf/",
     "./gio/",
     "./glib/",
     "./gmodule/",
+    "./graphene/",
+    "./gsk/",
+    "./gtk/",
     "./harfbuzz/",
     "./pango/",
     "./pangocairo/"

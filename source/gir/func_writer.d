@@ -6,6 +6,7 @@ import import_symbols;
 import gir.deleg_writer;
 import gir.func;
 import gir.param;
+import gir.structure;
 import gir.type_node;
 import std_includes;
 import utils;
@@ -13,9 +14,9 @@ import utils;
 /// Function writer class
 class FuncWriter
 {
-  this(Func func)
+  this(Func func, ImportSymbols imports)
   {
-    this.imports = new ImportSymbols(func.repo.namespace);
+    this.imports = imports;
     imports.add("Gid.gid");
     imports.add("Types");
     imports.add(func.repo.namespace ~ ".c.functions");
@@ -45,8 +46,7 @@ class FuncWriter
         if (param.scope_ == ParamScope.Call)
           preCall ~= "static " ~ param.dType ~ " _static_" ~ param.dName ~ ";\n\n";
 
-        auto delegWriter = new DelegWriter(param);
-        imports.merge(delegWriter.imports);
+        auto delegWriter = new DelegWriter(param, imports);
         preCall ~= delegWriter.generate() ~ "\n";
 
         if (param.scope_ == ParamScope.Call)
@@ -158,37 +158,41 @@ class FuncWriter
         call ~= "auto _retval = ";
         break;
       case Boxed:
+        auto className = imports.resolveClassName(cast(Structure)func.typeObject);
+
         if (!func.isCtor)
-          decl ~= func.dType ~ " ";
+          decl ~= className ~ " ";
 
         preCall ~= func.cType ~ " _cretval;\n";
         call ~= "_cretval = ";
 
         if (!func.isCtor)
-          postCall ~= func.dType ~ " _retval = new "d ~ func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval, "
+          postCall ~= "auto _retval = new "d ~ className ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval, "
             ~ func.fullOwnerStr ~ ");\n";
         else // Constructor method
           postCall ~= "this(_cretval, " ~ func.fullOwnerStr ~ ");\n";
         break;
       case Opaque, Wrap, Reffed, Object, Interface:
+        if (func.kind == TypeKind.Object || func.kind == TypeKind.Interface)
+          imports.add("GObject.ObjectG");
+
+        auto className = imports.resolveClassName(cast(Structure)func.typeObject);
+
         if (!func.isCtor)
-          decl ~= func.dType ~ " ";
+          decl ~= className ~ " ";
 
         preCall ~= func.cType ~ " _cretval;\n";
         call ~= "_cretval = ";
 
         if (!func.isCtor)
         {
-          postCall ~= func.dType ~ " _retval = " ~ ((func.kind == Object || func.kind == Interface)
+          postCall ~= "auto _retval = " ~ ((func.kind == Object || func.kind == Interface)
             ? "ObjectG.getDObject!"d : "new "d);
-          postCall ~= func.dType ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval"
+          postCall ~= className ~ "(cast(" ~ func.cType.stripConst ~ ")_cretval"
             ~ (func.kind != TypeKind.Wrap ? ", " ~ func.fullOwnerStr : "") ~ ");\n";
         }
         else // Constructor method
           postCall ~= "this(_cretval" ~ (func.kind != TypeKind.Wrap ? ", " ~ func.fullOwnerStr : "") ~ ");\n";
-
-        if (func.kind == TypeKind.Object || func.kind == TypeKind.Interface)
-          imports.add("GObject.ObjectG");
         break;
       case Unknown, Container, Namespace:
         assert(0, "Unsupported return value type '" ~ func.dType.to!string ~ "' (" ~ func.kind.to!string ~ ") for "
@@ -249,13 +253,15 @@ class FuncWriter
           postCall ~= "_retval[i] = _cretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed:
-          postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(cast(void*)" ~ (func.cType.countStars == 1 ? "&"d : "")
+          auto className = imports.resolveClassName(cast(Structure)elemType.typeObject);
+          postCall ~= "_retval[i] = new " ~ className ~ "(cast(void*)" ~ (func.cType.countStars == 1 ? "&"d : "")
             ~ "_cretval[i], " ~ func.fullOwnerStr ~ ");\n";
           break;
         case Object, Interface:
-          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ elemType.dType ~ "(_cretval[i], "
-            ~ func.fullOwnerStr ~ ");\n";
           imports.add("GObject.ObjectG");
+          auto className = imports.resolveClassName(cast(Structure)elemType.typeObject);
+          postCall ~= "_retval[i] = ObjectG.getDObject!" ~ className ~ "(_cretval[i], "
+            ~ func.fullOwnerStr ~ ");\n";
           break;
         case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
@@ -272,11 +278,11 @@ class FuncWriter
   {
     if (func.containerType == ContainerType.ByteArray)
     {
+      imports.add("GLib.ByteArray");
       decl ~= "ByteArray ";
       preCall ~= "GByteArray* _cretval;\n";
       call ~= "_cretval = ";
       postCall ~= "ByteArray _retval = _cretval ? new ByteArray(_cretval) : null;\n";
-      imports.add("GLib.ByteArray");
       return;
     }
     else if (func.containerType == ContainerType.HashTable)
@@ -291,12 +297,12 @@ class FuncWriter
       return;
     }
 
-    decl ~= func.dType ~ " ";
+    imports.add(func.containerType.getModule(func.repo.defs));
+    decl ~= func.dType ~ " "; // FIXME - Not using class aliases from ImportSymbols currently
     preCall ~= func.cType ~ " _cretval;\n";
     call ~= "_cretval = ";
     postCall ~= func.dType ~ " _retval = _cretval ? new " ~ func.dType ~ "(_cretval, GidOwnership."
       ~ func.ownership.to!dstring ~ ") : null;\n";
-    imports.add(func.containerType.getModule);
   }
 
   /// Process parameter
@@ -304,7 +310,7 @@ class FuncWriter
   {
     if (param.isInstanceParam) // Instance parameter?
     {
-      call ~= "cPtr" ~ "!" ~ param.cTypeRemPtr.stripConst;
+      call ~= "cast(" ~ param.cTypeRemPtr.stripConst ~ "*)cPtr";
       return;
     }
 
@@ -416,7 +422,7 @@ class FuncWriter
         break;
       case Pointer:
         addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
-        addCallParam(param.dName);
+        addCallParam((param.direction == ParamDirection.Out ? "&"d : ""d) ~ param.dName);
         break;
       case Callback:
         if (cast(Func)param.typeObject)
@@ -431,17 +437,19 @@ class FuncWriter
         }
         break;
       case Opaque, Wrap, Boxed, Reffed, Object:
+        auto className = imports.resolveClassName(cast(Structure)param.typeObject);
+
         if (param.direction == ParamDirection.In)
         {
-          addDeclParam(param.dType ~ " " ~ param.dName);
-          addCallParam(param.dName ~ " ? " ~ param.dName ~ ".cPtr!" ~ param.cTypeRemPtr.stripConst ~ " : null");
+          addDeclParam(className ~ " " ~ param.dName);
+          addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)" ~ param.dName ~ ".cPtr : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
-          addDeclParam("out " ~ param.dType ~ " " ~ param.dName);
+          addDeclParam("out " ~ className ~ " " ~ param.dName);
           preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = " ~ "new " ~ param.dType;
+          postCall ~= param.dName ~ " = " ~ "new " ~ className;
           postCall ~= "(cast(void*)" ~ (param.cTypeRemPtr.endsWith('*') ? "_"d : "&_"d) ~ param.dName;
           postCall ~= (param.kind != TypeKind.Wrap ? (", " ~ param.fullOwnerStr) : "") ~ ");\n";
         }
@@ -449,18 +457,19 @@ class FuncWriter
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
         break;
       case Interface:
+        auto className = imports.resolveClassName(cast(Structure)param.typeObject);
+
         if (param.direction == ParamDirection.In)
         {
-          addDeclParam(param.dType ~ " " ~ param.dName);
-          addCallParam(param.dName ~ " ? (cast(ObjectG)" ~ param.dName ~ ").cPtr!" ~ param.cTypeRemPtr.stripConst
-            ~ " : null");
+          addDeclParam(className ~ " " ~ param.dName);
+          addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)(cast(ObjectG)" ~ param.dName ~ ").cPtr : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
-          addDeclParam("out " ~ param.dType ~ " " ~ param.dName);
+          addDeclParam("out " ~ className ~ " " ~ param.dName);
           preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? ObjectG.getDObject!" ~ param.dType ~ "(_"
+          postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? ObjectG.getDObject!" ~ className ~ "(_"
             ~ param.dName ~ ", " ~ param.fullOwnerStr ~ ") : null;\n";
         }
         else // InOut
@@ -525,8 +534,7 @@ class FuncWriter
         preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
 
         preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= "
-          ~ (elemType.cType.endsWith('*') ? ""d : "*"d) ~ "obj.cPtr!"
-          ~ elemType.cTypeRemPtr.stripConst ~ ";\n";
+          ~ (elemType.cType.endsWith('*') ? ""d : "*"d) ~ "cast(" ~ elemType.cTypeRemPtr ~ "*)obj.cPtr;\n";
 
         if (param.zeroTerminated)
           preCall ~= "_tmp" ~ param.dName ~ ".length++;\n";
@@ -536,8 +544,8 @@ class FuncWriter
       case Opaque, Reffed, Object:
         preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
 
-        preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? obj.cPtr!"
-          ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
+        preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= obj ? cast("
+          ~ elemType.cTypeRemPtr.stripConst ~ "*)obj.cPtr : null;\n";
 
         if (param.zeroTerminated)
           preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
@@ -546,10 +554,11 @@ class FuncWriter
           ~ param.dName ~ ".ptr" ~ ";\n\n";
         break;
       case Interface:
+        imports.add("GObject.ObjectG");
         preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
 
         preCall ~= "foreach (obj; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName
-          ~ " ~= obj ? (cast(ObjectG)obj).cPtr!" ~ elemType.cTypeRemPtr.stripConst ~ " : null;\n";
+          ~ " ~= obj ? cast(" ~ elemType.cTypeRemPtr.stripConst ~ "*)(cast(ObjectG)obj).cPtr : null;\n";
 
         if (param.zeroTerminated)
           preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";

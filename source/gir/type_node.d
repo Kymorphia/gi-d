@@ -230,8 +230,6 @@ class TypeNode : Base
       kind = TypeKind.Container;
       dType = null;
     }
-
-    resolve; // Attempt to resolve dependencies
   }
 
   // Derive array element C type from the array C type
@@ -419,14 +417,16 @@ class TypeNode : Base
 
     if (containerType != ContainerType.None)
     {
-      if (auto mod = containerType.getModule)
+      if (auto mod = containerType.getModule(repo.defs))
         imports.add(mod);
 
       foreach (elem; elemTypes) // Add imports for each of the container types
         elem.addImports(imports, curRepo);
     }
-    else if (cast(TypeNode)typeObject ? (cast(TypeNode)typeObject).inModule : inModule)
-      imports.add(fullDType);
+    else if (cast(Structure)typeObject && (cast(Structure)typeObject).inModule)
+      imports.add(cast(Structure)typeObject);
+    else if (cast(Structure)this && inModule)
+      imports.add(cast(Structure)this);
   }
 
   Repo typeRepo; /// Repo containing the dType (can be this.repo)
@@ -513,16 +513,16 @@ long containerTypeElemCount(ContainerType container)
  * Get the module name which should be imported for a given container type.
  * Params:
  *   container = The container type
- * Returns: The module name or null if it has no module
+ * Returns: The module structure or null if the container has no module
  */
-dstring getModule(ContainerType container)
+Structure getModule(ContainerType container, Defs defs)
 {
   if (container == ContainerType.Array || container == ContainerType.HashTable)
     return null;
   else if (container == ContainerType.ArrayG)
-    return "GLib.ArrayG";
+    return cast(Structure)defs.findTypeObject("GLib.ArrayG");
   else
-    return ContainerTypeValues[cast(int)container];
+    return cast(Structure)defs.findTypeObject(ContainerTypeValues[cast(int)container]);
 }
 
 /// Basic type names

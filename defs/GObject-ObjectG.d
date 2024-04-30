@@ -71,9 +71,9 @@ class ObjectG
    *   addRef = true to add a reference with g_object_ref(), false otherwise (default)
    * Returns: The C object (no reference is added)
    */
-  T* cPtr(T)(bool addRef = false)
+  void* cPtr(bool addRef = false)
   {
-    return cast(T*)(addRef ? g_object_ref(cInstancePtr) : cInstancePtr);
+    return addRef ? g_object_ref(cInstancePtr) : cInstancePtr;
   }
 
   /**
@@ -135,6 +135,6 @@ class ObjectG
    */
   ulong connectSignalClosure(string signalDetail, DClosure closure, bool after = false)
   {
-    return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), (cast(Closure)closure).cPtr!GClosure, after);
+    return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), cast(GClosure*)(cast(Closure)closure).cPtr, after);
   }
 }

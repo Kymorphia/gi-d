@@ -77,6 +77,17 @@ final class Field : TypeNode
     }
   }
 
+  override void resolve()
+  {
+    super.resolve;
+
+    if (callback) // Embedded callback type
+      callback.resolve;
+    else if (directStruct) // Embedded structure
+      foreach (f; directStruct.fields)
+        f.resolve;
+  }
+
   override void verify()
   {
     if (disable || private_)

@@ -1,3 +1,5 @@
+//!kind ErrorG Wrap
+
 import GLib.Types;
 
 class ErrorG : Exception
@@ -20,9 +22,9 @@ class ErrorG : Exception
     g_error_free(errPtr);
   }
 
-  T* cPtr(T)()
+  void* cPtr()
   {
-    return cast(T*)errPtr;
+    return cast(void*)errPtr;
   }
 
   @property Quark domain()
