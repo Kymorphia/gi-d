@@ -6,7 +6,7 @@
   "license": "MIT",
   "targetType": "dynamicLibrary",
   "importPaths": [".", ".."],
-  "sourcePaths": ["GModule", ".."],
+  "sourcePaths": ["GModule"],
   "dependencies": {
     "gid:glib": "*"
   }

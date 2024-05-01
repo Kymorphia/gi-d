@@ -6,7 +6,7 @@
   "license": "MIT",
   "targetType": "dynamicLibrary",
   "importPaths": [".", ".."],
-  "sourcePaths": ["HarfBuzz", ".."],
+  "sourcePaths": ["HarfBuzz"],
   "dependencies": {
     "gid:glib": "*",
     "gid:freetype2": "*"

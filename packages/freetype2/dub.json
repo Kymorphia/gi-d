@@ -6,5 +6,8 @@
   "license": "MIT",
   "targetType": "dynamicLibrary",
   "importPaths": [".", ".."],
-  "sourcePaths": ["freetype2", ".."]
+  "sourcePaths": ["freetype2"],
+  "dependencies": {
+    "gid:glib": "*"
+  }
 }

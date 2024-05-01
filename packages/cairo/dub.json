@@ -6,7 +6,7 @@
   "license": "MIT",
   "targetType": "dynamicLibrary",
   "importPaths": [".", ".."],
-  "sourcePaths": ["cairo", ".."],
+  "sourcePaths": ["cairo"],
   "dependencies": {
     "gid:glib": "*"
   }

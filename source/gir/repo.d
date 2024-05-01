@@ -458,7 +458,7 @@ final class Repo : Base
 
     output ~= `  "targetType": "dynamicLibrary",` ~ "\n";
     output ~= `  "importPaths": [".", ".."],` ~ "\n";
-    output ~= `  "sourcePaths": ["` ~ namespace.to!string ~ `", ".."]`;
+    output ~= `  "sourcePaths": ["` ~ namespace.to!string ~ `"]`;
 
     if (!includes.empty)
     { // Use merge repo names as needed
