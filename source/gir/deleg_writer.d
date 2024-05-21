@@ -2,7 +2,6 @@ module gir.deleg_writer;
 
 import code_writer;
 import defs;
-import import_symbols;
 import gir.func;
 import gir.param;
 import gir.structure;
@@ -13,14 +12,13 @@ import utils;
 /// Delegate C callback marshal writer class
 class DelegWriter
 {
-  this(Param delegParam, ImportSymbols imports)
+  this(Param delegParam)
   {
     this.delegParam = delegParam;
-    this.imports = imports;
-    callback = cast(Func)delegParam.typeObject;
+    callback = cast(Func)delegParam.typeObjectRoot;
 
     assert(this.callback, "DelegWriter parameter " ~ delegParam.fullName.to!string ~ " has "
-      ~ delegParam.typeObject.to!string ~ " typeObject");
+      ~ delegParam.typeObjectRoot.to!string ~ " typeObjectRoot");
 
     process();
   }
@@ -70,84 +68,93 @@ class DelegWriter
   /// Process return value
   private void processReturn()
   {
-    if (callback.origDType == "none")
+    auto retVal = callback.returnVal;
+
+    if (!retVal || retVal.origDType == "none")
     {
       decl ~= "void ";
       return;
     }
 
-    callback.addImports(imports, callback.repo); // Add imports required for return value type
-
-    if (callback.containerType == ContainerType.Array)
+    if (retVal.containerType == ContainerType.Array)
     {
       processReturnArray();
       return;
     }
-    else if (callback.containerType != ContainerType.None)
+    else if (retVal.containerType != ContainerType.None)
     {
       processReturnContainer();
       return;
     }
 
-    decl ~= callback.cType ~ " ";
+    decl ~= retVal.cType ~ " ";
 
-    final switch (callback.kind) with (TypeKind)
+    final switch (retVal.kind) with (TypeKind)
     {
       case Basic, BasicAlias, Pointer:
-        call ~= callback.cType ~ " _retval = ";
+        call ~= retVal.cType ~ " _retval = ";
         break;
       case String:
-        preCall ~= callback.dType ~ " _dretval;\n";
+        preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-        postCall ~= callback.cType ~ " _retval = _dretval.toCString("d ~ callback.fullOwnerStr ~ ");\n";
+        postCall ~= retVal.cType ~ " _retval = _dretval.toCString("d ~ retVal.fullOwnerStr ~ ");\n";
         break;
       case Enum, Flags:
-        preCall ~= callback.dType ~ " _dretval;\n";
+        preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-        postCall ~= callback.cType ~ " _retval = cast(" ~ callback.cType ~ ")_dretval;\n";
+        postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cType ~ ")_dretval;\n";
         break;
       case Simple:
-        preCall ~= callback.dType ~ " _dretval;\n";
+        preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-        postCall ~= callback.cType ~ " _retval;\nif (_dretval)\n_retval = *_dretval;\n";
+        postCall ~= retVal.cType ~ " _retval;\nif (_dretval)\n_retval = *_dretval;\n";
         break;
-      case Opaque, Wrap, Boxed, Reffed, Object, Interface:
-        preCall ~= callback.dType ~ " _dretval;\n";
+      case Opaque, Wrap, Boxed, Reffed, Object:
+        preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-        postCall ~= callback.cType ~ " _retval = cast(" ~ callback.cTypeRemPtr ~ "*)_dretval.cPtr("
-          ~ callback.fullOwnerStr ~ ");\n";
+        postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cTypeRemPtr ~ "*)_dretval.cPtr("
+          ~ retVal.fullOwnerStr ~ ");\n";
+        break;
+      case Interface:
+        auto objectGSym = retVal.repo.defs.resolveSymbol("GObject.ObjectG");
+        preCall ~= retVal.dType ~ " _dretval;\n";
+        call ~= "_dretval = ";
+        postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cTypeRemPtr ~ "*)(cast(" ~ objectGSym ~ ")_dretval).cPtr("
+          ~ retVal.fullOwnerStr ~ ");\n";
         break;
       case Callback, Unknown, Container, Namespace:
-        assert(0, "Unsupported delegate return value type '" ~ callback.dType.to!string
-          ~ "' (" ~ callback.kind.to!string ~ ") for " ~ callback.fullName.to!string);
+        assert(0, "Unsupported delegate return value type '" ~ retVal.dType.to!string
+          ~ "' (" ~ retVal.kind.to!string ~ ") for " ~ callback.fullName.to!string);
     }
   }
 
   /// Process array return value
   private void processReturnArray()
   {
-    assert(callback.ownership == Ownership.Full, "Unsupported delegate return array ownership '"
-      ~ callback.ownership.to!string ~ "' for " ~ callback.fullName.to!string);
+    auto retVal = callback.returnVal;
 
-    auto elemType = callback.elemTypes[0];
+    assert(retVal.ownership == Ownership.Full, "Unsupported delegate return array ownership '"
+      ~ retVal.ownership.to!string ~ "' for " ~ callback.fullName.to!string);
 
-    decl ~= callback.cType ~ " ";
+    auto elemType = retVal.elemTypes[0];
+
+    decl ~= retVal.cType ~ " ";
     preCall ~= elemType.dType ~ "[] _dretval;\n";
     call ~= "_dretval = ";
-    postCall ~= callback.cType ~ " _retval;\n\nif (_dretval.length > 0)\n{\n";
+    postCall ~= retVal.cType ~ " _retval;\n\nif (_dretval.length > 0)\n{\n";
 
-    if (callback.fixedSize != ArrayNotFixed) // Array is a fixed size? Add an array size assertion.
-      postCall ~= "assert(!_dretval || _dretval.length == " ~ callback.fixedSize.to!dstring
-        ~ `, "Delegate '` ~ callback.dType ~ `' should return array of size ` ~ callback.fixedSize.to!dstring
+    if (retVal.fixedSize != ArrayNotFixed) // Array is a fixed size? Add an array size assertion.
+      postCall ~= "assert(!_dretval || _dretval.length == " ~ retVal.fixedSize.to!dstring
+        ~ `, "Delegate '` ~ retVal.dType ~ `' should return array of size ` ~ retVal.fixedSize.to!dstring
         ~ ` not " ~ _dretval.length.to!string);\n`;
 
-    if (callback.zeroTerminated)
+    if (retVal.zeroTerminated)
     {
-      postCall ~= "_retval = cast(" ~ callback.cType ~ ")g_malloc_n(_dretval.length + 1, (*_retval).sizeof);\n";
+      postCall ~= "_retval = cast(" ~ retVal.cType ~ ")g_malloc_n(_dretval.length + 1, (*_retval).sizeof);\n";
       postCall ~= "zero(cast(void*)&_retval[_dretval.length], (*_retval).sizeof);";
     }
     else
-      postCall ~= "_retval = cast(" ~ callback.cType ~ ")g_malloc_n(_dretval.length, (*_retval).sizeof);\n";
+      postCall ~= "_retval = cast(" ~ retVal.cType ~ ")g_malloc_n(_dretval.length, (*_retval).sizeof);\n";
 
     if (elemType.kind.among(TypeKind.Basic, TypeKind.BasicAlias, TypeKind.Enum))
       postCall ~= "_retval[0 .. _dretval.length] = _dretval[0 .. _dretval.length];\n";
@@ -168,7 +175,7 @@ class DelegWriter
           postCall ~= "_retval[i] = _dretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed, Object, Interface:
-          postCall ~= "_retval[i] = _dretval[i].cPtr(" ~ callback.fullOwnerStr ~ ");\n";
+          postCall ~= "_retval[i] = _dretval[i].cPtr(" ~ retVal.fullOwnerStr ~ ");\n";
           break;
         case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported delegate return value array type '" ~ elemType.dType.to!string
@@ -178,30 +185,32 @@ class DelegWriter
 
     postCall ~= "}\n\n";
 
-    if (callback.lengthParam) // Array has length parameter?
-      postCall ~= callback.lengthParam.dName ~ " = cast(" ~ callback.lengthParam.dName ~ ".typeof)_dretval.length;\n";
+    if (retVal.lengthParam) // Array has length parameter?
+      postCall ~= retVal.lengthParam.dName ~ " = cast(" ~ retVal.lengthParam.dName ~ ".typeof)_dretval.length;\n";
   }
 
   /// Process a return container (not Array)
   private void processReturnContainer()
   {
-    assert(callback.ownership == Ownership.Full, "Unsupported delegate return array ownership '"
-      ~ callback.ownership.to!string ~ "' for " ~ callback.fullName.to!string);
+    auto retVal = callback.returnVal;
 
-    if (callback.containerType == ContainerType.ByteArray)
+    assert(retVal.ownership == Ownership.Full, "Unsupported delegate return array ownership '"
+      ~ retVal.ownership.to!string ~ "' for " ~ retVal.fullName.to!string);
+
+    if (retVal.containerType == ContainerType.ByteArray)
     {
+      auto byteArraySym = retVal.repo.defs.resolveSymbol("GLib.ByteArray");
       decl ~= "GByteArray ";
-      call ~= "ByteArray* _dretval = ";
+      call ~= byteArraySym ~ "* _dretval = ";
       postCall ~= "GByteArray* _retval = _dretval ? _dretval.cPtr(true) : null;\n";
-      imports.add("GLib.ByteArray");
       return;
     }
-    else if (callback.containerType == ContainerType.HashTable)
+    else if (retVal.containerType == ContainerType.HashTable)
       assert(0, "Unsupported delegate return type GHashTable for " ~ callback.fullName.to!string);
 
-    decl ~= callback.cType ~ " ";
-    call ~= callback.dType ~ "_dretval = ";
-    postCall ~= callback.cType ~ " _retval = _dretval ? _dretval.cPtr(true) : null;\n";
+    decl ~= retVal.cType ~ " ";
+    call ~= retVal.dType ~ "_dretval = ";
+    postCall ~= retVal.cType ~ " _retval = _dretval ? _dretval.cPtr(true) : null;\n";
   }
 
   /// Process parameter
@@ -209,8 +218,6 @@ class DelegWriter
   {
     if (param.isInstanceParam) // Instance parameter or closure data? Skip
       return;
-
-    param.addImports(imports, param.repo);
 
     if (param.isArrayLength) // Array length parameter?
     {
@@ -258,20 +265,21 @@ class DelegWriter
         addCallParam("*"d ~ param.dName);
         break;
       case Opaque, Wrap, Boxed, Reffed, Object, Interface:
-        auto className = imports.resolveClassName(cast(Structure)param.typeObject);
-
         if (param.direction == ParamDirection.In)
         {
-          addCallParam(param.dName ~ " ? " ~ ((param.kind == Object || param.kind == Interface)
-            ? "ObjectG.getDObject!"d : "new "d) ~ className ~ "(cast(void*)" ~ param.dName ~ ", " ~ param.fullOwnerStr
-            ~ ") : null");
-
           if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
-            imports.add("GObject.ObjectG");
+          {
+            auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
+            addCallParam(param.dName ~ " ? " ~ objectGSym ~ ".getDObject!" ~ param.dType ~ "(cast(void*)"
+              ~ param.dName ~ ", " ~ param.fullOwnerStr ~ ") : null");
+          }
+          else
+            addCallParam(param.dName ~ " ? new " ~ param.dType ~ "(cast(void*)" ~ param.dName ~ ", "
+              ~ param.fullOwnerStr ~ ") : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
-          preCall ~= className ~ " _" ~ param.dName ~ ";\n";
+          preCall ~= param.dType ~ " _" ~ param.dName ~ ";\n";
           addCallParam("_" ~ param.dName);
           postCall ~= "*" ~ param.dName ~ " = _" ~ param.dName ~ ".cPtr(true);\n";
         }
@@ -332,9 +340,9 @@ class DelegWriter
             ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
           break;
         case Object, Interface:
-          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= ObjectG.getDObject(" ~ param.dName
-            ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
-          imports.add("GObject.ObjectG");
+          auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
+          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ objectGSym ~ ".getDObject("
+            ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
           break;
         case Unknown, Callback, Container, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
@@ -375,14 +383,15 @@ class DelegWriter
       auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
       preCall ~= mapType ~ " _" ~ param.dName;
 
-      postCall ~= "*" ~ param.dName ~ " = mapToHashTable!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType
-        ~ ")(_" ~ param.dName ~ ");\n";
+      auto mapToHashTableSym = param.repo.defs.resolveSymbol("Gid.mapToHashTable");
+      postCall ~= "*" ~ param.dName ~ " = " ~ mapToHashTableSym ~ "!(" ~ param.elemTypes[0].dType ~ ", "
+        ~ param.elemTypes[1].dType ~ ")(_" ~ param.dName ~ ");\n";
 
-      imports.add("Gid.gid");
       return;
     }
 
     addDeclParam(param.cType ~ " " ~ param.dName);
+    auto gidOwnershipSym = param.repo.defs.resolveSymbol("Gid.GidOwnership");
 
     auto elemType = param.elemTypes[0];
 
@@ -390,14 +399,14 @@ class DelegWriter
     {
       case In, InOut:
         postCall ~= "_" ~ param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
-          ~ ")(_" ~ param.dName ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ");\n";
+          ~ ")(_" ~ param.dName ~ ", " ~ gidOwnershipSym ~ "." ~ param.ownership.to!dstring ~ ");\n";
         addCallParam("_" ~ param.dName);
         break;
       case Out:
         preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
         addCallParam("&_" ~ param.dName);
         postCall ~= param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
-          ~ ")(_" ~ param.dName ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ");\n";
+          ~ ")(_" ~ param.dName ~ ", " ~ gidOwnershipSym ~ "." ~ param.ownership.to!dstring ~ ");\n";
         break;
     }
   }
@@ -418,7 +427,7 @@ class DelegWriter
     if (postCall.length > 0)
       output ~= postCall ~ "\n";
 
-    if (callback.origDType != "none")
+    if (callback.returnVal && callback.returnVal.origDType != "none")
       output ~= "return _retval;\n";
 
     return output ~ "}\n";
@@ -426,7 +435,6 @@ class DelegWriter
 
   Param delegParam; /// The parameter of the callback delegate
   Func callback; /// The resolved callback delegate type of parameter
-  ImportSymbols imports; /// Import symbols needed to support the function
   dstring decl; /// Function declaration
   dstring preCall; /// Pre-call code for call return variable, call output parameter variables, and input variable processing
   dstring call; /// The C function call

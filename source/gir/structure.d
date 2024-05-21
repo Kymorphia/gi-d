@@ -2,7 +2,6 @@ module gir.structure;
 
 import code_writer;
 import defs;
-import import_symbols;
 import gir.base;
 import gir.field;
 import gir.func;
@@ -116,8 +115,19 @@ final class Structure : TypeNode
       {
         if (field.kind == TypeKind.Unknown)
           retKind = TypeKind.Unknown;
-        else if (!field.callback && !field.kind.among(TypeKind.Basic, TypeKind.BasicAlias, TypeKind.Callback,
-          TypeKind.Enum, TypeKind.Flags))
+        else if (field.containerType == ContainerType.Array)
+        {
+          if (field.elemTypes.empty || field.elemTypes[0].kind == TypeKind.Unknown)
+            retKind = TypeKind.Unknown;
+          else if (!field.elemTypes[0].kind.among(TypeKind.Basic, TypeKind.BasicAlias,
+              TypeKind.Callback, TypeKind.Enum, TypeKind.Flags))
+          {
+            retKind = TypeKind.Wrap;
+            break;
+          }
+        }
+        else if (field.containerType != ContainerType.None || (!field.callback && !field.kind.among(TypeKind.Basic,
+            TypeKind.BasicAlias, TypeKind.Callback, TypeKind.Enum, TypeKind.Flags)))
         {
           retKind = TypeKind.Wrap;
           break;
@@ -189,11 +199,6 @@ final class Structure : TypeNode
     if (auto field = cast(Field)parent) // Structure as a field of another structure?
       return;
 
-    if (kind == TypeKind.Unknown)
-      kind = calcKind;
-
-    super.resolve;
-
     foreach (f; fields) // Resolve structure fields
       f.resolve;
 
@@ -202,6 +207,11 @@ final class Structure : TypeNode
 
     foreach (sg; signals) // Resolve structure signals
       sg.resolve;
+
+    if (kind == TypeKind.Unknown)
+      kind = calcKind;
+
+    super.resolve;
 
     if (kind == TypeKind.Boxed && parentType.empty)
       parentType = "GLib.Boxed";
@@ -285,14 +295,8 @@ final class Structure : TypeNode
     auto writer = new CodeWriter(buildPath(path, dType.to!string ~ (isIfaceTemplate ? "T" : "") ~ ".d")); // Append T to type name for interface mixin template module
     writer ~= ["module " ~ fullName ~ (isIfaceTemplate ? "T;"d : ";"d), ""];
 
-    auto imports = new ImportSymbols(defCode.imports, this);
-
-    imports.add("Gid.gid");
-    imports.add(repo.namespace ~ ".c.functions");
-    imports.add(repo.namespace ~ ".c.types");
-
-    if (kind == TypeKind.Wrap)
-      imports.add("GLib.c.functions"); // For g_free() - FIXME: probably shouldn't pull in everything here
+    repo.defs.beginImports(this);
+    scope(exit) repo.defs.endImports;
 
     dstring[] propMethods;
     FuncWriter[] funcWriters;
@@ -302,40 +306,36 @@ final class Structure : TypeNode
     if (defCode.genFuncs)
     {
       if (kind == TypeKind.Wrap || kind == TypeKind.Boxed)
-        propMethods = constructFieldProps(imports); // Construct wrapper property methods in order to collect imports
+        propMethods = constructFieldProps(); // Construct wrapper property methods in order to collect imports
 
       foreach (fn; functions)
-      {
         if (!fn.disable)
-          funcWriters ~= new FuncWriter(fn, imports);
-      }
+          funcWriters ~= new FuncWriter(fn);
 
       foreach (sig; signals)
       {
         if (!sig.disable)
         {
           codeTrap("struct.signal", sig.fullName);
-          signalWriters ~= new SignalWriter(sig, imports);
-          imports.add("GObject.DClosure");
+          signalWriters ~= new SignalWriter(sig);
         }
       }
     }
 
+    dstring parentStructSym;
     if (parentStruct)
-      parentStruct.addImports(imports, repo); // Add parent to imports
+      parentStructSym = parentStruct.dType; // Add parent to imports
 
     foreach (st; implementStructs) // Add implemented interfaces to imports
-    {
-      st.addImports(imports, repo);
-      imports.add(st.fullDType ~ "T"); // Import interface template module also
-    }
+      repo.defs.importManager.resolveDType(st);
 
     if (!errorQuarks.empty)
-      imports.add("GLib.ErrorG");
+    {
+      repo.defs.importManager.add("GLib.Types");
+      repo.defs.importManager.add("GLib.ErrorG");
+    }
 
-    imports.remove(fullDType);
-
-    if (imports.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
+    if (repo.defs.importManager.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
       writer ~= "";
 
     if (defCode.preClass.length > 0)
@@ -357,7 +357,7 @@ final class Structure : TypeNode
       else
       { // Create range of parent type and implemented interface types, but filter out interfaces already implemented by ancestors
         objIfaces = implementStructs.filter!(x => !getIfaceAncestor(x)).map!(x => x.dType).array;
-        auto parentAndIfaces = (parentStruct ? [imports.resolveClassName(parentStruct)] : []) ~ objIfaces;
+        auto parentAndIfaces = (parentStruct ? [parentStructSym] : []) ~ objIfaces;
         writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.join(", ") : "");
       }
     }
@@ -443,7 +443,7 @@ final class Structure : TypeNode
     else if (kind == TypeKind.Opaque && pointer)
       writer ~= ["cInstancePtr = cast(" ~ cType ~ ")ptr;", "", "this.owned = owned;", "}"];
     else if (kind == TypeKind.Wrap)
-      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (ownedRef)", "g_free(ptr);", "}"];
+      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (ownedRef)", "safeFree(ptr);", "}"];
     else if (kind == TypeKind.Reffed && !parentStruct)
       writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (!ownedRef)", glibRefFunc
         ~ "(cInstancePtr);", "}", "", "~this()", "{", glibUnrefFunc ~ "(cInstancePtr);", "}", ""];
@@ -473,7 +473,7 @@ final class Structure : TypeNode
   }
 
   // Construct struct wrapper property methods
-  private dstring[] constructFieldProps(ImportSymbols imports)
+  private dstring[] constructFieldProps()
   {
     dstring[] lines;
 
@@ -488,8 +488,6 @@ final class Structure : TypeNode
 
       assert(f.containerType == ContainerType.None, "Unsupported structure field " ~ f.fullName.to!string
           ~ " with container type " ~ f.containerType.to!string);
-
-      f.addImports(imports, repo);
 
       with (TypeKind) if (!f.kind.among(Callback, Simple))
         lines ~= ["", "@property " ~ f.dType ~ " " ~ f.dName ~ "()", "{"];
@@ -515,12 +513,7 @@ final class Structure : TypeNode
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
-          {
             lines ~= ["", "@property " ~ f.cType ~ " " ~ f.dName ~ "()", "{"];
-
-            if (auto typeNode = cast(TypeNode)f.typeObject)
-              typeNode.addImports(imports, repo);
-          }
           else // Callback function type is directly defined in field
             lines ~= ["", "@property " ~ f.name.camelCase(true) ~ "FuncType " ~ f.dName ~ "()", "{"];
 
@@ -535,8 +528,8 @@ final class Structure : TypeNode
             lines ~= "return new " ~ f.dType ~ "(cast(" ~ f.cType.stripConst ~ ")" ~ cPtr ~ "." ~ f.dName ~ ");";
           break;
         case Object:
-          lines ~= "return ObjectG.getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
-          imports.add("GObject.ObjectG");
+          auto objectGSym = repo.defs.resolveSymbol("GObject.ObjectG");
+          lines ~= "return " ~ objectGSym ~ ".getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
           break;
         case Unknown, Interface, Container, Namespace:
           throw new Exception(
@@ -558,11 +551,8 @@ final class Structure : TypeNode
           lines ~= cPtr ~ "." ~ f.dName ~ " = propval;";
           break;
         case String:
-          lines ~= [
-            "g_free(cast(void*)" ~ cPtr ~ "." ~ f.dName ~ ");",
-            cPtr ~ "." ~ f.dName ~ " = propval.toCString(true);"
-          ];
-          imports.add("GLib.c.functions");
+          lines ~= ["safeFree(cast(void*)" ~ cPtr ~ "." ~ f.dName ~ ");",
+            cPtr ~ "." ~ f.dName ~ " = propval.toCString(true);"];
           break;
         case Enum, Flags:
           lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";
@@ -573,12 +563,7 @@ final class Structure : TypeNode
           break;
         case Callback:
           if (f.typeObject) // Callback function is an alias type?
-          {
             lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.cType ~ " propval)", "{"];
-
-            if (auto typeNode = cast(TypeNode)f.typeObject)
-              typeNode.addImports(imports, repo);
-          }
           else // Callback function type is directly defined in field
             lines ~= ["", "@property void " ~ f.dName ~ "(" ~ f.name.camelCase(true) ~ "FuncType propval)", "{"];
 

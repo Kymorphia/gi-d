@@ -283,7 +283,7 @@ final class Param : TypeNode
       if (closureParam.direction != ParamDirection.In || closureParam.dType != "void*")
         throw new Exception("Closure data should be a void* input parameter");
 
-      auto closureCount = (cast(Func)typeObject).params.count!(x => x.isClosure);
+      auto closureCount = (cast(Func)typeObjectRoot).params.count!(x => x.isClosure);
       if (closureCount != 1)
         throw new Exception("Parameter callback must have one closure argument");
 
@@ -294,15 +294,15 @@ final class Param : TypeNode
 
         auto destroyParam = func.params[destroyIndex];
 
-        if (destroyParam.direction != ParamDirection.In || !cast(Func)destroyParam.typeObject
-            || (cast(Func)destroyParam.typeObject).funcType != FuncType.Callback)
+        if (destroyParam.direction != ParamDirection.In || !cast(Func)destroyParam.typeObjectRoot
+            || (cast(Func)destroyParam.typeObjectRoot).funcType != FuncType.Callback)
           throw new Exception("Unsupported destroy notify callback parameter");
       }
     }
     else if (destroyIndex != NoDestroy)
       throw new Exception("Parameter without a closure has a destroy notify");
 
-    if (auto cb = cast(Func)typeObject)
+    if (auto cb = cast(Func)typeObjectRoot)
       if (!isDestroy && !cb.closureParam && scope_ != ParamScope.Call)
         throw new Exception ("Callback parameters with scope '" ~ scope_.to!string
           ~ "' should have a closure parameter");

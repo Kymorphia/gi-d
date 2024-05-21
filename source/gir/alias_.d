@@ -38,6 +38,19 @@ final class Alias : TypeNode
     cName = node.get("c:type");
   }
 
+  override void resolve()
+  {
+    super.resolve;
+
+    if (typeObject && typeObject.disable)
+      disable = true;
+
+    typeObject = null; // Alias is itself a type, unset typeObject
+
+    if (kind == TypeKind.Basic)
+      kind = TypeKind.BasicAlias;
+  }
+
   private dstring _name; /// D type name for the alias (Gir "name" attribute)
   dstring origName; /// Original alias name
   dstring cName; /// C type name for the alias (Gir "c:type" attribute)

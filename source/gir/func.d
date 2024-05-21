@@ -4,17 +4,17 @@ import std.conv : to;
 
 import code_writer;
 import defs;
+import gir.alias_;
 import gir.field;
 import gir.param;
 import gir.repo;
+import gir.return_value;
 import gir.structure;
 import gir.type_node;
-import import_symbols;
 import utils;
 
 /**
  * Function like object. Can be a function, method, signal, callback, etc.
- * The TypeNode parent class stores the return type information.
  */
 final class Func : TypeNode
 {
@@ -44,6 +44,22 @@ final class Func : TypeNode
     return repo.defs.symbolName(_name.camelCase(firstUpper));
   }
 
+  /**
+   * Get the function full name formatted in D camelCase, with the namespace separated by a period
+   * Params:
+   *   firstUpper = true to make first character uppercase also (defaults to false)
+   */
+  dstring fullDName(bool firstUpper = false)
+  {
+    dstring full = dName;
+
+    for (auto b = this.parent; b; b = b.parent)
+      if (auto s = b.name)
+        full = full.length > 0 ? s ~ "." ~ full : s;
+
+    return full;
+  }
+
   /// Returns true if function has an instance parameter
   bool hasInstanceParam()
   {
@@ -52,14 +68,7 @@ final class Func : TypeNode
 
   override void fromXml(XmlNode node)
   {
-    if (auto retValNode = node.findChild("return-value"))
-    {
-      super.fromXml(retValNode); // The return-value node is used for TypeNode
-      ownership = cast(Ownership)OwnershipValues.countUntil(retValNode.get("transfer-ownership"));
-      nullable = retValNode.get("nullable") == "1";
-    }
-
-    Base.fromXml(node);
+    super.fromXml(node);
 
     _name = origName = node.get("name");
     funcType = cast(FuncType)FuncTypeValues.countUntil(node.id);
@@ -100,16 +109,21 @@ final class Func : TypeNode
         || !shadowedBy.empty)
       disable = true;
 
-    if (lengthParamIndex != ArrayNoLengthParam) // Return array has a length argument?
+    if (returnVal)
     {
-      if (hasInstanceParam) // Array length parameter indexes don't count instance parameters
-        lengthParamIndex++;
-
-      if (lengthParamIndex < params.length)
+      if (returnVal.lengthParamIndex != ArrayNoLengthParam) // Return array has a length argument?
       {
-        lengthParam = params[lengthParamIndex];
-        lengthParam.isLengthReturnArray = true;
+        if (hasInstanceParam) // Array length parameter indexes don't count instance parameters
+          returnVal.lengthParamIndex++;
+
+        if (returnVal.lengthParamIndex < params.length)
+        {
+          returnVal.lengthParam = params[returnVal.lengthParamIndex];
+          returnVal.lengthParam.isLengthReturnArray = true;
+        }
       }
+
+      returnVal.fixup; // Fixup return value
     }
 
     foreach (pa; params) // Fixup parameters
@@ -138,7 +152,10 @@ final class Func : TypeNode
   {
     super.resolve;
 
-    foreach (pa; params) // Fixup parameters
+    if (returnVal)
+      returnVal.resolve; // Resolve return value
+
+    foreach (pa; params) // Resolve parameters
       pa.resolve;
   }
 
@@ -160,48 +177,51 @@ final class Func : TypeNode
       return;
     }
 
-    try
-      super.verify; // Verify the return type
-    catch (Exception e)
+    if (returnVal)
     {
-      disableFunc("Return type error: " ~ e.msg);
-      return;
+      try
+        returnVal.verify; // Verify the return type
+      catch (Exception e)
+      {
+        disableFunc("Return type error: " ~ e.msg);
+        return;
+      }
     }
 
-    if (containerType == ContainerType.None && kind.among(TypeKind.Basic, TypeKind.BasicAlias) && cType.countStars != 0
-        && !cType.among("void*"d, "const(void)*"d))
-      disableFunc("Unexpected basic return type '" ~ cType.to!string ~ "'");
-
-    if (!resolved)
-      disableFunc("Unresolved return type '" ~ dType.to!string ~ "'");
+    if (returnVal.containerType == ContainerType.None && returnVal.kind.among(TypeKind.Basic, TypeKind.BasicAlias)
+        && returnVal.cType.countStars != 0 && !returnVal.cType.among("void*"d, "const(void)*"d))
+      disableFunc("Unexpected basic return type '" ~ returnVal.cType.to!string ~ "'");
 
     if (funcType == FuncType.Signal)
     {
-      if (containerType != ContainerType.None)
+      if (returnVal.containerType != ContainerType.None)
       {
-        disableFunc("signal container return type '" ~ containerType.to!string ~ "' not supported");
+        disableFunc("signal container return type '" ~ returnVal.containerType.to!string ~ "' not supported");
         return;
       }
 
-      with(TypeKind) if (kind.among(Simple, Pointer, Callback, Opaque, Unknown, Namespace))
+      with(TypeKind) if (returnVal.kind.among(Simple, Pointer, Callback, Opaque, Unknown, Namespace))
       {
-        disableFunc("signal return type '" ~ kind.to!string ~ "' is not supported");
+        disableFunc("signal return type '" ~ returnVal.kind.to!string ~ "' is not supported");
         return;
       }
     }
 
-    if (lengthParamIndex != ArrayNoLengthParam)
+    if (returnVal)
     {
-      if (!lengthParam) // Return array has invalid length argument?
+      if (returnVal.lengthParamIndex != ArrayNoLengthParam)
       {
-        disableFunc("invalid return array length parameter index");
-        return;
-      }
+        if (!returnVal.lengthParam) // Return array has invalid length argument?
+        {
+          disableFunc("invalid return array length parameter index");
+          return;
+        }
 
-      if (lengthParam.direction != ParamDirection.Out)
-      {
-        disableFunc("return array length parameter direction must be Out");
-        return;
+        if (returnVal.lengthParam.direction != ParamDirection.Out)
+        {
+          disableFunc("return array length parameter direction must be Out");
+          return;
+        }
       }
     }
 
@@ -219,22 +239,21 @@ final class Func : TypeNode
         disableFunc("Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg);
 
       if (!pa.resolved)
-        disableFunc("Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ dType.to!string ~ "'");
+        disableFunc("Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "'");
 
-      if (pa.disable || (pa.typeObject && pa.typeObject.disable))
+      // Resolve parameter type aliases to see if any are disabled and disable parameter if so
+      for (TypeNode tn = pa.typeObject; tn; tn = typeRepo.typeObjectHash.get((cast(Alias)tn).dType, null))
+      {
+        if (tn.disable)
+          pa.disable = true;
+
+        if (!cast(Alias)tn)
+          break;
+      }
+
+      if (pa.disable)
         disableFunc("Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled");
     }
-  }
-
-  override void addImports(ImportSymbols imports, Repo curRepo)
-  {
-    super.addImports(imports, curRepo);
-
-    if (funcType == FuncType.Callback)
-      imports.add(repo.namespace ~ ".Types");
-
-    foreach (param; params)
-      param.addImports(imports, curRepo);
   }
 
   /**
@@ -243,7 +262,7 @@ final class Func : TypeNode
    */
   dstring getCPrototype(dstring funcName = "function")
   {
-    dstring proto = cType ~ " " ~ funcName ~ "(";
+    dstring proto = returnVal.cType ~ " " ~ funcName ~ "(";
 
     foreach (i, p; params)
       proto ~= (i > 0 ? ", "d : "") ~ p.cType ~ " " ~ repo.defs.symbolName(p.name.camelCase);
@@ -259,7 +278,7 @@ final class Func : TypeNode
    */
   dstring getDelegPrototype()
   {
-    dstring proto = "alias " ~ dName ~ " = " ~ dType ~ " delegate(";
+    dstring proto = "alias " ~ dName ~ " = " ~ returnVal.dType ~ " delegate(";
 
     foreach (p; params)
     {
@@ -322,7 +341,8 @@ final class Func : TypeNode
     {
       auto cmpFunc = klass.funcNameHash.get(funcName, null);
 
-      if (!cmpFunc || cmpFunc.disable || dType != cmpFunc.dType || params.length != cmpFunc.params.length)
+      if (!cmpFunc || cmpFunc.disable || returnVal.dType != cmpFunc.returnVal.dType
+          || params.length != cmpFunc.params.length)
         continue;
 
       if (params.filter!(x => !x.isInstanceParam).map!(x => x.dType) // Compare dTypes of both functions (skip instance param)
@@ -337,6 +357,7 @@ final class Func : TypeNode
   dstring origName; /// Original name
   FuncType funcType; /// Function type
   dstring cName; /// C type name (Gir c:identifier)
+  ReturnValue returnVal; /// Return value type
   Param[] params; /// Parameters
   Param closureParam; /// Closure data parameter or null
   bool isCtor; /// Set for the primary constructor of an instance (not a Gir field)

@@ -2,7 +2,6 @@ module gir.signal_writer;
 
 import code_writer;
 import defs;
-import import_symbols;
 import gir.func;
 import gir.param;
 import gir.structure;
@@ -13,16 +12,15 @@ import utils;
 /// Signal writer class
 class SignalWriter
 {
-  this(Func signal, ImportSymbols imports)
+  this(Func signal)
   {
-    this.imports = imports;
-    imports.add("Types");
-    imports.add("GObject.Types");
     this.signal = signal;
 
     owningClass = cast(Structure)signal.parent;
     assert(owningClass && owningClass != signal.repo.globalStruct,
       "Signal '" ~ signal.fullName.to!string ~ "' does not have a valid class");
+
+    signal.repo.defs.resolveSymbol("GObject.DClosure");
 
     process();
   }
@@ -57,6 +55,8 @@ class SignalWriter
 
     decl ~= ") dlg, ConnectFlags flags = ConnectFlags.Default)";
     call ~= ");";
+
+    signal.repo.defs.importManager.add("GObject.Types"); // For ConnectFlags
   }
 
   // Helper to add parameter to call string with comma separator
@@ -80,69 +80,52 @@ class SignalWriter
   /// Process return value
   private void processReturn()
   {
-    if (signal.origDType == "none")
+    auto retVal = signal.returnVal;
+
+    if (!retVal || retVal.origDType == "none")
     {
       decl ~= "void ";
       return;
     }
 
-    signal.addImports(imports, signal.repo); // Add imports required for return value type
+    assert(retVal.containerType == ContainerType.None, "No support for signal container return type '"
+      ~ retVal.containerType.to!string ~ "'");
 
-    assert(signal.containerType == ContainerType.None, "No support for signal container return type '"
-      ~ signal.containerType.to!string ~ "'");
-
-    final switch (signal.kind) with (TypeKind)
+    final switch (retVal.kind) with (TypeKind)
     {
       case Basic, BasicAlias:
-        decl ~= signal.dType ~ " ";
-        preCall ~= signal.dType ~ " _retval;\n";
+        decl ~= retVal.dType ~ " ";
+        preCall ~= retVal.dType ~ " _retval;\n";
         call ~= "_retval = ";
         break;
       case String:
         decl ~= "string ";
-        preCall ~= signal.cType ~ " _cretval;\n";
-        call ~= "_cretval = ";
-        postCall ~= "string _retval = _cretval.fromCString("d ~ signal.fullOwnerStr ~ ");\n";
+        call ~= "auto _retval = ";
         break;
       case Enum, Flags:
-        decl ~= signal.dType ~ " ";
-        preCall ~= signal.cType ~ " _cretval;\n";
-        call ~= "_cretval = ";
-        postCall ~= signal.dType ~ " _retval = cast(" ~ signal.dType ~ ")_cretval;\n";
+        decl ~= retVal.dType ~ " ";
+        call ~= "auto _dretval = ";
+        postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cType ~ ")_dretval;\n";
         break;
       case Boxed:
-        decl ~= signal.dType ~ " ";
-        preCall ~= signal.cType ~ " _cretval;\n";
-        call ~= "_cretval = ";
-        postCall ~= signal.dType ~ " _retval = new "d ~ signal.dType ~ "(cast(" ~ signal.cType.stripConst ~ ")_cretval, "
-          ~ signal.fullOwnerStr ~ ");\n";
+        decl ~= retVal.dType ~ " ";
+        call ~= "auto _retval = ";
         break;
       case Wrap, Reffed, Object, Interface:
-        decl ~= signal.dType ~ " ";
-        preCall ~= signal.cType ~ " _cretval;\n";
-        call ~= "_cretval = ";
-
-        postCall ~= signal.dType ~ " _retval = " ~ ((signal.kind == Object || signal.kind == Interface)
-          ? "ObjectG.getDObject!"d : "new "d);
-        postCall ~= signal.dType ~ "(cast(" ~ signal.cType.stripConst ~ ")_cretval"
-          ~ (signal.kind != TypeKind.Wrap ? ", " ~ signal.fullOwnerStr : "") ~ ");\n";
-
-        if (signal.kind == TypeKind.Object || signal.kind == TypeKind.Interface)
-          imports.add("GObject.ObjectG");
+        decl ~= retVal.dType ~ " ";
+        call ~= "auto _retval = ";
         break;
       case Simple, Pointer, Callback, Opaque, Unknown, Container, Namespace:
-        assert(0, "Unsupported signal return value type '" ~ signal.dType.to!string ~ "' (" ~ signal.kind.to!string ~ ") for "
+        assert(0, "Unsupported signal return value type '" ~ retVal.dType.to!string ~ "' (" ~ retVal.kind.to!string ~ ") for "
             ~ signal.fullName.to!string);
     }
 
-    postCall ~= "setVal!" ~ signal.dType ~ "(_returnValue, _retval);\n";
+    postCall ~= "setVal!" ~ retVal.dType ~ "(_returnValue, _retval);\n";
   }
 
   /// Process parameter
   private void processParam(Param param)
   {
-    param.addImports(imports, signal.repo);
-
     assert(param.containerType == ContainerType.None, "No support for signal container parameter type '"
       ~ param.containerType.to!string ~ "'");
 
@@ -161,9 +144,6 @@ class SignalWriter
         break;
       case String:
         addDeclParam(param.directionStr ~ "string " ~ param.dName);
-
-        preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ param.dName ~ ".toCString("
-          ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
         break;
       case Wrap, Boxed, Reffed, Object, Interface:
         addDeclParam(param.dType ~ " " ~ param.dName);
@@ -207,7 +187,6 @@ class SignalWriter
 
   Func signal; /// The signal object being written
   Structure owningClass; /// The class which owns the signal (parent)
-  ImportSymbols imports; /// Import symbols needed to support the signal
   dstring decl; /// Signal declaration
   dstring preCall; /// Pre-call code for call return variable, call output parameter variables, and input variable processing
   dstring call; /// The D delegate call

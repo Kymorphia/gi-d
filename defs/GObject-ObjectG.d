@@ -73,7 +73,7 @@ class ObjectG
    */
   void* cPtr(bool addRef = false)
   {
-    return addRef ? g_object_ref(cInstancePtr) : cInstancePtr;
+    return cast(void*)(addRef ? g_object_ref(cInstancePtr) : cInstancePtr);
   }
 
   /**

@@ -4,7 +4,6 @@ import defs;
 import gir.func;
 import gir.structure;
 import gir.type_node;
-import import_symbols;
 import utils;
 
 /// Field in a structure
@@ -130,14 +129,6 @@ final class Field : TypeNode
     else if (directStruct)
       foreach (f; directStruct.fields)
         f.verify;
-  }
-
-  override void addImports(ImportSymbols imports, Repo repo)
-  {
-    if (callback)
-      callback.addImports(imports, repo);
-    else
-      super.addImports(imports, repo);
   }
 
   private dstring _name; /// Field name

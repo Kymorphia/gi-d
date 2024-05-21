@@ -7,7 +7,7 @@ import gir.field;
 import gir.func;
 import gir.param;
 import gir.structure;
-import import_symbols;
+import import_manager;
 import std_includes;
 import utils;
 
@@ -38,6 +38,46 @@ class TypeNode : Base
   override @property void name(dstring val)
   {
     super.name(val);
+  }
+
+  /// Get the D type string. Subject to subtype type substitutions and alises if defs.openModule() has been called and there is a conflict.
+  @property dstring dType()
+  {
+    if (repo.defs.importManager)
+      return repo.defs.importManager.resolveDType(this);
+
+    return _dType;
+  }
+
+  /// Set the D type string
+  @property void dType(dstring val)
+  {
+    _dType = val;
+  }
+
+  /**
+   * Get the fundamental root type object. De-references type aliases until the root type is found.
+   * Returns: The fundamental root de-aliased type
+   */
+  @property TypeNode typeObjectRoot()
+  {
+    TypeNode tn = typeObject;
+
+    foreach (i; 0 .. 4) // Resolve aliases (up to 4 dereferences)
+    {
+      if (auto al = cast(Alias)tn)
+      {
+        if (auto nextTn = tn.typeRepo.typeObjectHash.get(al._dType, null))
+        {
+          tn = nextTn;
+          continue;
+        }
+      }
+
+      break;
+    }
+
+    return tn;
   }
 
   /// Get the type kind of a type node
@@ -74,8 +114,8 @@ class TypeNode : Base
   /// Full name of the D type with the namespace followed by a period and then the D type
   dstring fullDType()
   {
-    if (typeRepo && !dType.empty)
-      return typeRepo.namespace ~ "." ~ dType;
+    if (typeRepo && !_dType.empty)
+      return typeRepo.namespace ~ "." ~ _dType;
 
     return origDType.canFind('.') ? origDType : repo.namespace ~ "." ~ origDType;
   }
@@ -133,15 +173,15 @@ class TypeNode : Base
 
     if (auto typ = node.findChild("type")) // Is there a child <type> node?
     {
-      dType = origDType = typ.get("name");
+      _dType = origDType = typ.get("name");
       cType = origCType = typ.get("c:type");
     }
     else if (auto arr = node.findChild("array")) // Is there a child <array> node
     {
-      dType = origDType = arr.get("name");
+      _dType = origDType = arr.get("name");
       cType = origCType = arr.get("c:type");
 
-      if (dType.empty) // Regular memory type arrays don't have a D type, only array wrappers like GArray, GPtrArray, and GByteArray do, processed in fixup()
+      if (_dType.empty) // Regular memory type arrays don't have a D type, only array wrappers like GArray, GPtrArray, and GByteArray do, processed in fixup()
       {
         containerType = ContainerType.Array;
         zeroTerminated = arr.get("zero-terminated", "0") == "1";
@@ -157,12 +197,12 @@ class TypeNode : Base
           lengthParamIndex = ArrayNoLengthParam;
       }
 
-      if (dType == "GLib.Array")
+      if (_dType == "GLib.Array")
         containerType = ContainerType.ArrayG;
     }
     else // Is this a <type> node or other node with "name" and "c:type"? (Structure for example).
     {
-      dType = origDType = node.get("name");
+      _dType = origDType = node.get("name");
       cType = origCType = node.get("c:type");
     }
   }
@@ -190,18 +230,18 @@ class TypeNode : Base
     codeTrap("type.fixup", fullName);
 
     origDType = parseRepoType(origDType, typeRepo);
-    dType = repo.defs.subTypeStr(origDType, repo.defs.dTypeSubs, typeRepo.dTypeSubs);
+    _dType = repo.defs.subTypeStr(origDType, repo.defs.dTypeSubs, typeRepo.dTypeSubs);
 
-    if (dType.canFind('.')) // If substituted type contains a repo name, resolve it
-      dType = parseRepoType(dType, typeRepo);
+    if (_dType.canFind('.')) // If substituted type contains a repo name, resolve it
+      _dType = parseRepoType(_dType, typeRepo);
 
     cType = repo.defs.subTypeStr(origCType, repo.defs.cTypeSubs, typeRepo.cTypeSubs);
 
     foreach (typ; elemTypes) // Fixup container element types
       typ.fixup;
 
-    if (dType == "void*" && cType == "const(void)*") // If dType is void* and cType is const(void)*, make the dType const as well
-      dType = "const(void)*";
+    if (_dType == "void*" && cType == "const(void)*") // If dType is void* and cType is const(void)*, make the dType const as well
+      _dType = "const(void)*";
 
     if (containerType == ContainerType.Array)
     {
@@ -209,10 +249,10 @@ class TypeNode : Base
         && lengthParamIndex != ArrayNoLengthParam) // If this is a char[] array, set element type to Basic char, but FuncWriter will consider it as a string.
       {
         elemTypes[0].kind = TypeKind.Basic;
-        elemTypes[0].dType = "char";
+        elemTypes[0]._dType = "char";
         info("'" ~ fullName.to!string ~ "' using string for char array with length");
       }
-      else if (lengthParamIndex != ArrayNoLengthParam && !elemTypes.empty && elemTypes[0].dType == "ubyte"
+      else if (lengthParamIndex != ArrayNoLengthParam && !elemTypes.empty && elemTypes[0]._dType == "ubyte"
         && cType.stripConst.startsWith("char")) // If there is a length parameter, dType is "ubyte", and array type uses char - treat it as a ubyte array
       {
         info("Changing array cType from " ~ cType.to!string ~ " to ubyte for " ~ fullName.to!string);
@@ -228,7 +268,7 @@ class TypeNode : Base
     if (containerType != ContainerType.None)
     {
       kind = TypeKind.Container;
-      dType = null;
+      _dType = null;
     }
   }
 
@@ -251,8 +291,8 @@ class TypeNode : Base
         elemTypes[0].origCType = elemType;
     }
 
-    if (elemTypes[0].origCType.empty && elemTypes[0].dType.isBasicType) // Don't use kind, since it isn't resolved yet
-      elemTypes[0].origCType = elemTypes[0].dType; // Use D type if unable to derive C type from array C type, as long as D type is Basic
+    if (elemTypes[0].origCType.empty && elemTypes[0]._dType.isBasicType) // Don't use kind, since it isn't resolved yet
+      elemTypes[0].origCType = elemTypes[0]._dType; // Use D type if unable to derive C type from array C type, as long as D type is Basic
 
     if (elemTypes[0].origCType)
     {
@@ -260,7 +300,7 @@ class TypeNode : Base
         elemTypes[0].typeRepo.cTypeSubs);
 
       info("Using member C type '" ~ elemTypes[0].cType.to!string ~ "' for D type '"
-        ~ elemTypes[0].dType.to!string ~ "' for an array with C type '" ~ cType.to!string ~ "' in "
+        ~ elemTypes[0]._dType.to!string ~ "' for an array with C type '" ~ cType.to!string ~ "' in "
         ~ fullName.to!string);
     }
   }
@@ -273,16 +313,10 @@ class TypeNode : Base
     if (kind != TypeKind.Container)
     {
       if (!typeObject)
-        typeObject = typeRepo.typeObjectHash.get(dType, null);
-
-      foreach (i; 0 .. 4) // Resolve aliases (up to 4 dereferences)
-        if (cast(Alias)typeObject)
-          typeObject = typeRepo.typeObjectHash.get((cast(Alias)typeObject).dType, null);
-        else
-          break;
+        typeObject = typeRepo.typeObjectHash.get(_dType, null);
 
       if (kind == TypeKind.Unknown)
-        kind = repo.defs.typeKind(dType, typeRepo);
+        kind = repo.defs.typeKind(_dType, typeRepo);
 
       if (cType.empty && kind == TypeKind.String)
       {
@@ -291,7 +325,7 @@ class TypeNode : Base
       }
 
       with (TypeKind) if (!kind.among(Unknown, Basic, String, Namespace))
-        dType = dType.normalizeDTypeName(); // Strip _t from type name and CamelCase it
+        _dType = _dType.normalizeDTypeName(); // Strip _t from type name and CamelCase it
 
       if (auto st = cast(Structure)typeObject) // Should only be set to a Structure for non-struct dependencies
       {
@@ -316,21 +350,22 @@ class TypeNode : Base
       updateUnresolvedFlags(UnresolvedFlags.Element, tn.unresolvedFlags != cast(UnresolvedFlags)0);
     }
 
-    if (dType.empty && (unresolvedFlags & UnresolvedFlags.Element) == 0) // If container D type has not yet been set and elements are resolved
+    if (_dType.empty && (unresolvedFlags & UnresolvedFlags.Element) == 0) // If container D type has not yet been set and elements are resolved
     {
       if (containerType == ContainerType.Array && elemTypes.length == 1)
-        dType = elemTypes[0].dType ~ "[]";
+        _dType = elemTypes[0]._dType ~ "[]";
       else if (containerType == ContainerType.ArrayG && elemTypes.length == 1)
-        dType = "ArrayG!(" ~ elemTypes.map!(x => x.dType ~ ", " ~ x.cType).join(", ") ~ ")";
+        _dType = "ArrayG!(" ~ elemTypes.map!(x => x._dType ~ ", " ~ x.cType).join(", ") ~ ")";
       else if (containerType == ContainerType.HashTable && elemTypes.length == 2)
-        dType = elemTypes[1].dType ~ "[" ~ elemTypes[0].dType ~ "]"; // Uses an associative array
-      else if (containerType != ContainerType.ByteArray && elemTypes.length == 1) // ByteArray is not a template
-        dType = containerType.to!dstring ~ "!(" ~ elemTypes.map!(x => x.dType ~ ", " ~ x.cType)
+        _dType = elemTypes[1]._dType ~ "[" ~ elemTypes[0]._dType ~ "]"; // Uses an associative array
+      else if (containerType == ContainerType.ByteArray && elemTypes.length == 1) // ByteArray is not a template
+        _dType = containerType.to!dstring;
+      else if (elemTypes.length == 1)
+        _dType = containerType.to!dstring ~ "!(" ~ elemTypes.map!(x => x._dType ~ ", " ~ x.cType)
           .join(", ") ~ ")"; // All other types use templates
     }
   }
 
-  /// Verify state
   void verify()
   {
     if (unresolvedFlags)
@@ -351,20 +386,20 @@ class TypeNode : Base
           repo.suggestions["Set arrays to be zero-terminated=1"] ~= "set " ~ xmlSelector.to!string ~ (cast(Func)this
             ? ".return-value.array[][zero-terminated] 1" : ".array[][zero-terminated] 1");
 
-        throw new Exception("Array of type '" ~ elemTypes[0].dType.to!string ~ "' has indeterminate length");
+        throw new Exception("Array of type '" ~ elemTypes[0]._dType.to!string ~ "' has indeterminate length");
       }
 
       if (elemTypes[0].cType.empty) // Missing array element C type?
         throw new Exception("Could not determine member type for array type '" ~ cType.to!string ~ "'");
 
       if (cType.empty && fixedSize == 0) // No array C type and not fixed size?
-        warning(xmlLocation ~ "No array c:type for array of D type '" ~ dType.to!string ~ "' in '"
+        warning(xmlLocation ~ "No array c:type for array of D type '" ~ _dType.to!string ~ "' in '"
             ~ fullName.to!string ~ "'");
 
-      if (elemTypes[0].dType == "ubyte" && cType.canFind("char"))
+      if (elemTypes[0]._dType == "ubyte" && cType.canFind("char"))
         throw new Exception("Unsure if array is a null terminated string or not for array cType "
           ~ cType.to!string ~ " element cType " ~ elemTypes[0].cType.to!string ~ " dType "
-          ~ elemTypes[0].dType.to!string);
+          ~ elemTypes[0]._dType.to!string);
     }
 
     if (containerType != ContainerType.None)
@@ -390,52 +425,25 @@ class TypeNode : Base
       {
         auto parentTypeNode = cast(TypeNode)parent;
         if (!parentTypeNode || parentTypeNode.containerType != ContainerType.Array) // Warn if not an array container type (handled separately)
-          warning(xmlLocation ~ "No c:type for D type '" ~ dType.to!string ~ "' in '" ~ fullName.to!string ~ "'");
+          warning(xmlLocation ~ "No c:type for D type '" ~ _dType.to!string ~ "' in '" ~ fullName.to!string ~ "'");
       }
 
       if (kind.among(TypeKind.Unknown, TypeKind.Namespace))
         throw new Exception("unhandled type kind '" ~ kind.to!string ~ "' for type '"
-            ~ dType.to!string ~ "'");
+            ~ _dType.to!string ~ "'");
 
       if (!elemTypes.empty)
         warning(xmlLocation ~ "Unexpected element type in unrecognized container '" ~ fullName.to!string ~ "'");
     }
   }
 
-  /**
-   * Add imports for a type node with respect to a repository.
-   * Params:
-   *   imports = Import symbols object
-   *   curRepo = The current repository
-   */
-  void addImports(ImportSymbols imports, Repo curRepo)
-  {
-    if (typeObject && typeObject.disable)
-      return;
-
-    imports.add(typeRepo.namespace ~ ".Types");
-
-    if (containerType != ContainerType.None)
-    {
-      if (auto mod = containerType.getModule(repo.defs))
-        imports.add(mod);
-
-      foreach (elem; elemTypes) // Add imports for each of the container types
-        elem.addImports(imports, curRepo);
-    }
-    else if (cast(Structure)typeObject && (cast(Structure)typeObject).inModule)
-      imports.add(cast(Structure)typeObject);
-    else if (cast(Structure)this && inModule)
-      imports.add(cast(Structure)this);
-  }
-
   Repo typeRepo; /// Repo containing the dType (can be this.repo)
-  dstring dType; /// D type (container type for containers, Gir "name")
+  dstring _dType; /// D type (container type for containers, Gir "name"), is accessed directly by ImportManager
   dstring cType; /// C type (container type for containers)
   dstring origDType; /// Original D type (before substitution)
   dstring origCType; /// Original C type (before substitution)
   private TypeKind _kind; /// Type kind
-  Base typeObject; /// Resolved type object for dType
+  TypeNode typeObject; /// Resolved type object for dType
   TypeNode[] elemTypes; /// Container element types (2 for HashTable, 1 for other container types)
   Ownership ownership; /// Ownership of passed value (return values, parameters, and properties)
   ContainerType containerType; /// The type of container or None

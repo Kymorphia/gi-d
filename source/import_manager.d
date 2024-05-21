@@ -1,21 +1,24 @@
-module import_symbols;
+module import_manager;
 
 import code_writer;
 import std_includes;
 import utils;
 
+import gir.alias_;
+import gir.func;
 import gir.structure;
+import gir.type_node;
 
-final class ImportSymbols
+final class ImportManager
 {
   this(Structure klassModule)
   {
     this.klassModule = klassModule;
     this.defaultNamespace = klassModule.repo.namespace;
-    this.classNames = [klassModule.name : klassModule];
+    this.symbolNames = [klassModule.name : klassModule];
   }
 
-  this(ImportSymbols imSyms, Structure klassModule)
+  this(ImportManager imSyms, Structure klassModule)
   {
     this(klassModule);
     merge(imSyms);
@@ -26,32 +29,10 @@ final class ImportSymbols
     this.defaultNamespace = defaultNamespace;
   }
 
-  this(ImportSymbols imSyms, dstring defaultNamespace = null)
+  this(ImportManager imSyms, dstring defaultNamespace = null)
   {
     this(defaultNamespace);
     merge(imSyms);
-  }
-
-  /**
-   * Add class structure import to an import symbols object. Class names are aliased if there are conflicts.
-   * Params:
-   *   klass = The class structure to add a module import for
-   */
-  void add(Structure klass)
-  {
-    if (klass in classAliases || klass == klassModule)
-      return;
-
-    codeTrap("import.add", klass.fullName);
-
-    dstring name;
-
-    if (klass.name in classNames) // Check for class name conflicts
-      name = "D" ~ klass.repo.namespace ~ klass.name; // Create an alias to use in local module
-    else
-      classNames[klass.name] = klass;
-
-    classAliases[klass] = name;
   }
 
   /**
@@ -96,21 +77,21 @@ final class ImportSymbols
   }
 
   /**
-   * Remove an import class from an import object.
+   * Remove a type node symbol from an import manager object.
    * Params:
-   *   klass = Class structure to remove
+   *   typeNode = Type node object to remove
    * Returns: true if removed, false if no match was found
    */
-  bool remove(Structure klass)
+  bool remove(TypeNode typeNode)
   {
-    if (klass !in classAliases)
+    if (typeNode !in symbolAliases)
       return false;
 
-    classAliases.remove(klass);
+    symbolAliases.remove(typeNode);
 
-    foreach (name, cmpKlass; classNames)
-      if (cmpKlass == klass)
-        classNames.remove(name);
+    foreach (name, cmpTypeNode; symbolNames)
+      if (cmpTypeNode == typeNode)
+        symbolNames.remove(name);
 
     return true;
   }
@@ -148,12 +129,12 @@ final class ImportSymbols
    * Params:
    *   mergeSyms = Other module symbols to merge into this module symbol array
    */
-  void merge(ImportSymbols mergeSyms)
+  void merge(ImportManager mergeSyms)
   {
-    foreach (st, aliasName; mergeSyms.classAliases) // Add structure imports from other ImportSymbols object
-      add(st);
+    foreach (st, aliasName; mergeSyms.symbolAliases) // Add structure imports from other ImportManager object
+      resolveDType(st);
 
-    foreach (s, syms; mergeSyms.stringImports) // Add string imports from other ImportSymbols object
+    foreach (s, syms; mergeSyms.stringImports) // Add string imports from other ImportManager object
       add(s, syms.keys);
   }
 
@@ -178,17 +159,46 @@ final class ImportSymbols
   }
 
   /**
-   * Resolve a class name for the given imports, using aliases created by createClassAliases() or the plain class name if not aliased.
+   * Resolve a symbol name for the given type node object. Uses an alias if it conflicts with another symbol or the D type otherwise.
    * Params:
-   *   klass = The class structure to get the name of
-   * Returns: The class name or an alias if there are conflicts in the current module imports.
+   *   typeNode = Type node object to get D type of or an alias if it conflicts with another one used in the same module
+   * Returns: The D type or an alias if it conflicts with another symbol in the module with the same name which was already used.
    */
-  dstring resolveClassName(Structure klass)
+  dstring resolveDType(TypeNode typeNode)
   {
-    if (auto aliasName = classAliases.get(klass, null))
-      return aliasName;
+    if (typeNode.containerType != ContainerType.None)
+    {
+      if (auto mod = typeNode.containerType.getModule(typeNode.repo.defs))
+        resolveDType(mod);
 
-    return klass.dType;
+      foreach (elem; typeNode.elemTypes) // Add imports for each of the container types
+        resolveDType(elem);
+
+      return typeNode._dType; // FIXME - Need to handle container element type aliases
+    }
+
+    auto refObject = typeNode;
+    if (typeNode.typeObject && !cast(Alias)typeNode) // Use referenced type object (unless this is an alias, which should be imported)
+      refObject = typeNode.typeObject;
+
+    if (refObject is klassModule || (!refObject.inModule && !refObject.inGlobal))
+      return typeNode._dType;
+
+    if (auto pAliasName = refObject in symbolAliases)
+      return (*pAliasName).empty ? typeNode._dType : *pAliasName;
+
+    codeTrap("import.resolve", refObject.repo.namespace ~ "." ~ typeNode._dType);
+
+    dstring name;
+
+    if (typeNode._dType in symbolNames) // Check for symbol name conflicts
+      name = "D" ~ refObject.repo.namespace ~ typeNode._dType; // Create an alias to use in local module
+    else
+      symbolNames[typeNode._dType] = refObject;
+
+    symbolAliases[refObject] = name;
+
+    return name ? name : typeNode._dType;
   }
 
   /**
@@ -198,25 +208,40 @@ final class ImportSymbols
    */
   dstring[] generate(dstring prefix = null)
   {
-    dstring[] importLines;
+    bool[dstring] importHash;
 
-    foreach (klass, aliasName; classAliases)
+    foreach (typeNode, aliasName; symbolAliases)
     {
+      auto moduleName = typeNode.repo.namespace ~ "." ~ (typeNode.inModule ? typeNode._dType : "Types");
+
       if (!aliasName.empty)
-        importLines ~= prefix ~ "import " ~ klass.fullName ~ " : " ~ aliasName ~ " = " ~ klass.name ~ ";";
+      {
+        importHash[moduleName ~ " : " ~ aliasName ~ " = " ~ typeNode._dType] = true;
+
+        if (typeNode.kind == TypeKind.Interface)
+          importHash[moduleName ~ "T : " ~ aliasName ~ "T = " ~ typeNode._dType ~ "T"] = true;
+      }
       else
-        importLines ~= prefix ~ "import " ~ klass.fullName ~ ";";
+      {
+        importHash[moduleName] = true;
+
+        if (typeNode.kind == TypeKind.Interface)
+          importHash[moduleName ~ "T"] = true;
+      }
     }
 
     foreach (mod, syms; stringImports)
     {
-      if (syms.empty)
-        importLines ~= prefix ~ "import " ~ mod ~ ";";
+      if (!syms.empty)
+        importHash[mod ~ " : "d ~ syms.keys.join(", ")] = true;
       else
-        importLines ~= prefix ~ "import " ~ mod ~ " : "d ~ syms.keys.join(", ") ~ ";";
+        importHash[mod] = true;
     }
 
-    return importLines.sort.array;
+    if (klassModule)
+      importHash.remove(klassModule.fullName); // Remove import of ourself
+
+    return importHash.keys.sort.map!(x => prefix ~ "import " ~ x ~ ";").array;
   }
 
   /**
@@ -237,8 +262,8 @@ private:
   immutable dstring[] notClassMods = [".Types", ".Global", ".c.types", ".c.functions"]; // Modules which aren't class modules (matches end of module name)
 
   Structure klassModule; /// The current class module or null if not a class module
-  dstring[Structure] classAliases; /// Structure => Alias (or null if no alias)
-  Structure[dstring] classNames; /// Hash of ClassName -> Structure to detect conflicts
+  dstring[TypeNode] symbolAliases; /// TypeNode => Alias (or null if no alias)
+  TypeNode[dstring] symbolNames; /// Hash of SymbolName -> TypeNode to detect conflicts
 
   bool[dstring][dstring] stringImports; /// moduleName => (Symbol => true)
   dstring defaultNamespace; /// Default namespace to use if not provided when adding imports

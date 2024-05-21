@@ -54,37 +54,42 @@ T getVal(T)(const(GValue)* gval)
 void setVal(T)(GValue* gval, T v)
 {
   static if (is(T == bool))
-    return g_value_set_boolean(gval, v);
+    g_value_set_boolean(gval, v);
   else static if (is(T == byte))
-    return g_value_set_schar(gval, v);
+    g_value_set_schar(gval, v);
   else static if (is(T == ubyte))
-    return g_value_set_uchar(gval, v);
+    g_value_set_uchar(gval, v);
   else static if (is(T == int))
-    return g_value_set_int(gval, v);
+    g_value_set_int(gval, v);
   else static if (is(T == uint))
-    return g_value_set_uint(gval, v);
+    g_value_set_uint(gval, v);
   else static if (is(T == long))
-    return g_value_set_int64(gval, v);
+    g_value_set_int64(gval, v);
   else static if (is(T == ulong))
-    return g_value_set_uint64(gval, v);
+    g_value_set_uint64(gval, v);
   else static if (is(T == float))
-    return g_value_set_float(gval, v);
+    g_value_set_float(gval, v);
   else static if (is(T == double))
-    return g_value_set_double(gval, v);
-  else static if (is(T == enum)) // enum or flags
-    return g_type_is_a(gval.gType, GTypeEnum.Flags) ? cast(T)g_value_set_flags(gval, v) : cast(T)g_value_set_enum(gval, v);
+    g_value_set_double(gval, v);
+  else static if (is(T == enum))
+  {
+    if (g_type_is_a(gval.gType, GTypeEnum.Flags))
+      g_value_set_flags(gval, v);
+    else
+      g_value_set_enum(gval, v);
+  }
   else static if (is(T == string))
-    return g_value_take_string(gval, v).toCString(true);
+    g_value_take_string(gval, v.toCString(true));
   else static if (is(T == Variant))
-    return g_value_set_variant(gval, v.cPtr!GVariant);
+    g_value_set_variant(gval, v.cPtr!GVariant);
   else static if (is(T : ParamSpec))
-    return g_value_set_param(gval, v.cPtr!GParamSpec);
+    g_value_set_param(gval, v.cPtr!GParamSpec);
   else static if (is(T : Boxed))
-    return g_value_set_boxed(gval, v.cInstancePtr);
+    g_value_set_boxed(gval, v.cInstancePtr);
   else static if (is(T : ObjectG))
-    return g_value_set_object(gval, v.cPtr!ObjectC);
+    g_value_set_object(gval, cast(ObjectC*)v.cPtr(false));
   else static if (isPointer!T)
-    return g_value_set_pointer(gval, v);
+    g_value_set_pointer(gval, v);
   else
     assert(0);
 

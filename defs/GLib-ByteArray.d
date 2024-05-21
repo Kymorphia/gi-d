@@ -7,15 +7,18 @@ import GLib.c.types;
 class ByteArray
 {
   GByteArray* cPtr; // The byte array
+  GidOwnership ownership; // Ownership of the container
 
-  this(GByteArray* array)
+  this(GByteArray* array, GidOwnership ownership = GidOwnership.None)
   {
     cPtr = array;
+    this.ownership = ownership;
   }
 
   ~this()
   {
-    g_byte_array_free(cPtr, true);
+    if (ownership != GidOwnership.None)
+      g_byte_array_free(cPtr, ownership == GidOwnership.Full);
   }
 
   bool empty() const

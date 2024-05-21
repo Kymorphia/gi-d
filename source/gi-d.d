@@ -79,8 +79,6 @@ int main(string[] args)
     else if (auto typeNode = cast(TypeNode)baseObj)
       return typeNode.repo.namespace ~ "." ~ (typeNode.cType.empty ? typeNode.name : typeNode.cType) ~ " "
         ~ typeNode.kind.to!dstring;
-    else if (auto en = cast(Enumeration)baseObj)
-      return en.repo.namespace ~ "." ~ en.cName ~ " Enum";
     else
       return baseObj.fullName ~ " Unknown";
   }

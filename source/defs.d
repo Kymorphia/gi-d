@@ -2,7 +2,7 @@ module defs;
 
 import std.utf : toUTF32;
 
-import import_symbols;
+import import_manager;
 import gir.alias_;
 import gir.constant;
 import gir.enumeration;
@@ -88,16 +88,6 @@ class Defs
     void processDefCode(dstring line, dstring lineRaw)
     {
       auto defCode = curRepo.structDefCode[curStructName];
-
-      if (line.startsWith("import ")) // Import statement?
-      {
-        try
-          defCode.imports.parseImport(line);
-        catch (Exception e)
-          warning(e.msg, " ", posInfo);
-
-        return;
-      }
 
       if (classState == ClassState.Pre) // Not inside class?
       { // Is this a class declaration?
@@ -547,7 +537,7 @@ class Defs
    *   repo = Repo to use if typeName does not contain a namespace (optional if typeName has a namespace)
    * Returns: The matching type object or null if not found (possible basic type), throws an exception if typeName has a namespace that wasn't resolved
    */
-  Base findTypeObject(dstring typeName, Repo repo = null)
+  TypeNode findTypeObject(dstring typeName, Repo repo = null)
   {
     auto t = typeName.split('.');
     if (t.length > 1)
@@ -630,6 +620,45 @@ class Defs
         .join("").strip);
   }
 
+  /**
+   * Designate the start of output processing for module imports. Enables tracking of symbol names and
+   * creation of aliases for conflicts for used symbols.
+   */
+  void beginImports(Structure klassModule)
+  {
+    importManager = new ImportManager(klassModule);
+    importManager.add("Gid.gid");
+    importManager.add("Types");
+    importManager.add(klassModule.repo.namespace ~ ".c.functions");
+    importManager.add(klassModule.repo.namespace ~ ".c.types");
+  }
+
+  /**
+   * Indicates the end of processing for the current output module imports which was activated with beginImports().
+   */
+  void endImports()
+  {
+    importManager = null;
+  }
+
+  /**
+   * Resolve a D type symbol name. Uses the D type name or an alias if it conflicts with
+   * another symbol imported into the current module which was defined by a call to beginImports().
+   * Params:
+   *   typeNode = The type node object to get the D type name of
+   * Returns: The D type name or an alias
+   */
+  dstring resolveSymbol(dstring typeName)
+  {
+    if (importManager)
+      importManager.add(typeName);
+
+    auto t = typeName.split('.');
+    assert(t.length == 2);
+
+    return t[1];
+  }
+
   bool[dstring] reservedWords; /// Reserved words (_ appended)
   dstring[dstring] cTypeSubs; /// Global C type substitutions
   dstring[dstring] dTypeSubs; /// Global D type substitutions
@@ -637,6 +666,7 @@ class Defs
   XmlPatch[] patches; /// Global XML patches specified in definitions file
   Repo[] repos; /// Gir repositories
   Repo[dstring] repoHash; /// Hash of repositories by namespace
+  ImportManager importManager; /// Current import manager used with beginImports()/endImports()
   UnresolvedFlags[TypeNode] unresolvedTypes; /// TypeNode objects which have an unresolved type (for recursive type resolution)
 }
 
@@ -645,12 +675,12 @@ class DefCode
 {
   this()
   {
-    imports = new ImportSymbols();
+    imports = new ImportManager();
   }
 
   bool genInit = true; /// Generate class constructor/destructor init code
   bool genFuncs = true; /// Generate functions and methods
-  ImportSymbols imports; /// Imports
+  ImportManager imports; /// Imports
   dstring[] preClass; /// Pre class declaration code, line separated
   dstring classDecl; /// Class declaration
   dstring[] inClass; /// Code inside of the class, line separated

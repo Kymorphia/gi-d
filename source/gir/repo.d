@@ -1,7 +1,6 @@
 module gir.repo;
 
 import defs;
-import import_symbols;
 import gir.alias_;
 import gir.base;
 import gir.constant;
@@ -12,6 +11,7 @@ import gir.func_writer;
 import gir.member;
 import gir.param;
 import gir.property;
+import gir.return_value;
 import gir.structure;
 import gir.type_node;
 import code_writer;
@@ -26,11 +26,25 @@ final class Repo : Base
   this(Defs defs)
   {
     this.defs = defs;
+
+    // Add global namespace structure
+    globalStruct = new Structure(this);
+    globalStruct.kind = TypeKind.Namespace;
+    globalStruct.origDType = "Global";
+    globalStruct.structType = StructType.Class;
+    structs ~= globalStruct;
+
+    // Add global Types structure
+    typesStruct = new Structure(this);
+    typesStruct.kind = TypeKind.Namespace;
+    typesStruct.origDType = "Types";
+    typesStruct.structType = StructType.Class;
+    structs ~= typesStruct;
   }
 
   this(Defs defs, string filename)
   {
-    this.defs = defs;
+    this(defs);
     this.filename = filename;
   }
 
@@ -151,20 +165,6 @@ final class Repo : Base
           nsVersion = node.get("version");
           identifierPrefixes = node.get("c:identifier-prefixes");
           symbolPrefixes = node.get("c:symbol-prefixes");
-
-          // Add global namespace structure
-          globalStruct = new Structure(this);
-          globalStruct.kind = TypeKind.Namespace;
-          globalStruct.origDType = "Global";
-          globalStruct.structType = StructType.Class;
-          structs ~= globalStruct;
-
-          // Add global Types structure
-          typesStruct = new Structure(this);
-          typesStruct.kind = TypeKind.Namespace;
-          typesStruct.origDType = "Types";
-          typesStruct.structType = StructType.Class;
-          structs ~= typesStruct;
           break;
         case "package": // Package name
           packageName = node.get("name");
@@ -196,7 +196,9 @@ final class Repo : Base
           xmlnsGlib = node.get("xmlns:glib");
           break;
         case "return-value": // Function return value info
-          break; // Do nothing, handled by function object
+          if (auto fn = node.baseParentFromXmlNodeWarn!Func)
+            fn.returnVal = new ReturnValue(fn, node);
+          break;
         case "source-position": // Source position information
           if (auto base = node.baseParentFromXmlNodeWarn!Base)
           {
@@ -257,10 +259,10 @@ final class Repo : Base
 
     foreach (en; enums) // Hash enums
     {
-      typeObjectHash[en.name] = en;
+      typeObjectHash[en.dType] = en;
 
-      if (en.origName != en.name)
-        typeObjectHash[en.origName] = en;
+      if (en.origDType != en.dType)
+        typeObjectHash[en.origDType] = en;
     }
 
     foreach (cb; callbacks) // Hash callbacks
@@ -389,6 +391,8 @@ final class Repo : Base
     auto sourcePath = buildPath(packagePath, namespace.to!string);
     auto cSourcePath = buildPath(sourcePath, "c");
 
+    codeTrap("repo.write", namespace);
+
     writeCTypes(buildPath(cSourcePath, "types.d"));
     writeCFuncs(buildPath(cSourcePath, "functions.d"));
 
@@ -412,7 +416,7 @@ final class Repo : Base
 
     foreach (al; aliases) // Write modules for aliases to structure types in modules
     {
-      auto st = cast(Structure)al.typeObject;
+      auto st = cast(Structure)al.typeObjectRoot;
 
       if (!al.disable && st && st.inModule)
       {
@@ -503,7 +507,7 @@ final class Repo : Base
     {
       e.writeDocs(writer);
 
-      writer ~= ["enum " ~ e.cName ~ (e.bitfield ? " : uint"d : ""), "{"];
+      writer ~= ["enum " ~ e.cType ~ (e.bitfield ? " : uint"d : ""), "{"];
 
       Member[dstring] dupCheck; // Duplicate member check
 
@@ -690,44 +694,51 @@ final class Repo : Base
   private void writeTypesModule(string path)
   {
     auto writer = new CodeWriter(path);
-
     writer ~= ["module " ~ namespace ~ ".Types;", ""];
+    defs.beginImports(typesStruct);
+    scope(exit) defs.endImports;
 
-    auto imports = new ImportSymbols(typesStruct.defCode.imports, typesStruct);
-    imports.add("Gid.gid");
-    imports.add(namespace ~ ".c.types");
+    dstring[] callbackDecls;
 
-    foreach (cb; callbacks) // Add imports for callback types
-      if (!cb.disable)
-        cb.addImports(imports, this);
+    foreach (i, cb; callbacks.filter!(x => !x.disable).enumerate) // Generate callback prototypes (to populate imports), added to writer output below
+      callbackDecls ~= (i == 0 ? [""d, "// Callbacks"] : []) ~ cb.getDelegPrototype;
 
-    imports.remove("Types");
-
-    if (imports.write(writer))
-      writer ~= "";
+    dstring[] aliasDecls;
 
     foreach (i, al; aliases.filter!(x => !x.disable).enumerate) // Write out aliases
     {
-      auto st = cast(Structure)al.typeObject;
+      auto st = cast(Structure)al.typeObjectRoot;
 
-      if ((al.typeObject && al.typeObject.disable) || (st && st.inModule)) // Skip if target type is disabled or an alias of a type in a module (alias is written as a module in writePackage())
+      if ((al.typeObjectRoot && al.typeObjectRoot.disable) || (st && st.inModule)) // Skip if target type is disabled or an alias of a type in a module (alias is written as a module in writePackage())
         continue;
 
-      if (i == 0)
-        writer ~= [""d, "// Aliases"];
-
-      auto fn = cast(Func)al.typeObject;
-
-      if (fn && fn.funcType == FuncType.Callback) // Callback aliases should alias to D callback delegates, not C functions
-        writer ~= ["alias " ~ al.name ~ " = " ~ fn.dName ~ ";"];
+      if (al.kind == TypeKind.Callback) // Callback aliases should alias to D callback delegates, not C functions
+        aliasDecls ~= ["alias " ~ al.name ~ " = " ~ al.dType ~ ";"];
       else if (al.name == al.cName)
-        writer ~= ["alias " ~ al.name ~ " = " ~ namespace ~ ".c.types." ~ al.cName ~ ";"];
+        aliasDecls ~= ["alias " ~ al.name ~ " = " ~ namespace ~ ".c.types." ~ al.cName ~ ";"];
       else
-        writer ~= ["alias " ~ al.name ~ " = " ~ al.cName ~ ";"];
+      {
+        auto aliasType = al.typeRepo.typeObjectHash.get(al._dType, null);
+
+        if (aliasType && aliasType._dType == al._dType)
+          aliasDecls ~= ["alias " ~ al.name ~ " = " ~ aliasType.dType ~ ";"];
+        else
+          aliasDecls ~= ["alias " ~ al.name ~ " = " ~ al.cName ~ ";"];
+      }
     }
 
+    if (defs.importManager.write(writer))
+      writer ~= "";
+
+    defs.endImports;
+
+    if (!aliasDecls.empty)
+      writer ~= [""d, "// Aliases"];
+
+    writer ~= aliasDecls;
+
     foreach (i, en; enums.filter!(x => !x.disable).enumerate) // Write out enums
-      writer ~= (i == 0 ? [""d, "// Enums"] : []) ~ ["alias " ~ en.name ~ " = " ~ en.cName ~ ";"];
+      writer ~= (i == 0 ? [""d, "// Enums"] : []) ~ ["alias " ~ en.dType ~ " = " ~ en.cType ~ ";"];
 
     auto simpleStructs = structs.filter!(x => !x.disable && !x.inModule).enumerate;
 
@@ -740,8 +751,7 @@ final class Repo : Base
         ~ ";"];
     }
 
-    foreach (i, cb; callbacks.filter!(x => !x.disable).enumerate) // Write out callback delegate types
-      writer ~= (i == 0 ? [""d, "// Callbacks"] : []) ~ cb.getDelegPrototype;
+    writer ~= callbackDecls;
 
     foreach (i, con; constants.filter!(x => !x.disable).enumerate) // Write out constants
     {
@@ -772,10 +782,8 @@ final class Repo : Base
     writer ~= ["module " ~ namespace ~ ".Global;", ""];
 
     // Create the function writers first to construct the imports
-    auto imports = new ImportSymbols(globalStruct.defCode.imports, globalStruct);
-    imports.add("Gid.gid");
-    imports.add(namespace ~ ".c.functions");
-    imports.add(namespace ~ ".c.types");
+    defs.beginImports(globalStruct);
+    scope(exit) defs.endImports;
 
     FuncWriter[] funcWriters;
 
@@ -784,13 +792,13 @@ final class Repo : Base
       if (fn.disable)
         continue;
 
-      funcWriters ~= new FuncWriter(fn, imports);
+      funcWriters ~= new FuncWriter(fn);
     }
 
-    imports.remove("Global");
-
-    if (imports.write(writer))
+    if (defs.importManager.write(writer))
       writer ~= "";
+
+    defs.endImports;
 
     if (globalStruct.defCode.preClass.length > 0)
       writer ~= globalStruct.defCode.preClass;
@@ -842,7 +850,7 @@ final class Repo : Base
   dstring merge; /// Package to merge this repo into identified by its namespace
   string[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
 
-  Base[dstring] typeObjectHash; /// Hash of type objects by name (Alias, Func (callback), Constant, Enumeration, or Structure)
+  TypeNode[dstring] typeObjectHash; /// Hash of type objects by name (Alias, Func (callback), Constant, Enumeration, or Structure)
 
   dstring xmlns;
   dstring xmlnsC;

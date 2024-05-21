@@ -103,6 +103,17 @@ string fromCString(const(char)* cstr, bool transfer)
 }
 
 /**
+ * Free a pointer allocated with malloc() but only if it is not null.
+ * Params:
+ *   ptr = Pointer to the data to free (can be null)
+ */
+void safeFree(void* ptr)
+{
+  if (ptr)
+    free(ptr);
+}
+
+/**
  * Duplicate a zero terminate C string.
  * Params:
  *   s = The zero terminated string to duplicate

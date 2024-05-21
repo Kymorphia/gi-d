@@ -1,4 +1,3 @@
-import GLib.Boxed;
 //!kind Boxed Boxed
 
 /// Class wrapper for boxed types
