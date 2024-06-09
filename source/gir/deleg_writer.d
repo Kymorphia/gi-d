@@ -102,7 +102,7 @@ class DelegWriter
       case Enum, Flags:
         preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-        postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cType ~ ")_dretval;\n";
+        postCall ~= "auto _retval = cast(" ~ retVal.cType ~ ")_dretval;\n";
         break;
       case Simple:
         preCall ~= retVal.dType ~ " _dretval;\n";

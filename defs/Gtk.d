@@ -10,4 +10,7 @@
 //!set class[PrintUnixDialog].method[get_settings][name] get_print_settings
 
 //# Rename Widget.activateAction so that it doesn't conflict with ActionGroup.ActivateAction
-//!set class[Widget].method[activate_action][name] activateActionGroup
+//!set class[Widget].method[activate_action][name] activate_action_group
+
+//# Rename MenuButton.getDirection so that it doesn't conflict with Widget.getDirection
+//!set class[MenuButton].method[get_direction][name] get_popup_direction

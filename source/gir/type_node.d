@@ -82,7 +82,10 @@ class TypeNode : Base
 
   /// Get the type kind of a type node
   @property TypeKind kind()
-  {
+  { // HACK - Return the referenced type kind if it has changed (kind override)
+    if (typeObject && _kind != TypeKind.Unknown && typeObject._kind != TypeKind.Unknown && _kind != typeObject._kind)
+      return typeObject._kind;
+
     return _kind;
   }
 
@@ -318,10 +321,18 @@ class TypeNode : Base
       if (kind == TypeKind.Unknown)
         kind = repo.defs.typeKind(_dType, typeRepo);
 
-      if (cType.empty && kind == TypeKind.String)
+      if (cType.empty)
       {
-        cType = "char*";
-        info(fullName ~ ": Using char* for missing cType");
+        if (kind == TypeKind.String)
+        {
+          cType = "char*";
+          info(fullName ~ ": Using char* for missing cType");
+        }
+        else if (typeObject && typeObject.cType)
+        {
+          cType = typeObject.cType;
+          info(fullName ~ ": Using " ~ cType ~ " for missing cType");
+        }
       }
 
       with (TypeKind) if (!kind.among(Unknown, Basic, String, Namespace))

@@ -194,7 +194,12 @@ final class ImportManager
     if (typeNode._dType in symbolNames) // Check for symbol name conflicts
       name = "D" ~ refObject.repo.namespace ~ typeNode._dType; // Create an alias to use in local module
     else
+    {
       symbolNames[typeNode._dType] = refObject;
+
+      if (refObject.inGlobal) // Add repos to global Types repo hash if this is a global symbol
+        typeRepos[refObject.repo] = true;
+    }
 
     symbolAliases[refObject] = name;
 
@@ -213,6 +218,18 @@ final class ImportManager
     foreach (typeNode, aliasName; symbolAliases)
     {
       auto moduleName = typeNode.repo.namespace ~ "." ~ (typeNode.inModule ? typeNode._dType : "Types");
+
+      if (aliasName.empty && typeNode.inGlobal)
+      { // Check if there are any other conflicting global symbols from other repos and add an explicit alias if so
+        foreach (repo; typeRepos.keys)
+        {
+          if (typeNode.repo != repo && typeNode._dType in repo.typeObjectHash)
+          {
+            aliasName = typeNode._dType;
+            break;
+          }
+        }
+      }
 
       if (!aliasName.empty)
       {
@@ -264,6 +281,7 @@ private:
   Structure klassModule; /// The current class module or null if not a class module
   dstring[TypeNode] symbolAliases; /// TypeNode => Alias (or null if no alias)
   TypeNode[dstring] symbolNames; /// Hash of SymbolName -> TypeNode to detect conflicts
+  bool[Repo] typeRepos; /// Repo objects which have imported symbols from their Types.d (for global Types.d conflict detection)
 
   bool[dstring][dstring] stringImports; /// moduleName => (Symbol => true)
   dstring defaultNamespace; /// Default namespace to use if not provided when adding imports

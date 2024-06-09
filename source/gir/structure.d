@@ -53,7 +53,7 @@ final class Structure : TypeNode
 
     abstract_ = node.get("abstract") == "1";
     deprecated_ = node.get("deprecated") == "1";
-    opaque = node.get("opaque") == "1";
+    opaque = node.get("opaque") == "1" || node.get("foreign") == "1";
     pointer = node.get("pointer") == "1";
     glibFundamental = node.get("glib:fundamental") == "1";
 

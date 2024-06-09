@@ -486,7 +486,8 @@ class FuncWriter
         preCall ~= "auto _" ~ param.dName ~ " = cast(" ~ param.cType ~ ")";
 
         if (param.zeroTerminated) // If zero terminated, append a null or 0 value to the array and use the pointer to pass to the C function call
-          preCall ~= "(" ~ param.dName ~ " ~ " ~ (elemType.cType.endsWith("*") ? "null"d : "0"d) ~ ").ptr";
+          preCall ~= "(" ~ param.dName ~ " ~ " ~ (elemType.cType.endsWith("*") ? "null" : elemType.cType ~ ".init")
+            ~ ").ptr";
         else
           preCall ~= param.dName ~ ".ptr";
 
@@ -673,7 +674,8 @@ class FuncWriter
   {
     if (param.containerType == ContainerType.ByteArray)
     {
-      addDeclParam(param.directionStr ~ "ByteArray " ~ param.dName);
+      auto byteArraySym = func.repo.defs.resolveSymbol("GLib.ByteArray");
+      addDeclParam(param.directionStr ~ byteArraySym ~ " " ~ param.dName);
 
       if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
       {
@@ -683,10 +685,9 @@ class FuncWriter
       }
       else if (param.direction == ParamDirection.Out) // Only use of out ByteArray found seems to actually be InOut (passed in to populate data), corrected in fixup()
       {
-        preCall ~= "GByteArray* _" ~ param.dName ~ ";\n";
+        preCall ~= byteArraySym ~ "* _" ~ param.dName ~ ";\n";
         addCallParam("&_" ~ param.dName);
 
-        auto byteArraySym = func.repo.defs.resolveSymbol("GLib.ByteArray");
         postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? new " ~ byteArraySym ~ "(_" ~ param.dName
           ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ") : null;\n";
       }

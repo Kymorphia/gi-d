@@ -1,5 +1,6 @@
 {
   "name": "harfbuzz",
+  "version": "0.0.0",
   "description": "HarfBuzz library gi-d binding",
   "copyright": "Copyright © 2024, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
@@ -8,7 +9,7 @@
   "importPaths": [".", ".."],
   "sourcePaths": ["HarfBuzz"],
   "dependencies": {
-    "gid:glib": "*",
-    "gid:freetype2": "*"
+    "gid:freetype2": "*",
+    "gid:glib": "*"
   }
 }

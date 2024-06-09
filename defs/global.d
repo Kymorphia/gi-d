@@ -128,6 +128,7 @@
 //!subtype gint32 int
 //!subtype gint64 long
 //!subtype gint8 byte
+//!subtype gintptr ptrdiff_t
 //!subtype goffset long
 //!subtype gpointer void*
 //!subtype grefcount int
@@ -158,6 +159,7 @@
 //!subtype uint8_t ubyte
 //!subtype uint16_t ushort
 //!subtype uint32_t uint
+//!subtype "unsigned char" ubyte
 //!subtype unsigned uint
 //!subtype "unsigned int" uint
 //!subtype utf8 string
@@ -166,6 +168,7 @@
 //# FIXME - Need to use int/uint on Windows
 //!subtype glong long
 //!subtype gulong ulong
+//!subtype "unsigned long" ulong
 
 //# GType is used for D type when it should be Type
 //!subdtype GType GObject.GType

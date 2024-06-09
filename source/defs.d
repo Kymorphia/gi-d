@@ -263,6 +263,9 @@ class Defs
           else
             patches ~= patch;
           break;
+        case "build":
+          curRepo.buildVersion = cmdTokens[1];
+          break;
         case "class":
           curStructName = cmdTokens[1];
           classState = ClassState.In; // FIXME - How to specify other sections of modules?
@@ -582,42 +585,81 @@ class Defs
    */
   dstring subTypeStr(dstring type, dstring[dstring] subs, dstring[dstring] localSubs = null)
   {
+    enum State
+    {
+      Start, // Start of type string
+      Space, // After a space character
+      Star, // After a * pointer
+      Char, // After a type character
+    }
+
+    State state; // Current state of state machine
+    bool isConst; // Set to true if there are any "const" strings
+    dstring subType; // Substitute type string being built
+    int starCount; // Number of stars
+
     if (auto s = subs.get(type, null)) // See if the type exactly matches a substitution (handles multi word substitions too)
       return s;
 
-    auto tok = tokenizeType(type).filter!(x => x != "volatile").array;
-
-    if (tok.empty)
-      return type;
-
-    // Substitute types not including end '*' pointers
-    dstring sub(dstring s)
+    // Loop over the type string consuming it head first
+    for (; !type.empty; type = type[1 .. $])
     {
-      for (auto i = cast(int)(s.length) - 1; i >= 0; i--)
+      dstring skip; // A token to skip (const or volatile)
+
+      if (state != State.Char) // Last state was not a type character?
       {
-        if (s[i] != '*' && s[i] != ' ')
+        if (type.startsWith("const"))
+          skip = "const";
+        else if (type.startsWith("volatile"))
+          skip = "volatile";
+
+        if (!skip.empty) // Skip first ask questions later
         {
-          auto t = s[0 .. i + 1];
+          type = type[skip.length .. $];
 
-          if (t in localSubs)
-            t = localSubs[t];
-          else
-            t = subs.get(t, t);
-
-          return t ~ s[i + 1 .. $];
+          if (type.empty) // No more chars after skipped token? - Done, but probably an invalid type
+            break;
         }
       }
 
-      return s;
+      if (type[0] == ' ' || type[0] == '*') // Space or star?
+      {
+        if (skip == "const")
+          isConst = true;
+
+        if (type[0] == '*')
+        {
+          starCount++;
+          state = State.Star;
+        }
+        else
+          state = State.Space; // Spaces only get added if it is followed by a regular character
+      }
+      else // Type name character
+      {
+        if (state == State.Space && !subType.empty) // Add a space if the last character was a space, since this is a regular character
+          subType ~= ' ';
+
+        if (!skip.empty) // Possible skip token was followed by a regular type character? - Don't skip it then (append it to the subType)
+          subType ~= skip;
+
+        subType ~= type[0]; // Append the character to the substituted type
+        state = State.Char;
+      }
     }
 
-    // Remove multiple "const", format as const(TYPE)*, and substitute type names
-    if (tok[0] == "const" && tok[$ - 1] == "*")
-      return "const(" ~ sub(tok[0 .. $ - 1].filter!(x => !x.among("const"d, "("d, ")"d)).join("")) ~ ")*";
+    if (subType in localSubs)
+      subType = localSubs[subType]; // Try localSubs first
+    else
+      subType = subs.get(subType, subType); // Then subs with fallback to itself
 
-    return sub(tok.filter!(x => x != "const")
-        .map!(x => x == "*" ? x : " " ~ x)
-        .join("").strip);
+    if (starCount == 0) // Not a pointer type?
+      return subType;
+
+    if (isConst) // Constant pointer type?
+      return "const(" ~ subType ~ "*"d.repeat(starCount - 1).join ~ ")*"d;
+
+    return subType ~ "*"d.repeat(starCount).join; // Just a pointer type
   }
 
   /**
@@ -710,6 +752,7 @@ immutable DefCmd[] defCommandInfo = [
   {
     "add", 2, DefCmdFlags.AllowBlock, "add <XmlSelect> <AttributeValue | Xml> - Add an XML attribute or node"
   },
+  {"build", 1, DefCmdFlags.ReqRepo, "build <BuildVersion> - Set build micro version"},
   {"class", 1, DefCmdFlags.ReqRepo, "class <Class> - Select the current structure/class"},
   {"del", 1, DefCmdFlags.None, "del <XmlSelect> - Delete an XML attribute or node"},
   {

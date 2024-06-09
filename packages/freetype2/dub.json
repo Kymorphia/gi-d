@@ -1,5 +1,6 @@
 {
   "name": "freetype2",
+  "version": "2.0.0",
   "description": "freetype2 library gi-d binding",
   "copyright": "Copyright © 2024, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],

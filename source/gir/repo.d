@@ -259,6 +259,8 @@ final class Repo : Base
 
     foreach (en; enums) // Hash enums
     {
+      en.fixup;
+      en.resolve;
       typeObjectHash[en.dType] = en;
 
       if (en.origDType != en.dType)
@@ -445,6 +447,8 @@ final class Repo : Base
   {
     string output = "{\n";
     output ~= `  "name": "` ~ namespace.toLower.to!string ~ "\",\n";
+    output ~= `  "version": "` ~ nsVersion.to!string ~ "." ~ (buildVersion.empty ? "0" : buildVersion.to!string)
+      ~ "\",\n";
 
     if ("description" !in dubInfo)
       dubInfo["description"] ~= namespace.to!string ~ " library gi-d binding";
@@ -474,7 +478,10 @@ final class Repo : Base
         return s ~ `": "*"`;
       }
 
-      output ~= ",\n  \"dependencies\": {\n" ~ includes.map!depFunc.join(",\n") ~ "\n  }";
+      // Get depencies, remove duplicates, and sort
+      auto deps = includes.map!depFunc.assocArray(true.repeat).keys.array.sort;
+
+      output ~= ",\n  \"dependencies\": {\n" ~ deps.join(",\n") ~ "\n  }";
     }
 
     output ~= "\n}\n";
@@ -574,9 +581,14 @@ final class Repo : Base
     auto writer = new CodeWriter(path);
 
     writer ~= ["module " ~ namespace ~ ".c.functions;", ""];
-
     writer ~= ["import " ~ namespace ~ ".c.types;"];
-    writer ~= includes.map!(x => "public import " ~ x.name ~ ".c.types;\n").array;
+
+    auto importNames = includes.map!(x => x.name).array;
+
+    if (namespace == "GLib") // HACK - Add GObject to includes for GLib for GType
+      importNames ~= "GObject";
+
+    writer ~= importNames.sort.map!(x => "public import " ~ x ~ ".c.types;\n").array;
     writer ~= "";
 
     writeSharedLibs(writer);
@@ -827,6 +839,7 @@ final class Repo : Base
 
   dstring namespace; /// Name space of symbols in gir file
   dstring nsVersion; /// Version of the namespace
+  dstring buildVersion; /// Build micro version number
   dstring sharedLibrary; /// Namespace shared library (multiple values separated by commas)
   dstring identifierPrefixes; /// Prefix to identifiers
   dstring symbolPrefixes; /// C symbol prefix

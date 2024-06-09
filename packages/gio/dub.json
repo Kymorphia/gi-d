@@ -1,5 +1,6 @@
 {
   "name": "gio",
+  "version": "2.0.0",
   "description": "Gio library gi-d binding",
   "copyright": "Copyright © 2024, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
@@ -8,6 +9,7 @@
   "importPaths": [".", ".."],
   "sourcePaths": ["Gio"],
   "dependencies": {
-    "gid:glib": "*"
+    "gid:glib": "*",
+    "gid:gmodule": "*"
   }
 }

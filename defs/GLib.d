@@ -6,6 +6,9 @@
 //!set function[malloc][name] gmalloc
 //!set function[free][name] gfree
 
+//# utime function takes an undefined utimebuf pointer, just delete it
+//!del function[utime]
+
 //# Not introspectable, but could be implemented manually
 //!set function[base64_encode_close][introspectable] 0
 //!set function[base64_encode_step][introspectable] 0
@@ -32,6 +35,9 @@
 //# Error conflicts with the base D Error type, rename to ErrorG
 //!subtype Error ErrorG
 
+//# Override OptionEntry type kind to be a simple struct, not Wrap
+//!kind OptionEntry Simple
+
 //# Override PollFD type kind to be a simple struct, not Boxed
 //!kind PollFD Simple
 
@@ -42,9 +48,6 @@
 //# Fix Dir by specifying g_dir_close as the free function and g_dir_open as the constructor
 //!set record[Dir][free-function] g_dir_close
 //!set record[Dir].method[close][disable] 1
-//!set record[Dir].function[open][introspectable] 1
-//!rename record[Dir].function[open] constructor
-//!set record[Dir].constructor[open].return-value[][transfer-ownership] full
 
 //# Disable binding of unuseful and problematic structures
 //!set record[TrashStack][disable] 1
@@ -203,17 +206,20 @@
 //!set function[ref_count_inc].parameters.parameter[rc][direction] inout
 //!set function[ref_count_init].parameters.parameter[rc][direction] inout
 //!set record[Timer].method[elapsed].parameters.parameter[microseconds][direction] out
+//!set record[Completion].method[complete_utf8].parameters.parameter[new_prefix][direction] out
+//!set record[Completion].method[complete_utf8].parameters.parameter[new_prefix][transfer-ownership] full
 
 //# Fix or add missing array information
 //!set function[assertion_message_cmpstrv].parameters.parameter[arg1].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
 //!set function[assertion_message_cmpstrv].parameters.parameter[arg2].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
+//!set function[log_writer_default_set_debug_domains].parameters.parameter[domains].type '<array zero-terminated="1" c:type="const char* const*"><type name="utf8" c:type="const char*"/></array>'
 //!set function[slice_get_config_state].return-value.type '<array length="2" zero-terminated="0" c:type="const gint64*"><type name="gint64" c:type="gint64"/></array>'
 //!set function[slice_get_config_state].parameters.parameter[n_values][direction] out
-//!set function[strjoinv].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="gchar**"><type name="utf8" c:type="gchar*"/></array>'
-//!set function[strv_contains].parameters.parameter[strv].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
-//!set function[strv_equal].parameters.parameter[strv1].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
-//!set function[strv_equal].parameters.parameter[strv2].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
-//!set function[strv_length].parameters.parameter[str_array].type '<array zero-terminated="1" c:type="const gchar* const*"><type name="utf8" c:type="const gchar*"/></array>'
+//!set function[strjoinv].parameters.parameter[str_array][zero-terminated] 1
+//!set function[strv_contains].parameters.parameter[strv][zero-terminated] 1
+//!set function[strv_equal].parameters.parameter[strv1][zero-terminated] 1
+//!set function[strv_equal].parameters.parameter[strv2][zero-terminated] 1
+//!set function[strv_length].parameters.parameter[str_array][zero-terminated] 1
 //!set function[ucs4_to_utf16].return-value.type '<array zero-terminated="1" c:type="gunichar2*"><type name="guint16" c:type="gunichar2"/></array>'
 //!set function[unicode_canonical_decomposition].return-value.type '<array length="1" zero-terminated="0" c:type="gunichar*"><type name="gunichar" c:type="gunichar"/></array>'
 //!set function[unicode_canonical_decomposition].parameters.parameter[result_len][direction] out
@@ -251,6 +257,9 @@
 //!set record[Queue].method[free_full].parameters.parameter[free_func][scope] call
 //!set function[atomic_rc_box_release_full].parameters.parameter[clear_func][scope] call
 //!set function[rc_box_release_full].parameters.parameter[clear_func][scope] call
+
+//# Change Variant.getString() return type to an array of chars with a length to remove length param and optimize
+//!set class[Variant].method[get_string].return-value.type '<array length="0" c:type="gchar*"><type name="char" c:type="char"/></array>'
 
 //# g_markup_parse_context_new() has unnecessary closure and destroy notify, override the new() method
 //!set record[MarkupParseContext].constructor[new][disable] 1

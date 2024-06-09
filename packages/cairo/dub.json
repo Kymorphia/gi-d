@@ -1,5 +1,6 @@
 {
   "name": "cairo",
+  "version": "1.0.0",
   "description": "cairo library gi-d binding",
   "copyright": "Copyright © 2024, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
@@ -8,6 +9,7 @@
   "importPaths": [".", ".."],
   "sourcePaths": ["cairo"],
   "dependencies": {
+    "gid:freetype2": "*",
     "gid:glib": "*"
   }
 }

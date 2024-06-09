@@ -9,7 +9,7 @@ public import std_includes;
 
 static this()
 {
-  sharedLog = new GidLogger;
+  sharedLog(cast(shared Logger)new GidLogger);
 }
 
 /// Create our own logger to strip out some of the extra info

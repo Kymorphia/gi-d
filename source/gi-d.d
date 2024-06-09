@@ -18,6 +18,7 @@ int main(string[] args)
   LogLevel logLevel = LogLevel.warning;
   string[] traps;
   arraySep = ","; // Allow comma separated values for array parameters (traps)
+  string[] girPaths;
 
   try
   {
@@ -29,6 +30,7 @@ int main(string[] args)
         "dump-traps", "Dump code trap actions", &codeTrapsDump,
         "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string)
         .join(", ") ~ ")", &logLevel,
+        "g|gir-path", "Add a path to search for GIR files", &girPaths,
         "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
         "trap", "Add gdb breakpoint 'action:regex', action: domain (help to list), regex: pattern to match", &traps,
     );
@@ -44,6 +46,9 @@ int main(string[] args)
     error(e.msg);
     return 1;
   }
+
+  if (girPaths.empty)
+     girPaths = ["/usr/share/gir-1.0"];
 
   globalLogLevel(logLevel);
 
@@ -67,7 +72,7 @@ int main(string[] args)
 
   auto defs = new Defs();
   defs.loadDefFiles();
-  defs.loadRepos();
+  defs.loadRepos(girPaths);
   defs.writePackages();
 
   defs.repos.sort!((a, b) => a.namespace < b.namespace);

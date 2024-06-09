@@ -6,6 +6,9 @@
 //# Add DClosure class type which is defined in GObject-DClosure.d
 //!add repository.namespace '<class name="DClosure" parent="Closure"></class>'
 
+//# Remove duplicate IOCondition definition
+//!del bitfield[IOCondition]
+
 //# Disable TypePlugin.use() and unuse() since they conflict with IOModule
 //!set interface[TypePlugin].method[use][disable] 1
 //!set interface[TypePlugin].method[unuse][disable] 1
