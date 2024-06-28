@@ -185,6 +185,8 @@ final class Structure : TypeNode
 
       if (fn.funcType == FuncType.Function && fn.dType == "Quark" && fn.name.endsWith("error_quark"))
         errorQuarks ~= fn; // Add exception error quark functions to array
+
+      repo.defs.cSymbolHash[fn.cName] = fn; // Add to global C symbol hash
     }
 
     if (ctorFunc)

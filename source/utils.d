@@ -49,6 +49,7 @@ dstring normalizeDTypeName(dstring typeStr)
  * Changes snake or kabob case to camelCase.
  * Params:
  *   snakeCase = snake_case string
+ *   firstUpper = set to true to make first character uppercase, defaults to lowercase
  * Returns: camelCase string
  */
 dstring camelCase(dstring snakeCase, bool firstUpper = false)
@@ -279,4 +280,125 @@ int countStars(dstring type)
     .filter!(x => x != ')')
     .countUntil!(x => x != '*');
   return count > 0 ? cast(int)count : 0;
+}
+
+import std.range : isInputRange, ElementType;
+
+/**
+ * Template to get the front item of a range or a default value if empty.
+ * Params:
+ *   r = The range
+ *   def = The default value
+ * Returns: The range front value or def if empty
+ */
+auto frontIfNotEmpty(R, T)(R r, T def)
+  if (isInputRange!R && is(ElementType!R == T))
+{
+  if (r.empty)
+    return def;
+  else
+    return r.front;
+}
+
+/**
+ * Escape parenthesis which aren't a part of a reference link of the form [text](url).
+ * Params:
+ *   s = The string
+ * Returns: The string with any wayward non reference link parenthesis escaped with backslashes.
+ */
+dstring escapeNonRefLinkParens(dstring s)
+{
+  enum State
+  {
+    Normal, // Not within a potential ref link
+    OpenBracket, // Found a start square bracket
+    EndBracket, // Found an end square bracket
+    OpenParen, // Found start open parenthesis
+  }
+
+  State state;
+  dstring escaped;
+  dstring possibleRefLink;
+  int parenCount;
+
+  with (State) while (s.length > 0) // Loop over characters in string
+  {
+    auto c = s[0];
+    s = s[1 .. $];
+
+    if (c == '[') // Open bracket?
+    {
+      if (state == Normal)
+        state = OpenBracket;
+
+      escaped ~= c;
+    }
+    else if (c == ']') // Close bracket?
+    {
+      if (state == OpenBracket)
+        state = EndBracket;
+
+      escaped ~= c;
+    }
+    else if (c == '(') // Open parenthesis?
+    {
+      if (state == EndBracket)
+      {
+        state = OpenParen;
+        possibleRefLink.length = 0;
+        parenCount = 0;
+      }
+      else // Embedded open parenthesis or open parenthesis not part of a ref link
+      {
+        if (state == OpenParen) // Count embedded parenthesis, which are escaped
+          parenCount++;
+
+        escaped ~= "$(LPAREN)";
+      }
+    }
+    else if (c == ')') // Close parenthesis?
+    {
+      if (state == OpenParen && parenCount == 0) // The closing parenthesis of a ref link?
+      {
+        state = Normal;
+        escaped ~= "(" ~ possibleRefLink ~ ")";
+      }
+      else // Close parenthesis for embedded parenthesis pair or a close parenthesis outside of a ref link
+      {
+        if (state == OpenParen)
+          parenCount--;
+
+        escaped ~= "$(RPAREN)";
+      }
+    }
+    else if (c == '\n') // Newline character?
+    {
+      if (state == OpenParen) // A newline character cancels any possible ref link
+        escaped ~= "$(LPAREN)" ~ possibleRefLink;
+
+      escaped ~= '\n';
+      state = Normal;
+    }
+    else // Another character
+    {
+      if (state == OpenParen)
+        possibleRefLink ~= c;
+      else
+        escaped ~= c;
+    }
+  }
+
+  if (state == State.OpenParen) // Add any partial potential ref link
+    escaped ~= "$(LPAREN)" ~ possibleRefLink;
+
+  return escaped;
+}
+
+unittest
+{
+  dstring testText = r"This is (stuff) with various ) parenthesis ( and a [link description](http://url) and blah()"
+    ~ r" with a second [blah blah](https://url.yay) etc";
+  dstring escText = r"This is \(stuff\) with various \) parenthesis \( and a [link description](http://url) and blah\(\)"
+    ~ r" with a second [blah blah](https://url.yay) etc";
+  assert(escapeNonRefLinkParens(testText) == escText);
 }

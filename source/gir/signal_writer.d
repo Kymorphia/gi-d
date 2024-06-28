@@ -28,7 +28,10 @@ class SignalWriter
   // Process the signal
   private void process()
   {
-    decl ~= "ulong connect" ~ signal.dName(true) ~ "(";
+    auto delegateName = signal.dName(true) ~ "Callback";
+    connectDecl = "ulong connect" ~ signal.dName(true) ~ "(" ~ delegateName
+      ~ " dlg, ConnectFlags flags = ConnectFlags.Default)";
+    dlgDecl = "alias " ~ delegateName ~ " = ";
 
     preCall ~= "extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals,"
       ~ " void* _invocHint, void* _marshalData)\n{\n";
@@ -40,7 +43,7 @@ class SignalWriter
 
     auto instanceParamName = signal.repo.defs.symbolName(owningClass.dType[0].toLower ~ owningClass.dType[1 .. $]);
     preCall ~= "auto " ~ instanceParamName ~ " = getVal!" ~ owningClass.dType ~ "(_paramVals);\n"; // Instance parameter is the first value
-    decl ~= "delegate(";
+    dlgDecl ~= " delegate(";
     call ~= "_dgClosure.dlg(";
 
     foreach (i, param; signal.params)
@@ -53,7 +56,7 @@ class SignalWriter
     addDeclParam(owningClass.dType ~ " " ~ instanceParamName);
     addCallParam(instanceParamName);
 
-    decl ~= ") dlg, ConnectFlags flags = ConnectFlags.Default)";
+    dlgDecl ~= ");";
     call ~= ");";
 
     signal.repo.defs.importManager.add("GObject.Types"); // For ConnectFlags
@@ -68,13 +71,13 @@ class SignalWriter
     call ~= paramStr;
   }
 
-  // Helper to add parameter to decl string with comma separator
+  // Helper to add parameter to dlgDecl string with comma separator
   private void addDeclParam(dstring paramStr)
   {
-    if (!decl.endsWith('('))
-      decl ~= ", ";
+    if (!dlgDecl.endsWith('('))
+      dlgDecl ~= ", ";
 
-    decl ~= paramStr;
+    dlgDecl ~= paramStr;
   }
 
   /// Process return value
@@ -84,7 +87,7 @@ class SignalWriter
 
     if (!retVal || retVal.origDType == "none")
     {
-      decl ~= "void ";
+      dlgDecl ~= "void";
       return;
     }
 
@@ -94,25 +97,25 @@ class SignalWriter
     final switch (retVal.kind) with (TypeKind)
     {
       case Basic, BasicAlias:
-        decl ~= retVal.dType ~ " ";
+        dlgDecl ~= retVal.dType;
         preCall ~= retVal.dType ~ " _retval;\n";
         call ~= "_retval = ";
         break;
       case String:
-        decl ~= "string ";
+        dlgDecl ~= "string";
         call ~= "auto _retval = ";
         break;
       case Enum, Flags:
-        decl ~= retVal.dType ~ " ";
+        dlgDecl ~= retVal.dType;
         call ~= "auto _dretval = ";
         postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cType ~ ")_dretval;\n";
         break;
       case Boxed:
-        decl ~= retVal.dType ~ " ";
+        dlgDecl ~= retVal.dType;
         call ~= "auto _retval = ";
         break;
       case Wrap, Reffed, Object, Interface:
-        decl ~= retVal.dType ~ " ";
+        dlgDecl ~= retVal.dType;
         call ~= "auto _retval = ";
         break;
       case Simple, Pointer, Callback, Opaque, Unknown, Container, Namespace:
@@ -164,13 +167,18 @@ class SignalWriter
   {
     signal.writeDocs(writer);
 
+    writer ~= [dlgDecl, ""];
+
+    writer ~= ["/**", "* Connect to " ~ signal.dName(true) ~ " signal.", "* Params:",
+      "*   dlg = signal delegate callback to connect", "*   flags = connection flags", "* Returns: Signal ID", "*/"];
+
     if (ifaceModule)
     {
-      writer ~= decl ~ ";";
+      writer ~= connectDecl ~ ";";
       return;
     }
 
-    writer ~= decl;
+    writer ~= connectDecl;
     writer ~= "{";
 
     if (preCall.length > 0)
@@ -187,7 +195,8 @@ class SignalWriter
 
   Func signal; /// The signal object being written
   Structure owningClass; /// The class which owns the signal (parent)
-  dstring decl; /// Signal declaration
+  dstring dlgDecl; /// Delegate alias declaration
+  dstring connectDecl; /// Signal connect method declaration
   dstring preCall; /// Pre-call code for call return variable, call output parameter variables, and input variable processing
   dstring call; /// The D delegate call
   dstring postCall; /// Post-call code for return value processing, output parameter processing, and input variable cleanup

@@ -245,6 +245,7 @@ final class Repo : Base
       al.fixup;
       al.resolve;
       typeObjectHash[al.name] = al;
+      defs.cSymbolHash[al.origCType] = al;
 
       if (al.origName != al.name)
         typeObjectHash[al.origName] = al;
@@ -255,6 +256,7 @@ final class Repo : Base
       con.fixup;
       con.resolve;
       typeObjectHash[con.name] = con;
+      defs.cSymbolHash[con.origCType] = con;
     }
 
     foreach (en; enums) // Hash enums
@@ -262,6 +264,7 @@ final class Repo : Base
       en.fixup;
       en.resolve;
       typeObjectHash[en.dType] = en;
+      defs.cSymbolHash[en.origCType] = en;
 
       if (en.origDType != en.dType)
         typeObjectHash[en.origDType] = en;
@@ -272,6 +275,7 @@ final class Repo : Base
       cb.fixup;
       cb.resolve;
       typeObjectHash[cb.name] = cb;
+      defs.cSymbolHash[cb.origCType] = cb;
 
       if (cb.origName != cb.name)
         typeObjectHash[cb.origName] = cb;
@@ -282,6 +286,7 @@ final class Repo : Base
       st.fixup;
       st.resolve;
       typeObjectHash[st.dType] = st;
+      defs.cSymbolHash[st.origCType] = st;
 
       if (st.origDType != st.dType)
         typeObjectHash[st.origDType] = st;
@@ -300,6 +305,7 @@ final class Repo : Base
         st.fixup;
         st.resolve;
         typeObjectHash[st.name] = st;
+        defs.cSymbolHash[st.origCType] = st;
       }
 
       st.defCode = stValue;
@@ -384,7 +390,6 @@ final class Repo : Base
    * Write repository D binding package.
    * Params:
    *   basePath = The path to the toplevel packages directory (defaults to "packages")
-   *   packagePrefix = Prefix to add to package name (defaults to "gid-")
    */
   void writePackage(string basePath = "packages")
   {
@@ -563,10 +568,7 @@ final class Repo : Base
     }
 
     foreach (cb; callbacks)
-    {
-      cb.writeDocs(writer);
       writer ~= ["alias extern(C) " ~ cb.getCPrototype ~ " " ~ cb.cName ~ ";", ""];
-    }
 
     writer.write();
   }

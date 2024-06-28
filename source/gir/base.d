@@ -101,15 +101,29 @@ abstract class Base
     return _node.parseFile ~ (_node.parseLine != 0 ? (":" ~ _node.parseLine.to!string) : "") ~ " ";
   }
 
+  /**
+   * Write DDoc documentation for an object to a CodeWriter.
+   * Params:
+   *   writer = The CodeWriter
+   */
   void writeDocs(CodeWriter writer)
   {
     if (docContent.length == 0)
       return;
 
     writer ~= "/**";
+    writer ~= "* " ~ repo.defs.gdocToDDoc(docContent, "* ", repo);
 
-    foreach (l; docContent.strip.splitLines.map!(x => x.strip))
-      writer ~= "* " ~ l;
+    if (!docVersion.empty || !docDeprecated.empty)
+    {
+      writer ~= "";
+
+      if (!docVersion.empty)
+        writer ~= "* Version: " ~ docVersion;
+
+      if (!docDeprecated.empty)
+        writer ~= "* Deprecated: " ~ repo.defs.gdocToDDoc(docDeprecated, "*   ", repo);
+    }
 
     writer ~= "*/";
   }
@@ -138,7 +152,7 @@ abstract class Base
   dstring docContent; /// Documentation content
   dstring docFilename; /// Documentation filename
   uint docLine; /// Documentation line number
-  dstring docVersion; /// FIXME - What is this for?
+  dstring docVersion; /// Version of the API where support for this object was added
   dstring sourceFilename; /// Source code filename
   uint sourceLine; /// Source code line number
   dstring docDeprecated; /// Deprecated note documentation

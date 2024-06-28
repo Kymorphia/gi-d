@@ -18,7 +18,7 @@ class ObjectG
   /**
     * Constructor to wrap a C GObject with a D proxy object.
     * Params:
-    *   cptr = Pointer to the GObject
+    *   cObj = Pointer to the GObject
     *   owned = true if the D object should take ownership of the passed reference, false to add a new reference
     */
   this(void* cObj, bool owned)
@@ -67,9 +67,8 @@ class ObjectG
   /**
    * Get a pointer to the underlying C object.
    * Params:
-   *   T = The type of C object to get (must be a valid C type for the D object or one of it's ancestors)
    *   addRef = true to add a reference with g_object_ref(), false otherwise (default)
-   * Returns: The C object (no reference is added)
+   * Returns: The C object (reference added according to addRef parameter)
    */
   void* cPtr(bool addRef = false)
   {

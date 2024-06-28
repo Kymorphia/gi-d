@@ -207,10 +207,11 @@ T* arrayDtoC(T, Flag!"UseMalloc" useMalloc = No.UseMalloc, Flag!"ZeroTerm" zeroT
 
 /**
  * Template to convert a GHashTable to a D associative array.
+ *   `K`: The key D type
+ *   `V`: The value D type
+ *   `owned`: Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
  * Params:
- *   K = The key D type
- *   V = The value D type
- *   owned = Set to true if caller takes ownership of hash (frees it), false to leave it alone (default)
+ *   hash = The hash table to convert
  * Returns: The D associative array which is a copy of the data in hash
  */
 V[K] hashTableToMap(K, V, bool owned = false)(GHashTable* hash)

@@ -532,6 +532,7 @@ long containerTypeElemCount(ContainerType container)
  * Get the module name which should be imported for a given container type.
  * Params:
  *   container = The container type
+ *   defs = The definitions object
  * Returns: The module structure or null if the container has no module
  */
 Structure getModule(ContainerType container, Defs defs)

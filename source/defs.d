@@ -7,8 +7,10 @@ import gir.alias_;
 import gir.constant;
 import gir.enumeration;
 import gir.func;
+import gir.member;
 import gir.param;
 import gir.repo;
+import gir.property;
 import gir.structure;
 import gir.type_node;
 import std_includes;
@@ -560,6 +562,144 @@ class Defs
   }
 
   /**
+   * Find type object by Gir doc reference (as found in Gir documentation).
+   * In the form [kind@Namespace.TypeName(.|::|:)SubTypeName] where SubTypeName is optional.
+   * Params:
+   *   refStr = Type name string
+   *   repo = Repo to use if refStr does not contain a namespace (optional if refStr has a valid namespace)
+   * Returns: The matching type object or null if not found (possible basic type)
+   */
+  TypeNode findTypeObjectByGDocRef(dstring refStr, Repo repo = null)
+  {
+    auto refRe = ctRegex!(`^(?P<kind>[a-z]+)@(?P<Namespace>[A-Za-z]+)\.(?P<TypeName>[A-Za-z0-9_]+)`d
+      ~ `(?:\.|::|:)?(?P<SubTypeName>[A-Za-z0-9_]*)`d);
+    auto c = refStr.matchFirst(refRe);
+
+    dstring kind, nameSpace, typeName, subTypeName;
+
+    if (c.empty) // No match to kind@Namespace.TypeName.SubTypeName? - Process it as a dot separated type name
+    {
+      auto t = refStr.split('.');
+
+      if (t.length > 1)
+      {
+        nameSpace = t[0];
+        typeName = t[1];
+
+        if (t.length > 2)
+          subTypeName = t[2];
+      }
+      else
+        typeName = t[0];
+
+      kind = "func"; // FIXME - This seems a little hackish, just assume it is a function/method rather than a property or signal
+    }
+    else
+    {
+      kind = c["kind"];
+      nameSpace = c["Namespace"];
+      typeName = c["TypeName"];
+      subTypeName = c["SubTypeName"];
+    }
+
+    if (!nameSpace.empty)
+    {
+      if (auto r = repoHash.get(nameSpace, null))
+        repo = r;
+      else // Namespace did not match, assume it is TypeName.SubTypeName without Namespace
+      {
+        subTypeName = typeName;
+        typeName = nameSpace;
+      }
+    }
+
+    assert(repo);
+
+    typeName = subTypeStr(typeName, dTypeSubs, repo.dTypeSubs);
+    auto tn = repo.typeObjectHash.get(typeName, null);
+
+    if (subTypeName.empty || !tn)
+      return tn;
+
+    if (auto st = cast(Structure)tn)
+    {
+      switch (kind)
+      {
+        case "func", "method", "ctor":
+          return st.funcNameHash.get(subTypeName, null);
+        case "property":
+          return st.properties.find!(x => x.name == subTypeName).frontIfNotEmpty(cast(Property)null);
+        case "signal":
+          return st.signals.find!(x => x.name == subTypeName).frontIfNotEmpty(cast(Func)null);
+        default: // Includes "vfunc"
+          return null;
+      }
+    }
+    else if (auto en = cast(Enumeration)tn)
+      return en.members.find!(x => x.name == subTypeName).frontIfNotEmpty(cast(Member)null);
+
+    return null;
+  }
+
+  /**
+  * Format a GTK doc string to be a DDoc string.
+  * Newlines are formatted with a prefix to match the indendation for the comment block.
+  * References in the form [kind@Namespace.TypeName(.|::|:)SubTypeName] are replaced with DDoc references.
+  * Function references func() are changed to the D function/method name and set to bold.
+  *
+  * Params:
+  *   s = The GTK doc string
+  *   prefix = The newline wrap prefix
+  *   repo = A default repository to look up references in (defaults to null)
+  * Returns: The DDoc formatted string
+  */
+  dstring gdocToDDoc(dstring s, dstring prefix, Repo repo = null)
+  {
+    import std.regex : Captures, ctRegex, replaceAll;
+    auto escapeRe = ctRegex!(r"[$=]"d);
+    auto nlSpaceRe = ctRegex!(r"\n\s*"d);
+    auto refRe = ctRegex!(r"\[`?([a-z]+@[^\]]+)`?\]"d);
+    auto funcRe = ctRegex!(r"([a-z0-9_]+)\(\)"d);
+
+    s = s.replaceAll(escapeRe, "\\$&"); // Escape special characters
+
+    // Format newlines for comment block
+    prefix = "\n" ~ prefix;
+    s = s.replaceAll(nlSpaceRe, prefix);
+
+    dstring refReplace(Captures!(dstring) m)
+    {
+      auto tn = findTypeObjectByGDocRef(m[1], repo);
+
+      if (auto fn = cast(Func)tn)
+        return "[" ~ fn.fullDName ~ "]";
+      else if (tn)
+        return "[" ~ tn.fullName ~ "]";
+      else
+        return m[1];
+    }
+
+    s = replaceAll!(refReplace)(s, refRe); // Replace [kind@name] with DDoc reference
+
+    dstring funcReplace(Captures!(dstring) m)
+    {
+      if (auto tn = cSymbolHash.get(m[1], null))
+      {
+        if (auto fn = cast(Func)tn)
+          return "[" ~ fn.fullDName ~ "]";
+        else
+          return "[" ~ tn.fullName ~ "]";
+      }
+
+      return m[0];
+    }
+
+    s = replaceAll!(funcReplace)(s, funcRe); // Replace func() references
+
+    return s.escapeNonRefLinkParens;
+  }
+
+  /**
    * Fix symbol name if it is a reserved word, by appending an underscore to it.
    * Params:
    *   name = The symbol name
@@ -708,6 +848,7 @@ class Defs
   XmlPatch[] patches; /// Global XML patches specified in definitions file
   Repo[] repos; /// Gir repositories
   Repo[dstring] repoHash; /// Hash of repositories by namespace
+  TypeNode[dstring] cSymbolHash; /// Hash of all C symbols across all repos
   ImportManager importManager; /// Current import manager used with beginImports()/endImports()
   UnresolvedFlags[TypeNode] unresolvedTypes; /// TypeNode objects which have an unresolved type (for recursive type resolution)
 }

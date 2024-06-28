@@ -66,6 +66,19 @@ final class Func : TypeNode
     return params.length > 0 && params[0].isInstanceParam;
   }
 
+  /**
+   * Get a signal delegate instance parameter name. This is the dType of the parent class with a lowercase first letter.
+   * Returns: Signal delegate instance parameter name or null if parent is not a class
+   */
+  dstring signalDelegInstanceParam()
+  {
+    if (auto owningClass = cast(Structure)parent)
+      if (owningClass != repo.globalStruct)
+        return repo.defs.symbolName(owningClass.dType[0].toLower ~ owningClass.dType[1 .. $]);
+
+    return null;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
@@ -91,6 +104,78 @@ final class Func : TypeNode
     deprecated_ = node.get("deprecated") == "1";
     deprecatedVersion = node.get("deprecated-version");
     when = cast(SignalWhen)SignalWhenValues.countUntil(node.get("when"));
+  }
+
+  override void writeDocs(CodeWriter writer)
+  {
+    if (docContent.length == 0)
+      return;
+
+    writer ~= "/**";
+    writer ~= "* " ~ gdocToDDoc(docContent, "* ");
+
+    bool preambleShown;
+    foreach (pa; params)
+    {
+      if (pa.isInstanceParam || pa.isArrayLength || pa.isClosure || pa.isDestroy)
+        continue;
+
+      if (!preambleShown)
+      {
+        preambleShown = true;
+        writer ~= funcType == FuncType.Signal ? "* Params"d : "* Params:"d; // FIXME - Work around lack of support for Ddoc delegate alias parameter support
+      }
+
+      writer ~= "*   " ~ pa.dName ~ " = " ~ gdocToDDoc(pa.docContent, "*     ");
+    }
+
+    if (funcType == FuncType.Signal) // Add documentation for the signal callback instance parameter
+      writer ~= "*   " ~ signalDelegInstanceParam ~ " = the instance the signal is connected to";
+
+    if (returnVal && returnVal.origDType != "none")
+      writer ~= "* Returns: " ~ gdocToDDoc(returnVal.docContent, "*   ");
+
+    if (!docVersion.empty || !docDeprecated.empty)
+    {
+      writer ~= "";
+
+      if (!docVersion.empty)
+        writer ~= "* Version: " ~ docVersion;
+
+      if (!docDeprecated.empty)
+        writer ~= "* Deprecated: " ~ gdocToDDoc(docDeprecated, "*   ");
+    }
+
+    writer ~= "*/";
+  }
+
+  /**
+  * Format a GTK doc string to be a DDoc string.
+  * Newlines are formatted with a prefix to match the indendation for the comment block.
+  * Parameter references are convered to D names and set to bold.
+  * Function references func() are changed to the D function/method name and set to bold.
+  *
+  * Params:
+  *   gdoc = The GTK doc string
+  *   prefix = The newline wrap prefix
+  * Returns: The DDoc formatted string
+  */
+  dstring gdocToDDoc(dstring gdoc, dstring prefix = "*   ")
+  {
+    auto paramRe = ctRegex!(r"@(\w)"d);
+
+    gdoc = repo.defs.gdocToDDoc(gdoc, prefix, repo);
+
+    dstring paramReplaceFunc(Captures!(dstring) m)
+    {
+      foreach (pa; params)
+        if (pa.name == m[1])
+          return pa.dName;
+
+      return m[1];
+    }
+
+    return gdoc.replaceAll!(paramReplaceFunc)(paramRe); // Replace @cName with dName for parameters
   }
 
   override void fixup()

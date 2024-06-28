@@ -44,8 +44,6 @@ abstract class Boxed
 
   /**
    * Make a copy of the wrapped C boxed data.
-   * Params:
-   *   T = Type of the C boxed structure
    * Returns: Copy of the boxed type
    */
   void* copy_()
