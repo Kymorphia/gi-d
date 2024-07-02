@@ -225,8 +225,13 @@ final class Param : TypeNode
       throw new Exception("Unsupported string InOut parameter");
 
     if (kind == TypeKind.Boxed && direction == ParamDirection.Out && cType.countStars != 2)
-      throw new Exception("Unsupported boxed type Out parameter of type '" ~ dType.to!string
-        ~ "' requiring caller allocation");
+    {
+      auto st = cast(Structure)typeObject;
+
+      if (!st || (!st.ctorFunc && (st.opaque || st.pointer || st.fields.empty)))
+        throw new Exception("Unsupported boxed type Out parameter of type '" ~ dType.to!string
+          ~ "' requiring caller allocation of opaque structure");
+    }
 
     with (ParamDirection) if (containerType == ContainerType.Array)
     {

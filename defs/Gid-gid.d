@@ -2,7 +2,6 @@
 
 import core.exception : OutOfMemoryError;
 import core.memory : GC;
-import core.stdc.stdlib : free, malloc;
 import core.stdc.string : memset, strlen;
 import std.string : toStringz;
 import std.traits : hasMember;
@@ -69,7 +68,7 @@ char* toCString(string dstr, bool transfer)
 
   if (transfer)
   {
-    char* cstr = cast(char*)malloc(dstr.length + 1);
+    char* cstr = cast(char*)g_malloc(dstr.length + 1);
 
     if (!cstr)
       throw new OutOfMemoryError();
@@ -83,10 +82,10 @@ char* toCString(string dstr, bool transfer)
 }
 
 /**
- * Convert a C string to a D string, with parameter to consume (free) the C string with free().
+ * Convert a C string to a D string, with parameter to consume (free) the C string with g_free().
  * Params:
  *   cstr = Zero terminated C string
- *   transfer = true to transfer the string (freed with free()), false to just copy it
+ *   transfer = true to transfer the string (freed with g_free()), false to just copy it
  * Returns: The D string copy
  */
 string fromCString(const(char)* cstr, bool transfer)
@@ -97,21 +96,20 @@ string fromCString(const(char)* cstr, bool transfer)
   string dstr = cstr[0 .. strlen(cstr)].dup;
 
   if (transfer && cstr)
-    free(cast(void*)cstr);
+    g_free(cast(void*)cstr);
 
   return dstr;
 }
 
 /**
- * Free a pointer allocated with malloc() but only if it is not null.
- * Params:
- *   ptr = Pointer to the data to free (can be null)
+ * An alias for g_malloc0 for allocating memory for interfacing with glib.
  */
-void safeFree(void* ptr)
-{
-  if (ptr)
-    free(ptr);
-}
+alias safeMalloc = g_malloc0;
+
+/**
+ * Free a pointer allocated with malloc() but only if it is not null.
+ */
+alias safeFree = g_free;
 
 /**
  * Duplicate a zero terminate C string.
@@ -127,7 +125,7 @@ char* strdup(const(char)* s)
 
   auto len = strlen(s);
 
-  if (auto dup = cast(char*)malloc(len))
+  if (auto dup = cast(char*)g_malloc(len))
   {
     dup[0 .. len] = s[0 .. len];
     return dup;
@@ -151,7 +149,7 @@ void zero(void* p, size_t len)
  * Template to copy a D array for use by C.
  * Params:
  *   T = The array type
- *   useMalloc = Yes.UseMalloc to use C malloc() to allocate the array, No to use D memory (defaults to No)
+ *   useMalloc = Yes.UseMalloc to use g_malloc() to allocate the array, No to use D memory (defaults to No)
  *   zeroTerm = Yes.ZeroTerminated if the resulting array should be zero terminated (defaults to No)
  *   array = The array to copy
  * Returns: C array or null if array is empty
@@ -167,13 +165,13 @@ T* arrayDtoC(T, Flag!"UseMalloc" useMalloc = No.UseMalloc, Flag!"ZeroTerm" zeroT
   {
     static if (zeroTerm)
     {
-      retArray = cast(T*)malloc((array.length + 1) * T.sizeof);
+      retArray = cast(T*)g_malloc((array.length + 1) * T.sizeof);
 
       if (retArray)
         zero(cast(void*)&retArray[array.length], T.sizeof);
     }
     else
-      retArray = cast(T*)malloc(array.length * T.sizeof);
+      retArray = cast(T*)g_malloc(array.length * T.sizeof);
 
     if (!retArray)
       throw new OutOfMemoryError;
@@ -245,10 +243,10 @@ GHashTable* mapToHashTable(K, V)(V[K] map)
   static if (is(V : ObjectG))
     valDestroyFunc = g_object_unref;
   else static if (is(V : string))
-    valDestroyFunc = free;
+    valDestroyFunc = g_free;
 
   static if (is(K : string))
-    g_hash_table_new_full(g_str_hash, g_str_equal, free, valDestroyFunc);
+    g_hash_table_new_full(g_str_hash, g_str_equal, g_free, valDestroyFunc);
   else
     g_hash_table_new_full(g_direct_hash, g_direct_equal, null, valDestroyFunc);
 }
@@ -289,7 +287,7 @@ void* containerCopyItem(T)(void* data)
   static if (is(T : ObjectG) || is(T == interface))
     return ObjectG.ref_(data);
   else static if (is(T : Boxed))
-    return Boxed.boxCopy!T(data);
+    return Boxed.boxedCopy!T(data);
   else static if (is(T : string))
     return strdup(cast(const(char)*)data);
   else static if (__traits(compiles, T.ref_(data)))
@@ -311,9 +309,9 @@ void containerFreeItem(T)(void* data)
   static if (is(T : ObjectG) || is(T == interface))
     ObjectG.unref(data);
   else static if (is(T : Boxed))
-    Boxed.boxFree!T(data);
+    Boxed.boxedFree!T(data);
   else static if (is(T : string))
-    free(data);
+    g_free(data);
   else static if (__traits(compiles, T.unref(data)))
     T.unref(data);
   else static if (is(T : void*))

@@ -278,10 +278,10 @@ class DelegWriter
               ~ param.fullOwnerStr ~ ") : null");
         }
         else if (param.direction == ParamDirection.Out)
-        {
-          preCall ~= param.dType ~ " _" ~ param.dName ~ ";\n";
+        { // FIXME - Not sure if this will work for all cases, also could optimize by allowing C structure to be directly used in D object
+          preCall ~= "auto _" ~ param.dName ~ " = new " ~ param.dType ~ "(" ~ param.dName ~ ", false);\n";
           addCallParam("_" ~ param.dName);
-          postCall ~= "*" ~ param.dName ~ " = _" ~ param.dName ~ ".cPtr(true);\n";
+          postCall ~= "*" ~ param.dName ~ " = *cast(" ~ param.cType ~ ")_" ~ param.dName ~ ".cPtr;\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?

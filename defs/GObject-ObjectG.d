@@ -2,6 +2,7 @@
 import GLib.Types;
 import GLib.c.functions;
 import GObject.DClosure;
+import GObject.Value;
 
 private immutable Quark gidObjectQuark;
 
@@ -135,5 +136,34 @@ class ObjectG
   ulong connectSignalClosure(string signalDetail, DClosure closure, bool after = false)
   {
     return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), cast(GClosure*)(cast(Closure)closure).cPtr, after);
+  }
+
+  /**
+   * Template for setting a GObject property.
+   * Params:
+   *   propertyName = Name of the GObject property
+   *   val = The value to assign (must match the property value type)
+   */
+  void setProperty(T)(string propertyName, T val)
+  {
+    GValue value;
+    setVal(&value, val);
+    g_object_set_property(cInstancePtr, toCString(propertyName, false), &value);
+    g_value_unset(&value);
+  }
+
+  /**
+   * Template for getting a GObject property.
+   * Params:
+   *   propertyName = Name of the GObject property
+   * Returns: The property value (must match the property value type)
+   */
+  T getProperty(T)(string propertyName) const
+  {
+    GValue value;
+    g_object_get_property(cInstancePtr, toCString(propertyName, false), &value);
+    T retval = getVal(&value, val);
+    g_value_unset(&value);
+    return retval;
   }
 }

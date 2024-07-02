@@ -209,6 +209,21 @@ final class Func : TypeNode
       }
 
       returnVal.fixup; // Fixup return value
+
+      if (funcType == FuncType.Constructor) // Return actual instance type for constructors, not a GTK convenience type (like GtkWidget)
+      {
+        auto retSt = cast(Structure)returnVal.typeObject;
+        auto parentSt = getParentByType!Structure;
+
+        if (!(retSt is parentSt || returnVal.dType == parentSt.dType))
+        {
+          info("Changing return value for " ~ fullName.to!string ~ " from type " ~ returnVal.dType.to!string
+            ~ " to " ~ parentSt.dType.to!string);
+
+          returnVal.dType = parentSt.dType;
+          returnVal.typeObject = parentSt;
+        }
+      }
     }
 
     foreach (pa; params) // Fixup parameters

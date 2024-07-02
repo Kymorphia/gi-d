@@ -58,7 +58,7 @@ abstract class Boxed
    *   cBoxed = The C boxed pointer
    * Returns: A copy of the boxed type
    */
-  static void* boxCopy(T)(void* cBoxed)
+  static void* boxedCopy(T)(void* cBoxed)
   {
     return glib_g_boxed_copy(T.getType, cBoxed);
   }
@@ -69,7 +69,7 @@ abstract class Boxed
    *   T = The D boxed type
    *   cBoxed = The C boxed pointer
    */
-  static void boxFree(T)(void* cBoxed)
+  static void boxedFree(T)(void* cBoxed)
   {
     glib_g_boxed_free(T.getType, cBoxed);
   }

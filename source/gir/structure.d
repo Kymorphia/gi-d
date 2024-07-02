@@ -430,6 +430,10 @@ final class Structure : TypeNode
     if (kind == TypeKind.Opaque)
       writer ~= "bool owned;";
 
+    // Boxed structures with defined structures can be allocated, add ctor without args
+    if (kind == TypeKind.Boxed && !ctorFunc && !opaque && !pointer && !fields.empty)
+      writer ~= ["", "this()", "{", "super(safeMalloc(" ~ cType ~ ".sizeof), true);", "}"];
+
     if (kind == TypeKind.Opaque)
       writer ~= ["", "this(void* ptr, bool owned = false)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
