@@ -35,10 +35,13 @@ class DelegWriter
 
     decl ~= "_" ~ delegParam.dName ~ "Callback(";
 
-    if (delegParam.scope_ == ParamScope.Call)
-      call ~= "_static_" ~ delegParam.dName ~ "("; // Call the static per thread delegate pointer which is used to pass it from the outer function to the C callback
+    if (delegParam.scope_ != ParamScope.Call)
+    {
+      preCall ~= "auto _dlg = cast(" ~ delegParam.dType ~ "*)" ~ callback.closureParam.dName ~ ";\n";
+      call ~= "(*_dlg)(";
+    }
     else
-      call ~= "(*(cast(" ~ delegParam.dType ~ "*)" ~ callback.closureParam.dName ~ "))(";
+      call ~= "_static_" ~ delegParam.dName ~ "("; // Call the static per thread delegate pointer which is used to pass it from the outer function to the C callback
 
     foreach (param; callback.params)
       processParam(param);
@@ -306,7 +309,7 @@ class DelegWriter
     preCall ~= elemType.dType ~ "[] _" ~ param.dName ~ ";\n";
     addCallParam("_" ~ param.dName);
 
-    // Pre C function call processing
+    // Pre delegate call processing
     if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
     {
       dstring lengthStr;

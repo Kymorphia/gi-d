@@ -471,7 +471,10 @@ final class Repo : Base
 
     output ~= `  "targetType": "dynamicLibrary",` ~ "\n";
     output ~= `  "importPaths": [".", ".."],` ~ "\n";
-    output ~= `  "sourcePaths": ["` ~ namespace.to!string ~ `"]`;
+
+    // Include merged repos in sourcePaths list
+    auto namespaces = [namespace] ~ defs.repos.filter!(x => x.merge == namespace).map!(x => x.namespace).array;
+    output ~= `  "sourcePaths": [` ~ namespaces.map!(ns => '"' ~ ns.to!string ~ '"').join(", ") ~ `]`;
 
     if (!includes.empty)
     { // Use merge repo names as needed

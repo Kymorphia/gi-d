@@ -1,9 +1,12 @@
 //!generate funcs
+import core.atomic;
+
 import GLib.Types;
 import GLib.c.functions;
 import GObject.DClosure;
 import GObject.Value;
 
+// String quark used to assign the D ObjectG to the C GObject keyed-data list
 private immutable Quark gidObjectQuark;
 
 shared static this()
@@ -11,10 +14,21 @@ shared static this()
   gidObjectQuark = g_quark_from_string("_gidObject");
 }
 
+// Map of GTypes to D class info
+private shared TypeInfo_Class[GType] gtypeClasses;
+private shared bool gtypeClassesInitialized;
+
 /// Base class wrapper for GObject types
 class ObjectG
 {
   protected ObjectC* cInstancePtr; // Pointer to wrapped C GObject
+
+  /**
+   * Create an unset GObject wrapper.
+   */
+  this()
+  {
+  }
 
   /**
     * Constructor to wrap a C GObject with a D proxy object.
@@ -27,6 +41,23 @@ class ObjectG
     if (!cObj)
       throw new GidConstructException("Null instance pointer for " ~ typeid(this).name);
 
+    setGObject(cObj, owned);
+  }
+
+  ~this()
+  { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
+    if (cInstancePtr) // Might be null if an exception occurred during construction
+      g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
+  }
+
+  /**
+   * Set the GObject of a D ObjectG wrapper.
+   * Params:
+   *   cObj = Pointer to the GObject
+   *   owned = true if the D object should take ownership of the passed reference, false to add a new reference
+   */
+  final void setGObject(void* cObj, bool owned)
+  {
     cInstancePtr = cast(ObjectC*)cObj;
 
     // Add a data pointer to the D object from the C GObject
@@ -49,13 +80,6 @@ class ObjectG
       g_object_unref(cInstancePtr);
   }
 
-  ~this()
-  { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
-    if (cInstancePtr) // Might be null if an exception occurred during construction
-      g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
-  }
-
-  
   // Toggle ref callback
   extern(C) static void _cObjToggleNotify(void *dObj, ObjectC* gObj, bool isLastRef)
   {
@@ -101,9 +125,18 @@ class ObjectG
    * Get the GType of an object.
    * Returns: The GType
    */
-  GType getType()
+  static GType getType()
   {
     return g_object_get_type();
+  }
+
+  /**
+   * GObject GType property.
+   * Returns: The GType of the GObject class.
+   */
+  @property GType gType()
+  {
+    return getType;
   }
 
   /**
@@ -119,10 +152,51 @@ class ObjectG
     if (auto dObj = g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
       return cast(T)dObj;
 
+    if (!atomicLoad(gtypeClassesInitialized)) // One time initialization of GType -> TypeInfo_Class map
+    {
+      synchronized
+      {
+        auto gobjClass = typeid(ObjectG);
+
+        foreach (m; ModuleInfo)
+        {
+          if (!m)
+            continue;
+
+          foreach (c; m.localClasses)
+          {
+            if (c && gobjClass.isBaseOf(c))
+              if (auto obj = c.create)
+                gtypeClasses[(cast(ObjectG)obj).gType] = cast(shared)c;
+          }
+        }
+
+        atomicStore(gtypeClassesInitialized, true);
+      }
+    }
+
+    // Traverse the C GObject type ancestry until we find a corresponding D class
+    for (auto gTypeClass = (cast(GTypeInstance*)cptr).gClass; gTypeClass;
+      gTypeClass = g_type_class_peek_parent(gTypeClass))
+    {
+      if (auto dClassType = gTypeClass.gType in gtypeClasses)
+      {
+        auto obj = (cast(TypeInfo_Class)*dClassType).create;
+
+        if (!obj)
+          return null;
+
+        (cast(ObjectG)obj).setGObject(cptr, owned);
+        return cast(T)obj;
+      }
+    }
+
     static if (!is(T == interface))
-      return new T(cptr, owned);
+      return new T(cptr, owned); // Fallback to create Object from this template Object type
+    else static if (is(T == ObjectG))
+      return new ObjectG(cptr, owned); // Interfaces fallback to creating a generic ObjectG wrapper
     else
-      return null; // FIXME - Need to handle returning an object instance for an interface
+      return null; // Object type is not derived from (or is) this template type, return null
   }
 
   /**
@@ -147,6 +221,7 @@ class ObjectG
   void setProperty(T)(string propertyName, T val)
   {
     GValue value;
+    initVal!T(&value);
     setVal(&value, val);
     g_object_set_property(cInstancePtr, toCString(propertyName, false), &value);
     g_value_unset(&value);
@@ -161,6 +236,7 @@ class ObjectG
   T getProperty(T)(string propertyName) const
   {
     GValue value;
+    initVal!T(&value);
     g_object_get_property(cInstancePtr, toCString(propertyName, false), &value);
     T retval = getVal(&value, val);
     g_value_unset(&value);

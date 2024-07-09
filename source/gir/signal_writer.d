@@ -47,10 +47,7 @@ class SignalWriter
     call ~= "_dgClosure.dlg(";
 
     foreach (i, param; signal.params)
-    { // The parameter index is +1 because the first one is the object instance
-      preCall ~= "auto " ~ param.dName ~ " = getVal!" ~ param.dType ~ "(&_paramVals[" ~ (i + 1).to!dstring ~ "]);\n";
-      processParam(param);
-    }
+      processParam(param, i);
 
     // Add the instance parameter (last)
     addDeclParam(owningClass.dType ~ " " ~ instanceParamName);
@@ -127,13 +124,25 @@ class SignalWriter
   }
 
   /// Process parameter
-  private void processParam(Param param)
+  private void processParam(Param param, ulong paramIndex)
   {
+    if (param.containerType == ContainerType.Array) // Array container?
+    {
+      processArrayParam(param, paramIndex);
+      return;
+    }
+
+    preCall ~= "auto " ~ param.dName ~ " = getVal!" ~ param.dType ~ "(&_paramVals[" ~ (paramIndex + 1).to!dstring
+      ~ "]);\n"; // The parameter index is +1 because the first one is the object instance
+
     assert(param.containerType == ContainerType.None, "No support for signal container parameter type '"
       ~ param.containerType.to!string ~ "'");
 
     assert(param.direction == ParamDirection.In, "No support for signal parameter direction '"
       ~ param.direction.to!string ~ "'");
+
+    if (param.isArrayLength) // Array length parameter?
+      return;
 
     addCallParam(param.dName);
 
@@ -154,6 +163,67 @@ class SignalWriter
       case Simple, Pointer, Opaque, Callback, Unknown, Container, Namespace:
         assert(0, "Unsupported signal parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
             ~ signal.fullName.to!string);
+    }
+  }
+
+  /// Process array parameter
+  private void processArrayParam(Param param, ulong paramIndex)
+  {
+    if (param.direction != ParamDirection.In || param.ownership != Ownership.None)
+      assert(0, "Unsupported delegate array parameter direction '" ~ param.direction.to!string
+        ~ "' and ownership '" ~ param.ownership.to!string ~ "'");
+
+    auto elemType = param.elemTypes[0];
+
+    preCall ~= "auto " ~ param.dName ~ " = getVal!(" ~ elemType.cTypeRemPtr ~ "**)(&_paramVals[" ~ (paramIndex + 1).to!dstring ~ "]);\n"; // The parameter index is +1 because the first one is the object instance
+
+    addDeclParam(elemType.dType ~ "[] " ~ param.dName);
+    preCall ~= elemType.dType ~ "[] _" ~ param.dName ~ ";\n";
+    addCallParam("_" ~ param.dName);
+
+    // Pre delegate call processing
+    if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
+    {
+      dstring lengthStr;
+
+      if (param.lengthParam) // Array has length parameter?
+        lengthStr = param.lengthParam.dName;
+      else if (param.fixedSize != ArrayNotFixed) // Array is a fixed size?
+        lengthStr = param.fixedSize.to!dstring;
+      else if (param.zeroTerminated) // Array is zero terminated?
+      {
+        inpProcess ~= "uint _len" ~ param.dName ~ ";\nif (" ~ param.dName ~ ")\nfor (; " ~ param.dName
+          ~ "[_len" ~ param.dName ~ "] != " ~ (elemType.cType.endsWith("*") ? "null"d : "0") ~ "; _len" ~ param.dName
+          ~ "++)\nbreak;\n";
+        lengthStr = "_len" ~ param.dName;
+      }
+      else
+        assert(0); // This should be prevented by verify
+
+      final switch (elemType.kind) with (TypeKind)
+      {
+        case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
+          inpProcess ~= "_" ~ param.dName ~ " = cast(" ~ elemType.dType ~ "[])" ~ param.dName ~ "[0 .. " ~ lengthStr
+            ~ "];\n";
+          break;
+        case String:
+          inpProcess ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ param.dName ~ "[i].fromCString("
+            ~ param.fullOwnerStr ~ ");\n";
+          break;
+        case Opaque, Boxed, Wrap, Reffed:
+          inpProcess ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= new " ~ elemType.dType ~ "(cast("
+            ~ elemType.cType.stripConst ~ "*)&" ~ param.dName ~ "[i]"
+            ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
+          break;
+        case Object, Interface:
+          auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
+          inpProcess ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ objectGSym ~ ".getDObject!"
+            ~ elemType.dType ~ "(" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+          break;
+        case Unknown, Callback, Container, Namespace:
+          assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
+              ~ ") for signal " ~ signal.fullName.to!string);
+      }
     }
   }
 
@@ -181,8 +251,11 @@ class SignalWriter
     writer ~= connectDecl;
     writer ~= "{";
 
-    if (preCall.length > 0)
+    if (!preCall.empty)
       writer ~= preCall;
+
+    if (!inpProcess.empty)
+      writer ~= inpProcess;
 
     writer ~= call;
 
@@ -198,6 +271,7 @@ class SignalWriter
   dstring dlgDecl; /// Delegate alias declaration
   dstring connectDecl; /// Signal connect method declaration
   dstring preCall; /// Pre-call code for call return variable, call output parameter variables, and input variable processing
+  dstring inpProcess; /// Input processing (after preCall variable assignments and before the delegate call)
   dstring call; /// The D delegate call
   dstring postCall; /// Post-call code for return value processing, output parameter processing, and input variable cleanup
 }

@@ -576,5 +576,6 @@ enum UnresolvedFlags
 {
   Kind = 1 << 0, /// The TypeNode kind is unresolved
   ParentStruct = 1 << 1, /// The parent structure is unresolved
-  Element = 1 << 2, /// A container element is unresolved
+  Implements = 1 << 2, /// Not all implementation interfaces are resolved
+  Element = 1 << 3, /// A container element is unresolved
 }

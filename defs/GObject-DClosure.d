@@ -11,6 +11,9 @@ class DClosure : Closure
   this(T)(T dlg, GClosureMarshal cMarshal)
   {
     auto closure = g_closure_new_simple(DGClosure!T.sizeof, null);
+    g_closure_ref(closure);
+    g_closure_sink(closure);
+
     auto dgClosure = cast(DGClosure!T*)closure;
     dgClosure.dlg = dlg;
     g_closure_set_marshal(closure, cMarshal);

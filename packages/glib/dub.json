@@ -7,5 +7,5 @@
   "license": "MIT",
   "targetType": "dynamicLibrary",
   "importPaths": [".", ".."],
-  "sourcePaths": ["GLib"]
+  "sourcePaths": ["GLib", "GObject", "Gid"]
 }

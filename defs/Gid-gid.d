@@ -55,6 +55,30 @@ extern(C) void ptrThawDestroyNotify(void* ptr)
 }
 
 /**
+ * Freeze a delegate to C heap memory and pin the context in the GC.
+ * Params:
+ *   dlg = Pointer to the delegate to freeze
+ * Returns: The duplicated delegate in C heap memory
+ */
+void* freezeDelegate(void* dlg)
+{
+  auto dlgCast = cast(void delegate()*)dlg;
+  ptrFreezeGC(dlgCast.ptr);
+  return g_memdup2(dlg, (*dlgCast).sizeof);
+}
+
+/**
+ * Destroy a C heap memory allocated duplicated delegate and unpin context in the GC which was created with freezeDelegate().
+ * Params:
+ *   dlg = The C heap memory allocated delegate
+ */
+extern(C) void thawDelegate(void* dlg)
+{
+  ptrThawGC((cast(void delegate()*)dlg).ptr);
+  safeFree(dlg);
+}
+
+/**
  * Convert a D string to a zero terminated C string, with allocation parameter.
  * Params:
  *   dstr = String to convert

@@ -295,3 +295,26 @@
   {
     g_thread_pool_free(pool, true, false); // immediate, wait
   }
+
+//# Change Timer.new() function to a constructor and set to inspectable
+//!set record[Timer].function[new][introspectable] 1
+//!rename record[Timer].function[new] constructor
+
+//# Add Timer.elapsed() without uselss microseconds parameter
+//!class Timer
+
+  /**
+   * If timer has been started but not stopped, obtains the time since
+   * the timer was started. If timer has been stopped, obtains the
+   * elapsed time between the time it was started and the time it was
+   * stopped. The return value is the number of seconds elapsed,
+   * including any fractional part.
+   * Returns: seconds elapsed as a floating point value, including any
+   *   fractional part.
+   */
+  double elapsed()
+  {
+    double _retval;
+    _retval = g_timer_elapsed(cast(GTimer*)cPtr, null);
+    return _retval;
+  }

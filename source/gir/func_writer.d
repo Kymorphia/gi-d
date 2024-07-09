@@ -160,7 +160,8 @@ class FuncWriter
         call ~= "_cretval = ";
 
         if (!func.isCtor)
-          postCall ~= "auto _retval = new "d ~ retVal.dType ~ "(cast(void*)_cretval, " ~ retVal.fullOwnerStr ~ ");\n";
+          postCall ~= "auto _retval = _cretval ? new "d ~ retVal.dType ~ "(cast(void*)_cretval, " ~ retVal.fullOwnerStr
+            ~ ") : null;\n";
         else // Constructor method
           postCall ~= "this(_cretval, " ~ retVal.fullOwnerStr ~ ");\n";
         break;
@@ -176,13 +177,13 @@ class FuncWriter
           if (retVal.kind == TypeKind.Object || retVal.kind == TypeKind.Interface)
           {
             auto objectGSym = retVal.repo.defs.resolveSymbol("GObject.ObjectG");
-            postCall ~= "auto _retval = " ~ objectGSym ~ ".getDObject!";
+            postCall ~= "auto _retval = _cretval ? " ~ objectGSym ~ ".getDObject!";
           }
           else
-            postCall ~= "auto _retval = new ";
+            postCall ~= "auto _retval = _cretval ? new ";
 
           postCall ~= retVal.dType ~ "(cast(" ~ retVal.cType.stripConst ~ ")_cretval"
-            ~ (retVal.kind != TypeKind.Wrap ? ", " ~ retVal.fullOwnerStr : "") ~ ");\n";
+            ~ (retVal.kind != TypeKind.Wrap ? ", " ~ retVal.fullOwnerStr : "") ~ ") : null;\n";
         }
         else // Constructor method
           postCall ~= "this(_cretval" ~ (retVal.kind != TypeKind.Wrap ? ", " ~ retVal.fullOwnerStr : "") ~ ");\n";
@@ -341,10 +342,10 @@ class FuncWriter
       {
         auto callbackParam = func.params[param.callbackIndex];
 
-        if (param.scope_ != ParamScope.Call)
-          preCall ~= "ptrFreezeGC(cast(void*)&" ~ callbackParam.dName ~ ");\n"; // Add delegate as a GC root so it doesn't get collected when there are no D pointers to it
+        if (param.scope_ != ParamScope.Call) // Duplicate delegate to malloc heap memory and pin the context if not Call scope
+          preCall ~= "auto _" ~ callbackParam.dName ~ " = freezeDelegate(cast(void*)&" ~ callbackParam.dName ~ ");\n";
 
-        addCallParam("cast(void*)&" ~ callbackParam.dName); // Pass the delegate as closure data
+        addCallParam("_" ~ callbackParam.dName); // Pass the duplicate pinned delegate as closure data
       }
       else
         addCallParam("null"); // Pass null if there is no callback associated with this closure data
@@ -354,7 +355,7 @@ class FuncWriter
     else if (param.isDestroy) // Destroy callback?
     {
       if (param.callbackIndex != NoCallback)
-        addCallParam("&ptrThawDestroyNotify"); // Remove delegate from the GC root when the closure is no longer used by the C code
+        addCallParam("&thawDelegate"); // Free the duplicate delegate and unpin the context
       else
         addCallParam("null"); // Pass null if there is no callback associated with this destroy notify
 

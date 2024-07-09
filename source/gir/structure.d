@@ -226,9 +226,15 @@ final class Structure : TypeNode
 
     implementStructs.length = 0;
 
+    updateUnresolvedFlags(UnresolvedFlags.Implements, false);
+
     foreach (ifaceName; implements)
+    {
       if (auto ifaceStruct = cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
         implementStructs ~= ifaceStruct;
+      else
+        updateUnresolvedFlags(UnresolvedFlags.Implements, true);
+    }
   }
 
   override void verify()
@@ -434,6 +440,9 @@ final class Structure : TypeNode
     if (kind == TypeKind.Boxed && !ctorFunc && !opaque && !pointer && !fields.empty)
       writer ~= ["", "this()", "{", "super(safeMalloc(" ~ cType ~ ".sizeof), true);", "}"];
 
+    if (kind == TypeKind.Object && (!ctorFunc || !ctorFunc.params.empty)) // Create default unassigned GObject constructor if there isn't one already
+      writer ~= ["", "this()", "{", "}"];
+
     if (kind == TypeKind.Opaque)
       writer ~= ["", "this(void* ptr, bool owned = false)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
@@ -473,6 +482,9 @@ final class Structure : TypeNode
 
     if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && ifaceModule))
       writer ~= ["", "static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+
+    if (kind.among(TypeKind.Boxed, TypeKind.Object))
+      writer ~= ["", "override @property GType gType()", "{", "return getType();", "}"];
 
     if (kind.among(TypeKind.Opaque, TypeKind.Wrap, TypeKind.Boxed))
       writer ~= propMethods;

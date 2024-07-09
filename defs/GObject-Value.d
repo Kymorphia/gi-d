@@ -3,10 +3,49 @@
 
 import std.traits : isPointer;
 
+import GObject.ObjectG;
 import GObject.Types;
 
 class Value : Boxed
 {
+}
+
+void initVal(T)(GValue* gval)
+{
+  static if (is(T == bool))
+    g_value_init(gval, GTypeEnum.Boolean);
+  else static if (is(T == byte))
+    g_value_init(gval, GTypeEnum.Char);
+  else static if (is(T == ubyte))
+    g_value_init(gval, GTypeEnum.Uchar);
+  else static if (is(T == int))
+    g_value_init(gval, GTypeEnum.Int);
+  else static if (is(T == uint))
+    g_value_init(gval, GTypeEnum.Uint);
+  else static if (is(T == long))
+    g_value_init(gval, GTypeEnum.Int64);
+  else static if (is(T == ulong))
+    g_value_init(gval, GTypeEnum.Uint64);
+  else static if (is(T == float))
+    g_value_init(gval, GTypeEnum.Float);
+  else static if (is(T == double))
+    g_value_init(gval, GTypeEnum.Double);
+  else static if (is(T == enum)) // FIXME enum or flags
+    g_value_init(gval, GTypeEnum.Enum);
+  else static if (is(T == string))
+    g_value_init(gval, GTypeEnum.String);
+  else static if (is(T == Variant))
+    g_value_init(gval, GTypeEnum.Variant);
+  else static if (is(T : ParamSpec))
+    g_value_init(gval, GTypeEnum.Param);
+  else static if (is(T : Boxed))
+    g_value_init(gval, GTypeEnum.Boxed);
+  else static if (is(T : ObjectG) || is(T == interface))
+    g_value_init(gval, GTypeEnum.Object);
+  else static if (isPointer!T)
+    g_value_init(gval, GTypeEnum.Pointer);
+  else
+    assert(0);
 }
 
 /// Template to get a value from a GValue of a given D type (must contain the correct type)
@@ -35,19 +74,29 @@ T getVal(T)(const(GValue)* gval)
   else static if (is(T == string))
     return g_value_get_string(gval).fromCString(false);
   else static if (is(T == Variant))
-    return new Variant(g_value_get_variant(gval), false);
+  {
+    auto v = g_value_get_variant(gval);
+    return v ? new Variant(v, false) : null;
+  }
   else static if (is(T : ParamSpec))
-    return new T(g_value_get_param(gval), false);
+  {
+    auto v = g_value_get_param(gval);
+    return v ? new T(v, false) : null;
+  }
   else static if (is(T : Boxed))
-    return new T(g_value_get_boxed(gval), false);
-  else static if (is(T : ObjectG))
-    return new T(g_value_get_object(gval), false);
+  {
+    auto v = g_value_get_boxed(gval);
+    return v ? new T(v, false) : null;
+  }
+  else static if (is(T : ObjectG) || is(T == interface))
+  {
+    auto v = g_value_get_object(gval);
+    return v ? ObjectG.getDObject!T(v, false) : null;
+  }
   else static if (isPointer!T)
     return cast(T)g_value_get_pointer(gval);
   else
     assert(0);
-
-  // g_value_get_gtype - FIXME?
 }
 
 /// Template to set a GValue to a given D type (must have been initialized to the proper type)
@@ -86,12 +135,10 @@ void setVal(T)(GValue* gval, T v)
     g_value_set_param(gval, v.cPtr!GParamSpec);
   else static if (is(T : Boxed))
     g_value_set_boxed(gval, v.cInstancePtr);
-  else static if (is(T : ObjectG))
+  else static if (is(T : ObjectG) || is(T == interface))
     g_value_set_object(gval, cast(ObjectC*)v.cPtr(false));
   else static if (isPointer!T)
     g_value_set_pointer(gval, v);
   else
     assert(0);
-
-  // g_value_set_gtype - FIXME?
 }
