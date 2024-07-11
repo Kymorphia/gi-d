@@ -1,6 +1,7 @@
 //!generate funcs
 import core.atomic;
 
+import Gid.class_map;
 import GLib.Types;
 import GLib.c.functions;
 import GObject.DClosure;
@@ -13,10 +14,6 @@ shared static this()
 {
   gidObjectQuark = g_quark_from_string("_gidObject");
 }
-
-// Map of GTypes to D class info
-private shared TypeInfo_Class[GType] gtypeClasses;
-private shared bool gtypeClassesInitialized;
 
 /// Base class wrapper for GObject types
 class ObjectG
@@ -152,36 +149,13 @@ class ObjectG
     if (auto dObj = g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
       return cast(T)dObj;
 
-    if (!atomicLoad(gtypeClassesInitialized)) // One time initialization of GType -> TypeInfo_Class map
-    {
-      synchronized
-      {
-        auto gobjClass = typeid(ObjectG);
-
-        foreach (m; ModuleInfo)
-        {
-          if (!m)
-            continue;
-
-          foreach (c; m.localClasses)
-          {
-            if (c && gobjClass.isBaseOf(c))
-              if (auto obj = c.create)
-                gtypeClasses[(cast(ObjectG)obj).gType] = cast(shared)c;
-          }
-        }
-
-        atomicStore(gtypeClassesInitialized, true);
-      }
-    }
-
     // Traverse the C GObject type ancestry until we find a corresponding D class
     for (auto gTypeClass = (cast(GTypeInstance*)cptr).gClass; gTypeClass;
       gTypeClass = g_type_class_peek_parent(gTypeClass))
     {
-      if (auto dClassType = gTypeClass.gType in gtypeClasses)
+      if (auto dClassType = lookupClassByGType(gTypeClass.gType))
       {
-        auto obj = (cast(TypeInfo_Class)*dClassType).create;
+        auto obj = (cast(TypeInfo_Class)dClassType).create;
 
         if (!obj)
           return null;
