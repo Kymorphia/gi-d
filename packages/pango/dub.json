@@ -1,0 +1,17 @@
+{
+  "name": "pango",
+  "version": "1.0.0",
+  "description": "Pango library gi-d binding",
+  "copyright": "Copyright © 2024, Kymorphia, PBC",
+  "authors": ["Element Green <element@kymorphia.com>"],
+  "license": "MIT",
+  "targetType": "dynamicLibrary",
+  "importPaths": [".", ".."],
+  "sourcePaths": ["Pango"],
+  "dependencies": {
+    "gid:cairo": "*",
+    "gid:gio": "*",
+    "gid:glib": "*",
+    "gid:harfbuzz": "*"
+  }
+}
