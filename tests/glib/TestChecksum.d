@@ -1,11 +1,13 @@
 module glib.TestChecksum;
 
+import std.array : array;
 import std.digest.md, std.digest.sha;
 import std.string : toLower;
 import std.traits;
 
 import GLib.Checksum;
-import GLib.global;
+import GLib.Global;
+import GLib.Types;
 
 unittest
 {
@@ -20,11 +22,11 @@ unittest
   ];
 
   char[][ChecksumType] testHashes;
-  testHashes[ChecksumType.Md5] = hexDigest!MD5(testString);
-  testHashes[ChecksumType.Sha1] = hexDigest!SHA1(testString);
-  testHashes[ChecksumType.Sha256] = hexDigest!SHA256(testString);
-  testHashes[ChecksumType.Sha512] = hexDigest!SHA512(testString);
-  testHashes[ChecksumType.Sha384] = hexDigest!SHA384(testString);
+  testHashes[ChecksumType.Md5] = hexDigest!MD5(testString).array;
+  testHashes[ChecksumType.Sha1] = hexDigest!SHA1(testString).array;
+  testHashes[ChecksumType.Sha256] = hexDigest!SHA256(testString).array;
+  testHashes[ChecksumType.Sha512] = hexDigest!SHA512(testString).array;
+  testHashes[ChecksumType.Sha384] = hexDigest!SHA384(testString).array;
 
   foreach (v; hashSizes.byKeyValue)
     assert(Checksum.typeGetLength(v.key) == v.value);

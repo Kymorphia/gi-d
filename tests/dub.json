@@ -6,7 +6,7 @@
 	"license": "MIT",
 	"targetType": "none",
 	"dependencies": {
-		":glib": "*"
+		"gid:glib": "*"
 	},
 	"subPackages" : [
 		"./glib/"

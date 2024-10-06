@@ -1,19 +1,32 @@
 //!generate funcs
 import core.atomic;
 
-import Gid.class_map;
 import GLib.Types;
 import GLib.c.functions;
 import GObject.DClosure;
 import GObject.Value;
 
+debug
+{
+  // Used for enabling GObject lifecycle debug messages by setting GID_OBJECT_DEBUG=1
+  private immutable bool gidObjectDebug;
+
+  shared static this()
+  {
+    import std.process : environment;
+    gidObjectQuark = g_quark_from_string("_gidObject");
+    gidObjectDebug = environment.get("GID_OBJECT_DEBUG", "0") == "1";
+  }
+}
+
+private extern (C) Object _d_newclass(const TypeInfo_Class ci);
+
 // String quark used to assign the D ObjectG to the C GObject keyed-data list
 private immutable Quark gidObjectQuark;
 
-shared static this()
-{
-  gidObjectQuark = g_quark_from_string("_gidObject");
-}
+// Map of GTypes to D class info
+private shared TypeInfo_Class[GType] gtypeClasses;
+private shared bool gtypeClassesInitialized;
 
 /// Base class wrapper for GObject types
 class ObjectG
@@ -44,7 +57,14 @@ class ObjectG
   ~this()
   { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
     if (cInstancePtr) // Might be null if an exception occurred during construction
+    {
+      import core.memory : GC;
+
+      if (!GC.inFinalizer)
+        debug objectDebugLog("dtor");
+
       g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
+    }
   }
 
   /**
@@ -55,6 +75,8 @@ class ObjectG
    */
   final void setGObject(void* cObj, bool owned)
   {
+    assert(!cInstancePtr);
+
     cInstancePtr = cast(ObjectC*)cObj;
 
     // Add a data pointer to the D object from the C GObject
@@ -75,6 +97,8 @@ class ObjectG
     // which will call GC.removeRoot() allowing the D object to be garbage collected if it is no longer being accessed, resulting in the destruction of the GObject in dtor.
     if (owned)
       g_object_unref(cInstancePtr);
+
+    debug objectDebugLog("new");
   }
 
   // Toggle ref callback
@@ -94,7 +118,12 @@ class ObjectG
    */
   void* cPtr(bool addRef = false)
   {
-    return cast(void*)(addRef ? g_object_ref(cInstancePtr) : cInstancePtr);
+    if (addRef)
+      g_object_ref(cInstancePtr);
+
+    debug objectDebugLog("cPtr(addRef=true)");
+
+    return cast(void*)cInstancePtr;
   }
 
   /**
@@ -145,17 +174,44 @@ class ObjectG
     * Returns: The D object (which may be a new object if the GObject wasn't already wrapped)
     */
   static T getDObject(T)(void* cptr, bool owned = false)
-  {
-    if (auto dObj = g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
+  { // Cast return value to ObjectG or D pointer resolution will break if T is an interface (cast from void* to Interface not the same as Object to Interface)
+    if (auto dObj = cast(ObjectG)g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
       return cast(T)dObj;
+
+    if (!atomicLoad(gtypeClassesInitialized)) // One time initialization of GType -> TypeInfo_Class map
+    {
+      synchronized
+      {
+        auto gobjClass = typeid(ObjectG);
+
+        foreach (m; ModuleInfo)
+        {
+          if (!m)
+            continue;
+
+          foreach (c; m.localClasses)
+          {
+            if (c && gobjClass.isBaseOf(c))
+            { // Create object without calling the constructor which could have side effects - FIXME is there a better way to do this?
+              auto obj = _d_newclass(c);
+
+              if (auto gType = (cast(ObjectG)obj).gType)
+                gtypeClasses[gType] = cast(shared)c;
+            }
+          }
+        }
+
+        atomicStore(gtypeClassesInitialized, true);
+      }
+    }
 
     // Traverse the C GObject type ancestry until we find a corresponding D class
     for (auto gTypeClass = (cast(GTypeInstance*)cptr).gClass; gTypeClass;
       gTypeClass = g_type_class_peek_parent(gTypeClass))
     {
-      if (auto dClassType = lookupClassByGType(gTypeClass.gType))
+      if (auto dClassType = gTypeClass.gType in gtypeClasses)
       {
-        auto obj = (cast(TypeInfo_Class)dClassType).create;
+        auto obj = _d_newclass(cast()*dClassType);
 
         if (!obj)
           return null;
@@ -171,6 +227,20 @@ class ObjectG
       return new ObjectG(cptr, owned); // Interfaces fallback to creating a generic ObjectG wrapper
     else
       return null; // Object type is not derived from (or is) this template type, return null
+  }
+
+  debug
+  {
+    void objectDebugLog(string action)
+    {
+      if (gidObjectDebug)
+      {
+        import std.stdio : writeln;
+        import std.conv : to;
+        writeln(action, " ", typeid(this).name, "@0x", (cast(ulong)cast(void*)this).to!string(16), "(GObject@0x",
+          (cast(ulong)cast(void*)cInstancePtr).to!string(16), ") refcount=", cInstancePtr.refCount);
+      }
+    }
   }
 
   /**

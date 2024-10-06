@@ -219,8 +219,8 @@ class FuncWriter
       lengthStr = retVal.fixedSize.to!dstring;
     else if (retVal.zeroTerminated) // Array is zero terminated?
     {
-      postCall ~= "uint _cretlength;\nfor (; _cretval[_cretlength] != "d ~ (elemType.cType.endsWith("*") ? "null"d : "0")
-        ~ "; _cretlength++)\nbreak;\n";
+      postCall ~= "uint _cretlength;\nfor (; _cretval[_cretlength] "d ~ (elemType.cType.endsWith("*")
+        ? "!is null"d : "!= 0") ~ "; _cretlength++)\nbreak;\n";
       lengthStr = "_cretlength";
     }
     else
@@ -285,8 +285,8 @@ class FuncWriter
     decl ~= retVal.dType ~ " ";
     preCall ~= retVal.cType ~ " _cretval;\n";
     call ~= "_cretval = ";
-    postCall ~= retVal.dType ~ " _retval = _cretval ? new " ~ retVal.dType ~ "(cast(" ~ retVal.cType.stripConst
-      ~ ")_cretval, GidOwnership." ~ retVal.ownership.to!dstring ~ ") : null;\n";
+    postCall ~= retVal.dType ~ " _retval = new " ~ retVal.dType ~ "(cast(" ~ retVal.cType.stripConst
+      ~ ")_cretval, GidOwnership." ~ retVal.ownership.to!dstring ~ ");\n";
   }
 
   /// Process parameter
@@ -422,7 +422,8 @@ class FuncWriter
         if (param.direction == ParamDirection.In)
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
-          addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)" ~ param.dName ~ ".cPtr : null");
+          addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)" ~ param.dName ~ ".cPtr"
+            ~ (!param.kind.among(TypeKind.Opaque, TypeKind.Wrap) ? ("(" ~ param.fullOwnerStr ~ ")") : "") ~ " : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
@@ -443,7 +444,7 @@ class FuncWriter
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
           addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)(cast(" ~ objectGSym ~ ")"
-            ~ param.dName ~ ").cPtr : null");
+            ~ param.dName ~ ").cPtr(" ~ param.fullOwnerStr ~ ") : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
@@ -569,7 +570,7 @@ class FuncWriter
     else if (param.zeroTerminated) // Array is zero terminated?
     {
       postCall ~= "uint _len" ~ param.dName ~ ";\nif (_" ~ param.dName ~ ")\n{\nfor (; _" ~ param.dName
-        ~ "[_len" ~ param.dName ~ "] != " ~ (elemType.cType.endsWith("*") ? "null"d : "0") ~ "; _len" ~ param.dName
+        ~ "[_len" ~ param.dName ~ "] " ~ (elemType.cType.endsWith("*") ? "!is null"d : "!= 0") ~ "; _len" ~ param.dName
         ~ "++)\n{\n}\n}\n";
       lengthStr = "_len" ~ param.dName;
     }

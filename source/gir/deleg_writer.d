@@ -321,7 +321,7 @@ class DelegWriter
       else if (param.zeroTerminated) // Array is zero terminated?
       {
         postCall ~= "uint _len" ~ param.dName ~ ";\nif (" ~ param.dName ~ ")\nfor (; " ~ param.dName
-          ~ "[_len" ~ param.dName ~ "] != " ~ (elemType.cType.endsWith("*") ? "null"d : "0") ~ "; _len" ~ param.dName
+          ~ "[_len" ~ param.dName ~ "] " ~ (elemType.cType.endsWith("*") ? "!is null"d : "!= 0") ~ "; _len" ~ param.dName
           ~ "++)\nbreak;\n";
         lengthStr = "_len" ~ param.dName;
       }

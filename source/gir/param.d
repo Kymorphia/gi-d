@@ -214,8 +214,13 @@ final class Param : TypeNode
     if (containerType == ContainerType.None && kind.among(TypeKind.Basic, TypeKind.BasicAlias))
     {
       if (direction == ParamDirection.In && cType.countStars > 0 && cType != "void*" && cType != "const(void)*")
+      {
+        if (Repo.suggestDefCmds)
+          repo.suggestions["Set basic parameters to out"] ~= "set " ~ xmlSelector.to!string ~ "[direction] out";
+
         throw new Exception("Basic input parameter type '" ~ dType.to!string ~ "' has unexpected C type '"
           ~ cType.to!string ~ "'");
+      }
 
       if (direction == ParamDirection.Out && !callerAllocates && cType.countStars == 0)
         throw new Exception("Basic output parameter type '" ~ dType.to!string ~ "' has unexpected C type '"

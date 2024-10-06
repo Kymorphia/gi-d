@@ -183,7 +183,7 @@ final class Structure : TypeNode
       if (fn.funcType == FuncType.Constructor && fn.name == "new") // Set "new" constructor as the primary constructor
         ctorFunc = fn;
 
-      if (fn.funcType == FuncType.Function && fn.dType == "Quark" && fn.name.endsWith("error_quark"))
+      if (fn.funcType == FuncType.Function && fn.returnVal.dType == "Quark" && fn.name.endsWith("error_quark"))
         errorQuarks ~= fn; // Add exception error quark functions to array
 
       repo.defs.cSymbolHash[fn.cName] = fn; // Add to global C symbol hash
@@ -337,10 +337,6 @@ final class Structure : TypeNode
     foreach (st; implementStructs) // Add implemented interfaces to imports
       repo.defs.importManager.resolveDType(st);
 
-    // Add ObjectG for GObject classes for mapObjectG static GType -> TypeInfo_Class map registration function
-    if (kind == TypeKind.Object)
-      repo.defs.importManager.add("Gid.class_map");
-
     if (!errorQuarks.empty)
     {
       repo.defs.importManager.add("GLib.Types");
@@ -349,9 +345,6 @@ final class Structure : TypeNode
 
     if (repo.defs.importManager.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
       writer ~= "";
-
-    if (kind == TypeKind.Object)
-      writer ~= ["shared static this()", "{", "registerGTypeClassMap(typeid(" ~ name ~ "), " ~ name ~ ".getType);", "}", ""];
 
     if (defCode.preClass.length > 0)
       writer ~= defCode.preClass;

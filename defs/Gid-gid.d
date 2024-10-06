@@ -40,7 +40,9 @@ void ptrFreezeGC(const void* ptr)
 void ptrThawGC(const void* ptr)
 {
   GC.removeRoot(ptr);
-  GC.clrAttr(ptr, GC.BlkAttr.NO_MOVE);
+
+  if (!GC.inFinalizer)
+    GC.clrAttr(ptr, GC.BlkAttr.NO_MOVE); // FIXME - This call fails with an core.exception.InvalidMemoryOperationError if called during finalization, should removeRoot also not be called?
 }
 
 /**
@@ -87,7 +89,7 @@ extern(C) void thawDelegate(void* dlg)
  */
 char* toCString(string dstr, bool transfer)
 {
-  if (dstr == null)
+  if (dstr is null)
     return null;
 
   if (transfer)

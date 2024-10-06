@@ -4,7 +4,8 @@ import std.typecons;
 
 import GLib.MatchInfo;
 import GLib.Regex;
-import GLib.global;
+import GLib.Global;
+import GLib.Types;
 import GLib.c.types;
 
 unittest

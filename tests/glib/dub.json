@@ -1,5 +1,5 @@
 {
-  "name": "glib",
+  "name": "test-glib",
   "description": "GLib library gi-d binding tests",
   "copyright": "Copyright © 2024, Kymorphia, PBC",
 	"authors": ["Element Green <element@kymorphia.com>"],

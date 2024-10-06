@@ -4,8 +4,9 @@ import std.stdio;
 
 import GLib.c.functions;
 import GLib.c.types;
-import GLib.global;
+import GLib.Global;
 import GLib.LogField;
+import GLib.Types;
 
 unittest
 {
