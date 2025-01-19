@@ -52,7 +52,7 @@ class DirectoryList : ObjectG, ListModel
     return getType();
   }
 
-  mixin ListModelT!GtkDirectoryList;
+  mixin ListModelT!();
 
   /**
    * Creates a new `GtkDirectoryList`.

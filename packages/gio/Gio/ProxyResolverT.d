@@ -1,5 +1,6 @@
 module Gio.ProxyResolverT;
 
+public import Gio.ProxyResolverIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -19,21 +20,9 @@ public import Gio.c.types;
  * found in [glib-networking](https://gitlab.gnome.org/GNOME/glib-networking).
  * GIO comes with an implementation for use inside Flatpak portals.
  */
-template ProxyResolverT(TStruct)
+template ProxyResolverT()
 {
 
-  /**
-   * Gets the default #GProxyResolver for the system.
-   * Returns: the default #GProxyResolver, which
-   *   will be a dummy object if no proxy resolver is available
-   */
-  static ProxyResolver getDefault()
-  {
-    GProxyResolver* _cretval;
-    _cretval = g_proxy_resolver_get_default();
-    auto _retval = _cretval ? ObjectG.getDObject!ProxyResolver(cast(GProxyResolver*)_cretval, false) : null;
-    return _retval;
-  }
 
   /**
    * Checks if resolver can be used on this system. $(LPAREN)This is used

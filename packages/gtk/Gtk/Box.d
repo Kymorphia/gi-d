@@ -61,7 +61,7 @@ class Box : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkBox;
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkBox`.

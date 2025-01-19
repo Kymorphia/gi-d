@@ -1,5 +1,6 @@
 module Gio.AppInfo;
 
+public import Gio.AppInfoIfaceProxy;
 import GLib.ErrorG;
 import GLib.List;
 import GObject.ObjectG;
@@ -82,7 +83,18 @@ interface AppInfo
    *   flags = flags that can specify details of the created #GAppInfo
    * Returns: new #GAppInfo for given command.
    */
-  static AppInfo createFromCommandline(string commandline, string applicationName, AppInfoCreateFlags flags);
+  static AppInfo createFromCommandline(string commandline, string applicationName, AppInfoCreateFlags flags)
+  {
+    GAppInfo* _cretval;
+    const(char)* _commandline = commandline.toCString(false);
+    const(char)* _applicationName = applicationName.toCString(false);
+    GError *_err;
+    _cretval = g_app_info_create_from_commandline(_commandline, _applicationName, flags, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!AppInfo(cast(GAppInfo*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets a list of all of the applications currently registered
@@ -94,7 +106,13 @@ interface AppInfo
    * the `Hidden` key set.
    * Returns: a newly allocated #GList of references to #GAppInfos.
    */
-  static List!(AppInfo, GAppInfo) getAll();
+  static List!(AppInfo, GAppInfo) getAll()
+  {
+    GList* _cretval;
+    _cretval = g_app_info_get_all();
+    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    return _retval;
+  }
 
   /**
    * Gets a list of all #GAppInfos for a given content type,
@@ -106,7 +124,14 @@ interface AppInfo
    * Returns: #GList of #GAppInfos
    *   for given content_type or %NULL on error.
    */
-  static List!(AppInfo, GAppInfo) getAllForType(string contentType);
+  static List!(AppInfo, GAppInfo) getAllForType(string contentType)
+  {
+    GList* _cretval;
+    const(char)* _contentType = contentType.toCString(false);
+    _cretval = g_app_info_get_all_for_type(_contentType);
+    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    return _retval;
+  }
 
   /**
    * Gets the default #GAppInfo for a given content type.
@@ -117,7 +142,14 @@ interface AppInfo
    * Returns: #GAppInfo for given content_type or
    *   %NULL on error.
    */
-  static AppInfo getDefaultForType(string contentType, bool mustSupportUris);
+  static AppInfo getDefaultForType(string contentType, bool mustSupportUris)
+  {
+    GAppInfo* _cretval;
+    const(char)* _contentType = contentType.toCString(false);
+    _cretval = g_app_info_get_default_for_type(_contentType, mustSupportUris);
+    auto _retval = _cretval ? ObjectG.getDObject!AppInfo(cast(GAppInfo*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Asynchronously gets the default #GAppInfo for a given content type.
@@ -128,7 +160,20 @@ interface AppInfo
    *   cancellable = optional #GCancellable object, %NULL to ignore
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  static void getDefaultForTypeAsync(string contentType, bool mustSupportUris, Cancellable cancellable, AsyncReadyCallback callback);
+  static void getDefaultForTypeAsync(string contentType, bool mustSupportUris, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)* _contentType = contentType.toCString(false);
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    g_app_info_get_default_for_type_async(_contentType, mustSupportUris, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
 
   /**
    * Finishes a default #GAppInfo lookup started by
@@ -139,7 +184,16 @@ interface AppInfo
    * Returns: #GAppInfo for given content_type or
    *   %NULL on error.
    */
-  static AppInfo getDefaultForTypeFinish(AsyncResult result);
+  static AppInfo getDefaultForTypeFinish(AsyncResult result)
+  {
+    GAppInfo* _cretval;
+    GError *_err;
+    _cretval = g_app_info_get_default_for_type_finish(result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!AppInfo(cast(GAppInfo*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets the default application for handling URIs with
@@ -151,7 +205,14 @@ interface AppInfo
    * Returns: #GAppInfo for given uri_scheme or
    *   %NULL on error.
    */
-  static AppInfo getDefaultForUriScheme(string uriScheme);
+  static AppInfo getDefaultForUriScheme(string uriScheme)
+  {
+    GAppInfo* _cretval;
+    const(char)* _uriScheme = uriScheme.toCString(false);
+    _cretval = g_app_info_get_default_for_uri_scheme(_uriScheme);
+    auto _retval = _cretval ? ObjectG.getDObject!AppInfo(cast(GAppInfo*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Asynchronously gets the default application for handling URIs with
@@ -163,7 +224,20 @@ interface AppInfo
    *   cancellable = optional #GCancellable object, %NULL to ignore
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  static void getDefaultForUriSchemeAsync(string uriScheme, Cancellable cancellable, AsyncReadyCallback callback);
+  static void getDefaultForUriSchemeAsync(string uriScheme, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)* _uriScheme = uriScheme.toCString(false);
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    g_app_info_get_default_for_uri_scheme_async(_uriScheme, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
 
   /**
    * Finishes a default #GAppInfo lookup started by
@@ -174,7 +248,16 @@ interface AppInfo
    * Returns: #GAppInfo for given uri_scheme or
    *   %NULL on error.
    */
-  static AppInfo getDefaultForUriSchemeFinish(AsyncResult result);
+  static AppInfo getDefaultForUriSchemeFinish(AsyncResult result)
+  {
+    GAppInfo* _cretval;
+    GError *_err;
+    _cretval = g_app_info_get_default_for_uri_scheme_finish(result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!AppInfo(cast(GAppInfo*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets a list of fallback #GAppInfos for a given content type, i.e.
@@ -185,7 +268,14 @@ interface AppInfo
    * Returns: #GList of #GAppInfos
    *   for given content_type or %NULL on error.
    */
-  static List!(AppInfo, GAppInfo) getFallbackForType(string contentType);
+  static List!(AppInfo, GAppInfo) getFallbackForType(string contentType)
+  {
+    GList* _cretval;
+    const(char)* _contentType = contentType.toCString(false);
+    _cretval = g_app_info_get_fallback_for_type(_contentType);
+    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    return _retval;
+  }
 
   /**
    * Gets a list of recommended #GAppInfos for a given content type, i.e.
@@ -199,7 +289,14 @@ interface AppInfo
    * Returns: #GList of #GAppInfos
    *   for given content_type or %NULL on error.
    */
-  static List!(AppInfo, GAppInfo) getRecommendedForType(string contentType);
+  static List!(AppInfo, GAppInfo) getRecommendedForType(string contentType)
+  {
+    GList* _cretval;
+    const(char)* _contentType = contentType.toCString(false);
+    _cretval = g_app_info_get_recommended_for_type(_contentType);
+    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    return _retval;
+  }
 
   /**
    * Utility function that launches the default application
@@ -214,7 +311,16 @@ interface AppInfo
    *   context = an optional #GAppLaunchContext
    * Returns: %TRUE on success, %FALSE on error.
    */
-  static bool launchDefaultForUri(string uri, AppLaunchContext context);
+  static bool launchDefaultForUri(string uri, AppLaunchContext context)
+  {
+    bool _retval;
+    const(char)* _uri = uri.toCString(false);
+    GError *_err;
+    _retval = g_app_info_launch_default_for_uri(_uri, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
 
   /**
    * Async version of [Gio.AppInfo.launchDefaultForUri].
@@ -231,7 +337,20 @@ interface AppInfo
    *   cancellable = a #GCancellable
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  static void launchDefaultForUriAsync(string uri, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback);
+  static void launchDefaultForUriAsync(string uri, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)* _uri = uri.toCString(false);
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    g_app_info_launch_default_for_uri_async(_uri, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
 
   /**
    * Finishes an asynchronous launch-default-for-uri operation.
@@ -239,7 +358,15 @@ interface AppInfo
    *   result = a #GAsyncResult
    * Returns: %TRUE if the launch was successful, %FALSE if error is set
    */
-  static bool launchDefaultForUriFinish(AsyncResult result);
+  static bool launchDefaultForUriFinish(AsyncResult result)
+  {
+    bool _retval;
+    GError *_err;
+    _retval = g_app_info_launch_default_for_uri_finish(result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
 
   /**
    * Removes all changes to the type associations done by
@@ -250,7 +377,11 @@ interface AppInfo
    * Params:
    *   contentType = a content type
    */
-  static void resetTypeAssociations(string contentType);
+  static void resetTypeAssociations(string contentType)
+  {
+    const(char)* _contentType = contentType.toCString(false);
+    g_app_info_reset_type_associations(_contentType);
+  }
 
   /**
    * Adds a content type to the application information to indicate the

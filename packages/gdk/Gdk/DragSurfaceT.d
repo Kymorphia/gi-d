@@ -1,5 +1,6 @@
 module Gdk.DragSurfaceT;
 
+public import Gdk.DragSurfaceIfaceProxy;
 public import Gdk.Types;
 public import Gdk.c.functions;
 public import Gdk.c.types;
@@ -8,7 +9,7 @@ public import Gid.gid;
 /**
  * A `GdkDragSurface` is an interface for surfaces used during DND.
  */
-template DragSurfaceT(TStruct)
+template DragSurfaceT()
 {
 
   /**

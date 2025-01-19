@@ -87,7 +87,7 @@ class Subprocess : ObjectG, Initable
     return getType();
   }
 
-  mixin InitableT!GSubprocess;
+  mixin InitableT!();
 
   /**
    * Create a new process with the given flags and argument list.

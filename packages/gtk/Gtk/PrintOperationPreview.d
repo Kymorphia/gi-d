@@ -1,7 +1,7 @@
 module Gtk.PrintOperationPreview;
 
+public import Gtk.PrintOperationPreviewIfaceProxy;
 import GObject.DClosure;
-import GObject.Types;
 import Gid.gid;
 import Gtk.PageSetup;
 import Gtk.PrintContext;
@@ -69,10 +69,10 @@ interface PrintOperationPreview
    * Connect to GotPageSize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectGotPageSize(GotPageSizeCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectGotPageSize(GotPageSizeCallback dlg, Flag!"After" after = No.After);
 
   /**
    * The ::ready signal gets emitted once per preview operation,
@@ -88,8 +88,8 @@ interface PrintOperationPreview
    * Connect to Ready signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectReady(ReadyCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectReady(ReadyCallback dlg, Flag!"After" after = No.After);
 }

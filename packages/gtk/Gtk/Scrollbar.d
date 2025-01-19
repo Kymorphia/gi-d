@@ -72,7 +72,7 @@ class Scrollbar : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkScrollbar;
+  mixin OrientableT!();
 
   /**
    * Creates a new scrollbar with the given orientation.

@@ -1,10 +1,10 @@
 module Gio.Drive;
 
+public import Gio.DriveIfaceProxy;
 import GLib.ErrorG;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncResult;
 import Gio.AsyncResultT;
@@ -301,10 +301,10 @@ interface Drive
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is emitted when the #GDrive have been
@@ -319,10 +319,10 @@ interface Drive
    * Connect to Disconnected signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDisconnected(DisconnectedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectDisconnected(DisconnectedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when the physical eject button $(LPAREN)if any$(RPAREN) of a drive has
@@ -335,10 +335,10 @@ interface Drive
    * Connect to EjectButton signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEjectButton(EjectButtonCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectEjectButton(EjectButtonCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when the physical stop button $(LPAREN)if any$(RPAREN) of a drive has
@@ -351,8 +351,8 @@ interface Drive
    * Connect to StopButton signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectStopButton(StopButtonCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectStopButton(StopButtonCallback dlg, Flag!"After" after = No.After);
 }

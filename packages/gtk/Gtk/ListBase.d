@@ -41,6 +41,6 @@ class ListBase : Widget, Orientable, Scrollable
     return getType();
   }
 
-  mixin OrientableT!GtkListBase;
-  mixin ScrollableT!GtkListBase;
+  mixin OrientableT!();
+  mixin ScrollableT!();
 }

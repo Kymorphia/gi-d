@@ -38,7 +38,7 @@ class InetAddressMask : ObjectG, Initable
     return getType();
   }
 
-  mixin InitableT!GInetAddressMask;
+  mixin InitableT!();
 
   /**
    * Creates a new #GInetAddressMask representing all addresses whose

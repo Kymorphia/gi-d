@@ -35,7 +35,7 @@ class ZlibCompressor : ObjectG, Converter
     return getType();
   }
 
-  mixin ConverterT!GZlibCompressor;
+  mixin ConverterT!();
 
   /**
    * Creates a new #GZlibCompressor.

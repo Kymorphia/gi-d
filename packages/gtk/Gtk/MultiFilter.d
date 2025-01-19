@@ -35,8 +35,8 @@ class MultiFilter : Filter, ListModel, Buildable
     return getType();
   }
 
-  mixin ListModelT!GtkMultiFilter;
-  mixin BuildableT!GtkMultiFilter;
+  mixin ListModelT!();
+  mixin BuildableT!();
 
   /**
    * Adds a filter to self to use for matching.

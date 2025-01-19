@@ -1,9 +1,9 @@
 module Gio.NetworkMonitor;
 
+public import Gio.NetworkMonitorIfaceProxy;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncResult;
 import Gio.AsyncResultT;
@@ -34,7 +34,13 @@ interface NetworkMonitor
    * Returns: a #GNetworkMonitor, which will be
    *   a dummy object if no network monitor is available
    */
-  static NetworkMonitor getDefault();
+  static NetworkMonitor getDefault()
+  {
+    GNetworkMonitor* _cretval;
+    _cretval = g_network_monitor_get_default();
+    auto _retval = _cretval ? ObjectG.getDObject!NetworkMonitor(cast(GNetworkMonitor*)_cretval, false) : null;
+    return _retval;
+  }
 
   /**
    * Attempts to determine whether or not the host pointed to by
@@ -132,8 +138,8 @@ interface NetworkMonitor
    * Connect to NetworkChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNetworkChanged(NetworkChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectNetworkChanged(NetworkChangedCallback dlg, Flag!"After" after = No.After);
 }

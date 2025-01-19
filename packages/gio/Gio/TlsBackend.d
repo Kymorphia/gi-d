@@ -1,5 +1,6 @@
 module Gio.TlsBackend;
 
+public import Gio.TlsBackendIfaceProxy;
 import GObject.ObjectG;
 import GObject.Types;
 import Gid.gid;
@@ -26,7 +27,13 @@ interface TlsBackend
    * Returns: a #GTlsBackend, which will be a
    *   dummy object if no TLS backend is available
    */
-  static TlsBackend getDefault();
+  static TlsBackend getDefault()
+  {
+    GTlsBackend* _cretval;
+    _cretval = g_tls_backend_get_default();
+    auto _retval = _cretval ? ObjectG.getDObject!TlsBackend(cast(GTlsBackend*)_cretval, false) : null;
+    return _retval;
+  }
 
   /**
    * Gets the #GType of backend's #GTlsCertificate implementation.

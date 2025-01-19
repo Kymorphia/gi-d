@@ -1,5 +1,6 @@
 module Gio.DebugController;
 
+public import Gio.DebugControllerIfaceProxy;
 import Gid.gid;
 import Gio.Types;
 import Gio.c.functions;

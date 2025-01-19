@@ -1,5 +1,6 @@
 module Gtk.SymbolicPaintableT;
 
+public import Gtk.SymbolicPaintableIfaceProxy;
 public import Gdk.RGBA;
 public import Gdk.Snapshot;
 public import Gid.gid;
@@ -18,7 +19,7 @@ public import Gtk.c.types;
  * and success information in that order.
  * More colors may be added in the future.
  */
-template SymbolicPaintableT(TStruct)
+template SymbolicPaintableT()
 {
 
   /**

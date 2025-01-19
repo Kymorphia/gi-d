@@ -1,5 +1,6 @@
 module Gtk.CellLayout;
 
+public import Gtk.CellLayoutIfaceProxy;
 import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;

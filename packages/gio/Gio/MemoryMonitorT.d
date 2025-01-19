@@ -1,8 +1,8 @@
 module Gio.MemoryMonitorT;
 
+public import Gio.MemoryMonitorIfaceProxy;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gio.Types;
 public import Gio.c.functions;
@@ -50,20 +50,9 @@ public import Gio.c.types;
  * Don’t forget to disconnect the signal@Gio.MemoryMonitor::low-memory-warning
  * signal, and unref the `GMemoryMonitor` itself when exiting.
  */
-template MemoryMonitorT(TStruct)
+template MemoryMonitorT()
 {
 
-  /**
-   * Gets a reference to the default #GMemoryMonitor for the system.
-   * Returns: a new reference to the default #GMemoryMonitor
-   */
-  static MemoryMonitor dupDefault()
-  {
-    GMemoryMonitor* _cretval;
-    _cretval = g_memory_monitor_dup_default();
-    auto _retval = _cretval ? ObjectG.getDObject!MemoryMonitor(cast(GMemoryMonitor*)_cretval, true) : null;
-    return _retval;
-  }
 
   /**
    * Emitted when the system is running low on free memory. The signal
@@ -80,10 +69,10 @@ template MemoryMonitorT(TStruct)
    * Connect to LowMemoryWarning signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLowMemoryWarning(LowMemoryWarningCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLowMemoryWarning(LowMemoryWarningCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -95,6 +84,6 @@ template MemoryMonitorT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("low-memory-warning", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("low-memory-warning", closure, after);
   }
 }

@@ -3,7 +3,6 @@ module Gtk.PrintOperation;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.PageSetup;
 import Gtk.PrintContext;
@@ -85,7 +84,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     return getType();
   }
 
-  mixin PrintOperationPreviewT!GtkPrintOperation;
+  mixin PrintOperationPreviewT!();
 
   /**
    * Creates a new `GtkPrintOperation`.
@@ -560,10 +559,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to BeginPrint signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectBeginPrint(BeginPrintCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectBeginPrint(BeginPrintCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -575,7 +574,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("begin-print", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("begin-print", closure, after);
   }
 
   /**
@@ -598,10 +597,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to CreateCustomWidget signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCreateCustomWidget(CreateCustomWidgetCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCreateCustomWidget(CreateCustomWidgetCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -613,7 +612,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("create-custom-widget", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("create-custom-widget", closure, after);
   }
 
   /**
@@ -632,10 +631,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to CustomWidgetApply signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCustomWidgetApply(CustomWidgetApplyCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCustomWidgetApply(CustomWidgetApplyCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -647,7 +646,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("custom-widget-apply", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("custom-widget-apply", closure, after);
   }
 
   /**
@@ -669,10 +668,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to Done signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDone(DoneCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDone(DoneCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -684,7 +683,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("done", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("done", closure, after);
   }
 
   /**
@@ -738,10 +737,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to DrawPage signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDrawPage(DrawPageCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDrawPage(DrawPageCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -754,7 +753,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("draw-page", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("draw-page", closure, after);
   }
 
   /**
@@ -771,10 +770,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to EndPrint signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEndPrint(EndPrintCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEndPrint(EndPrintCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -786,7 +785,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("end-print", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("end-print", closure, after);
   }
 
   /**
@@ -812,10 +811,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to Paginate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPaginate(PaginateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPaginate(PaginateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -829,7 +828,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("paginate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("paginate", closure, after);
   }
 
   /**
@@ -860,10 +859,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to Preview signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreview(PreviewCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPreview(PreviewCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -879,7 +878,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("preview", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("preview", closure, after);
   }
 
   /**
@@ -899,10 +898,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to RequestPageSetup signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRequestPageSetup(RequestPageSetupCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRequestPageSetup(RequestPageSetupCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -916,7 +915,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("request-page-setup", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("request-page-setup", closure, after);
   }
 
   /**
@@ -932,10 +931,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to StatusChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectStatusChanged(StatusChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectStatusChanged(StatusChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -946,7 +945,7 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("status-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("status-changed", closure, after);
   }
 
   /**
@@ -965,10 +964,10 @@ class PrintOperation : ObjectG, PrintOperationPreview
    * Connect to UpdateCustomWidget signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUpdateCustomWidget(UpdateCustomWidgetCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUpdateCustomWidget(UpdateCustomWidgetCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -982,6 +981,6 @@ class PrintOperation : ObjectG, PrintOperationPreview
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("update-custom-widget", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("update-custom-widget", closure, after);
   }
 }

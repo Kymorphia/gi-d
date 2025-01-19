@@ -1,5 +1,6 @@
 module Gio.SocketConnectableT;
 
+public import Gio.SocketConnectableIfaceProxy;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.SocketAddressEnumerator;
@@ -62,7 +63,7 @@ public import Gio.c.types;
  * }
  * ```
  */
-template SocketConnectableT(TStruct)
+template SocketConnectableT()
 {
 
   /**

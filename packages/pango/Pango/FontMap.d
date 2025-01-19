@@ -42,7 +42,7 @@ class FontMap : ObjectG, ListModel
     return getType();
   }
 
-  mixin ListModelT!PangoFontMap;
+  mixin ListModelT!();
 
   /**
    * Forces a change in the context, which will cause any `PangoContext`

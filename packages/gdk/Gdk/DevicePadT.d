@@ -1,5 +1,6 @@
 module Gdk.DevicePadT;
 
+public import Gdk.DevicePadIfaceProxy;
 public import Gdk.Types;
 public import Gdk.c.functions;
 public import Gdk.c.types;
@@ -21,7 +22,7 @@ public import Gid.gid;
  * out through [Gdk.DevicePad.getGroupNModes], and the current mode
  * for a given group will be notified through events of type `GDK_PAD_GROUP_MODE`.
  */
-template DevicePadT(TStruct)
+template DevicePadT()
 {
 
   /**

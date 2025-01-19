@@ -1,5 +1,6 @@
 module Gtk.Scrollable;
 
+public import Gtk.ScrollableIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.Adjustment;

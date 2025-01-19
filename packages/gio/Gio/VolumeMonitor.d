@@ -3,7 +3,6 @@ module Gio.VolumeMonitor;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Drive;
 import Gio.DriveT;
@@ -190,10 +189,10 @@ class VolumeMonitor : ObjectG
    * Connect to DriveChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDriveChanged(DriveChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDriveChanged(DriveChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -205,7 +204,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drive-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drive-changed", closure, after);
   }
 
   /**
@@ -220,10 +219,10 @@ class VolumeMonitor : ObjectG
    * Connect to DriveConnected signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDriveConnected(DriveConnectedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDriveConnected(DriveConnectedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -235,7 +234,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drive-connected", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drive-connected", closure, after);
   }
 
   /**
@@ -250,10 +249,10 @@ class VolumeMonitor : ObjectG
    * Connect to DriveDisconnected signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDriveDisconnected(DriveDisconnectedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDriveDisconnected(DriveDisconnectedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -265,7 +264,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drive-disconnected", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drive-disconnected", closure, after);
   }
 
   /**
@@ -280,10 +279,10 @@ class VolumeMonitor : ObjectG
    * Connect to DriveEjectButton signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDriveEjectButton(DriveEjectButtonCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDriveEjectButton(DriveEjectButtonCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -295,7 +294,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drive-eject-button", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drive-eject-button", closure, after);
   }
 
   /**
@@ -310,10 +309,10 @@ class VolumeMonitor : ObjectG
    * Connect to DriveStopButton signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDriveStopButton(DriveStopButtonCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDriveStopButton(DriveStopButtonCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -325,7 +324,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drive-stop-button", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drive-stop-button", closure, after);
   }
 
   /**
@@ -340,10 +339,10 @@ class VolumeMonitor : ObjectG
    * Connect to MountAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMountAdded(MountAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMountAdded(MountAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -355,7 +354,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mount-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mount-added", closure, after);
   }
 
   /**
@@ -370,10 +369,10 @@ class VolumeMonitor : ObjectG
    * Connect to MountChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMountChanged(MountChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMountChanged(MountChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -385,7 +384,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mount-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mount-changed", closure, after);
   }
 
   /**
@@ -402,10 +401,10 @@ class VolumeMonitor : ObjectG
    * Connect to MountPreUnmount signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMountPreUnmount(MountPreUnmountCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMountPreUnmount(MountPreUnmountCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -417,7 +416,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mount-pre-unmount", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mount-pre-unmount", closure, after);
   }
 
   /**
@@ -432,10 +431,10 @@ class VolumeMonitor : ObjectG
    * Connect to MountRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMountRemoved(MountRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMountRemoved(MountRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -447,7 +446,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mount-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mount-removed", closure, after);
   }
 
   /**
@@ -462,10 +461,10 @@ class VolumeMonitor : ObjectG
    * Connect to VolumeAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectVolumeAdded(VolumeAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectVolumeAdded(VolumeAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -477,7 +476,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("volume-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("volume-added", closure, after);
   }
 
   /**
@@ -492,10 +491,10 @@ class VolumeMonitor : ObjectG
    * Connect to VolumeChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectVolumeChanged(VolumeChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectVolumeChanged(VolumeChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -507,7 +506,7 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("volume-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("volume-changed", closure, after);
   }
 
   /**
@@ -522,10 +521,10 @@ class VolumeMonitor : ObjectG
    * Connect to VolumeRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectVolumeRemoved(VolumeRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectVolumeRemoved(VolumeRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -537,6 +536,6 @@ class VolumeMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("volume-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("volume-removed", closure, after);
   }
 }

@@ -58,7 +58,7 @@ class StackSwitcher : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkStackSwitcher;
+  mixin OrientableT!();
 
   /**
    * Create a new `GtkStackSwitcher`.

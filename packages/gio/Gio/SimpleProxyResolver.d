@@ -39,7 +39,7 @@ class SimpleProxyResolver : ObjectG, ProxyResolver
     return getType();
   }
 
-  mixin ProxyResolverT!GSimpleProxyResolver;
+  mixin ProxyResolverT!();
 
   /**
    * Creates a new #GSimpleProxyResolver. See

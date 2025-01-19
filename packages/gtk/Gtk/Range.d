@@ -2,7 +2,6 @@ module Gtk.Range;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Rectangle;
 import Gid.gid;
 import Gtk.Accessible;
@@ -52,8 +51,8 @@ class Range : Widget, AccessibleRange, Orientable
     return getType();
   }
 
-  mixin AccessibleRangeT!GtkRange;
-  mixin OrientableT!GtkRange;
+  mixin AccessibleRangeT!();
+  mixin OrientableT!();
 
   /**
    * Get the adjustment which is the “model” object for `GtkRange`.
@@ -355,10 +354,10 @@ class Range : Widget, AccessibleRange, Orientable
    * Connect to AdjustBounds signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAdjustBounds(AdjustBoundsCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAdjustBounds(AdjustBoundsCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -370,7 +369,7 @@ class Range : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("adjust-bounds", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("adjust-bounds", closure, after);
   }
 
   /**
@@ -397,10 +396,10 @@ class Range : Widget, AccessibleRange, Orientable
    * Connect to ChangeValue signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChangeValue(ChangeValueCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChangeValue(ChangeValueCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -415,7 +414,7 @@ class Range : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("change-value", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("change-value", closure, after);
   }
 
   /**
@@ -431,10 +430,10 @@ class Range : Widget, AccessibleRange, Orientable
    * Connect to MoveSlider signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveSlider(MoveSliderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveSlider(MoveSliderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -446,7 +445,7 @@ class Range : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-slider", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-slider", closure, after);
   }
 
   /**
@@ -459,10 +458,10 @@ class Range : Widget, AccessibleRange, Orientable
    * Connect to ValueChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectValueChanged(ValueChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectValueChanged(ValueChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -473,6 +472,6 @@ class Range : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("value-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("value-changed", closure, after);
   }
 }

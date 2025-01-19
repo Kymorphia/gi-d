@@ -2,7 +2,6 @@ module Gdk.FrameClock;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.FrameTimings;
 import Gdk.Types;
 import Gdk.c.functions;
@@ -231,10 +230,10 @@ class FrameClock : ObjectG
    * Connect to AfterPaint signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAfterPaint(AfterPaintCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAfterPaint(AfterPaintCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -245,7 +244,7 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("after-paint", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("after-paint", closure, after);
   }
 
   /**
@@ -259,10 +258,10 @@ class FrameClock : ObjectG
    * Connect to BeforePaint signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectBeforePaint(BeforePaintCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectBeforePaint(BeforePaintCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -273,7 +272,7 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("before-paint", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("before-paint", closure, after);
   }
 
   /**
@@ -288,10 +287,10 @@ class FrameClock : ObjectG
    * Connect to FlushEvents signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFlushEvents(FlushEventsCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectFlushEvents(FlushEventsCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -302,7 +301,7 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("flush-events", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("flush-events", closure, after);
   }
 
   /**
@@ -318,10 +317,10 @@ class FrameClock : ObjectG
    * Connect to Layout signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLayout(LayoutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLayout(LayoutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -332,7 +331,7 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("layout", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("layout", closure, after);
   }
 
   /**
@@ -350,10 +349,10 @@ class FrameClock : ObjectG
    * Connect to Paint signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPaint(PaintCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPaint(PaintCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -364,7 +363,7 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("paint", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("paint", closure, after);
   }
 
   /**
@@ -379,10 +378,10 @@ class FrameClock : ObjectG
    * Connect to ResumeEvents signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectResumeEvents(ResumeEventsCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectResumeEvents(ResumeEventsCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -393,7 +392,7 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("resume-events", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("resume-events", closure, after);
   }
 
   /**
@@ -411,10 +410,10 @@ class FrameClock : ObjectG
    * Connect to Update signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUpdate(UpdateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUpdate(UpdateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -425,6 +424,6 @@ class FrameClock : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("update", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("update", closure, after);
   }
 }

@@ -34,7 +34,7 @@ class StackPage : ObjectG, Accessible
     return getType();
   }
 
-  mixin AccessibleT!GtkStackPage;
+  mixin AccessibleT!();
 
   /**
    * Returns the stack child to which self belongs.

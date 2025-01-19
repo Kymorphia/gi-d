@@ -73,8 +73,8 @@ class ProgressBar : Widget, AccessibleRange, Orientable
     return getType();
   }
 
-  mixin AccessibleRangeT!GtkProgressBar;
-  mixin OrientableT!GtkProgressBar;
+  mixin AccessibleRangeT!();
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkProgressBar`.

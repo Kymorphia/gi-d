@@ -1,9 +1,9 @@
 module Gio.MountT;
 
+public import Gio.MountIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gio.AsyncResult;
 public import Gio.AsyncResultT;
@@ -42,7 +42,7 @@ public import Gio.c.types;
  * [Gio.Mount.unmountWithOperationFinish] is called, then it will be
  * filled with any error information.
  */
-template MountT(TStruct)
+template MountT()
 {
 
   /**
@@ -582,10 +582,10 @@ template MountT(TStruct)
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -596,7 +596,7 @@ template MountT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("changed", closure, after);
   }
 
   /**
@@ -612,10 +612,10 @@ template MountT(TStruct)
    * Connect to PreUnmount signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreUnmount(PreUnmountCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPreUnmount(PreUnmountCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -626,7 +626,7 @@ template MountT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("pre-unmount", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("pre-unmount", closure, after);
   }
 
   /**
@@ -642,10 +642,10 @@ template MountT(TStruct)
    * Connect to Unmounted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnmounted(UnmountedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnmounted(UnmountedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -656,6 +656,6 @@ template MountT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unmounted", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unmounted", closure, after);
   }
 }

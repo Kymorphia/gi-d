@@ -1,5 +1,6 @@
 module Gio.TlsFileDatabase;
 
+public import Gio.TlsFileDatabaseIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -29,5 +30,15 @@ interface TlsFileDatabase
    * Returns: the new
    *   #GTlsFileDatabase, or %NULL on error
    */
-  static TlsFileDatabase new_(string anchors);
+  static TlsFileDatabase new_(string anchors)
+  {
+    GTlsDatabase* _cretval;
+    const(char)* _anchors = anchors.toCString(false);
+    GError *_err;
+    _cretval = g_tls_file_database_new(_anchors, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!TlsFileDatabase(cast(GTlsDatabase*)_cretval, true) : null;
+    return _retval;
+  }
 }

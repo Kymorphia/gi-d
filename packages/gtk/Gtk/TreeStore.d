@@ -70,11 +70,11 @@ class TreeStore : ObjectG, Buildable, TreeDragDest, TreeDragSource, TreeModel, T
     return getType();
   }
 
-  mixin BuildableT!GtkTreeStore;
-  mixin TreeDragDestT!GtkTreeStore;
-  mixin TreeDragSourceT!GtkTreeStore;
-  mixin TreeModelT!GtkTreeStore;
-  mixin TreeSortableT!GtkTreeStore;
+  mixin BuildableT!();
+  mixin TreeDragDestT!();
+  mixin TreeDragSourceT!();
+  mixin TreeModelT!();
+  mixin TreeSortableT!();
 
   /**
    * Creates a new tree store.

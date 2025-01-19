@@ -1,5 +1,6 @@
 module Gtk.SymbolicPaintable;
 
+public import Gtk.SymbolicPaintableIfaceProxy;
 import Gdk.RGBA;
 import Gdk.Snapshot;
 import Gid.gid;

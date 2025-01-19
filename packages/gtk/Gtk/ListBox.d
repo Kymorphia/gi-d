@@ -3,7 +3,6 @@ module Gtk.ListBox;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.ListModel;
 import Gio.ListModelT;
@@ -564,10 +563,10 @@ class ListBox : Widget
    * Connect to ActivateCursorRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivateCursorRow(ActivateCursorRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivateCursorRow(ActivateCursorRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -578,7 +577,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate-cursor-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate-cursor-row", closure, after);
   }
 
   alias MoveCursorCallback = void delegate(MovementStep object, int p0, bool p1, bool p2, ListBox listBox);
@@ -587,10 +586,10 @@ class ListBox : Widget
    * Connect to MoveCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveCursor(MoveCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveCursor(MoveCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -605,7 +604,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-cursor", closure, after);
   }
 
   /**
@@ -620,10 +619,10 @@ class ListBox : Widget
    * Connect to RowActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowActivated(RowActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowActivated(RowActivatedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -635,7 +634,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-activated", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-activated", closure, after);
   }
 
   /**
@@ -654,10 +653,10 @@ class ListBox : Widget
    * Connect to RowSelected signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowSelected(RowSelectedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowSelected(RowSelectedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -669,7 +668,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-selected", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-selected", closure, after);
   }
 
   /**
@@ -685,10 +684,10 @@ class ListBox : Widget
    * Connect to SelectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectAll(SelectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectAll(SelectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -699,7 +698,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-all", closure, after);
   }
 
   /**
@@ -712,10 +711,10 @@ class ListBox : Widget
    * Connect to SelectedRowsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectedRowsChanged(SelectedRowsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectedRowsChanged(SelectedRowsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -726,7 +725,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("selected-rows-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("selected-rows-changed", closure, after);
   }
 
   alias ToggleCursorRowCallback = void delegate(ListBox listBox);
@@ -735,10 +734,10 @@ class ListBox : Widget
    * Connect to ToggleCursorRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleCursorRow(ToggleCursorRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleCursorRow(ToggleCursorRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -749,7 +748,7 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-cursor-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-cursor-row", closure, after);
   }
 
   /**
@@ -766,10 +765,10 @@ class ListBox : Widget
    * Connect to UnselectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnselectAll(UnselectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnselectAll(UnselectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -780,6 +779,6 @@ class ListBox : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unselect-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unselect-all", closure, after);
   }
 }

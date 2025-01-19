@@ -1,5 +1,6 @@
 module Gio.PollableInputStream;
 
+public import Gio.PollableInputStreamIfaceProxy;
 import GLib.ErrorG;
 import GLib.Source;
 import Gid.gid;

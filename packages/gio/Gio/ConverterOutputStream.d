@@ -40,7 +40,7 @@ class ConverterOutputStream : FilterOutputStream, PollableOutputStream
     return getType();
   }
 
-  mixin PollableOutputStreamT!GConverterOutputStream;
+  mixin PollableOutputStreamT!();
 
   /**
    * Creates a new converter output stream for the base_stream.

@@ -53,8 +53,8 @@ class DragIcon : Widget, Native, Root
     return getType();
   }
 
-  mixin NativeT!GtkDragIcon;
-  mixin RootT!GtkDragIcon;
+  mixin NativeT!();
+  mixin RootT!();
 
   /**
    * Creates a widget that can be used as a drag icon for the given

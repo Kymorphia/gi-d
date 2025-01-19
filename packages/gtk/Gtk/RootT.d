@@ -1,5 +1,6 @@
 module Gtk.RootT;
 
+public import Gtk.RootIfaceProxy;
 public import GObject.ObjectG;
 public import Gdk.Display;
 public import Gid.gid;
@@ -19,7 +20,7 @@ public import Gtk.c.types;
  * `GtkRoot` also maintains the location of keyboard focus inside its widget
  * hierarchy, with [Gtk.Root.setFocus] and [Gtk.Root.getFocus].
  */
-template RootT(TStruct)
+template RootT()
 {
 
   /**

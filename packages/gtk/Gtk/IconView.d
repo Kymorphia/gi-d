@@ -3,7 +3,6 @@ module Gtk.IconView;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.ContentFormats;
 import Gdk.Paintable;
 import Gdk.PaintableT;
@@ -72,8 +71,8 @@ class IconView : Widget, CellLayout, Scrollable
     return getType();
   }
 
-  mixin CellLayoutT!GtkIconView;
-  mixin ScrollableT!GtkIconView;
+  mixin CellLayoutT!();
+  mixin ScrollableT!();
 
   /**
    * Creates a new `GtkIconView` widget
@@ -1078,10 +1077,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to ActivateCursorItem signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivateCursorItem(ActivateCursorItemCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivateCursorItem(ActivateCursorItemCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1094,7 +1093,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate-cursor-item", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate-cursor-item", closure, after);
   }
 
   /**
@@ -1115,10 +1114,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to ItemActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectItemActivated(ItemActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectItemActivated(ItemActivatedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1130,7 +1129,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("item-activated", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("item-activated", closure, after);
   }
 
   /**
@@ -1160,10 +1159,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to MoveCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveCursor(MoveCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveCursor(MoveCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1180,7 +1179,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-cursor", closure, after);
   }
 
   /**
@@ -1198,10 +1197,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to SelectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectAll(SelectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectAll(SelectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1212,7 +1211,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-all", closure, after);
   }
 
   /**
@@ -1231,10 +1230,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to SelectCursorItem signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectCursorItem(SelectCursorItemCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectCursorItem(SelectCursorItemCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1245,7 +1244,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-cursor-item", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-cursor-item", closure, after);
   }
 
   /**
@@ -1259,10 +1258,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to SelectionChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectionChanged(SelectionChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectionChanged(SelectionChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1273,7 +1272,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("selection-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("selection-changed", closure, after);
   }
 
   /**
@@ -1293,10 +1292,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to ToggleCursorItem signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleCursorItem(ToggleCursorItemCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleCursorItem(ToggleCursorItemCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1307,7 +1306,7 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-cursor-item", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-cursor-item", closure, after);
   }
 
   /**
@@ -1325,10 +1324,10 @@ class IconView : Widget, CellLayout, Scrollable
    * Connect to UnselectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnselectAll(UnselectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnselectAll(UnselectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1339,6 +1338,6 @@ class IconView : Widget, CellLayout, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unselect-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unselect-all", closure, after);
   }
 }

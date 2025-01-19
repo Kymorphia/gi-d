@@ -1,5 +1,6 @@
 module Gtk.TreeModelT;
 
+public import Gtk.TreeModelIfaceProxy;
 public import GObject.DClosure;
 public import GObject.ObjectG;
 public import GObject.Types;
@@ -180,7 +181,7 @@ public import Gtk.c.types;
 
  * Deprecated: Use [Gio.ListModel] instead
  */
-template TreeModelT(TStruct)
+template TreeModelT()
 {
 
   /**
@@ -617,10 +618,10 @@ template TreeModelT(TStruct)
    * Connect to RowChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowChanged(RowChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowChanged(RowChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -633,7 +634,7 @@ template TreeModelT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-changed", closure, after);
   }
 
   /**
@@ -653,10 +654,10 @@ template TreeModelT(TStruct)
    * Connect to RowDeleted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowDeleted(RowDeletedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowDeleted(RowDeletedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -668,7 +669,7 @@ template TreeModelT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-deleted", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-deleted", closure, after);
   }
 
   /**
@@ -685,10 +686,10 @@ template TreeModelT(TStruct)
    * Connect to RowHasChildToggled signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowHasChildToggled(RowHasChildToggledCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowHasChildToggled(RowHasChildToggledCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -701,7 +702,7 @@ template TreeModelT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-has-child-toggled", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-has-child-toggled", closure, after);
   }
 
   /**
@@ -721,10 +722,10 @@ template TreeModelT(TStruct)
    * Connect to RowInserted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowInserted(RowInsertedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowInserted(RowInsertedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -737,6 +738,6 @@ template TreeModelT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-inserted", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-inserted", closure, after);
   }
 }

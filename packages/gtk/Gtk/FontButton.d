@@ -2,7 +2,6 @@ module Gtk.FontButton;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleT;
@@ -51,7 +50,7 @@ class FontButton : Widget, FontChooser
     return getType();
   }
 
-  mixin FontChooserT!GtkFontButton;
+  mixin FontChooserT!();
 
   /**
    * Creates a new font picker widget.
@@ -201,10 +200,10 @@ class FontButton : Widget, FontChooser
    * Connect to Activate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivate(ActivateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivate(ActivateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -215,7 +214,7 @@ class FontButton : Widget, FontChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate", closure, after);
   }
 
   /**
@@ -233,10 +232,10 @@ class FontButton : Widget, FontChooser
    * Connect to FontSet signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFontSet(FontSetCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectFontSet(FontSetCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -247,6 +246,6 @@ class FontButton : Widget, FontChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("font-set", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("font-set", closure, after);
   }
 }

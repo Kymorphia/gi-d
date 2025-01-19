@@ -55,6 +55,52 @@ class Value : Boxed
   }
 
   /**
+   * Template to create a new Value from a D type.
+   * Params:
+   *   T = The D type to initialize the value to
+   *   val = The value to assign
+   */
+  static Value create(T)(T val)
+  {
+    Value value = new Value;
+    value.init_!T();
+    value.set!T(val);
+    return value;
+  }
+
+  /**
+   * Template to initialize a Value to a D type.
+   * Params:
+   *   T = The D type to initialize the Value to
+   */
+  void init_(T)()
+  {
+    initVal!T(cast(GValue*)cPtr);
+  }
+
+  /**
+   * Template to get a Value of a specific type.
+   * Params:
+   *   T = The D type of the value to get (must match the type of the Value)
+   * Returns: The value
+   */
+  T get(T)()
+  {
+    return getVal!T(cast(GValue*)cPtr);
+  }
+
+  /**
+   * Template to set a Value of a specific type.
+   * Params:
+   *   T = The D type of the value to set (must match the type of the Value)
+   *   val = The value to assign
+   */
+  void set(T)(T val)
+  {
+    return setVal!T(cast(GValue*)cPtr, val);
+  }
+
+  /**
    * Copies the value of src_value into dest_value.
    * Params:
    *   destValue = An initialized #GValue structure of the same type as src_value.
@@ -865,7 +911,7 @@ void initVal(T)(GValue* gval)
     g_value_init(gval, GTypeEnum.Boxed);
   else static if (is(T : ObjectG) || is(T == interface))
     g_value_init(gval, GTypeEnum.Object);
-  else static if (isPointer!T)
+  else static if (is(T : Object) || isPointer!T)
     g_value_init(gval, GTypeEnum.Pointer);
   else
     assert(0);
@@ -916,7 +962,7 @@ T getVal(T)(const(GValue)* gval)
     auto v = g_value_get_object(gval);
     return v ? ObjectG.getDObject!T(v, false) : null;
   }
-  else static if (isPointer!T)
+  else static if (is(T : Object) || isPointer!T)
     return cast(T)g_value_get_pointer(gval);
   else
     assert(0);
@@ -960,8 +1006,8 @@ void setVal(T)(GValue* gval, T v)
     g_value_set_boxed(gval, v.cInstancePtr);
   else static if (is(T : ObjectG) || is(T == interface))
     g_value_set_object(gval, cast(ObjectC*)v.cPtr(false));
-  else static if (isPointer!T)
-    g_value_set_pointer(gval, v);
+  else static if (is(T : Object) || isPointer!T)
+    g_value_set_pointer(gval, cast(void*)v);
   else
     assert(0);
 }

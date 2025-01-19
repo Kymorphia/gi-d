@@ -42,9 +42,9 @@ class SingleSelection : ObjectG, ListModel, SectionModel, SelectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkSingleSelection;
-  mixin SectionModelT!GtkSingleSelection;
-  mixin SelectionModelT!GtkSingleSelection;
+  mixin ListModelT!();
+  mixin SectionModelT!();
+  mixin SelectionModelT!();
 
   /**
    * Creates a new selection to handle model.

@@ -1,5 +1,6 @@
 module Gtk.TreeModel;
 
+public import Gtk.TreeModelIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectG;
 import GObject.Types;
@@ -480,10 +481,10 @@ interface TreeModel
    * Connect to RowChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowChanged(RowChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectRowChanged(RowChangedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is emitted when a row has been deleted.
@@ -502,10 +503,10 @@ interface TreeModel
    * Connect to RowDeleted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowDeleted(RowDeletedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectRowDeleted(RowDeletedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is emitted when a row has gotten the first child
@@ -521,10 +522,10 @@ interface TreeModel
    * Connect to RowHasChildToggled signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowHasChildToggled(RowHasChildToggledCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectRowHasChildToggled(RowHasChildToggledCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is emitted when a new row has been inserted in
@@ -543,8 +544,8 @@ interface TreeModel
    * Connect to RowInserted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowInserted(RowInsertedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectRowInserted(RowInsertedCallback dlg, Flag!"After" after = No.After);
 }

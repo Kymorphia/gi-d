@@ -1,5 +1,6 @@
 module Gtk.Orientable;
 
+public import Gtk.OrientableIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

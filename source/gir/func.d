@@ -474,7 +474,7 @@ final class Func : TypeNode
   bool introspectable = true; /// Introspectable?
   bool throws; /// Throws exception?
   bool action; /// Signal action (FIXME)
-  bool detailed; /// Signal detailed (FIXME)
+  bool detailed; /// Signal detailed (indicates the signal accepts a detail string)
   bool noHooks; /// Signal no hooks (FIXME)
   bool noRecurse; /// Signal no recurse (FIXME)
 

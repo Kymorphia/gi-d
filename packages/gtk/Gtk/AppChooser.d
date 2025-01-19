@@ -1,5 +1,6 @@
 module Gtk.AppChooser;
 
+public import Gtk.AppChooserIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.AppInfo;

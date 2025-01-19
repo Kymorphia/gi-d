@@ -52,7 +52,7 @@ class DBusObjectManagerServer : ObjectG, DBusObjectManager
     return getType();
   }
 
-  mixin DBusObjectManagerT!GDBusObjectManagerServer;
+  mixin DBusObjectManagerT!();
 
   /**
    * Creates a new #GDBusObjectManagerServer object.

@@ -2,7 +2,6 @@ module Gtk.GestureStylus;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.DeviceTool;
 import Gdk.Types;
 import Gid.gid;
@@ -143,10 +142,10 @@ class GestureStylus : GestureSingle
    * Connect to Down signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDown(DownCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDown(DownCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -159,7 +158,7 @@ class GestureStylus : GestureSingle
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("down", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("down", closure, after);
   }
 
   /**
@@ -175,10 +174,10 @@ class GestureStylus : GestureSingle
    * Connect to Motion signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMotion(MotionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMotion(MotionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -191,7 +190,7 @@ class GestureStylus : GestureSingle
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("motion", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("motion", closure, after);
   }
 
   /**
@@ -207,10 +206,10 @@ class GestureStylus : GestureSingle
    * Connect to Proximity signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectProximity(ProximityCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectProximity(ProximityCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -223,7 +222,7 @@ class GestureStylus : GestureSingle
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("proximity", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("proximity", closure, after);
   }
 
   /**
@@ -239,10 +238,10 @@ class GestureStylus : GestureSingle
    * Connect to Up signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUp(UpCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUp(UpCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -255,6 +254,6 @@ class GestureStylus : GestureSingle
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("up", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("up", closure, after);
   }
 }

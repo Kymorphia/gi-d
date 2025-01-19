@@ -1,5 +1,6 @@
 module Gio.Proxy;
 
+public import Gio.ProxyIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -36,7 +37,14 @@ interface Proxy
    * Returns: return a #GProxy or NULL if protocol
    *   is not supported.
    */
-  static Proxy getDefaultForProtocol(string protocol);
+  static Proxy getDefaultForProtocol(string protocol)
+  {
+    GProxy* _cretval;
+    const(char)* _protocol = protocol.toCString(false);
+    _cretval = g_proxy_get_default_for_protocol(_protocol);
+    auto _retval = _cretval ? ObjectG.getDObject!Proxy(cast(GProxy*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Given connection to communicate with a proxy $(LPAREN)eg, a

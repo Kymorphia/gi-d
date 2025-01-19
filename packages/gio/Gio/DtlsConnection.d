@@ -1,9 +1,9 @@
 module Gio.DtlsConnection;
 
+public import Gio.DtlsConnectionIfaceProxy;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncResult;
 import Gio.AsyncResultT;
@@ -438,8 +438,8 @@ interface DtlsConnection
    * Connect to AcceptCertificate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAcceptCertificate(AcceptCertificateCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectAcceptCertificate(AcceptCertificateCallback dlg, Flag!"After" after = No.After);
 }

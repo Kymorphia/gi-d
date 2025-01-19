@@ -1,5 +1,6 @@
 module Gio.Seekable;
 
+public import Gio.SeekableIfaceProxy;
 import GLib.ErrorG;
 import GLib.Types;
 import Gid.gid;

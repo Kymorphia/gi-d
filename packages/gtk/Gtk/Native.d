@@ -1,5 +1,6 @@
 module Gtk.Native;
 
+public import Gtk.NativeIfaceProxy;
 import GObject.ObjectG;
 import Gdk.Surface;
 import Gid.gid;
@@ -35,7 +36,13 @@ interface Native
    *   surface = a `GdkSurface`
    * Returns: the `GtkNative` that is associated with surface
    */
-  static Native getForSurface(Surface surface);
+  static Native getForSurface(Surface surface)
+  {
+    GtkNative* _cretval;
+    _cretval = gtk_native_get_for_surface(surface ? cast(GdkSurface*)surface.cPtr(false) : null);
+    auto _retval = _cretval ? ObjectG.getDObject!Native(cast(GtkNative*)_cretval, false) : null;
+    return _retval;
+  }
 
   /**
    * Returns the renderer that is used for this `GtkNative`.

@@ -2,7 +2,6 @@ module Gtk.Calendar;
 
 import GLib.DateTime;
 import GObject.DClosure;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleT;
@@ -301,10 +300,10 @@ class Calendar : Widget
    * Connect to DaySelected signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDaySelected(DaySelectedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDaySelected(DaySelectedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -315,7 +314,7 @@ class Calendar : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("day-selected", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("day-selected", closure, after);
   }
 
   /**
@@ -328,10 +327,10 @@ class Calendar : Widget
    * Connect to NextMonth signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNextMonth(NextMonthCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNextMonth(NextMonthCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -342,7 +341,7 @@ class Calendar : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("next-month", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("next-month", closure, after);
   }
 
   /**
@@ -355,10 +354,10 @@ class Calendar : Widget
    * Connect to NextYear signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNextYear(NextYearCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNextYear(NextYearCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -369,7 +368,7 @@ class Calendar : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("next-year", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("next-year", closure, after);
   }
 
   /**
@@ -382,10 +381,10 @@ class Calendar : Widget
    * Connect to PrevMonth signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPrevMonth(PrevMonthCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPrevMonth(PrevMonthCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -396,7 +395,7 @@ class Calendar : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("prev-month", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("prev-month", closure, after);
   }
 
   /**
@@ -409,10 +408,10 @@ class Calendar : Widget
    * Connect to PrevYear signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPrevYear(PrevYearCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPrevYear(PrevYearCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -423,6 +422,6 @@ class Calendar : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("prev-year", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("prev-year", closure, after);
   }
 }

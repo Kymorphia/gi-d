@@ -1,9 +1,9 @@
 module Gio.ActionGroupT;
 
+public import Gio.ActionGroupIfaceProxy;
 public import GLib.Variant;
 public import GLib.VariantType;
 public import GObject.DClosure;
-public import GObject.Types;
 public import Gid.gid;
 public import Gio.Types;
 public import Gio.c.functions;
@@ -47,7 +47,7 @@ public import Gio.c.types;
  * not be implemented - their "wrappers" are actually implemented with
  * calls to [Gio.ActionGroup.queryAction].
  */
-template ActionGroupT(TStruct)
+template ActionGroupT()
 {
 
   /**
@@ -372,10 +372,11 @@ template ActionGroupT(TStruct)
    * Connect to ActionAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionAdded(ActionAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActionAdded(ActionAddedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -387,7 +388,7 @@ template ActionGroupT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("action-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("action-added"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 
   /**
@@ -403,10 +404,11 @@ template ActionGroupT(TStruct)
    * Connect to ActionEnabledChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionEnabledChanged(ActionEnabledChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActionEnabledChanged(ActionEnabledChangedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -419,7 +421,7 @@ template ActionGroupT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("action-enabled-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("action-enabled-changed"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 
   /**
@@ -436,10 +438,11 @@ template ActionGroupT(TStruct)
    * Connect to ActionRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionRemoved(ActionRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActionRemoved(ActionRemovedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -451,7 +454,7 @@ template ActionGroupT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("action-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("action-removed"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 
   /**
@@ -467,10 +470,11 @@ template ActionGroupT(TStruct)
    * Connect to ActionStateChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionStateChanged(ActionStateChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActionStateChanged(ActionStateChangedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -483,6 +487,6 @@ template ActionGroupT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("action-state-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("action-state-changed"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 }

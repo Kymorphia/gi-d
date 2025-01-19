@@ -26,10 +26,9 @@ int main(string[] args)
         args,
         "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
         "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
-        "dump-patches", "Dump XML patch matches", &XmlPatch.dumpSelectorMatches,
+        "dump-selectors", "Dump XML patch selector matches", &XmlPatch.dumpSelectorMatches,
         "dump-traps", "Dump code trap actions", &codeTrapsDump,
-        "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string)
-        .join(", ") ~ ")", &logLevel,
+        "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string).join(", ") ~ ")", &logLevel,
         "g|gir-path", "Add a path to search for GIR files", &girPaths,
         "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
         "trap", "Add gdb breakpoint 'action:regex', action: domain (help to list), regex: pattern to match", &traps,

@@ -47,7 +47,7 @@ class FontChooserWidget : Widget, FontChooser
     return getType();
   }
 
-  mixin FontChooserT!GtkFontChooserWidget;
+  mixin FontChooserT!();
 
   /**
    * Creates a new `GtkFontChooserWidget`.

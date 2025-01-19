@@ -1,5 +1,6 @@
 module Gio.LoadableIcon;
 
+public import Gio.LoadableIconIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;

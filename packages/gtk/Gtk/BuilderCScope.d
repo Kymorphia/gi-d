@@ -41,7 +41,7 @@ class BuilderCScope : ObjectG, BuilderScope
     return getType();
   }
 
-  mixin BuilderScopeT!GtkBuilderCScope;
+  mixin BuilderScopeT!();
 
   /**
    * Creates a new `GtkBuilderCScope` object to use with future

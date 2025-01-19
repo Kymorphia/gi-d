@@ -48,7 +48,7 @@ class Separator : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkSeparator;
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkSeparator` with the given orientation.

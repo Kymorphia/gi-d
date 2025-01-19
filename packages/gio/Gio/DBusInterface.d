@@ -1,5 +1,6 @@
 module Gio.DBusInterface;
 
+public import Gio.DBusInterfaceIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.DBusInterfaceInfo;

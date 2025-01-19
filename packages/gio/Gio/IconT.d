@@ -1,5 +1,6 @@
 module Gio.IconT;
 
+public import Gio.IconIfaceProxy;
 public import GLib.ErrorG;
 public import GLib.Variant;
 public import GObject.ObjectG;
@@ -34,45 +35,10 @@ public import Gio.c.types;
  * understood by [Gio.Icon.deserialize], yielding one of the built-in
  * icon types.
  */
-template IconT(TStruct)
+template IconT()
 {
 
-  /**
-   * Deserializes a #GIcon previously serialized using [Gio.Icon.serialize].
-   * Params:
-   *   value = a #GVariant created with [Gio.Icon.serialize]
-   * Returns: a #GIcon, or %NULL when deserialization fails.
-   */
-  static Icon deserialize(Variant value)
-  {
-    GIcon* _cretval;
-    _cretval = g_icon_deserialize(value ? cast(GVariant*)value.cPtr(false) : null);
-    auto _retval = _cretval ? ObjectG.getDObject!Icon(cast(GIcon*)_cretval, true) : null;
-    return _retval;
-  }
 
-  /**
-   * Generate a #GIcon instance from str. This function can fail if
-   * str is not valid - see [Gio.Icon.toString_] for discussion.
-   * If your application or library provides one or more #GIcon
-   * implementations you need to ensure that each #GType is registered
-   * with the type system prior to calling [Gio.Icon.newForString].
-   * Params:
-   *   str = A string obtained via [Gio.Icon.toString_].
-   * Returns: An object implementing the #GIcon
-   *   interface or %NULL if error is set.
-   */
-  static Icon newForString(string str)
-  {
-    GIcon* _cretval;
-    const(char)* _str = str.toCString(false);
-    GError *_err;
-    _cretval = g_icon_new_for_string(_str, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? ObjectG.getDObject!Icon(cast(GIcon*)_cretval, true) : null;
-    return _retval;
-  }
 
   /**
    * Checks if two icons are equal.

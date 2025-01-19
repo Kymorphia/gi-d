@@ -1,5 +1,6 @@
 module Gtk.TreeDragDestT;
 
+public import Gtk.TreeDragDestIfaceProxy;
 public import GObject.Value;
 public import Gid.gid;
 public import Gtk.TreePath;
@@ -13,7 +14,7 @@ public import Gtk.c.types;
  * Deprecated: List views use widgets to display their contents.
  *   You can use [Gtk.DropTarget] to implement a drop destination
  */
-template TreeDragDestT(TStruct)
+template TreeDragDestT()
 {
 
   /**

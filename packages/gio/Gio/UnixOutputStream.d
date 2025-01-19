@@ -42,8 +42,8 @@ class UnixOutputStream : OutputStream, FileDescriptorBased, PollableOutputStream
     return getType();
   }
 
-  mixin FileDescriptorBasedT!GUnixOutputStream;
-  mixin PollableOutputStreamT!GUnixOutputStream;
+  mixin FileDescriptorBasedT!();
+  mixin PollableOutputStreamT!();
 
   /**
    * Creates a new #GUnixOutputStream for the given fd.

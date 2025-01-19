@@ -1,5 +1,6 @@
 module Gio.ActionT;
 
+public import Gio.ActionIfaceProxy;
 public import GLib.ErrorG;
 public import GLib.Variant;
 public import GLib.VariantType;
@@ -33,95 +34,11 @@ public import Gio.c.types;
  * Probably the only useful thing to do with a `GAction` is to put it
  * inside of a [Gio.SimpleActionGroup].
  */
-template ActionT(TStruct)
+template ActionT()
 {
 
-  /**
-   * Checks if action_name is valid.
-   * action_name is valid if it consists only of alphanumeric characters,
-   * plus '-' and '.'.  The empty string is not a valid action name.
-   * It is an error to call this function with a non-utf8 action_name.
-   * action_name must not be %NULL.
-   * Params:
-   *   actionName = a potential action name
-   * Returns: %TRUE if action_name is valid
-   */
-  static bool nameIsValid(string actionName)
-  {
-    bool _retval;
-    const(char)* _actionName = actionName.toCString(false);
-    _retval = g_action_name_is_valid(_actionName);
-    return _retval;
-  }
 
-  /**
-   * Parses a detailed action name into its separate name and target
-   * components.
-   * Detailed action names can have three formats.
-   * The first format is used to represent an action name with no target
-   * value and consists of just an action name containing no whitespace
-   * nor the characters `:`, `$(LPAREN)` or `$(RPAREN)`.  For example: `app.action`.
-   * The second format is used to represent an action with a target value
-   * that is a non-empty string consisting only of alphanumerics, plus `-`
-   * and `.`.  In that case, the action name and target value are
-   * separated by a double colon $(LPAREN)`::`$(RPAREN).  For example:
-   * `app.action::target`.
-   * The third format is used to represent an action with any type of
-   * target value, including strings.  The target value follows the action
-   * name, surrounded in parens.  For example: `app.action$(LPAREN)42$(RPAREN)`.  The
-   * target value is parsed using [GLib.Variant.parse].  If a tuple-typed
-   * value is desired, it must be specified in the same way, resulting in
-   * two sets of parens, for example: `app.action$(LPAREN)$(LPAREN)1,2,3$(RPAREN)$(RPAREN)`.  A string
-   * target can be specified this way as well: `app.action$(LPAREN)'target'$(RPAREN)`.
-   * For strings, this third format must be used if target value is
-   * empty or contains characters other than alphanumerics, `-` and `.`.
-   * If this function returns %TRUE, a non-%NULL value is guaranteed to be returned
-   * in action_name $(LPAREN)if a pointer is passed in$(RPAREN). A %NULL value may still be
-   * returned in target_value, as the detailed_name may not contain a target.
-   * If returned, the #GVariant in target_value is guaranteed to not be floating.
-   * Params:
-   *   detailedName = a detailed action name
-   *   actionName = the action name
-   *   targetValue = the target value,
-   *     or %NULL for no target
-   * Returns: %TRUE if successful, else %FALSE with error set
-   */
-  static bool parseDetailedName(string detailedName, out string actionName, out Variant targetValue)
-  {
-    bool _retval;
-    const(char)* _detailedName = detailedName.toCString(false);
-    char* _actionName;
-    GVariant* _targetValue;
-    GError *_err;
-    _retval = g_action_parse_detailed_name(_detailedName, &_actionName, &_targetValue, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    actionName = _actionName.fromCString(true);
-    targetValue = new Variant(cast(void*)_targetValue, true);
-    return _retval;
-  }
 
-  /**
-   * Formats a detailed action name from action_name and target_value.
-   * It is an error to call this function with an invalid action name.
-   * This function is the opposite of [Gio.Action.parseDetailedName].
-   * It will produce a string that can be parsed back to the action_name
-   * and target_value by that function.
-   * See that function for the types of strings that will be printed by
-   * this function.
-   * Params:
-   *   actionName = a valid action name
-   *   targetValue = a #GVariant target value, or %NULL
-   * Returns: a detailed format string
-   */
-  static string printDetailedName(string actionName, Variant targetValue)
-  {
-    char* _cretval;
-    const(char)* _actionName = actionName.toCString(false);
-    _cretval = g_action_print_detailed_name(_actionName, targetValue ? cast(GVariant*)targetValue.cPtr(false) : null);
-    string _retval = _cretval.fromCString(true);
-    return _retval;
-  }
 
   /**
    * Activates the action.

@@ -5,7 +5,6 @@ import GLib.List;
 import GLib.Variant;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncResult;
 import Gio.AsyncResultT;
@@ -525,10 +524,10 @@ class Resolver : ObjectG
    * Connect to Reload signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectReload(ReloadCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectReload(ReloadCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -539,6 +538,6 @@ class Resolver : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("reload", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("reload", closure, after);
   }
 }

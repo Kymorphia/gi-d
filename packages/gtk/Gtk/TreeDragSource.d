@@ -1,5 +1,6 @@
 module Gtk.TreeDragSource;
 
+public import Gtk.TreeDragSourceIfaceProxy;
 import GObject.ObjectG;
 import Gdk.ContentProvider;
 import Gid.gid;

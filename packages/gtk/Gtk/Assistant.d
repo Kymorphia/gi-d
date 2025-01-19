@@ -2,7 +2,6 @@ module Gtk.Assistant;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.ListModel;
 import Gio.ListModelT;
@@ -464,10 +463,10 @@ class Assistant : Window
    * Connect to Apply signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectApply(ApplyCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectApply(ApplyCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -478,7 +477,7 @@ class Assistant : Window
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("apply", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("apply", closure, after);
   }
 
   /**
@@ -493,10 +492,10 @@ class Assistant : Window
    * Connect to Cancel signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCancel(CancelCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCancel(CancelCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -507,7 +506,7 @@ class Assistant : Window
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cancel", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cancel", closure, after);
   }
 
   /**
@@ -524,10 +523,10 @@ class Assistant : Window
    * Connect to Close signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectClose(CloseCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectClose(CloseCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -538,7 +537,7 @@ class Assistant : Window
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("close", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("close", closure, after);
   }
 
   /**
@@ -553,10 +552,10 @@ class Assistant : Window
    * Connect to Escape signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEscape(EscapeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEscape(EscapeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -567,7 +566,7 @@ class Assistant : Window
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("escape", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("escape", closure, after);
   }
 
   /**
@@ -587,10 +586,10 @@ class Assistant : Window
    * Connect to Prepare signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPrepare(PrepareCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPrepare(PrepareCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -602,6 +601,6 @@ class Assistant : Window
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("prepare", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("prepare", closure, after);
   }
 }

@@ -2,7 +2,6 @@ module Gtk.EventControllerKey;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Types;
 import Gid.gid;
 import Gtk.EventController;
@@ -109,10 +108,10 @@ class EventControllerKey : EventController
    * Connect to ImUpdate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectImUpdate(ImUpdateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectImUpdate(ImUpdateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -123,7 +122,7 @@ class EventControllerKey : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("im-update", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("im-update", closure, after);
   }
 
   /**
@@ -141,10 +140,10 @@ class EventControllerKey : EventController
    * Connect to KeyPressed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectKeyPressed(KeyPressedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectKeyPressed(KeyPressedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -160,7 +159,7 @@ class EventControllerKey : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("key-pressed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("key-pressed", closure, after);
   }
 
   /**
@@ -177,10 +176,10 @@ class EventControllerKey : EventController
    * Connect to KeyReleased signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectKeyReleased(KeyReleasedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectKeyReleased(KeyReleasedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -194,7 +193,7 @@ class EventControllerKey : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("key-released", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("key-released", closure, after);
   }
 
   /**
@@ -211,10 +210,10 @@ class EventControllerKey : EventController
    * Connect to Modifiers signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectModifiers(ModifiersCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectModifiers(ModifiersCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -228,6 +227,6 @@ class EventControllerKey : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("modifiers", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("modifiers", closure, after);
   }
 }

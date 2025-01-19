@@ -1,8 +1,8 @@
 module Gtk.TreeSortable;
 
+public import Gtk.TreeSortableIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.TreeIter;
 import Gtk.TreeModel;
@@ -104,8 +104,8 @@ interface TreeSortable
    * Connect to SortColumnChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSortColumnChanged(SortColumnChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectSortColumnChanged(SortColumnChangedCallback dlg, Flag!"After" after = No.After);
 }

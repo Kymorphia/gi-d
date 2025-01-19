@@ -39,8 +39,8 @@ class SliceListModel : ObjectG, ListModel, SectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkSliceListModel;
-  mixin SectionModelT!GtkSliceListModel;
+  mixin ListModelT!();
+  mixin SectionModelT!();
 
   /**
    * Creates a new slice model.

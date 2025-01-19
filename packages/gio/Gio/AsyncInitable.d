@@ -1,5 +1,6 @@
 module Gio.AsyncInitable;
 
+public import Gio.AsyncInitableIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import GObject.Parameter;
@@ -124,7 +125,19 @@ interface AsyncInitable
    * Deprecated: Use [GObject.ObjectG.newWithProperties] and
    *   [Gio.AsyncInitable.initAsync] instead. See #GParameter for more information.
    */
-  static void newvAsync(GType objectType, uint nParameters, Parameter parameters, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback);
+  static void newvAsync(GType objectType, uint nParameters, Parameter parameters, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    g_async_initable_newv_async(objectType, nParameters, parameters ? cast(GParameter*)parameters.cPtr : null, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
 
   /**
    * Starts asynchronous initialization of the object implementing the

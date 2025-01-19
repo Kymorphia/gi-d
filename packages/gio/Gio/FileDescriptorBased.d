@@ -1,5 +1,6 @@
 module Gio.FileDescriptorBased;
 
+public import Gio.FileDescriptorBasedIfaceProxy;
 import Gid.gid;
 import Gio.Types;
 import Gio.c.functions;

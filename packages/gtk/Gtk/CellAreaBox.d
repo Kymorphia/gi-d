@@ -52,7 +52,7 @@ class CellAreaBox : CellArea, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkCellAreaBox;
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkCellAreaBox`.

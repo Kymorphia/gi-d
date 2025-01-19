@@ -3,7 +3,6 @@ module Gio.DebugControllerDBus;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Cancellable;
 import Gio.DBusConnection;
@@ -133,8 +132,8 @@ class DebugControllerDBus : ObjectG, DebugController, Initable
     return getType();
   }
 
-  mixin DebugControllerT!GDebugControllerDBus;
-  mixin InitableT!GDebugControllerDBus;
+  mixin DebugControllerT!();
+  mixin InitableT!();
 
   /**
    * Create a new #GDebugControllerDBus and synchronously initialize it.
@@ -202,10 +201,10 @@ class DebugControllerDBus : ObjectG, DebugController, Initable
    * Connect to Authorize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAuthorize(AuthorizeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAuthorize(AuthorizeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -219,6 +218,6 @@ class DebugControllerDBus : ObjectG, DebugController, Initable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("authorize", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("authorize", closure, after);
   }
 }

@@ -59,7 +59,7 @@ class EditableLabel : Widget, Editable
     return getType();
   }
 
-  mixin EditableT!GtkEditableLabel;
+  mixin EditableT!();
 
   /**
    * Creates a new `GtkEditableLabel` widget.

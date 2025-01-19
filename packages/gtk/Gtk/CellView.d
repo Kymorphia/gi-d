@@ -61,8 +61,8 @@ class CellView : Widget, CellLayout, Orientable
     return getType();
   }
 
-  mixin CellLayoutT!GtkCellView;
-  mixin OrientableT!GtkCellView;
+  mixin CellLayoutT!();
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkCellView` widget.

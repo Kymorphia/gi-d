@@ -1,5 +1,6 @@
 module Gio.ActionMap;
 
+public import Gio.ActionMapIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Action;

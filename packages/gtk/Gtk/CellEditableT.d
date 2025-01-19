@@ -1,7 +1,7 @@
 module Gtk.CellEditableT;
 
+public import Gtk.CellEditableIfaceProxy;
 public import GObject.DClosure;
-public import GObject.Types;
 public import Gdk.Event;
 public import Gid.gid;
 public import Gtk.Types;
@@ -17,7 +17,7 @@ public import Gtk.c.types;
  * Deprecated: List views use widgets for displaying their
  *   contents. See [Gtk.Editable] for editable text widgets
  */
-template CellEditableT(TStruct)
+template CellEditableT()
 {
 
   /**
@@ -71,10 +71,10 @@ template CellEditableT(TStruct)
    * Connect to EditingDone signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEditingDone(EditingDoneCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEditingDone(EditingDoneCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -85,7 +85,7 @@ template CellEditableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("editing-done", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("editing-done", closure, after);
   }
 
   /**
@@ -107,10 +107,10 @@ template CellEditableT(TStruct)
    * Connect to RemoveWidget signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRemoveWidget(RemoveWidgetCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRemoveWidget(RemoveWidgetCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -121,6 +121,6 @@ template CellEditableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("remove-widget", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("remove-widget", closure, after);
   }
 }

@@ -148,8 +148,8 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
     return getType();
   }
 
-  mixin IconT!PixbufC;
-  mixin LoadableIconT!PixbufC;
+  mixin IconT!();
+  mixin LoadableIconT!();
 
   /**
    * Creates a new `GdkPixbuf` structure and allocates a buffer for it.

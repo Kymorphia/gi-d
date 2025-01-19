@@ -177,5 +177,5 @@ class FileChooserDialog : Dialog, FileChooser
     return getType();
   }
 
-  mixin FileChooserT!GtkFileChooserDialog;
+  mixin FileChooserT!();
 }

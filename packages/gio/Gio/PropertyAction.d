@@ -72,7 +72,7 @@ class PropertyAction : ObjectG, Action
     return getType();
   }
 
-  mixin ActionT!GPropertyAction;
+  mixin ActionT!();
 
   /**
    * Creates a #GAction corresponding to the value of property

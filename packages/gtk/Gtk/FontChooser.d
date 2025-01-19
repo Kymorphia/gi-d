@@ -1,8 +1,8 @@
 module Gtk.FontChooser;
 
+public import Gtk.FontChooserIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;
@@ -272,8 +272,8 @@ interface FontChooser
    * Connect to FontActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFontActivated(FontActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectFontActivated(FontActivatedCallback dlg, Flag!"After" after = No.After);
 }

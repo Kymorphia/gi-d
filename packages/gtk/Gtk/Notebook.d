@@ -2,7 +2,6 @@ module Gtk.Notebook;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.ListModel;
 import Gio.ListModelT;
@@ -776,10 +775,10 @@ class Notebook : Widget
    * Connect to ChangeCurrentPage signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChangeCurrentPage(ChangeCurrentPageCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChangeCurrentPage(ChangeCurrentPageCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -793,7 +792,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("change-current-page", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("change-current-page", closure, after);
   }
 
   /**
@@ -816,10 +815,10 @@ class Notebook : Widget
    * Connect to CreateWindow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCreateWindow(CreateWindowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCreateWindow(CreateWindowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -832,7 +831,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("create-window", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("create-window", closure, after);
   }
 
   alias FocusTabCallback = bool delegate(NotebookTab object, Notebook notebook);
@@ -841,10 +840,10 @@ class Notebook : Widget
    * Connect to FocusTab signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFocusTab(FocusTabCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectFocusTab(FocusTabCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -858,7 +857,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("focus-tab", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("focus-tab", closure, after);
   }
 
   alias MoveFocusOutCallback = void delegate(DirectionType object, Notebook notebook);
@@ -867,10 +866,10 @@ class Notebook : Widget
    * Connect to MoveFocusOut signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveFocusOut(MoveFocusOutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveFocusOut(MoveFocusOutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -882,7 +881,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-focus-out", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-focus-out", closure, after);
   }
 
   /**
@@ -899,10 +898,10 @@ class Notebook : Widget
    * Connect to PageAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPageAdded(PageAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPageAdded(PageAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -915,7 +914,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("page-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("page-added", closure, after);
   }
 
   /**
@@ -932,10 +931,10 @@ class Notebook : Widget
    * Connect to PageRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPageRemoved(PageRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPageRemoved(PageRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -948,7 +947,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("page-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("page-removed", closure, after);
   }
 
   /**
@@ -965,10 +964,10 @@ class Notebook : Widget
    * Connect to PageReordered signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPageReordered(PageReorderedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPageReordered(PageReorderedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -981,7 +980,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("page-reordered", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("page-reordered", closure, after);
   }
 
   alias ReorderTabCallback = bool delegate(DirectionType object, bool p0, Notebook notebook);
@@ -990,10 +989,10 @@ class Notebook : Widget
    * Connect to ReorderTab signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectReorderTab(ReorderTabCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectReorderTab(ReorderTabCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1008,7 +1007,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("reorder-tab", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("reorder-tab", closure, after);
   }
 
   alias SelectPageCallback = bool delegate(bool object, Notebook notebook);
@@ -1017,10 +1016,10 @@ class Notebook : Widget
    * Connect to SelectPage signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectPage(SelectPageCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectPage(SelectPageCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1034,7 +1033,7 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-page", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-page", closure, after);
   }
 
   /**
@@ -1050,10 +1049,10 @@ class Notebook : Widget
    * Connect to SwitchPage signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSwitchPage(SwitchPageCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSwitchPage(SwitchPageCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1066,6 +1065,6 @@ class Notebook : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("switch-page", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("switch-page", closure, after);
   }
 }

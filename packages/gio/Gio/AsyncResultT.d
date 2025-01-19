@@ -1,5 +1,6 @@
 module Gio.AsyncResultT;
 
+public import Gio.AsyncResultIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -78,7 +79,7 @@ public import Gio.c.types;
  * `G_PRIORITY_LOW` and `G_PRIORITY_HIGH`, with `G_PRIORITY_DEFAULT`
  * as a default.
  */
-template AsyncResultT(TStruct)
+template AsyncResultT()
 {
 
   /**

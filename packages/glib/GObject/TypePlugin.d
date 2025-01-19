@@ -1,5 +1,6 @@
 module GObject.TypePlugin;
 
+public import GObject.TypePluginIfaceProxy;
 import GObject.TypeInfoG;
 import GObject.TypeValueTable;
 import GObject.Types;

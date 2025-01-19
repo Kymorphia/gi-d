@@ -1,5 +1,6 @@
 module Gdk.ToplevelT;
 
+public import Gdk.ToplevelIfaceProxy;
 public import GLib.List;
 public import Gdk.Device;
 public import Gdk.Event;
@@ -17,7 +18,7 @@ public import Gid.gid;
  * the windowing system, such as controlling maximization and size of the
  * surface, setting icons and transient parents for dialogs.
  */
-template ToplevelT(TStruct)
+template ToplevelT()
 {
 
   /**

@@ -4,7 +4,6 @@ import GLib.List;
 import GLib.Variant;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AppInfo;
 import Gio.AppInfoT;
@@ -171,10 +170,10 @@ class AppLaunchContext : ObjectG
    * Connect to LaunchFailed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLaunchFailed(LaunchFailedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLaunchFailed(LaunchFailedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -186,7 +185,7 @@ class AppLaunchContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("launch-failed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("launch-failed", closure, after);
   }
 
   /**
@@ -216,10 +215,10 @@ class AppLaunchContext : ObjectG
    * Connect to LaunchStarted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLaunchStarted(LaunchStartedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLaunchStarted(LaunchStartedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -232,7 +231,7 @@ class AppLaunchContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("launch-started", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("launch-started", closure, after);
   }
 
   /**
@@ -263,10 +262,10 @@ class AppLaunchContext : ObjectG
    * Connect to Launched signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLaunched(LaunchedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLaunched(LaunchedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -279,6 +278,6 @@ class AppLaunchContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("launched", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("launched", closure, after);
   }
 }

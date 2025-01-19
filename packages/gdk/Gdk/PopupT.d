@@ -1,5 +1,6 @@
 module Gdk.PopupT;
 
+public import Gdk.PopupIfaceProxy;
 public import GObject.ObjectG;
 public import Gdk.PopupLayout;
 public import Gdk.Surface;
@@ -15,7 +16,7 @@ public import Gid.gid;
  * They can be modal, which is indicated by the [Gdk.Popup.autohide]
  * property.
  */
-template PopupT(TStruct)
+template PopupT()
 {
 
   /**

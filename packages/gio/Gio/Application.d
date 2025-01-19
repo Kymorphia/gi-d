@@ -6,7 +6,6 @@ import GLib.Types;
 import GLib.VariantDict;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.ActionGroup;
 import Gio.ActionGroupT;
@@ -149,8 +148,8 @@ class Application : ObjectG, ActionGroup, ActionMap
     return getType();
   }
 
-  mixin ActionGroupT!GApplication;
-  mixin ActionMapT!GApplication;
+  mixin ActionGroupT!();
+  mixin ActionMapT!();
 
   /**
    * Creates a new #GApplication instance.
@@ -990,10 +989,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to Activate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivate(ActivateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivate(ActivateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1004,7 +1003,7 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate", closure, after);
   }
 
   /**
@@ -1024,10 +1023,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to CommandLine signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCommandLine(CommandLineCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCommandLine(CommandLineCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1041,7 +1040,7 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("command-line", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("command-line", closure, after);
   }
 
   /**
@@ -1093,10 +1092,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to HandleLocalOptions signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectHandleLocalOptions(HandleLocalOptionsCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectHandleLocalOptions(HandleLocalOptionsCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1110,7 +1109,7 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("handle-local-options", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("handle-local-options", closure, after);
   }
 
   /**
@@ -1127,10 +1126,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to NameLost signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNameLost(NameLostCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNameLost(NameLostCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1143,7 +1142,7 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("name-lost", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("name-lost", closure, after);
   }
 
   /**
@@ -1160,10 +1159,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to Open signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectOpen(OpenCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectOpen(OpenCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1180,7 +1179,7 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("open", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("open", closure, after);
   }
 
   /**
@@ -1194,10 +1193,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to Shutdown signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectShutdown(ShutdownCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectShutdown(ShutdownCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1208,7 +1207,7 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("shutdown", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("shutdown", closure, after);
   }
 
   /**
@@ -1222,10 +1221,10 @@ class Application : ObjectG, ActionGroup, ActionMap
    * Connect to Startup signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectStartup(StartupCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectStartup(StartupCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1236,6 +1235,6 @@ class Application : ObjectG, ActionGroup, ActionMap
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("startup", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("startup", closure, after);
   }
 }

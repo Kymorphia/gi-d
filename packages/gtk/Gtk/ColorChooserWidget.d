@@ -52,7 +52,7 @@ class ColorChooserWidget : Widget, ColorChooser
     return getType();
   }
 
-  mixin ColorChooserT!GtkColorChooserWidget;
+  mixin ColorChooserT!();
 
   /**
    * Creates a new `GtkColorChooserWidget`.

@@ -36,8 +36,8 @@ class SimpleActionGroup : ObjectG, ActionGroup, ActionMap
     return getType();
   }
 
-  mixin ActionGroupT!GSimpleActionGroup;
-  mixin ActionMapT!GSimpleActionGroup;
+  mixin ActionGroupT!();
+  mixin ActionMapT!();
 
   /**
    * Creates a new, empty, #GSimpleActionGroup.

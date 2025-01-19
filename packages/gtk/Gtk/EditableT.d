@@ -1,10 +1,10 @@
 module Gtk.EditableT;
 
+public import Gtk.EditableIfaceProxy;
 public import GObject.DClosure;
 public import GObject.ObjectClass;
 public import GObject.ObjectG;
 public import GObject.ParamSpec;
-public import GObject.Types;
 public import GObject.Value;
 public import Gid.gid;
 public import Gtk.Types;
@@ -117,71 +117,11 @@ public import Gtk.c.types;
  * and signal@Gtk.Editable::delete-text signals, you will need to connect
  * to them on the delegate obtained via [Gtk.Editable.getDelegate].
  */
-template EditableT(TStruct)
+template EditableT()
 {
 
-  /**
-   * Gets a property of the `GtkEditable` delegate for object.
-   * This is helper function that should be called in the `get_property`
-   * function of your `GtkEditable` implementation, before handling your
-   * own properties.
-   * Params:
-   *   object = a `GObject`
-   *   propId = a property ID
-   *   value = value to set
-   *   pspec = the `GParamSpec` for the property
-   * Returns: %TRUE if the property was found
-   */
-  static bool delegateGetProperty(ObjectG object, uint propId, Value value, ParamSpec pspec)
-  {
-    bool _retval;
-    _retval = gtk_editable_delegate_get_property(object ? cast(ObjectC*)object.cPtr(false) : null, propId, value ? cast(GValue*)value.cPtr(false) : null, pspec ? cast(GParamSpec*)pspec.cPtr(false) : null);
-    return _retval;
-  }
 
-  /**
-   * Sets a property on the `GtkEditable` delegate for object.
-   * This is a helper function that should be called in the `set_property`
-   * function of your `GtkEditable` implementation, before handling your
-   * own properties.
-   * Params:
-   *   object = a `GObject`
-   *   propId = a property ID
-   *   value = value to set
-   *   pspec = the `GParamSpec` for the property
-   * Returns: %TRUE if the property was found
-   */
-  static bool delegateSetProperty(ObjectG object, uint propId, Value value, ParamSpec pspec)
-  {
-    bool _retval;
-    _retval = gtk_editable_delegate_set_property(object ? cast(ObjectC*)object.cPtr(false) : null, propId, value ? cast(GValue*)value.cPtr(false) : null, pspec ? cast(GParamSpec*)pspec.cPtr(false) : null);
-    return _retval;
-  }
 
-  /**
-   * Overrides the `GtkEditable` properties for class.
-   * This is a helper function that should be called in class_init,
-   * after installing your own properties.
-   * Note that your class must have "text", "cursor-position",
-   * "selection-bound", "editable", "width-chars", "max-width-chars",
-   * "xalign" and "enable-undo" properties for this function to work.
-   * To handle the properties in your set_property and get_property
-   * functions, you can either use [Gtk.Editable.delegateSetProperty]
-   * and [Gtk.Editable.delegateGetProperty] $(LPAREN)if you are using
-   * a delegate$(RPAREN), or remember the first_prop offset and add it to the
-   * values in the [Gtk] enumeration to get the
-   * property IDs for these properties.
-   * Params:
-   *   objectClass = a `GObjectClass`
-   *   firstProp = property ID to use for the first property
-   * Returns: the number of properties that were installed
-   */
-  static uint installProperties(ObjectClass objectClass, uint firstProp)
-  {
-    uint _retval;
-    _retval = gtk_editable_install_properties(objectClass ? cast(GObjectClass*)objectClass.cPtr : null, firstProp);
-    return _retval;
-  }
 
   /**
    * Retrieves the accessible platform state from the editable delegate.
@@ -535,10 +475,10 @@ template EditableT(TStruct)
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -549,7 +489,7 @@ template EditableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("changed", closure, after);
   }
 
   /**
@@ -571,10 +511,10 @@ template EditableT(TStruct)
    * Connect to DeleteText signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeleteText(DeleteTextCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeleteText(DeleteTextCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -587,6 +527,6 @@ template EditableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("delete-text", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("delete-text", closure, after);
   }
 }

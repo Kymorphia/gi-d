@@ -66,8 +66,8 @@ class ShortcutController : EventController, ListModel, Buildable
     return getType();
   }
 
-  mixin ListModelT!GtkShortcutController;
-  mixin BuildableT!GtkShortcutController;
+  mixin ListModelT!();
+  mixin BuildableT!();
 
   /**
    * Creates a new shortcut controller.

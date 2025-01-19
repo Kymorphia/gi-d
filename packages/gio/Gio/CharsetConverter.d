@@ -37,8 +37,8 @@ class CharsetConverter : ObjectG, Converter, Initable
     return getType();
   }
 
-  mixin ConverterT!GCharsetConverter;
-  mixin InitableT!GCharsetConverter;
+  mixin ConverterT!();
+  mixin InitableT!();
 
   /**
    * Creates a new #GCharsetConverter.

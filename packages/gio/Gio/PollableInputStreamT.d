@@ -1,5 +1,6 @@
 module Gio.PollableInputStreamT;
 
+public import Gio.PollableInputStreamIfaceProxy;
 public import GLib.ErrorG;
 public import GLib.Source;
 public import Gid.gid;
@@ -18,7 +19,7 @@ public import Gio.c.types;
  * returns false, then the behavior of other `GPollableInputStream` methods is
  * undefined.
  */
-template PollableInputStreamT(TStruct)
+template PollableInputStreamT()
 {
 
   /**

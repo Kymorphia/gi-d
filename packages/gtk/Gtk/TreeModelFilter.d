@@ -97,8 +97,8 @@ class TreeModelFilter : ObjectG, TreeDragSource, TreeModel
     return getType();
   }
 
-  mixin TreeDragSourceT!GtkTreeModelFilter;
-  mixin TreeModelT!GtkTreeModelFilter;
+  mixin TreeDragSourceT!();
+  mixin TreeModelT!();
 
   /**
    * This function should almost never be called. It clears the filter

@@ -2,7 +2,6 @@ module Gtk.EntryBuffer;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;
@@ -219,10 +218,10 @@ class EntryBuffer : ObjectG
    * Connect to DeletedText signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeletedText(DeletedTextCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeletedText(DeletedTextCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -235,7 +234,7 @@ class EntryBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("deleted-text", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("deleted-text", closure, after);
   }
 
   /**
@@ -252,10 +251,10 @@ class EntryBuffer : ObjectG
    * Connect to InsertedText signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertedText(InsertedTextCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertedText(InsertedTextCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -269,6 +268,6 @@ class EntryBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("inserted-text", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("inserted-text", closure, after);
   }
 }

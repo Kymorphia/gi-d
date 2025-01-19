@@ -2,7 +2,6 @@ module Gtk.LevelBar;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleRange;
@@ -114,8 +113,8 @@ class LevelBar : Widget, AccessibleRange, Orientable
     return getType();
   }
 
-  mixin AccessibleRangeT!GtkLevelBar;
-  mixin OrientableT!GtkLevelBar;
+  mixin AccessibleRangeT!();
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkLevelBar`.
@@ -318,10 +317,11 @@ class LevelBar : Widget, AccessibleRange, Orientable
    * Connect to OffsetChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectOffsetChanged(OffsetChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectOffsetChanged(OffsetChangedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -333,6 +333,6 @@ class LevelBar : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("offset-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("offset-changed"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 }

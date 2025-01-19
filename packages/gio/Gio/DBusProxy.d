@@ -4,7 +4,6 @@ import GLib.ErrorG;
 import GLib.Variant;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncInitable;
 import Gio.AsyncInitableT;
@@ -86,9 +85,9 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
     return getType();
   }
 
-  mixin AsyncInitableT!GDBusProxy;
-  mixin DBusInterfaceT!GDBusProxy;
-  mixin InitableT!GDBusProxy;
+  mixin AsyncInitableT!();
+  mixin DBusInterfaceT!();
+  mixin InitableT!();
 
   /**
    * Finishes creating a #GDBusProxy.
@@ -731,10 +730,10 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    * Connect to GPropertiesChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectGPropertiesChanged(GPropertiesChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectGPropertiesChanged(GPropertiesChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -754,7 +753,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("g-properties-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("g-properties-changed", closure, after);
   }
 
   /**
@@ -774,10 +773,11 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    * Connect to GSignal signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectGSignal(GSignalCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectGSignal(GSignalCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -791,6 +791,6 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("g-signal", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("g-signal"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 }

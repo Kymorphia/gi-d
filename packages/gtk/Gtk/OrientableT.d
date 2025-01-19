@@ -1,5 +1,6 @@
 module Gtk.OrientableT;
 
+public import Gtk.OrientableIfaceProxy;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -15,7 +16,7 @@ public import Gtk.c.types;
  * automatically acquire the `horizontal` or `vertical` CSS class depending on
  * the value of the [Gtk.Orientable.orientation] property.
  */
-template OrientableT(TStruct)
+template OrientableT()
 {
 
   /**

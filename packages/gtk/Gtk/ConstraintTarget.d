@@ -1,5 +1,6 @@
 module Gtk.ConstraintTarget;
 
+public import Gtk.ConstraintTargetIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

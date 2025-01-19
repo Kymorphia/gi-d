@@ -1,5 +1,6 @@
 module Gio.TlsClientConnection;
 
+public import Gio.TlsClientConnectionIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -35,7 +36,16 @@ interface TlsClientConnection
    * Returns: the new
    *   #GTlsClientConnection, or %NULL on error
    */
-  static TlsClientConnection new_(IOStream baseIoStream, SocketConnectable serverIdentity);
+  static TlsClientConnection new_(IOStream baseIoStream, SocketConnectable serverIdentity)
+  {
+    GIOStream* _cretval;
+    GError *_err;
+    _cretval = g_tls_client_connection_new(baseIoStream ? cast(GIOStream*)baseIoStream.cPtr(false) : null, serverIdentity ? cast(GSocketConnectable*)(cast(ObjectG)serverIdentity).cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!TlsClientConnection(cast(GIOStream*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Possibly copies session state from one connection to another, for use

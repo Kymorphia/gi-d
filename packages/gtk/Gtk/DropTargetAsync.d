@@ -1,7 +1,6 @@
 module Gtk.DropTargetAsync;
 
 import GObject.DClosure;
-import GObject.Types;
 import Gdk.ContentFormats;
 import Gdk.Drop;
 import Gdk.Types;
@@ -159,10 +158,10 @@ class DropTargetAsync : EventController
    * Connect to Accept signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAccept(AcceptCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAccept(AcceptCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -176,7 +175,7 @@ class DropTargetAsync : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("accept", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("accept", closure, after);
   }
 
   /**
@@ -195,10 +194,10 @@ class DropTargetAsync : EventController
    * Connect to DragEnter signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDragEnter(DragEnterCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDragEnter(DragEnterCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -214,7 +213,7 @@ class DropTargetAsync : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drag-enter", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drag-enter", closure, after);
   }
 
   /**
@@ -231,10 +230,10 @@ class DropTargetAsync : EventController
    * Connect to DragLeave signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDragLeave(DragLeaveCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDragLeave(DragLeaveCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -246,7 +245,7 @@ class DropTargetAsync : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drag-leave", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drag-leave", closure, after);
   }
 
   /**
@@ -264,10 +263,10 @@ class DropTargetAsync : EventController
    * Connect to DragMotion signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDragMotion(DragMotionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDragMotion(DragMotionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -283,7 +282,7 @@ class DropTargetAsync : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drag-motion", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drag-motion", closure, after);
   }
 
   /**
@@ -311,10 +310,10 @@ class DropTargetAsync : EventController
    * Connect to Drop signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDrop(DropCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDrop(DropCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -330,6 +329,6 @@ class DropTargetAsync : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drop", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drop", closure, after);
   }
 }

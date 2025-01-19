@@ -57,7 +57,7 @@ class CenterBox : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkCenterBox;
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkCenterBox`.

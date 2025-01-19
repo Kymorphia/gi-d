@@ -1,5 +1,6 @@
 module Gio.Action;
 
+public import Gio.ActionIfaceProxy;
 import GLib.ErrorG;
 import GLib.Variant;
 import GLib.VariantType;
@@ -51,7 +52,13 @@ interface Action
    *   actionName = a potential action name
    * Returns: %TRUE if action_name is valid
    */
-  static bool nameIsValid(string actionName);
+  static bool nameIsValid(string actionName)
+  {
+    bool _retval;
+    const(char)* _actionName = actionName.toCString(false);
+    _retval = g_action_name_is_valid(_actionName);
+    return _retval;
+  }
 
   /**
    * Parses a detailed action name into its separate name and target
@@ -85,7 +92,20 @@ interface Action
    *     or %NULL for no target
    * Returns: %TRUE if successful, else %FALSE with error set
    */
-  static bool parseDetailedName(string detailedName, out string actionName, out Variant targetValue);
+  static bool parseDetailedName(string detailedName, out string actionName, out Variant targetValue)
+  {
+    bool _retval;
+    const(char)* _detailedName = detailedName.toCString(false);
+    char* _actionName;
+    GVariant* _targetValue;
+    GError *_err;
+    _retval = g_action_parse_detailed_name(_detailedName, &_actionName, &_targetValue, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    actionName = _actionName.fromCString(true);
+    targetValue = new Variant(cast(void*)_targetValue, true);
+    return _retval;
+  }
 
   /**
    * Formats a detailed action name from action_name and target_value.
@@ -100,7 +120,14 @@ interface Action
    *   targetValue = a #GVariant target value, or %NULL
    * Returns: a detailed format string
    */
-  static string printDetailedName(string actionName, Variant targetValue);
+  static string printDetailedName(string actionName, Variant targetValue)
+  {
+    char* _cretval;
+    const(char)* _actionName = actionName.toCString(false);
+    _cretval = g_action_print_detailed_name(_actionName, targetValue ? cast(GVariant*)targetValue.cPtr(false) : null);
+    string _retval = _cretval.fromCString(true);
+    return _retval;
+  }
 
   /**
    * Activates the action.

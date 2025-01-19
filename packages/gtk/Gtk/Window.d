@@ -3,7 +3,6 @@ module Gtk.Window;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Display;
 import Gdk.MonitorG;
 import Gid.gid;
@@ -89,9 +88,9 @@ class Window : Widget, Native, Root, ShortcutManager
     return getType();
   }
 
-  mixin NativeT!GtkWindow;
-  mixin RootT!GtkWindow;
-  mixin ShortcutManagerT!GtkWindow;
+  mixin NativeT!();
+  mixin RootT!();
+  mixin ShortcutManagerT!();
 
   /**
    * Creates a new `GtkWindow`.
@@ -1010,10 +1009,10 @@ class Window : Widget, Native, Root, ShortcutManager
    * Connect to ActivateDefault signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivateDefault(ActivateDefaultCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivateDefault(ActivateDefaultCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1024,7 +1023,7 @@ class Window : Widget, Native, Root, ShortcutManager
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate-default", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate-default", closure, after);
   }
 
   /**
@@ -1039,10 +1038,10 @@ class Window : Widget, Native, Root, ShortcutManager
    * Connect to ActivateFocus signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivateFocus(ActivateFocusCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivateFocus(ActivateFocusCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1053,7 +1052,7 @@ class Window : Widget, Native, Root, ShortcutManager
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate-focus", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate-focus", closure, after);
   }
 
   /**
@@ -1067,10 +1066,10 @@ class Window : Widget, Native, Root, ShortcutManager
    * Connect to CloseRequest signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCloseRequest(CloseRequestCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCloseRequest(CloseRequestCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1083,7 +1082,7 @@ class Window : Widget, Native, Root, ShortcutManager
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("close-request", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("close-request", closure, after);
   }
 
   /**
@@ -1105,10 +1104,10 @@ class Window : Widget, Native, Root, ShortcutManager
    * Connect to EnableDebugging signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEnableDebugging(EnableDebuggingCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEnableDebugging(EnableDebuggingCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1122,7 +1121,7 @@ class Window : Widget, Native, Root, ShortcutManager
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("enable-debugging", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("enable-debugging", closure, after);
   }
 
   /**
@@ -1139,10 +1138,10 @@ class Window : Widget, Native, Root, ShortcutManager
    * Connect to KeysChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectKeysChanged(KeysChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectKeysChanged(KeysChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1153,6 +1152,6 @@ class Window : Widget, Native, Root, ShortcutManager
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("keys-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("keys-changed", closure, after);
   }
 }

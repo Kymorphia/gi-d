@@ -1,5 +1,6 @@
 module PangoCairo.FontMap;
 
+public import PangoCairo.FontMapIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Pango.FontMap : DPangoFontMap = FontMap;
@@ -39,7 +40,13 @@ interface FontMap
    *   for the current thread. This object is owned by Pango and must
    *   not be freed.
    */
-  static DPangoFontMap getDefault();
+  static DPangoFontMap getDefault()
+  {
+    PangoFontMap* _cretval;
+    _cretval = pango_cairo_font_map_get_default();
+    auto _retval = _cretval ? ObjectG.getDObject!DPangoFontMap(cast(PangoFontMap*)_cretval, false) : null;
+    return _retval;
+  }
 
   /**
    * Creates a new `PangoCairoFontMap` object.
@@ -60,7 +67,13 @@ interface FontMap
    * Returns: the newly allocated `PangoFontMap`,
    *   which should be freed with [GObject.ObjectG.unref].
    */
-  static DPangoFontMap new_();
+  static DPangoFontMap new_()
+  {
+    PangoFontMap* _cretval;
+    _cretval = pango_cairo_font_map_new();
+    auto _retval = _cretval ? ObjectG.getDObject!DPangoFontMap(cast(PangoFontMap*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Creates a new `PangoCairoFontMap` object of the type suitable
@@ -74,7 +87,13 @@ interface FontMap
    *   [GObject.ObjectG.unref], or %NULL if the requested cairo font backend
    *   is not supported / compiled in.
    */
-  static DPangoFontMap newForFontType(FontType fonttype);
+  static DPangoFontMap newForFontType(FontType fonttype)
+  {
+    PangoFontMap* _cretval;
+    _cretval = pango_cairo_font_map_new_for_font_type(fonttype);
+    auto _retval = _cretval ? ObjectG.getDObject!DPangoFontMap(cast(PangoFontMap*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets the type of Cairo font backend that fontmap uses.

@@ -43,7 +43,7 @@ class BoxLayout : LayoutManager, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkBoxLayout;
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkBoxLayout`.

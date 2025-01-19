@@ -1,5 +1,6 @@
 module Gio.RemoteActionGroupT;
 
+public import Gio.RemoteActionGroupIfaceProxy;
 public import GLib.Variant;
 public import Gid.gid;
 public import Gio.Types;
@@ -26,7 +27,7 @@ public import Gio.c.types;
  * provides a mechanism by which to receive platform data for action
  * invocations that arrive by way of D-Bus.
  */
-template RemoteActionGroupT(TStruct)
+template RemoteActionGroupT()
 {
 
   /**

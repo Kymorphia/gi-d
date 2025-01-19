@@ -59,7 +59,7 @@ class FontChooserDialog : Dialog, FontChooser
     return getType();
   }
 
-  mixin FontChooserT!GtkFontChooserDialog;
+  mixin FontChooserT!();
 
   /**
    * Creates a new `GtkFontChooserDialog`.

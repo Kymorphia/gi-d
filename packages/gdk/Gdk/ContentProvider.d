@@ -4,7 +4,6 @@ import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import GObject.Value;
 import Gdk.ContentFormats;
 import Gdk.Types;
@@ -198,10 +197,10 @@ class ContentProvider : ObjectG
    * Connect to ContentChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectContentChanged(ContentChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectContentChanged(ContentChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -212,6 +211,6 @@ class ContentProvider : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("content-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("content-changed", closure, after);
   }
 }

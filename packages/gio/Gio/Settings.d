@@ -4,7 +4,6 @@ import GLib.Types;
 import GLib.Variant;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Action;
 import Gio.ActionT;
@@ -1336,10 +1335,10 @@ class Settings : ObjectG
    * Connect to ChangeEvent signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChangeEvent(ChangeEventCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChangeEvent(ChangeEventCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1356,7 +1355,7 @@ class Settings : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("change-event", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("change-event", closure, after);
   }
 
   /**
@@ -1378,10 +1377,11 @@ class Settings : ObjectG
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChanged(ChangedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1393,7 +1393,7 @@ class Settings : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("changed"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 
   /**
@@ -1425,10 +1425,10 @@ class Settings : ObjectG
    * Connect to WritableChangeEvent signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectWritableChangeEvent(WritableChangeEventCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectWritableChangeEvent(WritableChangeEventCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1442,7 +1442,7 @@ class Settings : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("writable-change-event", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("writable-change-event", closure, after);
   }
 
   /**
@@ -1462,10 +1462,11 @@ class Settings : ObjectG
    * Connect to WritableChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectWritableChanged(WritableChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectWritableChanged(WritableChangedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1477,6 +1478,6 @@ class Settings : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("writable-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("writable-changed"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 }

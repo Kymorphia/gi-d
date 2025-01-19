@@ -1,9 +1,9 @@
 module Gio.Mount;
 
+public import Gio.MountIfaceProxy;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncResult;
 import Gio.AsyncResultT;
@@ -362,10 +362,10 @@ interface Mount
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal may be emitted when the #GMount is about to be
@@ -380,10 +380,10 @@ interface Mount
    * Connect to PreUnmount signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreUnmount(PreUnmountCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectPreUnmount(PreUnmountCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is emitted when the #GMount have been
@@ -398,8 +398,8 @@ interface Mount
    * Connect to Unmounted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnmounted(UnmountedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectUnmounted(UnmountedCallback dlg, Flag!"After" after = No.After);
 }

@@ -1,9 +1,9 @@
 module Gio.NetworkMonitorT;
 
+public import Gio.NetworkMonitorIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gio.AsyncResult;
 public import Gio.AsyncResultT;
@@ -21,21 +21,9 @@ public import Gio.c.types;
  * on NetworkManager.
  * There is also an implementation for use inside Flatpak sandboxes.
  */
-template NetworkMonitorT(TStruct)
+template NetworkMonitorT()
 {
 
-  /**
-   * Gets the default #GNetworkMonitor for the system.
-   * Returns: a #GNetworkMonitor, which will be
-   *   a dummy object if no network monitor is available
-   */
-  static NetworkMonitor getDefault()
-  {
-    GNetworkMonitor* _cretval;
-    _cretval = g_network_monitor_get_default();
-    auto _retval = _cretval ? ObjectG.getDObject!NetworkMonitor(cast(GNetworkMonitor*)_cretval, false) : null;
-    return _retval;
-  }
 
   /**
    * Attempts to determine whether or not the host pointed to by
@@ -177,10 +165,10 @@ template NetworkMonitorT(TStruct)
    * Connect to NetworkChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNetworkChanged(NetworkChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNetworkChanged(NetworkChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -192,6 +180,6 @@ template NetworkMonitorT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("network-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("network-changed", closure, after);
   }
 }

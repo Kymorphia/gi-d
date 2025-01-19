@@ -1,9 +1,9 @@
 module Gio.DBusObjectManagerT;
 
+public import Gio.DBusObjectManagerIfaceProxy;
 public import GLib.List;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gio.DBusInterface;
 public import Gio.DBusInterfaceT;
@@ -21,7 +21,7 @@ public import Gio.c.types;
  * See [Gio.DBusObjectManagerClient] for the client-side implementation
  * and [Gio.DBusObjectManagerServer] for the service-side implementation.
  */
-template DBusObjectManagerT(TStruct)
+template DBusObjectManagerT()
 {
 
   /**
@@ -101,10 +101,10 @@ template DBusObjectManagerT(TStruct)
    * Connect to InterfaceAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInterfaceAdded(InterfaceAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInterfaceAdded(InterfaceAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -117,7 +117,7 @@ template DBusObjectManagerT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("interface-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("interface-added", closure, after);
   }
 
   /**
@@ -135,10 +135,10 @@ template DBusObjectManagerT(TStruct)
    * Connect to InterfaceRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInterfaceRemoved(InterfaceRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInterfaceRemoved(InterfaceRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -151,7 +151,7 @@ template DBusObjectManagerT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("interface-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("interface-removed", closure, after);
   }
 
   /**
@@ -166,10 +166,10 @@ template DBusObjectManagerT(TStruct)
    * Connect to ObjectAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectObjectAdded(ObjectAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectObjectAdded(ObjectAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -181,7 +181,7 @@ template DBusObjectManagerT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("object-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("object-added", closure, after);
   }
 
   /**
@@ -196,10 +196,10 @@ template DBusObjectManagerT(TStruct)
    * Connect to ObjectRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectObjectRemoved(ObjectRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectObjectRemoved(ObjectRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -211,6 +211,6 @@ template DBusObjectManagerT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("object-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("object-removed", closure, after);
   }
 }

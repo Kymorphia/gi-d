@@ -1,9 +1,9 @@
 module Gio.Volume;
 
+public import Gio.VolumeIfaceProxy;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.AsyncResult;
 import Gio.AsyncResultT;
@@ -271,10 +271,10 @@ interface Volume
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is emitted when the #GVolume have been removed. If
@@ -288,8 +288,8 @@ interface Volume
    * Connect to Removed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRemoved(RemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectRemoved(RemovedCallback dlg, Flag!"After" after = No.After);
 }

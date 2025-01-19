@@ -37,8 +37,8 @@ class BytesIcon : ObjectG, Icon, LoadableIcon
     return getType();
   }
 
-  mixin IconT!GBytesIcon;
-  mixin LoadableIconT!GBytesIcon;
+  mixin IconT!();
+  mixin LoadableIconT!();
 
   /**
    * Creates a new icon for a bytes.

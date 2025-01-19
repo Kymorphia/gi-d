@@ -62,7 +62,7 @@ class TypeModule : ObjectG, TypePlugin
     return getType();
   }
 
-  mixin TypePluginT!GTypeModule;
+  mixin TypePluginT!();
 
   /**
    * Registers an additional interface for a type, whose interface lives

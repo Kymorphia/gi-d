@@ -42,8 +42,8 @@ class UnixInputStream : InputStream, FileDescriptorBased, PollableInputStream
     return getType();
   }
 
-  mixin FileDescriptorBasedT!GUnixInputStream;
-  mixin PollableInputStreamT!GUnixInputStream;
+  mixin FileDescriptorBasedT!();
+  mixin PollableInputStreamT!();
 
   /**
    * Creates a new #GUnixInputStream for the given fd.

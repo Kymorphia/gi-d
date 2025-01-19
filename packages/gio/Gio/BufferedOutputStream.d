@@ -44,7 +44,7 @@ class BufferedOutputStream : FilterOutputStream, Seekable
     return getType();
   }
 
-  mixin SeekableT!GBufferedOutputStream;
+  mixin SeekableT!();
 
   /**
    * Creates a new buffered output stream for a base stream.

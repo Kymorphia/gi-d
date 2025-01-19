@@ -37,7 +37,7 @@ class ConstraintGuide : ObjectG, ConstraintTarget
     return getType();
   }
 
-  mixin ConstraintTargetT!GtkConstraintGuide;
+  mixin ConstraintTargetT!();
 
   /**
    * Creates a new `GtkConstraintGuide` object.

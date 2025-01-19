@@ -104,7 +104,7 @@ class Grid : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkGrid;
+  mixin OrientableT!();
 
   /**
    * Creates a new grid widget.

@@ -1,5 +1,6 @@
 module Gio.Converter;
 
+public import Gio.ConverterIfaceProxy;
 import GLib.ErrorG;
 import Gid.gid;
 import Gio.Types;

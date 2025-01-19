@@ -3,7 +3,6 @@ module Gtk.TreeView;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.ContentFormats;
 import Gdk.Paintable;
 import Gdk.PaintableT;
@@ -123,7 +122,7 @@ class TreeView : Widget, Scrollable
     return getType();
   }
 
-  mixin ScrollableT!GtkTreeView;
+  mixin ScrollableT!();
 
   /**
    * Creates a new `GtkTreeView` widget.
@@ -1655,10 +1654,10 @@ class TreeView : Widget, Scrollable
    * Connect to ColumnsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectColumnsChanged(ColumnsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectColumnsChanged(ColumnsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1669,7 +1668,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("columns-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("columns-changed", closure, after);
   }
 
   /**
@@ -1682,10 +1681,10 @@ class TreeView : Widget, Scrollable
    * Connect to CursorChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCursorChanged(CursorChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCursorChanged(CursorChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1696,7 +1695,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cursor-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cursor-changed", closure, after);
   }
 
   alias ExpandCollapseCursorRowCallback = bool delegate(bool object, bool p0, bool p1, TreeView treeView);
@@ -1705,10 +1704,10 @@ class TreeView : Widget, Scrollable
    * Connect to ExpandCollapseCursorRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectExpandCollapseCursorRow(ExpandCollapseCursorRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectExpandCollapseCursorRow(ExpandCollapseCursorRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1724,7 +1723,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("expand-collapse-cursor-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("expand-collapse-cursor-row", closure, after);
   }
 
   /**
@@ -1756,10 +1755,10 @@ class TreeView : Widget, Scrollable
    * Connect to MoveCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveCursor(MoveCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveCursor(MoveCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1776,7 +1775,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-cursor", closure, after);
   }
 
   /**
@@ -1802,10 +1801,10 @@ class TreeView : Widget, Scrollable
    * Connect to RowActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowActivated(RowActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowActivated(RowActivatedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1818,7 +1817,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-activated", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-activated", closure, after);
   }
 
   /**
@@ -1834,10 +1833,10 @@ class TreeView : Widget, Scrollable
    * Connect to RowCollapsed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowCollapsed(RowCollapsedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowCollapsed(RowCollapsedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1850,7 +1849,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-collapsed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-collapsed", closure, after);
   }
 
   /**
@@ -1866,10 +1865,10 @@ class TreeView : Widget, Scrollable
    * Connect to RowExpanded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRowExpanded(RowExpandedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRowExpanded(RowExpandedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1882,7 +1881,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("row-expanded", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("row-expanded", closure, after);
   }
 
   alias SelectAllCallback = bool delegate(TreeView treeView);
@@ -1891,10 +1890,10 @@ class TreeView : Widget, Scrollable
    * Connect to SelectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectAll(SelectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectAll(SelectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1907,7 +1906,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-all", closure, after);
   }
 
   alias SelectCursorParentCallback = bool delegate(TreeView treeView);
@@ -1916,10 +1915,10 @@ class TreeView : Widget, Scrollable
    * Connect to SelectCursorParent signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectCursorParent(SelectCursorParentCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectCursorParent(SelectCursorParentCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1932,7 +1931,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-cursor-parent", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-cursor-parent", closure, after);
   }
 
   alias SelectCursorRowCallback = bool delegate(bool object, TreeView treeView);
@@ -1941,10 +1940,10 @@ class TreeView : Widget, Scrollable
    * Connect to SelectCursorRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectCursorRow(SelectCursorRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectCursorRow(SelectCursorRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1958,7 +1957,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-cursor-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-cursor-row", closure, after);
   }
 
   alias StartInteractiveSearchCallback = bool delegate(TreeView treeView);
@@ -1967,10 +1966,10 @@ class TreeView : Widget, Scrollable
    * Connect to StartInteractiveSearch signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectStartInteractiveSearch(StartInteractiveSearchCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectStartInteractiveSearch(StartInteractiveSearchCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1983,7 +1982,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("start-interactive-search", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("start-interactive-search", closure, after);
   }
 
   /**
@@ -2001,10 +2000,10 @@ class TreeView : Widget, Scrollable
    * Connect to TestCollapseRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectTestCollapseRow(TestCollapseRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectTestCollapseRow(TestCollapseRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -2019,7 +2018,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("test-collapse-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("test-collapse-row", closure, after);
   }
 
   /**
@@ -2037,10 +2036,10 @@ class TreeView : Widget, Scrollable
    * Connect to TestExpandRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectTestExpandRow(TestExpandRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectTestExpandRow(TestExpandRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -2055,7 +2054,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("test-expand-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("test-expand-row", closure, after);
   }
 
   alias ToggleCursorRowCallback = bool delegate(TreeView treeView);
@@ -2064,10 +2063,10 @@ class TreeView : Widget, Scrollable
    * Connect to ToggleCursorRow signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleCursorRow(ToggleCursorRowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleCursorRow(ToggleCursorRowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -2080,7 +2079,7 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-cursor-row", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-cursor-row", closure, after);
   }
 
   alias UnselectAllCallback = bool delegate(TreeView treeView);
@@ -2089,10 +2088,10 @@ class TreeView : Widget, Scrollable
    * Connect to UnselectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnselectAll(UnselectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnselectAll(UnselectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -2105,6 +2104,6 @@ class TreeView : Widget, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unselect-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unselect-all", closure, after);
   }
 }

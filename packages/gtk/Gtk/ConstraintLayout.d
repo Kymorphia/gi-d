@@ -156,7 +156,7 @@ class ConstraintLayout : LayoutManager, Buildable
     return getType();
   }
 
-  mixin BuildableT!GtkConstraintLayout;
+  mixin BuildableT!();
 
   /**
    * Creates a new `GtkConstraintLayout` layout manager.

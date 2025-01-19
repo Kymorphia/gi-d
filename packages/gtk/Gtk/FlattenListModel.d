@@ -37,8 +37,8 @@ class FlattenListModel : ObjectG, ListModel, SectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkFlattenListModel;
-  mixin SectionModelT!GtkFlattenListModel;
+  mixin ListModelT!();
+  mixin SectionModelT!();
 
   /**
    * Creates a new `GtkFlattenListModel` that flattens list.

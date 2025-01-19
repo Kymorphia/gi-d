@@ -1,5 +1,6 @@
 module Gtk.ShortcutManagerT;
 
+public import Gtk.ShortcutManagerIfaceProxy;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -16,6 +17,6 @@ public import Gtk.c.types;
  * Every widget that implements `GtkShortcutManager` will be used as a
  * %GTK_SHORTCUT_SCOPE_MANAGED.
  */
-template ShortcutManagerT(TStruct)
+template ShortcutManagerT()
 {
 }

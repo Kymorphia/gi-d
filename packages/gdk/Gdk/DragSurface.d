@@ -1,5 +1,6 @@
 module Gdk.DragSurface;
 
+public import Gdk.DragSurfaceIfaceProxy;
 import Gdk.Types;
 import Gdk.c.functions;
 import Gdk.c.types;

@@ -176,7 +176,7 @@ class SimpleAsyncResult : ObjectG, AsyncResult
     return getType();
   }
 
-  mixin AsyncResultT!GSimpleAsyncResult;
+  mixin AsyncResultT!();
 
   /**
    * Creates a #GSimpleAsyncResult.

@@ -139,10 +139,10 @@ class SignalGroup : ObjectG
    * Connect to Bind signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectBind(BindCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectBind(BindCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -154,7 +154,7 @@ class SignalGroup : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("bind", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("bind", closure, after);
   }
 
   /**
@@ -170,10 +170,10 @@ class SignalGroup : ObjectG
    * Connect to Unbind signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnbind(UnbindCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnbind(UnbindCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -184,6 +184,6 @@ class SignalGroup : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unbind", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unbind", closure, after);
   }
 }

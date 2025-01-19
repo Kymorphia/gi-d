@@ -1,5 +1,6 @@
 module Gio.SocketConnectable;
 
+public import Gio.SocketConnectableIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.SocketAddressEnumerator;

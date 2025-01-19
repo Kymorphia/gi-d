@@ -1,7 +1,7 @@
 module Gtk.SectionModelT;
 
+public import Gtk.SectionModelIfaceProxy;
 public import GObject.DClosure;
-public import GObject.Types;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -21,7 +21,7 @@ public import Gtk.c.types;
  * The signal@Gio.ListModel::items-changed signal has the same effect, all sections in
  * that range are invalidated, too.
  */
-template SectionModelT(TStruct)
+template SectionModelT()
 {
 
   /**
@@ -65,10 +65,10 @@ template SectionModelT(TStruct)
    * Connect to SectionsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSectionsChanged(SectionsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSectionsChanged(SectionsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -81,6 +81,6 @@ template SectionModelT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("sections-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("sections-changed", closure, after);
   }
 }

@@ -3,7 +3,6 @@ module Gtk.Application;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.ActionGroup;
 import Gio.ActionGroupT;
@@ -350,10 +349,10 @@ class Application : DGioApplication
    * Connect to QueryEnd signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectQueryEnd(QueryEndCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectQueryEnd(QueryEndCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -364,7 +363,7 @@ class Application : DGioApplication
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("query-end", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("query-end", closure, after);
   }
 
   /**
@@ -380,10 +379,10 @@ class Application : DGioApplication
    * Connect to WindowAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectWindowAdded(WindowAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectWindowAdded(WindowAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -395,7 +394,7 @@ class Application : DGioApplication
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("window-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("window-added", closure, after);
   }
 
   /**
@@ -412,10 +411,10 @@ class Application : DGioApplication
    * Connect to WindowRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectWindowRemoved(WindowRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectWindowRemoved(WindowRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -427,6 +426,6 @@ class Application : DGioApplication
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("window-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("window-removed", closure, after);
   }
 }

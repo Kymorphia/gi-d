@@ -5,7 +5,6 @@ import GLib.List;
 import GLib.Variant;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.DBusConnection;
 import Gio.DBusInterface;
@@ -41,7 +40,7 @@ class DBusInterfaceSkeleton : ObjectG, DBusInterface
     return getType();
   }
 
-  mixin DBusInterfaceT!GDBusInterfaceSkeleton;
+  mixin DBusInterfaceT!();
 
   /**
    * Exports interface_ at object_path on connection.
@@ -262,10 +261,10 @@ class DBusInterfaceSkeleton : ObjectG, DBusInterface
    * Connect to GAuthorizeMethod signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectGAuthorizeMethod(GAuthorizeMethodCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectGAuthorizeMethod(GAuthorizeMethodCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -279,6 +278,6 @@ class DBusInterfaceSkeleton : ObjectG, DBusInterface
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("g-authorize-method", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("g-authorize-method", closure, after);
   }
 }

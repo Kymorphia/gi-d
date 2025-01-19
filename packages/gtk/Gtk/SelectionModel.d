@@ -1,7 +1,7 @@
 module Gtk.SelectionModel;
 
+public import Gtk.SelectionModelIfaceProxy;
 import GObject.DClosure;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Bitset;
 import Gtk.Types;
@@ -200,8 +200,8 @@ interface SelectionModel
    * Connect to SelectionChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectionChanged(SelectionChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectSelectionChanged(SelectionChangedCallback dlg, Flag!"After" after = No.After);
 }

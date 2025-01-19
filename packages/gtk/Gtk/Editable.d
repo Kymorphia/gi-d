@@ -1,10 +1,10 @@
 module Gtk.Editable;
 
+public import Gtk.EditableIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectClass;
 import GObject.ObjectG;
 import GObject.ParamSpec;
-import GObject.Types;
 import GObject.Value;
 import Gid.gid;
 import Gtk.Types;
@@ -137,7 +137,12 @@ interface Editable
    *   pspec = the `GParamSpec` for the property
    * Returns: %TRUE if the property was found
    */
-  static bool delegateGetProperty(ObjectG object, uint propId, Value value, ParamSpec pspec);
+  static bool delegateGetProperty(ObjectG object, uint propId, Value value, ParamSpec pspec)
+  {
+    bool _retval;
+    _retval = gtk_editable_delegate_get_property(object ? cast(ObjectC*)object.cPtr(false) : null, propId, value ? cast(GValue*)value.cPtr(false) : null, pspec ? cast(GParamSpec*)pspec.cPtr(false) : null);
+    return _retval;
+  }
 
   /**
    * Sets a property on the `GtkEditable` delegate for object.
@@ -151,7 +156,12 @@ interface Editable
    *   pspec = the `GParamSpec` for the property
    * Returns: %TRUE if the property was found
    */
-  static bool delegateSetProperty(ObjectG object, uint propId, Value value, ParamSpec pspec);
+  static bool delegateSetProperty(ObjectG object, uint propId, Value value, ParamSpec pspec)
+  {
+    bool _retval;
+    _retval = gtk_editable_delegate_set_property(object ? cast(ObjectC*)object.cPtr(false) : null, propId, value ? cast(GValue*)value.cPtr(false) : null, pspec ? cast(GParamSpec*)pspec.cPtr(false) : null);
+    return _retval;
+  }
 
   /**
    * Overrides the `GtkEditable` properties for class.
@@ -171,7 +181,12 @@ interface Editable
    *   firstProp = property ID to use for the first property
    * Returns: the number of properties that were installed
    */
-  static uint installProperties(ObjectClass objectClass, uint firstProp);
+  static uint installProperties(ObjectClass objectClass, uint firstProp)
+  {
+    uint _retval;
+    _retval = gtk_editable_install_properties(objectClass ? cast(GObjectClass*)objectClass.cPtr : null, firstProp);
+    return _retval;
+  }
 
   /**
    * Retrieves the accessible platform state from the editable delegate.
@@ -426,10 +441,10 @@ interface Editable
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when text is deleted from the widget by the user.
@@ -450,8 +465,8 @@ interface Editable
    * Connect to DeleteText signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeleteText(DeleteTextCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectDeleteText(DeleteTextCallback dlg, Flag!"After" after = No.After);
 }

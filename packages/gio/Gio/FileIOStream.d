@@ -53,7 +53,7 @@ class FileIOStream : IOStream, Seekable
     return getType();
   }
 
-  mixin SeekableT!GFileIOStream;
+  mixin SeekableT!();
 
   /**
    * Gets the entity tag for the file when it has been written.

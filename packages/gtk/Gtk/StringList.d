@@ -55,8 +55,8 @@ class StringList : ObjectG, ListModel, Buildable
     return getType();
   }
 
-  mixin ListModelT!GtkStringList;
-  mixin BuildableT!GtkStringList;
+  mixin ListModelT!();
+  mixin BuildableT!();
 
   /**
    * Appends string to self.

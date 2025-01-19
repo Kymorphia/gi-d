@@ -1,5 +1,6 @@
 module Gio.InitableT;
 
+public import Gio.InitableIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import GObject.Parameter;
@@ -33,42 +34,9 @@ public import Gio.c.types;
  * during normal construction and automatically initialize them, throwing
  * an exception on failure.
  */
-template InitableT(TStruct)
+template InitableT()
 {
 
-  /**
-   * Helper function for constructing #GInitable object. This is
-   * similar to [GObject.ObjectG.newv] but also initializes the object
-   * and returns %NULL, setting an error on failure.
-   * Params:
-   *   objectType = a #GType supporting #GInitable.
-   *   parameters = the parameters to use to construct the object
-   *   cancellable = optional #GCancellable object, %NULL to ignore.
-   * Returns: a newly allocated
-   *   #GObject, or %NULL on error
-
-   * Deprecated: Use [GObject.ObjectG.newWithProperties] and
-   *   [Gio.Initable.init_] instead. See #GParameter for more information.
-   */
-  static ObjectG newv(GType objectType, Parameter[] parameters, Cancellable cancellable)
-  {
-    ObjectC* _cretval;
-    uint _nParameters;
-    if (parameters)
-      _nParameters = cast(uint)parameters.length;
-
-    GParameter[] _tmpparameters;
-    foreach (obj; parameters)
-      _tmpparameters ~= obj.cInstance;
-    GParameter* _parameters = _tmpparameters.ptr;
-
-    GError *_err;
-    _cretval = g_initable_newv(objectType, _nParameters, _parameters, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? ObjectG.getDObject!ObjectG(cast(ObjectC*)_cretval, true) : null;
-    return _retval;
-  }
 
   /**
    * Initializes the object implementing the interface.

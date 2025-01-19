@@ -1,5 +1,6 @@
 module Gdk.Toplevel;
 
+public import Gdk.ToplevelIfaceProxy;
 import GLib.List;
 import Gdk.Device;
 import Gdk.Event;

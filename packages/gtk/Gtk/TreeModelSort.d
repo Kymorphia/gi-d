@@ -120,9 +120,9 @@ class TreeModelSort : ObjectG, TreeDragSource, TreeModel, TreeSortable
     return getType();
   }
 
-  mixin TreeDragSourceT!GtkTreeModelSort;
-  mixin TreeModelT!GtkTreeModelSort;
-  mixin TreeSortableT!GtkTreeModelSort;
+  mixin TreeDragSourceT!();
+  mixin TreeModelT!();
+  mixin TreeSortableT!();
 
   /**
    * Creates a new `GtkTreeModelSort`, with child_model as the child model.

@@ -1,5 +1,6 @@
 module Gtk.TreeDragSourceT;
 
+public import Gtk.TreeDragSourceIfaceProxy;
 public import GObject.ObjectG;
 public import Gdk.ContentProvider;
 public import Gid.gid;
@@ -14,7 +15,7 @@ public import Gtk.c.types;
  * Deprecated: List views use widgets to display their contents.
  *   You can use [Gtk.DragSource] to implement a drag source
  */
-template TreeDragSourceT(TStruct)
+template TreeDragSourceT()
 {
 
   /**

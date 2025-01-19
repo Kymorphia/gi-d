@@ -1,5 +1,6 @@
 module Gio.Icon;
 
+public import Gio.IconIfaceProxy;
 import GLib.ErrorG;
 import GLib.Variant;
 import GObject.ObjectG;
@@ -48,7 +49,13 @@ interface Icon
    *   value = a #GVariant created with [Gio.Icon.serialize]
    * Returns: a #GIcon, or %NULL when deserialization fails.
    */
-  static Icon deserialize(Variant value);
+  static Icon deserialize(Variant value)
+  {
+    GIcon* _cretval;
+    _cretval = g_icon_deserialize(value ? cast(GVariant*)value.cPtr(false) : null);
+    auto _retval = _cretval ? ObjectG.getDObject!Icon(cast(GIcon*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Generate a #GIcon instance from str. This function can fail if
@@ -61,7 +68,17 @@ interface Icon
    * Returns: An object implementing the #GIcon
    *   interface or %NULL if error is set.
    */
-  static Icon newForString(string str);
+  static Icon newForString(string str)
+  {
+    GIcon* _cretval;
+    const(char)* _str = str.toCString(false);
+    GError *_err;
+    _cretval = g_icon_new_for_string(_str, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!Icon(cast(GIcon*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Checks if two icons are equal.

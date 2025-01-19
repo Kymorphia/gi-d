@@ -1,8 +1,8 @@
 module Gio.MemoryMonitor;
 
+public import Gio.MemoryMonitorIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Types;
 import Gio.c.functions;
@@ -62,7 +62,13 @@ interface MemoryMonitor
    * Gets a reference to the default #GMemoryMonitor for the system.
    * Returns: a new reference to the default #GMemoryMonitor
    */
-  static MemoryMonitor dupDefault();
+  static MemoryMonitor dupDefault()
+  {
+    GMemoryMonitor* _cretval;
+    _cretval = g_memory_monitor_dup_default();
+    auto _retval = _cretval ? ObjectG.getDObject!MemoryMonitor(cast(GMemoryMonitor*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Emitted when the system is running low on free memory. The signal
@@ -79,8 +85,8 @@ interface MemoryMonitor
    * Connect to LowMemoryWarning signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLowMemoryWarning(LowMemoryWarningCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectLowMemoryWarning(LowMemoryWarningCallback dlg, Flag!"After" after = No.After);
 }

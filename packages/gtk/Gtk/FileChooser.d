@@ -1,5 +1,6 @@
 module Gtk.FileChooser;
 
+public import Gtk.FileChooserIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;

@@ -414,10 +414,13 @@ final class Repo : Base
       if (!st.disable && ((st.defCode && st.defCode.inClass) || st.inModule) && st !is globalStruct
         && st !is typesStruct)
       {
-        st.write(sourcePath);
+        st.write(sourcePath, st.kind == TypeKind.Interface ? ModuleType.IfaceTemplate : ModuleType.Normal);
 
         if (st.kind == TypeKind.Interface)
-          st.write(sourcePath, true);
+        {
+          st.write(sourcePath, ModuleType.Iface);
+          writeIfaceProxy(sourcePath, st);
+        }
       }
     }
 
@@ -441,6 +444,27 @@ final class Repo : Base
 
     if (merge.empty)
       writeDubJsonFile(buildPath(packagePath, "dub.json"));
+  }
+
+  // Write an interface proxy object (to use when a GObject has no known applicable D object binding when using the interface)
+  private void writeIfaceProxy(string path, Structure st)
+  {
+    auto className = st.dType ~ "IfaceProxy";
+    auto writer = new CodeWriter(buildPath(path, className.to!string ~ ".d"));
+    writer ~= ["module " ~ namespace ~ "." ~ className ~ ";", "",
+      "import GObject.ObjectG;",
+      "import " ~ st.fullName ~ ";",
+      "import " ~ st.fullName ~ "T;", "",
+      "/// Proxy object for " ~ st.fullName ~ " interface when a GObject has no applicable D binding",
+      "class " ~ className ~ " : IfaceProxy, " ~ st.dType, "{",
+      "this()", "{", "}", "",
+      "this(void* ptr, bool ownedRef = false)", "{", "super(cast(void*)ptr, ownedRef);", "}", "",
+      "override TypeInfo_Interface getIface()", "{", "return typeid(" ~ st.dType ~ ");", "}", "",
+      "mixin " ~ st.dType ~ "T!();",
+      "}",
+    ];
+
+    writer.write;
   }
 
   /**

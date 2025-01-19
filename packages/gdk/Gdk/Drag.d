@@ -2,7 +2,6 @@ module Gdk.Drag;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.ContentFormats;
 import Gdk.ContentProvider;
 import Gdk.Device;
@@ -217,10 +216,10 @@ class Drag : ObjectG
    * Connect to Cancel signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCancel(CancelCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCancel(CancelCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -232,7 +231,7 @@ class Drag : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cancel", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cancel", closure, after);
   }
 
   /**
@@ -246,10 +245,10 @@ class Drag : ObjectG
    * Connect to DndFinished signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDndFinished(DndFinishedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDndFinished(DndFinishedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -260,7 +259,7 @@ class Drag : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("dnd-finished", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("dnd-finished", closure, after);
   }
 
   /**
@@ -273,10 +272,10 @@ class Drag : ObjectG
    * Connect to DropPerformed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDropPerformed(DropPerformedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDropPerformed(DropPerformedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -287,6 +286,6 @@ class Drag : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drop-performed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drop-performed", closure, after);
   }
 }

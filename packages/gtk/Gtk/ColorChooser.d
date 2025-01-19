@@ -1,7 +1,7 @@
 module Gtk.ColorChooser;
 
+public import Gtk.ColorChooserIfaceProxy;
 import GObject.DClosure;
-import GObject.Types;
 import Gdk.RGBA;
 import Gid.gid;
 import Gtk.Types;
@@ -104,8 +104,8 @@ interface ColorChooser
    * Connect to ColorActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectColorActivated(ColorActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectColorActivated(ColorActivatedCallback dlg, Flag!"After" after = No.After);
 }

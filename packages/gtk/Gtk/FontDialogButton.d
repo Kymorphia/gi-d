@@ -2,7 +2,6 @@ module Gtk.FontDialogButton;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleT;
@@ -252,10 +251,10 @@ class FontDialogButton : Widget
    * Connect to Activate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivate(ActivateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivate(ActivateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -266,6 +265,6 @@ class FontDialogButton : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate", closure, after);
   }
 }

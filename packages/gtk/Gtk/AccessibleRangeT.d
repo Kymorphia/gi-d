@@ -1,5 +1,6 @@
 module Gtk.AccessibleRangeT;
 
+public import Gtk.AccessibleRangeIfaceProxy;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -23,6 +24,6 @@ public import Gtk.c.types;
  * - `GTK_ACCESSIBLE_PROPERTY_VALUE_NOW`
  * - `GTK_ACCESSIBLE_PROPERTY_VALUE_TEXT`
  */
-template AccessibleRangeT(TStruct)
+template AccessibleRangeT()
 {
 }

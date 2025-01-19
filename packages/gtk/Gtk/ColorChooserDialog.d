@@ -59,7 +59,7 @@ class ColorChooserDialog : Dialog, ColorChooser
     return getType();
   }
 
-  mixin ColorChooserT!GtkColorChooserDialog;
+  mixin ColorChooserT!();
 
   /**
    * Creates a new `GtkColorChooserDialog`.

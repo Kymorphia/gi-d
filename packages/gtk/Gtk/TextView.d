@@ -2,7 +2,6 @@ module Gtk.TextView;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Event;
 import Gdk.Rectangle;
 import Gid.gid;
@@ -73,8 +72,8 @@ class TextView : Widget, AccessibleText, Scrollable
     return getType();
   }
 
-  mixin AccessibleTextT!GtkTextView;
-  mixin ScrollableT!GtkTextView;
+  mixin AccessibleTextT!();
+  mixin ScrollableT!();
 
   /**
    * Creates a new `GtkTextView`.
@@ -1161,10 +1160,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to Backspace signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectBackspace(BackspaceCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectBackspace(BackspaceCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1175,7 +1174,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("backspace", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("backspace", closure, after);
   }
 
   /**
@@ -1192,10 +1191,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to CopyClipboard signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCopyClipboard(CopyClipboardCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCopyClipboard(CopyClipboardCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1206,7 +1205,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("copy-clipboard", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("copy-clipboard", closure, after);
   }
 
   /**
@@ -1223,10 +1222,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to CutClipboard signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCutClipboard(CutClipboardCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCutClipboard(CutClipboardCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1237,7 +1236,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cut-clipboard", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cut-clipboard", closure, after);
   }
 
   /**
@@ -1261,10 +1260,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to DeleteFromCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeleteFromCursor(DeleteFromCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeleteFromCursor(DeleteFromCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1277,7 +1276,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("delete-from-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("delete-from-cursor", closure, after);
   }
 
   /**
@@ -1297,10 +1296,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to ExtendSelection signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectExtendSelection(ExtendSelectionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectExtendSelection(ExtendSelectionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1317,7 +1316,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("extend-selection", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("extend-selection", closure, after);
   }
 
   /**
@@ -1335,10 +1334,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to InsertAtCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertAtCursor(InsertAtCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertAtCursor(InsertAtCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1350,7 +1349,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("insert-at-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("insert-at-cursor", closure, after);
   }
 
   /**
@@ -1367,10 +1366,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to InsertEmoji signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertEmoji(InsertEmojiCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertEmoji(InsertEmojiCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1381,7 +1380,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("insert-emoji", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("insert-emoji", closure, after);
   }
 
   /**
@@ -1415,10 +1414,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to MoveCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveCursor(MoveCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveCursor(MoveCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1432,7 +1431,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-cursor", closure, after);
   }
 
   /**
@@ -1453,10 +1452,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to MoveViewport signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveViewport(MoveViewportCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveViewport(MoveViewportCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1469,7 +1468,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-viewport", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-viewport", closure, after);
   }
 
   /**
@@ -1487,10 +1486,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to PasteClipboard signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPasteClipboard(PasteClipboardCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPasteClipboard(PasteClipboardCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1501,7 +1500,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("paste-clipboard", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("paste-clipboard", closure, after);
   }
 
   /**
@@ -1521,10 +1520,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to PreeditChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreeditChanged(PreeditChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPreeditChanged(PreeditChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1536,7 +1535,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("preedit-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("preedit-changed", closure, after);
   }
 
   /**
@@ -1557,10 +1556,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to SelectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectAll(SelectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectAll(SelectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1572,7 +1571,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-all", closure, after);
   }
 
   /**
@@ -1590,10 +1589,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to SetAnchor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSetAnchor(SetAnchorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSetAnchor(SetAnchorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1604,7 +1603,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("set-anchor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("set-anchor", closure, after);
   }
 
   /**
@@ -1620,10 +1619,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to ToggleCursorVisible signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleCursorVisible(ToggleCursorVisibleCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleCursorVisible(ToggleCursorVisibleCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1634,7 +1633,7 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-cursor-visible", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-cursor-visible", closure, after);
   }
 
   /**
@@ -1649,10 +1648,10 @@ class TextView : Widget, AccessibleText, Scrollable
    * Connect to ToggleOverwrite signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleOverwrite(ToggleOverwriteCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleOverwrite(ToggleOverwriteCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1663,6 +1662,6 @@ class TextView : Widget, AccessibleText, Scrollable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-overwrite", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-overwrite", closure, after);
   }
 }

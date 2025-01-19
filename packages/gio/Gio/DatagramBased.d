@@ -1,5 +1,6 @@
 module Gio.DatagramBased;
 
+public import Gio.DatagramBasedIfaceProxy;
 import GLib.ErrorG;
 import GLib.Source;
 import GLib.Types;

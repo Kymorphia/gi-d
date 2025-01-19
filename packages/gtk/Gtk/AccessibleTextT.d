@@ -1,5 +1,6 @@
 module Gtk.AccessibleTextT;
 
+public import Gtk.AccessibleTextIfaceProxy;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -13,7 +14,7 @@ public import Gtk.c.types;
  * enum@Gtk.AccessibleProperty.DESCRIPTION properties for accessible
  * objects containing simple, unformatted text.
  */
-template AccessibleTextT(TStruct)
+template AccessibleTextT()
 {
 
   /**

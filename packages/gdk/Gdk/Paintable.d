@@ -1,8 +1,8 @@
 module Gdk.Paintable;
 
+public import Gdk.PaintableIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Snapshot;
 import Gdk.Types;
 import Gdk.c.functions;
@@ -70,7 +70,13 @@ interface Paintable
    *   intrinsicHeight = The intrinsic height to report. Can be 0 for no height.
    * Returns: a `GdkPaintable`
    */
-  static Paintable newEmpty(int intrinsicWidth, int intrinsicHeight);
+  static Paintable newEmpty(int intrinsicWidth, int intrinsicHeight)
+  {
+    GdkPaintable* _cretval;
+    _cretval = gdk_paintable_new_empty(intrinsicWidth, intrinsicHeight);
+    auto _retval = _cretval ? ObjectG.getDObject!Paintable(cast(GdkPaintable*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Compute a concrete size for the `GdkPaintable`.
@@ -201,10 +207,10 @@ interface Paintable
    * Connect to InvalidateContents signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInvalidateContents(InvalidateContentsCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectInvalidateContents(InvalidateContentsCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when the intrinsic size of the paintable changes.
@@ -223,8 +229,8 @@ interface Paintable
    * Connect to InvalidateSize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInvalidateSize(InvalidateSizeCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectInvalidateSize(InvalidateSizeCallback dlg, Flag!"After" after = No.After);
 }

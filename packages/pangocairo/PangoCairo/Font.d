@@ -1,5 +1,6 @@
 module PangoCairo.Font;
 
+public import PangoCairo.FontIfaceProxy;
 import Gid.gid;
 import PangoCairo.Types;
 import PangoCairo.c.functions;

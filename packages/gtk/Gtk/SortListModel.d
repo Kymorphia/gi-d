@@ -57,8 +57,8 @@ class SortListModel : ObjectG, ListModel, SectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkSortListModel;
-  mixin SectionModelT!GtkSortListModel;
+  mixin ListModelT!();
+  mixin SectionModelT!();
 
   /**
    * Creates a new sort list model that uses the sorter to sort model.

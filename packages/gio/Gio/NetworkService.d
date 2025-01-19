@@ -40,7 +40,7 @@ class NetworkService : ObjectG, SocketConnectable
     return getType();
   }
 
-  mixin SocketConnectableT!GNetworkService;
+  mixin SocketConnectableT!();
 
   /**
    * Creates a new #GNetworkService representing the given service,

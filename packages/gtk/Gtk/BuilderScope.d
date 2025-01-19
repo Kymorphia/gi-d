@@ -1,5 +1,6 @@
 module Gtk.BuilderScope;
 
+public import Gtk.BuilderScopeIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

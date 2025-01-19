@@ -43,8 +43,8 @@ class FilterListModel : ObjectG, ListModel, SectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkFilterListModel;
-  mixin SectionModelT!GtkFilterListModel;
+  mixin ListModelT!();
+  mixin SectionModelT!();
 
   /**
    * Creates a new `GtkFilterListModel` that will filter model using the given

@@ -2,7 +2,6 @@ module Gtk.Paned;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleRange;
@@ -95,8 +94,8 @@ class Paned : Widget, AccessibleRange, Orientable
     return getType();
   }
 
-  mixin AccessibleRangeT!GtkPaned;
-  mixin OrientableT!GtkPaned;
+  mixin AccessibleRangeT!();
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkPaned` widget.
@@ -299,10 +298,10 @@ class Paned : Widget, AccessibleRange, Orientable
    * Connect to AcceptPosition signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAcceptPosition(AcceptPositionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAcceptPosition(AcceptPositionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -315,7 +314,7 @@ class Paned : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("accept-position", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("accept-position", closure, after);
   }
 
   /**
@@ -334,10 +333,10 @@ class Paned : Widget, AccessibleRange, Orientable
    * Connect to CancelPosition signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCancelPosition(CancelPositionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCancelPosition(CancelPositionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -350,7 +349,7 @@ class Paned : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cancel-position", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cancel-position", closure, after);
   }
 
   /**
@@ -368,10 +367,10 @@ class Paned : Widget, AccessibleRange, Orientable
    * Connect to CycleChildFocus signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCycleChildFocus(CycleChildFocusCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCycleChildFocus(CycleChildFocusCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -385,7 +384,7 @@ class Paned : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cycle-child-focus", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cycle-child-focus", closure, after);
   }
 
   /**
@@ -404,10 +403,10 @@ class Paned : Widget, AccessibleRange, Orientable
    * Connect to CycleHandleFocus signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCycleHandleFocus(CycleHandleFocusCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCycleHandleFocus(CycleHandleFocusCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -421,7 +420,7 @@ class Paned : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cycle-handle-focus", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cycle-handle-focus", closure, after);
   }
 
   /**
@@ -438,10 +437,10 @@ class Paned : Widget, AccessibleRange, Orientable
    * Connect to MoveHandle signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveHandle(MoveHandleCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveHandle(MoveHandleCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -455,7 +454,7 @@ class Paned : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-handle", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-handle", closure, after);
   }
 
   /**
@@ -472,10 +471,10 @@ class Paned : Widget, AccessibleRange, Orientable
    * Connect to ToggleHandleFocus signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleHandleFocus(ToggleHandleFocusCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleHandleFocus(ToggleHandleFocusCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -488,6 +487,6 @@ class Paned : Widget, AccessibleRange, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-handle-focus", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-handle-focus", closure, after);
   }
 }

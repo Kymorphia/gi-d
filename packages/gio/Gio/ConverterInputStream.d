@@ -40,7 +40,7 @@ class ConverterInputStream : FilterInputStream, PollableInputStream
     return getType();
   }
 
-  mixin PollableInputStreamT!GConverterInputStream;
+  mixin PollableInputStreamT!();
 
   /**
    * Creates a new converter input stream for the base_stream.

@@ -1,5 +1,6 @@
 module Gtk.ShortcutManager;
 
+public import Gtk.ShortcutManagerIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

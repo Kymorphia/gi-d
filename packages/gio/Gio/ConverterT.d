@@ -1,5 +1,6 @@
 module Gio.ConverterT;
 
+public import Gio.ConverterIfaceProxy;
 public import GLib.ErrorG;
 public import Gid.gid;
 public import Gio.Types;
@@ -15,7 +16,7 @@ public import Gio.c.types;
  * compression, decompression and regular expression
  * replace.
  */
-template ConverterT(TStruct)
+template ConverterT()
 {
 
   /**

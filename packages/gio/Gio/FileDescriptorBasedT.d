@@ -1,5 +1,6 @@
 module Gio.FileDescriptorBasedT;
 
+public import Gio.FileDescriptorBasedIfaceProxy;
 public import Gid.gid;
 public import Gio.Types;
 public import Gio.c.functions;
@@ -13,7 +14,7 @@ public import Gio.c.types;
  * GIO interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
  * file or the `GioUnix-2.0` GIR namespace when using it.
  */
-template FileDescriptorBasedT(TStruct)
+template FileDescriptorBasedT()
 {
 
   /**

@@ -1,5 +1,6 @@
 module Gtk.ScrollableT;
 
+public import Gtk.ScrollableIfaceProxy;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gtk.Adjustment;
@@ -31,7 +32,7 @@ public import Gtk.c.types;
  * - When any of the adjustments emits the signal@Gtk.Adjustment::value-changed
  * signal, the scrollable widget should scroll its contents.
  */
-template ScrollableT(TStruct)
+template ScrollableT()
 {
 
   /**

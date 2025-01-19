@@ -40,7 +40,7 @@ class DesktopAppInfo : ObjectG, AppInfo
     return getType();
   }
 
-  mixin AppInfoT!GDesktopAppInfo;
+  mixin AppInfoT!();
 
   /**
    * Creates a new #GDesktopAppInfo based on a desktop file id.

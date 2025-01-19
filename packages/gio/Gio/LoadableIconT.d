@@ -1,5 +1,6 @@
 module Gio.LoadableIconT;
 
+public import Gio.LoadableIconIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -15,7 +16,7 @@ public import Gio.c.types;
  * `GLoadableIcon` extends the [Gio.Icon] interface and adds the ability
  * to load icons from streams.
  */
-template LoadableIconT(TStruct)
+template LoadableIconT()
 {
 
   /**

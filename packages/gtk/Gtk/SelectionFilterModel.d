@@ -36,7 +36,7 @@ class SelectionFilterModel : ObjectG, ListModel
     return getType();
   }
 
-  mixin ListModelT!GtkSelectionFilterModel;
+  mixin ListModelT!();
 
   /**
    * Creates a new `GtkSelectionFilterModel` that will include the

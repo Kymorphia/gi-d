@@ -4,7 +4,6 @@ import GLib.Variant;
 import GLib.VariantType;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.MenuAttributeIter;
 import Gio.MenuLinkIter;
@@ -280,10 +279,10 @@ class MenuModel : ObjectG
    * Connect to ItemsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectItemsChanged(ItemsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectItemsChanged(ItemsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -297,6 +296,6 @@ class MenuModel : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("items-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("items-changed", closure, after);
   }
 }

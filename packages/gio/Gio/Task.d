@@ -488,7 +488,7 @@ class Task : ObjectG, AsyncResult
     return getType();
   }
 
-  mixin AsyncResultT!GTask;
+  mixin AsyncResultT!();
 
   /**
    * Creates a #GTask acting on source_object, which will eventually be

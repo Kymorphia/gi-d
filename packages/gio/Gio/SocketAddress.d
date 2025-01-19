@@ -37,7 +37,7 @@ class SocketAddress : ObjectG, SocketConnectable
     return getType();
   }
 
-  mixin SocketConnectableT!GSocketAddress;
+  mixin SocketConnectableT!();
 
   /**
    * Creates a #GSocketAddress subclass corresponding to the native

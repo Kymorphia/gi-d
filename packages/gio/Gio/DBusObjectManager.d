@@ -1,9 +1,9 @@
 module Gio.DBusObjectManager;
 
+public import Gio.DBusObjectManagerIfaceProxy;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.DBusInterface;
 import Gio.DBusInterfaceT;
@@ -79,10 +79,10 @@ interface DBusObjectManager
    * Connect to InterfaceAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInterfaceAdded(InterfaceAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectInterfaceAdded(InterfaceAddedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when interface has been removed from object.
@@ -99,10 +99,10 @@ interface DBusObjectManager
    * Connect to InterfaceRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInterfaceRemoved(InterfaceRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectInterfaceRemoved(InterfaceRemovedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when object is added to manager.
@@ -116,10 +116,10 @@ interface DBusObjectManager
    * Connect to ObjectAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectObjectAdded(ObjectAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectObjectAdded(ObjectAddedCallback dlg, Flag!"After" after = No.After);
 
   /**
    * Emitted when object is removed from manager.
@@ -133,8 +133,8 @@ interface DBusObjectManager
    * Connect to ObjectRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectObjectRemoved(ObjectRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectObjectRemoved(ObjectRemovedCallback dlg, Flag!"After" after = No.After);
 }

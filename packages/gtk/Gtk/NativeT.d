@@ -1,5 +1,6 @@
 module Gtk.NativeT;
 
+public import Gtk.NativeIfaceProxy;
 public import GObject.ObjectG;
 public import Gdk.Surface;
 public import Gid.gid;
@@ -21,22 +22,9 @@ public import Gtk.c.types;
  * a [Gsk.Renderer] for rendering on that surface. To get the
  * renderer, use [Gtk.Native.getRenderer].
  */
-template NativeT(TStruct)
+template NativeT()
 {
 
-  /**
-   * Finds the `GtkNative` associated with the surface.
-   * Params:
-   *   surface = a `GdkSurface`
-   * Returns: the `GtkNative` that is associated with surface
-   */
-  static Native getForSurface(Surface surface)
-  {
-    GtkNative* _cretval;
-    _cretval = gtk_native_get_for_surface(surface ? cast(GdkSurface*)surface.cPtr(false) : null);
-    auto _retval = _cretval ? ObjectG.getDObject!Native(cast(GtkNative*)_cretval, false) : null;
-    return _retval;
-  }
 
   /**
    * Returns the renderer that is used for this `GtkNative`.

@@ -1,5 +1,6 @@
 module Gtk.FileChooserT;
 
+public import Gtk.FileChooserIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -46,7 +47,7 @@ public import Gtk.c.types;
 
  * Deprecated: Use [Gtk.FileDialog] instead
  */
-template FileChooserT(TStruct)
+template FileChooserT()
 {
 
   /**

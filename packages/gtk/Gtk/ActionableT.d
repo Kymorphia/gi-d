@@ -1,5 +1,6 @@
 module Gtk.ActionableT;
 
+public import Gtk.ActionableIfaceProxy;
 public import GLib.Variant;
 public import Gid.gid;
 public import Gtk.Types;
@@ -19,7 +20,7 @@ public import Gtk.c.types;
  * are added with [Gtk.Widget.insertActionGroup] will be consulted
  * as well.
  */
-template ActionableT(TStruct)
+template ActionableT()
 {
 
   /**

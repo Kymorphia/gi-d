@@ -49,7 +49,7 @@ class Inscription : Widget, AccessibleText
     return getType();
   }
 
-  mixin AccessibleTextT!GtkInscription;
+  mixin AccessibleTextT!();
 
   /**
    * Creates a new `GtkInscription` with the given text.

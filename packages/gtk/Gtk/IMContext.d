@@ -2,7 +2,6 @@ module Gtk.IMContext;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Device;
 import Gdk.Event;
 import Gdk.Rectangle;
@@ -359,10 +358,10 @@ class IMContext : ObjectG
    * Connect to Commit signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCommit(CommitCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCommit(CommitCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -374,7 +373,7 @@ class IMContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("commit", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("commit", closure, after);
   }
 
   /**
@@ -394,10 +393,10 @@ class IMContext : ObjectG
    * Connect to DeleteSurrounding signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeleteSurrounding(DeleteSurroundingCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeleteSurrounding(DeleteSurroundingCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -412,7 +411,7 @@ class IMContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("delete-surrounding", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("delete-surrounding", closure, after);
   }
 
   /**
@@ -428,10 +427,10 @@ class IMContext : ObjectG
    * Connect to PreeditChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreeditChanged(PreeditChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPreeditChanged(PreeditChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -442,7 +441,7 @@ class IMContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("preedit-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("preedit-changed", closure, after);
   }
 
   /**
@@ -456,10 +455,10 @@ class IMContext : ObjectG
    * Connect to PreeditEnd signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreeditEnd(PreeditEndCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPreeditEnd(PreeditEndCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -470,7 +469,7 @@ class IMContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("preedit-end", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("preedit-end", closure, after);
   }
 
   /**
@@ -484,10 +483,10 @@ class IMContext : ObjectG
    * Connect to PreeditStart signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPreeditStart(PreeditStartCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPreeditStart(PreeditStartCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -498,7 +497,7 @@ class IMContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("preedit-start", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("preedit-start", closure, after);
   }
 
   /**
@@ -515,10 +514,10 @@ class IMContext : ObjectG
    * Connect to RetrieveSurrounding signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRetrieveSurrounding(RetrieveSurroundingCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRetrieveSurrounding(RetrieveSurroundingCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -531,6 +530,6 @@ class IMContext : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("retrieve-surrounding", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("retrieve-surrounding", closure, after);
   }
 }

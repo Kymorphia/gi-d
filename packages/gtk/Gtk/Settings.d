@@ -55,7 +55,7 @@ class Settings : ObjectG, StyleProvider
     return getType();
   }
 
-  mixin StyleProviderT!GtkSettings;
+  mixin StyleProviderT!();
 
   /**
    * Gets the `GtkSettings` object for the default display, creating

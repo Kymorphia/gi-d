@@ -1,5 +1,6 @@
 module Gtk.AccessibleRange;
 
+public import Gtk.AccessibleRangeIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

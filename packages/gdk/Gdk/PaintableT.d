@@ -1,8 +1,8 @@
 module Gdk.PaintableT;
 
+public import Gdk.PaintableIfaceProxy;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gdk.Snapshot;
 public import Gdk.Types;
 public import Gdk.c.functions;
@@ -50,28 +50,9 @@ public import Gid.gid;
  * [Gdk.Paintable.invalidateSize],
  * [Gdk.Paintable.newEmpty].
  */
-template PaintableT(TStruct)
+template PaintableT()
 {
 
-  /**
-   * Returns a paintable that has the given intrinsic size and draws nothing.
-   * This is often useful for implementing the
-   * vfuncGdk.Paintable.get_current_image virtual function
-   * when the paintable is in an incomplete state $(LPAREN)like a
-   * [GtkMediaStream](../gtk4/class.MediaStream.html) before receiving
-   * the first frame$(RPAREN).
-   * Params:
-   *   intrinsicWidth = The intrinsic width to report. Can be 0 for no width.
-   *   intrinsicHeight = The intrinsic height to report. Can be 0 for no height.
-   * Returns: a `GdkPaintable`
-   */
-  static Paintable newEmpty(int intrinsicWidth, int intrinsicHeight)
-  {
-    GdkPaintable* _cretval;
-    _cretval = gdk_paintable_new_empty(intrinsicWidth, intrinsicHeight);
-    auto _retval = _cretval ? ObjectG.getDObject!Paintable(cast(GdkPaintable*)_cretval, true) : null;
-    return _retval;
-  }
 
   /**
    * Compute a concrete size for the `GdkPaintable`.
@@ -241,10 +222,10 @@ template PaintableT(TStruct)
    * Connect to InvalidateContents signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInvalidateContents(InvalidateContentsCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInvalidateContents(InvalidateContentsCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -255,7 +236,7 @@ template PaintableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("invalidate-contents", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("invalidate-contents", closure, after);
   }
 
   /**
@@ -275,10 +256,10 @@ template PaintableT(TStruct)
    * Connect to InvalidateSize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInvalidateSize(InvalidateSizeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInvalidateSize(InvalidateSizeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -289,6 +270,6 @@ template PaintableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("invalidate-size", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("invalidate-size", closure, after);
   }
 }

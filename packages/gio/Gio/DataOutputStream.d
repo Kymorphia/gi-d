@@ -37,7 +37,7 @@ class DataOutputStream : FilterOutputStream, Seekable
     return getType();
   }
 
-  mixin SeekableT!GDataOutputStream;
+  mixin SeekableT!();
 
   /**
    * Creates a new data output stream for base_stream.

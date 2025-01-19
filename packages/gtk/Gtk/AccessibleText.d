@@ -1,5 +1,6 @@
 module Gtk.AccessibleText;
 
+public import Gtk.AccessibleTextIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

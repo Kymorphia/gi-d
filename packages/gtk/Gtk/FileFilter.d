@@ -70,7 +70,7 @@ class FileFilter : Filter, Buildable
     return getType();
   }
 
-  mixin BuildableT!GtkFileFilter;
+  mixin BuildableT!();
 
   /**
    * Creates a new `GtkFileFilter` with no rules added to it.

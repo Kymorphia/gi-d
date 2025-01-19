@@ -1,9 +1,9 @@
 module Gio.DtlsConnectionT;
 
+public import Gio.DtlsConnectionIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gio.AsyncResult;
 public import Gio.AsyncResultT;
@@ -34,7 +34,7 @@ public import Gio.c.types;
  * `GDtlsConnection` will not raise a `G_IO_ERROR_NOT_CONNECTED` error on
  * further I/O.
  */
-template DtlsConnectionT(TStruct)
+template DtlsConnectionT()
 {
 
   /**
@@ -604,10 +604,10 @@ template DtlsConnectionT(TStruct)
    * Connect to AcceptCertificate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAcceptCertificate(AcceptCertificateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAcceptCertificate(AcceptCertificateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -622,6 +622,6 @@ template DtlsConnectionT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("accept-certificate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("accept-certificate", closure, after);
   }
 }

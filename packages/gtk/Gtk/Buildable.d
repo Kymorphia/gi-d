@@ -1,5 +1,6 @@
 module Gtk.Buildable;
 
+public import Gtk.BuildableIfaceProxy;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;

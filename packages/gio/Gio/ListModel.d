@@ -1,5 +1,6 @@
 module Gio.ListModel;
 
+public import Gio.ListModelIfaceProxy;
 import GObject.DClosure;
 import GObject.ObjectG;
 import GObject.Types;
@@ -71,6 +72,30 @@ interface ListModel
   {
     return g_list_model_get_type();
   }
+
+  /**
+   * Get the item at position and cast to the template type.
+   * NOTE: If type is an interface and no known D object is found that the object conforms to,
+   * the interface IfaceProxy object will be used.
+   * If position is greater than the number of items in list, %NULL is
+   * returned.
+   * %NULL may be returned if index is smaller than the length
+   * of the list, but the object does not conform to the template type.
+   * This function is meant to be used by language bindings in place
+   * of [Gio.ListModel.getItem].
+   * See also: [Gio.ListModel.getNItems]
+   * Params:
+   *   T = type to cast the resulting object to (can be an interface type)
+   *   position = the position of the item to fetch
+   * Returns: the object at position.
+   */
+  T getItem(T)(uint position)
+  {
+    auto gobj = cast(ObjectC*)g_list_model_get_object(cast(GListModel*)(cast(ObjectG)this).cPtr, position);
+    return gobj ? ObjectG.getDObject!T(gobj, true) : null;
+  }
+
+
 
   /**
    * Gets the type of the items in list.
@@ -150,8 +175,8 @@ interface ListModel
    * Connect to ItemsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectItemsChanged(ItemsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectItemsChanged(ItemsChangedCallback dlg, Flag!"After" after = No.After);
 }

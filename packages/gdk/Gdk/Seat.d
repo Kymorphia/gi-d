@@ -3,7 +3,6 @@ module Gdk.Seat;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Device;
 import Gdk.DeviceTool;
 import Gdk.Display;
@@ -129,10 +128,10 @@ class Seat : ObjectG
    * Connect to DeviceAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeviceAdded(DeviceAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeviceAdded(DeviceAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -144,7 +143,7 @@ class Seat : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("device-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("device-added", closure, after);
   }
 
   /**
@@ -159,10 +158,10 @@ class Seat : ObjectG
    * Connect to DeviceRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeviceRemoved(DeviceRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeviceRemoved(DeviceRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -174,7 +173,7 @@ class Seat : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("device-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("device-removed", closure, after);
   }
 
   /**
@@ -193,10 +192,10 @@ class Seat : ObjectG
    * Connect to ToolAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToolAdded(ToolAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToolAdded(ToolAddedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -208,7 +207,7 @@ class Seat : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("tool-added", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("tool-added", closure, after);
   }
 
   /**
@@ -223,10 +222,10 @@ class Seat : ObjectG
    * Connect to ToolRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToolRemoved(ToolRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToolRemoved(ToolRemovedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -238,6 +237,6 @@ class Seat : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("tool-removed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("tool-removed", closure, after);
   }
 }

@@ -1,5 +1,6 @@
 module Gtk.TreeDragDest;
 
+public import Gtk.TreeDragDestIfaceProxy;
 import GObject.Value;
 import Gid.gid;
 import Gtk.TreePath;

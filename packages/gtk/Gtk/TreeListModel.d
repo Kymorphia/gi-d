@@ -34,7 +34,7 @@ class TreeListModel : ObjectG, ListModel
     return getType();
   }
 
-  mixin ListModelT!GtkTreeListModel;
+  mixin ListModelT!();
 
   /**
    * Creates a new empty `GtkTreeListModel` displaying root

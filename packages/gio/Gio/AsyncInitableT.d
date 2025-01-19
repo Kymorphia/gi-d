@@ -1,5 +1,6 @@
 module Gio.AsyncInitableT;
 
+public import Gio.AsyncInitableIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import GObject.Parameter;
@@ -98,40 +99,9 @@ public import Gio.c.types;
  * }
  * ```
  */
-template AsyncInitableT(TStruct)
+template AsyncInitableT()
 {
 
-  /**
-   * Helper function for constructing #GAsyncInitable object. This is
-   * similar to [GObject.ObjectG.newv] but also initializes the object asynchronously.
-   * When the initialization is finished, callback will be called. You can
-   * then call [Gio.AsyncInitable.newFinish] to get the new object and check
-   * for any errors.
-   * Params:
-   *   objectType = a #GType supporting #GAsyncInitable.
-   *   nParameters = the number of parameters in parameters
-   *   parameters = the parameters to use to construct the object
-   *   ioPriority = the [I/O priority][io-priority] of the operation
-   *   cancellable = optional #GCancellable object, %NULL to ignore.
-   *   callback = a #GAsyncReadyCallback to call when the initialization is
-   *     finished
-
-   * Deprecated: Use [GObject.ObjectG.newWithProperties] and
-   *   [Gio.AsyncInitable.initAsync] instead. See #GParameter for more information.
-   */
-  static void newvAsync(GType objectType, uint nParameters, Parameter parameters, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback)
-  {
-    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
-    {
-      ptrThawGC(data);
-      auto _dlg = cast(AsyncReadyCallback*)data;
-
-      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
-    }
-
-    auto _callback = freezeDelegate(cast(void*)&callback);
-    g_async_initable_newv_async(objectType, nParameters, parameters ? cast(GParameter*)parameters.cPtr : null, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
-  }
 
   /**
    * Starts asynchronous initialization of the object implementing the

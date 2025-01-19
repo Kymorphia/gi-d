@@ -2,7 +2,6 @@ module Gtk.TextBuffer;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Clipboard;
 import Gdk.ContentProvider;
 import Gdk.Paintable;
@@ -1183,10 +1182,10 @@ class TextBuffer : ObjectG
    * Connect to ApplyTag signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectApplyTag(ApplyTagCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectApplyTag(ApplyTagCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1200,7 +1199,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("apply-tag", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("apply-tag", closure, after);
   }
 
   /**
@@ -1221,10 +1220,10 @@ class TextBuffer : ObjectG
    * Connect to BeginUserAction signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectBeginUserAction(BeginUserActionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectBeginUserAction(BeginUserActionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1235,7 +1234,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("begin-user-action", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("begin-user-action", closure, after);
   }
 
   /**
@@ -1248,10 +1247,10 @@ class TextBuffer : ObjectG
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1262,7 +1261,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("changed", closure, after);
   }
 
   /**
@@ -1286,10 +1285,10 @@ class TextBuffer : ObjectG
    * Connect to DeleteRange signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDeleteRange(DeleteRangeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDeleteRange(DeleteRangeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1302,7 +1301,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("delete-range", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("delete-range", closure, after);
   }
 
   /**
@@ -1324,10 +1323,10 @@ class TextBuffer : ObjectG
    * Connect to EndUserAction signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEndUserAction(EndUserActionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEndUserAction(EndUserActionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1338,7 +1337,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("end-user-action", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("end-user-action", closure, after);
   }
 
   /**
@@ -1360,10 +1359,10 @@ class TextBuffer : ObjectG
    * Connect to InsertChildAnchor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertChildAnchor(InsertChildAnchorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertChildAnchor(InsertChildAnchorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1376,7 +1375,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("insert-child-anchor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("insert-child-anchor", closure, after);
   }
 
   /**
@@ -1398,10 +1397,10 @@ class TextBuffer : ObjectG
    * Connect to InsertPaintable signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertPaintable(InsertPaintableCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertPaintable(InsertPaintableCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1414,7 +1413,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("insert-paintable", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("insert-paintable", closure, after);
   }
 
   /**
@@ -1438,10 +1437,10 @@ class TextBuffer : ObjectG
    * Connect to InsertText signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertText(InsertTextCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertText(InsertTextCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1455,7 +1454,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("insert-text", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("insert-text", closure, after);
   }
 
   /**
@@ -1471,10 +1470,10 @@ class TextBuffer : ObjectG
    * Connect to MarkDeleted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMarkDeleted(MarkDeletedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMarkDeleted(MarkDeletedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1486,7 +1485,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mark-deleted", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mark-deleted", closure, after);
   }
 
   /**
@@ -1505,10 +1504,10 @@ class TextBuffer : ObjectG
    * Connect to MarkSet signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMarkSet(MarkSetCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMarkSet(MarkSetCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1521,7 +1520,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mark-set", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mark-set", closure, after);
   }
 
   /**
@@ -1535,10 +1534,10 @@ class TextBuffer : ObjectG
    * Connect to ModifiedChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectModifiedChanged(ModifiedChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectModifiedChanged(ModifiedChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1549,7 +1548,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("modified-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("modified-changed", closure, after);
   }
 
   /**
@@ -1567,10 +1566,10 @@ class TextBuffer : ObjectG
    * Connect to PasteDone signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPasteDone(PasteDoneCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPasteDone(PasteDoneCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1582,7 +1581,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("paste-done", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("paste-done", closure, after);
   }
 
   /**
@@ -1596,10 +1595,10 @@ class TextBuffer : ObjectG
    * Connect to Redo signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRedo(RedoCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRedo(RedoCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1610,7 +1609,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("redo", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("redo", closure, after);
   }
 
   /**
@@ -1633,10 +1632,10 @@ class TextBuffer : ObjectG
    * Connect to RemoveTag signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRemoveTag(RemoveTagCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRemoveTag(RemoveTagCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1650,7 +1649,7 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("remove-tag", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("remove-tag", closure, after);
   }
 
   /**
@@ -1665,10 +1664,10 @@ class TextBuffer : ObjectG
    * Connect to Undo signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUndo(UndoCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUndo(UndoCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1679,6 +1678,6 @@ class TextBuffer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("undo", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("undo", closure, after);
   }
 }

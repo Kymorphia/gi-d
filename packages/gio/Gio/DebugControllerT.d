@@ -1,5 +1,6 @@
 module Gio.DebugControllerT;
 
+public import Gio.DebugControllerIfaceProxy;
 public import Gid.gid;
 public import Gio.Types;
 public import Gio.c.functions;
@@ -20,7 +21,7 @@ public import Gio.c.types;
  * creating one of the built-in implementations of `GDebugController` should be
  * all that’s needed to dynamically enable or disable debug output.
  */
-template DebugControllerT(TStruct)
+template DebugControllerT()
 {
 
   /**

@@ -39,8 +39,8 @@ class DBusActionGroup : ObjectG, ActionGroup, RemoteActionGroup
     return getType();
   }
 
-  mixin ActionGroupT!GDBusActionGroup;
-  mixin RemoteActionGroupT!GDBusActionGroup;
+  mixin ActionGroupT!();
+  mixin RemoteActionGroupT!();
 
   /**
    * Obtains a #GDBusActionGroup for the action group which is exported at

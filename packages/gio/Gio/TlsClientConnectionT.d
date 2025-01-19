@@ -1,5 +1,6 @@
 module Gio.TlsClientConnectionT;
 
+public import Gio.TlsClientConnectionIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -14,32 +15,9 @@ public import Gio.c.types;
  * `GTlsClientConnection` is the client-side subclass of
  * [Gio.TlsConnection], representing a client-side TLS connection.
  */
-template TlsClientConnectionT(TStruct)
+template TlsClientConnectionT()
 {
 
-  /**
-   * Creates a new #GTlsClientConnection wrapping base_io_stream $(LPAREN)which
-   * must have pollable input and output streams$(RPAREN) which is assumed to
-   * communicate with the server identified by server_identity.
-   * See the documentation for #GTlsConnection:base-io-stream for restrictions
-   * on when application code can run operations on the base_io_stream after
-   * this function has returned.
-   * Params:
-   *   baseIoStream = the #GIOStream to wrap
-   *   serverIdentity = the expected identity of the server
-   * Returns: the new
-   *   #GTlsClientConnection, or %NULL on error
-   */
-  static TlsClientConnection new_(IOStream baseIoStream, SocketConnectable serverIdentity)
-  {
-    GIOStream* _cretval;
-    GError *_err;
-    _cretval = g_tls_client_connection_new(baseIoStream ? cast(GIOStream*)baseIoStream.cPtr(false) : null, serverIdentity ? cast(GSocketConnectable*)(cast(ObjectG)serverIdentity).cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? ObjectG.getDObject!TlsClientConnection(cast(GIOStream*)_cretval, true) : null;
-    return _retval;
-  }
 
   /**
    * Possibly copies session state from one connection to another, for use

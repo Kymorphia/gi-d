@@ -3,7 +3,6 @@ module Gdk.Surface;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.CairoContext;
 import Gdk.Cursor;
 import Gdk.Device;
@@ -485,10 +484,10 @@ class Surface : ObjectG
    * Connect to EnterMonitor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEnterMonitor(EnterMonitorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEnterMonitor(EnterMonitorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -500,7 +499,7 @@ class Surface : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("enter-monitor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("enter-monitor", closure, after);
   }
 
   /**
@@ -516,10 +515,10 @@ class Surface : ObjectG
    * Connect to Event signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEvent(EventCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEvent(EventCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -533,7 +532,7 @@ class Surface : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("event", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("event", closure, after);
   }
 
   /**
@@ -552,10 +551,10 @@ class Surface : ObjectG
    * Connect to Layout signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLayout(LayoutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLayout(LayoutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -568,7 +567,7 @@ class Surface : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("layout", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("layout", closure, after);
   }
 
   /**
@@ -583,10 +582,10 @@ class Surface : ObjectG
    * Connect to LeaveMonitor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLeaveMonitor(LeaveMonitorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLeaveMonitor(LeaveMonitorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -598,7 +597,7 @@ class Surface : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("leave-monitor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("leave-monitor", closure, after);
   }
 
   /**
@@ -614,10 +613,10 @@ class Surface : ObjectG
    * Connect to Render signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRender(RenderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRender(RenderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -631,6 +630,6 @@ class Surface : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("render", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("render", closure, after);
   }
 }

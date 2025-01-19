@@ -398,9 +398,9 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     return getType();
   }
 
-  mixin AccessibleT!GtkWidget;
-  mixin BuildableT!GtkWidget;
-  mixin ConstraintTargetT!GtkWidget;
+  mixin AccessibleT!();
+  mixin BuildableT!();
+  mixin ConstraintTargetT!();
 
   /**
    * Obtains the current default reading direction.
@@ -2985,10 +2985,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Destroy signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDestroy(DestroyCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDestroy(DestroyCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -2999,7 +2999,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("destroy", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("destroy", closure, after);
   }
 
   /**
@@ -3014,10 +3014,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to DirectionChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDirectionChanged(DirectionChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDirectionChanged(DirectionChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3029,7 +3029,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("direction-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("direction-changed", closure, after);
   }
 
   /**
@@ -3042,10 +3042,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Hide signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectHide(HideCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectHide(HideCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3056,7 +3056,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("hide", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("hide", closure, after);
   }
 
   /**
@@ -3075,10 +3075,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to KeynavFailed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectKeynavFailed(KeynavFailedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectKeynavFailed(KeynavFailedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3092,7 +3092,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("keynav-failed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("keynav-failed", closure, after);
   }
 
   /**
@@ -3111,10 +3111,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Map signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMap(MapCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMap(MapCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3125,7 +3125,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("map", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("map", closure, after);
   }
 
   /**
@@ -3144,10 +3144,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to MnemonicActivate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMnemonicActivate(MnemonicActivateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMnemonicActivate(MnemonicActivateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3161,7 +3161,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mnemonic-activate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mnemonic-activate", closure, after);
   }
 
   /**
@@ -3179,10 +3179,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to MoveFocus signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveFocus(MoveFocusCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveFocus(MoveFocusCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3194,7 +3194,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-focus", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-focus", closure, after);
   }
 
   /**
@@ -3225,10 +3225,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to QueryTooltip signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectQueryTooltip(QueryTooltipCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectQueryTooltip(QueryTooltipCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3245,7 +3245,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("query-tooltip", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("query-tooltip", closure, after);
   }
 
   /**
@@ -3260,10 +3260,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Realize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRealize(RealizeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRealize(RealizeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3274,7 +3274,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("realize", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("realize", closure, after);
   }
 
   /**
@@ -3287,10 +3287,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Show signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectShow(ShowCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectShow(ShowCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3301,7 +3301,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("show", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("show", closure, after);
   }
 
   /**
@@ -3317,10 +3317,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to StateFlagsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectStateFlagsChanged(StateFlagsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectStateFlagsChanged(StateFlagsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3332,7 +3332,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("state-flags-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("state-flags-changed", closure, after);
   }
 
   /**
@@ -3349,10 +3349,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Unmap signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnmap(UnmapCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnmap(UnmapCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3363,7 +3363,7 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unmap", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unmap", closure, after);
   }
 
   /**
@@ -3378,10 +3378,10 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Connect to Unrealize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnrealize(UnrealizeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnrealize(UnrealizeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -3392,6 +3392,6 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unrealize", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unrealize", closure, after);
   }
 }

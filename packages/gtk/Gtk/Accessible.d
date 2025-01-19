@@ -1,5 +1,6 @@
 module Gtk.Accessible;
 
+public import Gtk.AccessibleIfaceProxy;
 import GObject.ObjectG;
 import GObject.Value;
 import Gid.gid;

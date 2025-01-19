@@ -28,9 +28,13 @@ debug
   shared static this()
   {
     import std.process : environment;
-    gidObjectQuark = g_quark_from_string("_gidObject");
     gidObjectDebug = environment.get("GID_OBJECT_DEBUG", "0") == "1";
   }
+}
+
+shared static this()
+{
+  gidObjectQuark = g_quark_from_string("_gidObject");
 }
 
 private extern (C) Object _d_newclass(const TypeInfo_Class ci);
@@ -38,9 +42,9 @@ private extern (C) Object _d_newclass(const TypeInfo_Class ci);
 // String quark used to assign the D ObjectG to the C GObject keyed-data list
 private immutable Quark gidObjectQuark;
 
-// Map of GTypes to D class info
-private shared TypeInfo_Class[GType] gtypeClasses;
-private shared bool gtypeClassesInitialized;
+private shared TypeInfo_Class[GType] gtypeClasses; // Map of GTypes to D class info
+private shared TypeInfo_Class[TypeInfo_Interface] ifaceProxyClasses; // Map of interface type info to proxy class info
+private shared bool classMapsInitialized;
 
 /// Base class wrapper for GObject types
 /**
@@ -73,6 +77,17 @@ class ObjectG
    */
   this()
   {
+  }
+
+  /**
+   * Create an ObjectG which is wrapping a C GObject with the given GType.
+   * Useful for creating custom D classes which are derived from ObjectG.
+   * Params:
+   *   type = The GType value to use for creating the wrapped GObject
+   */
+  this(GType type)
+  {
+    this(g_object_new(type, null), true);
   }
 
   /**
@@ -209,15 +224,16 @@ class ObjectG
    * Returns: The D object (which may be a new object if the GObject wasn't already wrapped)
    */
   static T getDObject(T)(void* cptr, bool owned = false)
-  {
+  { // Cast return value to ObjectG or D pointer resolution will break if T is an interface (cast from void* to Interface not the same as Object to Interface)
     if (auto dObj = cast(ObjectG)g_object_get_qdata(cast(ObjectC*)cptr, gidObjectQuark))
       return cast(T)dObj;
 
-    if (!atomicLoad(gtypeClassesInitialized)) // One time initialization of GType -> TypeInfo_Class map
+    if (!atomicLoad(classMapsInitialized)) // One time initialization of class maps
     {
       synchronized
       {
         auto gobjClass = typeid(ObjectG);
+        auto ifProxyClass = typeid(IfaceProxy);
 
         foreach (m; ModuleInfo)
         {
@@ -226,7 +242,17 @@ class ObjectG
 
           foreach (c; m.localClasses)
           {
-            if (c && gobjClass.isBaseOf(c))
+            if (c && ifProxyClass.isBaseOf(c))
+            {
+              if (c is ifProxyClass)
+                continue;
+
+              auto obj = cast(IfaceProxy)_d_newclass(c);
+
+              if (auto ifaceInfo = obj.getIface)
+                ifaceProxyClasses[ifaceInfo] = cast(shared)c;
+            }
+            else if (c && gobjClass.isBaseOf(c))
             { // Create object without calling the constructor which could have side effects - FIXME is there a better way to do this?
               auto obj = _d_newclass(c);
 
@@ -236,7 +262,7 @@ class ObjectG
           }
         }
 
-        atomicStore(gtypeClassesInitialized, true);
+        atomicStore(classMapsInitialized, true);
       }
     }
 
@@ -245,23 +271,35 @@ class ObjectG
       gTypeClass = g_type_class_peek_parent(gTypeClass))
     {
       if (auto dClassType = gTypeClass.gType in gtypeClasses)
-      {
-        auto obj = _d_newclass(cast()*dClassType);
+      { // If T is an interface type, make sure the matching object class implements it
+        if (is(T == interface) && !typeid(T).isBaseOf(cast(const)*dClassType))
+          break;
 
-        if (!obj)
-          return null;
+        if (auto obj = _d_newclass(cast()*dClassType))
+        {
+          (cast(ObjectG)obj).setGObject(cptr, owned);
+          return cast(T)obj;
+        }
 
-        (cast(ObjectG)obj).setGObject(cptr, owned);
-        return cast(T)obj;
+        return null;
       }
     }
 
-    static if (!is(T == interface))
-      return new T(cptr, owned); // Fallback to create Object from this template Object type
-    else static if (is(T == ObjectG))
-      return new ObjectG(cptr, owned); // Interfaces fallback to creating a generic ObjectG wrapper
+    static if (is(T == interface))
+    {
+      if (auto proxyClass = typeid(T) in ifaceProxyClasses) // Interface has a proxy object?
+      {
+        if (auto obj = _d_newclass(cast()*proxyClass)) // Create the object without calling the constructor
+        {
+          (cast(ObjectG)obj).setGObject(cptr, owned); // Assign the C GObject
+          return cast(T)obj;
+        }
+      }
+
+      return null;
+    }
     else
-      return null; // Object type is not derived from (or is) this template type, return null
+      return new T(cptr, owned); // Fallback to attempting to create Object from this template Object type
   }
 
   debug
@@ -283,12 +321,12 @@ class ObjectG
    * Params:
    *   signalDetail = Signal name and optional detail separated by '::'
    *   closure = Closure to connect signal to
-   *   after = true invoke the signal after the default handler, false to execute before (default)
+   *   after = Yes.After to invoke the signal after the default handler, No.After to execute before (default)
    * Returns: The signal connection ID
    */
-  ulong connectSignalClosure(string signalDetail, DClosure closure, bool after = false)
+  ulong connectSignalClosure(string signalDetail, DClosure closure, Flag!"After" after = No.After)
   {
-    return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), cast(GClosure*)(cast(Closure)closure).cPtr, after);
+    return g_signal_connect_closure(cInstancePtr, signalDetail.toCString(false), cast(GClosure*)(cast(Closure)closure).cPtr, after == Yes.After);
   }
 
   /**
@@ -873,10 +911,11 @@ class ObjectG
    * Connect to Notify signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNotify(NotifyCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNotify(NotifyCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -888,6 +927,21 @@ class ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("notify", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("notify"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
+}
+
+/// Interface proxy class - used to wrap unknown GObjects as a specific interface
+abstract class IfaceProxy : ObjectG
+{
+  this()
+  {
+  }
+
+  this(void* ptr, bool ownedRef = false)
+  {
+    super(ptr, ownedRef);
+  }
+
+  abstract TypeInfo_Interface getIface();
 }

@@ -1,5 +1,6 @@
 module Gtk.AccessibleT;
 
+public import Gtk.AccessibleIfaceProxy;
 public import GObject.ObjectG;
 public import GObject.Value;
 public import Gid.gid;
@@ -34,7 +35,7 @@ public import Gtk.c.types;
  * by calling [Gtk.Accessible.setAccessibleParent] and
  * updating the sibling by [Gtk.Accessible.updateNextAccessibleSibling].
  */
-template AccessibleT(TStruct)
+template AccessibleT()
 {
 
   /**

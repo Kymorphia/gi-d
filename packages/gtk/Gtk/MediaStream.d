@@ -49,7 +49,7 @@ class MediaStream : ObjectG, Paintable
     return getType();
   }
 
-  mixin PaintableT!GtkMediaStream;
+  mixin PaintableT!();
 
   /**
    * Sets self into an error state.

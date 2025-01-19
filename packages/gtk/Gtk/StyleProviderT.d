@@ -1,7 +1,7 @@
 module Gtk.StyleProviderT;
 
+public import Gtk.StyleProviderIfaceProxy;
 public import GObject.DClosure;
-public import GObject.Types;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -16,7 +16,7 @@ public import Gtk.c.types;
  * GTK uses the `GtkStyleProvider` implementation for CSS in
  * [Gtk.CssProvider].
  */
-template StyleProviderT(TStruct)
+template StyleProviderT()
 {
 
   alias GtkPrivateChangedCallback = void delegate(StyleProvider styleProvider);
@@ -25,10 +25,10 @@ template StyleProviderT(TStruct)
    * Connect to GtkPrivateChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectGtkPrivateChanged(GtkPrivateChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectGtkPrivateChanged(GtkPrivateChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -39,6 +39,6 @@ template StyleProviderT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("gtk-private-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("gtk-private-changed", closure, after);
   }
 }

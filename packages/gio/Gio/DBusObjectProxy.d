@@ -37,7 +37,7 @@ class DBusObjectProxy : ObjectG, DBusObject
     return getType();
   }
 
-  mixin DBusObjectT!GDBusObjectProxy;
+  mixin DBusObjectT!();
 
   /**
    * Creates a new #GDBusObjectProxy for the given connection and

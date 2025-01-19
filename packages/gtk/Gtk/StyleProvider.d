@@ -1,7 +1,7 @@
 module Gtk.StyleProvider;
 
+public import Gtk.StyleProviderIfaceProxy;
 import GObject.DClosure;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;
@@ -30,8 +30,8 @@ interface StyleProvider
    * Connect to GtkPrivateChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectGtkPrivateChanged(GtkPrivateChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectGtkPrivateChanged(GtkPrivateChangedCallback dlg, Flag!"After" after = No.After);
 }

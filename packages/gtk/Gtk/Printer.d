@@ -3,7 +3,6 @@ module Gtk.Printer;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.PageSetup;
 import Gtk.PaperSize;
@@ -365,10 +364,10 @@ class Printer : ObjectG
    * Connect to DetailsAcquired signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDetailsAcquired(DetailsAcquiredCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDetailsAcquired(DetailsAcquiredCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -380,6 +379,6 @@ class Printer : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("details-acquired", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("details-acquired", closure, after);
   }
 }

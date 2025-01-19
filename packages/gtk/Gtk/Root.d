@@ -1,5 +1,6 @@
 module Gtk.Root;
 
+public import Gtk.RootIfaceProxy;
 import GObject.ObjectG;
 import Gdk.Display;
 import Gid.gid;

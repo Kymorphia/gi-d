@@ -34,8 +34,8 @@ class MultiSorter : Sorter, ListModel, Buildable
     return getType();
   }
 
-  mixin ListModelT!GtkMultiSorter;
-  mixin BuildableT!GtkMultiSorter;
+  mixin ListModelT!();
+  mixin BuildableT!();
 
   /**
    * Creates a new multi sorter.

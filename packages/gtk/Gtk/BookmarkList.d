@@ -38,7 +38,7 @@ class BookmarkList : ObjectG, ListModel
     return getType();
   }
 
-  mixin ListModelT!GtkBookmarkList;
+  mixin ListModelT!();
 
   /**
    * Creates a new `GtkBookmarkList` with the given attributes.

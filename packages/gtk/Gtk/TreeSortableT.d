@@ -1,8 +1,8 @@
 module Gtk.TreeSortableT;
 
+public import Gtk.TreeSortableIfaceProxy;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gtk.TreeIter;
 public import Gtk.TreeModel;
@@ -20,7 +20,7 @@ public import Gtk.c.types;
  * Deprecated: There is no replacement for this interface. You should
  *   use [Gtk.SortListModel] to wrap your list model instead
  */
-template TreeSortableT(TStruct)
+template TreeSortableT()
 {
 
   /**
@@ -139,10 +139,10 @@ template TreeSortableT(TStruct)
    * Connect to SortColumnChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSortColumnChanged(SortColumnChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSortColumnChanged(SortColumnChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -153,6 +153,6 @@ template TreeSortableT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("sort-column-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("sort-column-changed", closure, after);
   }
 }

@@ -46,7 +46,7 @@ class ContentDeserializer : ObjectG, AsyncResult
     return getType();
   }
 
-  mixin AsyncResultT!GdkContentDeserializer;
+  mixin AsyncResultT!();
 
   /**
    * Gets the cancellable for the current operation.

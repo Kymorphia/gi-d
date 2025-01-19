@@ -1,5 +1,6 @@
 module Gio.ActionMapT;
 
+public import Gio.ActionMapIfaceProxy;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.Action;
@@ -20,7 +21,7 @@ public import Gio.c.types;
  * This is the motivation for the 'Map' part of the interface
  * name.
  */
-template ActionMapT(TStruct)
+template ActionMapT()
 {
 
   /**

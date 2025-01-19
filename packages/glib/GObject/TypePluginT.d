@@ -1,5 +1,6 @@
 module GObject.TypePluginT;
 
+public import GObject.TypePluginIfaceProxy;
 public import GObject.TypeInfoG;
 public import GObject.TypeValueTable;
 public import GObject.Types;
@@ -48,7 +49,7 @@ public import Gid.gid;
  * already implements most of this except for the actual module loading and
  * unloading. It even handles multiple registered types per module.
  */
-template TypePluginT(TStruct)
+template TypePluginT()
 {
 
   /**

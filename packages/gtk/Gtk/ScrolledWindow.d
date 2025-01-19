@@ -2,7 +2,6 @@ module Gtk.ScrolledWindow;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleT;
@@ -499,10 +498,10 @@ class ScrolledWindow : Widget
    * Connect to EdgeOvershot signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEdgeOvershot(EdgeOvershotCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEdgeOvershot(EdgeOvershotCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -514,7 +513,7 @@ class ScrolledWindow : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("edge-overshot", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("edge-overshot", closure, after);
   }
 
   /**
@@ -535,10 +534,10 @@ class ScrolledWindow : Widget
    * Connect to EdgeReached signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEdgeReached(EdgeReachedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEdgeReached(EdgeReachedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -550,7 +549,7 @@ class ScrolledWindow : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("edge-reached", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("edge-reached", closure, after);
   }
 
   /**
@@ -571,10 +570,10 @@ class ScrolledWindow : Widget
    * Connect to MoveFocusOut signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveFocusOut(MoveFocusOutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveFocusOut(MoveFocusOutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -586,7 +585,7 @@ class ScrolledWindow : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-focus-out", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-focus-out", closure, after);
   }
 
   /**
@@ -607,10 +606,10 @@ class ScrolledWindow : Widget
    * Connect to ScrollChild signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectScrollChild(ScrollChildCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectScrollChild(ScrollChildCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -625,6 +624,6 @@ class ScrolledWindow : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("scroll-child", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("scroll-child", closure, after);
   }
 }

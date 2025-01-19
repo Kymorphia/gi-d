@@ -1,5 +1,6 @@
 module Gio.DesktopAppInfoLookup;
 
+public import Gio.DesktopAppInfoLookupIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.AppInfo;

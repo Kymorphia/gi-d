@@ -36,8 +36,8 @@ class MemoryInputStream : InputStream, PollableInputStream, Seekable
     return getType();
   }
 
-  mixin PollableInputStreamT!GMemoryInputStream;
-  mixin SeekableT!GMemoryInputStream;
+  mixin PollableInputStreamT!();
+  mixin SeekableT!();
 
   /**
    * Creates a new empty #GMemoryInputStream.

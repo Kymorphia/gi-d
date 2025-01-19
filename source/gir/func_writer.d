@@ -737,13 +737,18 @@ class FuncWriter
    * Write function binding to a CodeWriter.
    * Params:
    *   writer = Code writer to write to.
-   *   ifaceModule = Set to true when writing interface module (defaults to false which writes function for mixin template module)
+   *   moduleType = Module file type being written (defaults to ModuleType.Normal)
    */
-  void write(CodeWriter writer, bool ifaceModule = false)
+  void write(CodeWriter writer, ModuleType moduleType = ModuleType.Normal)
   {
+    auto isStatic = decl.startsWith("static");
+
+    if (moduleType == ModuleType.IfaceTemplate && isStatic) // Skip static methods in interface template files (implemented in the interface definition file)
+      return;
+
     func.writeDocs(writer);
 
-    if (ifaceModule)
+    if (moduleType == ModuleType.Iface && !isStatic) // Interface module and not a static method? (Static methods are implemented in the interface below)
     {
       writer ~= decl ~ ";";
       return;
@@ -752,8 +757,7 @@ class FuncWriter
     auto parentNode = cast(TypeNode)func.parent;
 
     // Add "override" for methods of an interface mixin template or if an ancestor/iface has a method with the same name
-    if (parentNode && (parentNode.kind == TypeKind.Interface || func.needOverride)
-        && !decl.startsWith("static"))
+    if (parentNode && (parentNode.kind == TypeKind.Interface || func.needOverride) && !isStatic)
       writer ~= "override " ~ decl;
     else
       writer ~= decl;

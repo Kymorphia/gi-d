@@ -48,7 +48,7 @@ class BufferedInputStream : FilterInputStream, Seekable
     return getType();
   }
 
-  mixin SeekableT!GBufferedInputStream;
+  mixin SeekableT!();
 
   /**
    * Creates a new #GInputStream from the given base_stream, with

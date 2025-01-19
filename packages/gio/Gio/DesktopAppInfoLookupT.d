@@ -1,5 +1,6 @@
 module Gio.DesktopAppInfoLookupT;
 
+public import Gio.DesktopAppInfoLookupIfaceProxy;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.AppInfo;
@@ -15,7 +16,7 @@ public import Gio.c.types;
  * Deprecated: The #GDesktopAppInfoLookup interface is deprecated and
  *   unused by GIO.
  */
-template DesktopAppInfoLookupT(TStruct)
+template DesktopAppInfoLookupT()
 {
 
   /**

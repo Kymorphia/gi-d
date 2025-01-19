@@ -1,7 +1,6 @@
 module Gtk.FileChooserWidget;
 
 import GObject.DClosure;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Accessible;
 import Gtk.AccessibleT;
@@ -48,7 +47,7 @@ class FileChooserWidget : Widget, FileChooser
     return getType();
   }
 
-  mixin FileChooserT!GtkFileChooserWidget;
+  mixin FileChooserT!();
 
   /**
    * Creates a new `GtkFileChooserWidget`.
@@ -82,10 +81,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to DesktopFolder signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDesktopFolder(DesktopFolderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDesktopFolder(DesktopFolderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -96,7 +95,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("desktop-folder", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("desktop-folder", closure, after);
   }
 
   /**
@@ -117,10 +116,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to DownFolder signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDownFolder(DownFolderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDownFolder(DownFolderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -131,7 +130,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("down-folder", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("down-folder", closure, after);
   }
 
   /**
@@ -148,10 +147,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to HomeFolder signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectHomeFolder(HomeFolderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectHomeFolder(HomeFolderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -162,7 +161,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("home-folder", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("home-folder", closure, after);
   }
 
   /**
@@ -186,10 +185,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to LocationPopup signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLocationPopup(LocationPopupCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLocationPopup(LocationPopupCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -201,7 +200,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("location-popup", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("location-popup", closure, after);
   }
 
   /**
@@ -218,10 +217,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to LocationPopupOnPaste signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLocationPopupOnPaste(LocationPopupOnPasteCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLocationPopupOnPaste(LocationPopupOnPasteCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -232,7 +231,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("location-popup-on-paste", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("location-popup-on-paste", closure, after);
   }
 
   /**
@@ -250,10 +249,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to LocationTogglePopup signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLocationTogglePopup(LocationTogglePopupCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLocationTogglePopup(LocationTogglePopupCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -264,7 +263,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("location-toggle-popup", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("location-toggle-popup", closure, after);
   }
 
   /**
@@ -280,10 +279,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to PlacesShortcut signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPlacesShortcut(PlacesShortcutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPlacesShortcut(PlacesShortcutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -294,7 +293,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("places-shortcut", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("places-shortcut", closure, after);
   }
 
   /**
@@ -319,10 +318,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to QuickBookmark signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectQuickBookmark(QuickBookmarkCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectQuickBookmark(QuickBookmarkCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -334,7 +333,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("quick-bookmark", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("quick-bookmark", closure, after);
   }
 
   /**
@@ -350,10 +349,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to RecentShortcut signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRecentShortcut(RecentShortcutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRecentShortcut(RecentShortcutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -364,7 +363,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("recent-shortcut", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("recent-shortcut", closure, after);
   }
 
   /**
@@ -380,10 +379,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to SearchShortcut signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSearchShortcut(SearchShortcutCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSearchShortcut(SearchShortcutCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -394,7 +393,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("search-shortcut", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("search-shortcut", closure, after);
   }
 
   /**
@@ -410,10 +409,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to ShowHidden signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectShowHidden(ShowHiddenCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectShowHidden(ShowHiddenCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -424,7 +423,7 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("show-hidden", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("show-hidden", closure, after);
   }
 
   /**
@@ -441,10 +440,10 @@ class FileChooserWidget : Widget, FileChooser
    * Connect to UpFolder signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUpFolder(UpFolderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUpFolder(UpFolderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -455,6 +454,6 @@ class FileChooserWidget : Widget, FileChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("up-folder", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("up-folder", closure, after);
   }
 }

@@ -1,5 +1,6 @@
 module Gio.DBusInterfaceT;
 
+public import Gio.DBusInterfaceIfaceProxy;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.DBusInterfaceInfo;
@@ -15,7 +16,7 @@ public import Gio.c.types;
  * on the service side $(LPAREN)see [Gio.DBusInterfaceSkeleton]$(RPAREN) and client side
  * $(LPAREN)see [Gio.DBusProxy]$(RPAREN).
  */
-template DBusInterfaceT(TStruct)
+template DBusInterfaceT()
 {
 
   /**

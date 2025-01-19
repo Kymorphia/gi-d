@@ -1,5 +1,6 @@
 module Gio.Initable;
 
+public import Gio.InitableIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import GObject.Parameter;
@@ -55,7 +56,25 @@ interface Initable
    * Deprecated: Use [GObject.ObjectG.newWithProperties] and
    *   [Gio.Initable.init_] instead. See #GParameter for more information.
    */
-  static ObjectG newv(GType objectType, Parameter[] parameters, Cancellable cancellable);
+  static ObjectG newv(GType objectType, Parameter[] parameters, Cancellable cancellable)
+  {
+    ObjectC* _cretval;
+    uint _nParameters;
+    if (parameters)
+      _nParameters = cast(uint)parameters.length;
+
+    GParameter[] _tmpparameters;
+    foreach (obj; parameters)
+      _tmpparameters ~= obj.cInstance;
+    GParameter* _parameters = _tmpparameters.ptr;
+
+    GError *_err;
+    _cretval = g_initable_newv(objectType, _nParameters, _parameters, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!ObjectG(cast(ObjectC*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Initializes the object implementing the interface.

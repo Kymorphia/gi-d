@@ -4,7 +4,6 @@ import GLib.List;
 import GObject.DClosure;
 import GObject.InitiallyUnowned;
 import GObject.ObjectG;
-import GObject.Types;
 import GObject.Value;
 import Gdk.Event;
 import Gdk.Rectangle;
@@ -312,8 +311,8 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
     return getType();
   }
 
-  mixin BuildableT!GtkCellArea;
-  mixin CellLayoutT!GtkCellArea;
+  mixin BuildableT!();
+  mixin CellLayoutT!();
 
   /**
    * Activates area, usually by activating the currently focused
@@ -982,10 +981,10 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    * Connect to AddEditable signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAddEditable(AddEditableCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAddEditable(AddEditableCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1000,7 +999,7 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("add-editable", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("add-editable", closure, after);
   }
 
   /**
@@ -1018,10 +1017,10 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    * Connect to ApplyAttributes signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectApplyAttributes(ApplyAttributesCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectApplyAttributes(ApplyAttributesCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1036,7 +1035,7 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("apply-attributes", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("apply-attributes", closure, after);
   }
 
   /**
@@ -1058,10 +1057,10 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    * Connect to FocusChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFocusChanged(FocusChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectFocusChanged(FocusChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1074,7 +1073,7 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("focus-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("focus-changed", closure, after);
   }
 
   /**
@@ -1091,10 +1090,10 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    * Connect to RemoveEditable signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRemoveEditable(RemoveEditableCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRemoveEditable(RemoveEditableCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -1107,6 +1106,6 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("remove-editable", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("remove-editable", closure, after);
   }
 }

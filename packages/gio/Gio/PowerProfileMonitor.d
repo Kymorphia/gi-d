@@ -1,5 +1,6 @@
 module Gio.PowerProfileMonitor;
 
+public import Gio.PowerProfileMonitorIfaceProxy;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Types;
@@ -39,7 +40,13 @@ interface PowerProfileMonitor
    * Gets a reference to the default #GPowerProfileMonitor for the system.
    * Returns: a new reference to the default #GPowerProfileMonitor
    */
-  static PowerProfileMonitor dupDefault();
+  static PowerProfileMonitor dupDefault()
+  {
+    GPowerProfileMonitor* _cretval;
+    _cretval = g_power_profile_monitor_dup_default();
+    auto _retval = _cretval ? ObjectG.getDObject!PowerProfileMonitor(cast(GPowerProfileMonitor*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets whether the system is in “Power Saver” mode.

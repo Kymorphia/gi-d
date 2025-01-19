@@ -1,5 +1,6 @@
 module Gdk.Popup;
 
+public import Gdk.PopupIfaceProxy;
 import GObject.ObjectG;
 import Gdk.PopupLayout;
 import Gdk.Surface;

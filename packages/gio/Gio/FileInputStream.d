@@ -46,7 +46,7 @@ class FileInputStream : InputStream, Seekable
     return getType();
   }
 
-  mixin SeekableT!GFileInputStream;
+  mixin SeekableT!();
 
   /**
    * Queries a file input stream the given attributes. This function blocks

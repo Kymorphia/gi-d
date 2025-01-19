@@ -37,7 +37,7 @@ class FontFamily : ObjectG, ListModel
     return getType();
   }
 
-  mixin ListModelT!PangoFontFamily;
+  mixin ListModelT!();
 
   /**
    * Gets the `PangoFontFace` of family with the given name.

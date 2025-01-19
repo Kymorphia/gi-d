@@ -56,8 +56,8 @@ class MapListModel : ObjectG, ListModel, SectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkMapListModel;
-  mixin SectionModelT!GtkMapListModel;
+  mixin ListModelT!();
+  mixin SectionModelT!();
 
   /**
    * Creates a new `GtkMapListModel` for the given arguments.

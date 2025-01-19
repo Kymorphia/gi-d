@@ -1,5 +1,6 @@
 module Gdk.DevicePad;
 
+public import Gdk.DevicePadIfaceProxy;
 import Gdk.Types;
 import Gdk.c.functions;
 import Gdk.c.types;

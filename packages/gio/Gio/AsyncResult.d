@@ -1,5 +1,6 @@
 module Gio.AsyncResult;
 
+public import Gio.AsyncResultIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;

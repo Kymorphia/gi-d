@@ -1,5 +1,6 @@
 module Gio.DtlsClientConnection;
 
+public import Gio.DtlsClientConnectionIfaceProxy;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -32,7 +33,16 @@ interface DtlsClientConnection
    * Returns: the new
    *   #GDtlsClientConnection, or %NULL on error
    */
-  static DtlsClientConnection new_(DatagramBased baseSocket, SocketConnectable serverIdentity);
+  static DtlsClientConnection new_(DatagramBased baseSocket, SocketConnectable serverIdentity)
+  {
+    GDatagramBased* _cretval;
+    GError *_err;
+    _cretval = g_dtls_client_connection_new(baseSocket ? cast(GDatagramBased*)(cast(ObjectG)baseSocket).cPtr(false) : null, serverIdentity ? cast(GSocketConnectable*)(cast(ObjectG)serverIdentity).cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!DtlsClientConnection(cast(GDatagramBased*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets conn's expected server identity

@@ -41,7 +41,7 @@ class NetworkAddress : ObjectG, SocketConnectable
     return getType();
   }
 
-  mixin SocketConnectableT!GNetworkAddress;
+  mixin SocketConnectableT!();
 
   /**
    * Creates a new #GSocketConnectable for connecting to the given

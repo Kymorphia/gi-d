@@ -1,5 +1,6 @@
 module Gio.File;
 
+public import Gio.FileIfaceProxy;
 import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
@@ -122,7 +123,18 @@ interface File
    *     array of strings containing the path elements.
    * Returns: a new #GFile
    */
-  static File newBuildFilenamev(string[] args);
+  static File newBuildFilenamev(string[] args)
+  {
+    GFile* _cretval;
+    const(char)*[] _tmpargs;
+    foreach (s; args)
+      _tmpargs ~= s.toCString(false);
+    _tmpargs ~= null;
+    const(char*)* _args = _tmpargs.ptr;
+    _cretval = g_file_new_build_filenamev(_args);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Creates a #GFile with the given argument from the command line.
@@ -143,7 +155,14 @@ interface File
    * Returns: a new #GFile.
    *   Free the returned object with [GObject.ObjectG.unref].
    */
-  static File newForCommandlineArg(string arg);
+  static File newForCommandlineArg(string arg)
+  {
+    GFile* _cretval;
+    const(char)* _arg = arg.toCString(false);
+    _cretval = g_file_new_for_commandline_arg(_arg);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Creates a #GFile with the given argument from the command line.
@@ -159,7 +178,15 @@ interface File
    *   cwd = the current working directory of the commandline
    * Returns: a new #GFile
    */
-  static File newForCommandlineArgAndCwd(string arg, string cwd);
+  static File newForCommandlineArgAndCwd(string arg, string cwd)
+  {
+    GFile* _cretval;
+    const(char)* _arg = arg.toCString(false);
+    const(char)* _cwd = cwd.toCString(false);
+    _cretval = g_file_new_for_commandline_arg_and_cwd(_arg, _cwd);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Constructs a #GFile for a given path. This operation never
@@ -171,7 +198,14 @@ interface File
    * Returns: a new #GFile for the given path.
    *   Free the returned object with [GObject.ObjectG.unref].
    */
-  static File newForPath(string path);
+  static File newForPath(string path)
+  {
+    GFile* _cretval;
+    const(char)* _path = path.toCString(false);
+    _cretval = g_file_new_for_path(_path);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Constructs a #GFile for a given URI. This operation never
@@ -183,7 +217,14 @@ interface File
    * Returns: a new #GFile for the given uri.
    *   Free the returned object with [GObject.ObjectG.unref].
    */
-  static File newForUri(string uri);
+  static File newForUri(string uri)
+  {
+    GFile* _cretval;
+    const(char)* _uri = uri.toCString(false);
+    _cretval = g_file_new_for_uri(_uri);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Opens a file in the preferred directory for temporary files $(LPAREN)as
@@ -201,7 +242,19 @@ interface File
    * Returns: a new #GFile.
    *   Free the returned object with [GObject.ObjectG.unref].
    */
-  static File newTmp(string tmpl, out FileIOStream iostream);
+  static File newTmp(string tmpl, out FileIOStream iostream)
+  {
+    GFile* _cretval;
+    const(char)* _tmpl = tmpl.toCString(false);
+    GFileIOStream* _iostream;
+    GError *_err;
+    _cretval = g_file_new_tmp(_tmpl, &_iostream, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    iostream = new FileIOStream(cast(void*)_iostream, true);
+    return _retval;
+  }
 
   /**
    * Asynchronously opens a file in the preferred directory for temporary files
@@ -216,7 +269,20 @@ interface File
    *   cancellable = optional #GCancellable object, %NULL to ignore
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  static void newTmpAsync(string tmpl, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback);
+  static void newTmpAsync(string tmpl, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)* _tmpl = tmpl.toCString(false);
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    g_file_new_tmp_async(_tmpl, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
 
   /**
    * Asynchronously creates a directory in the preferred directory for
@@ -231,7 +297,20 @@ interface File
    *   cancellable = optional #GCancellable object, %NULL to ignore
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  static void newTmpDirAsync(string tmpl, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback);
+  static void newTmpDirAsync(string tmpl, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)* _tmpl = tmpl.toCString(false);
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    g_file_new_tmp_dir_async(_tmpl, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
 
   /**
    * Finishes a temporary directory creation started by
@@ -241,7 +320,16 @@ interface File
    * Returns: a new #GFile.
    *   Free the returned object with [GObject.ObjectG.unref].
    */
-  static File newTmpDirFinish(AsyncResult result);
+  static File newTmpDirFinish(AsyncResult result)
+  {
+    GFile* _cretval;
+    GError *_err;
+    _cretval = g_file_new_tmp_dir_finish(result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Finishes a temporary file creation started by [Gio.File.newTmpAsync].
@@ -251,7 +339,18 @@ interface File
    * Returns: a new #GFile.
    *   Free the returned object with [GObject.ObjectG.unref].
    */
-  static File newTmpFinish(AsyncResult result, out FileIOStream iostream);
+  static File newTmpFinish(AsyncResult result, out FileIOStream iostream)
+  {
+    GFile* _cretval;
+    GFileIOStream* _iostream;
+    GError *_err;
+    _cretval = g_file_new_tmp_finish(result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_iostream, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    iostream = new FileIOStream(cast(void*)_iostream, true);
+    return _retval;
+  }
 
   /**
    * Constructs a #GFile with the given parse_name $(LPAREN)i.e. something
@@ -262,7 +361,14 @@ interface File
    *   parseName = a file name or path to be parsed
    * Returns: a new #GFile.
    */
-  static File parseName(string parseName);
+  static File parseName(string parseName)
+  {
+    GFile* _cretval;
+    const(char)* _parseName = parseName.toCString(false);
+    _cretval = g_file_parse_name(_parseName);
+    auto _retval = _cretval ? ObjectG.getDObject!File(cast(GFile*)_cretval, true) : null;
+    return _retval;
+  }
 
   /**
    * Gets an output stream for appending data to the file.

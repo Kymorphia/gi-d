@@ -1,9 +1,9 @@
 module Gio.ActionGroup;
 
+public import Gio.ActionGroupIfaceProxy;
 import GLib.Variant;
 import GLib.VariantType;
 import GObject.DClosure;
-import GObject.Types;
 import Gid.gid;
 import Gio.Types;
 import Gio.c.functions;
@@ -283,10 +283,11 @@ interface ActionGroup
    * Connect to ActionAdded signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionAdded(ActionAddedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectActionAdded(ActionAddedCallback dlg, string detail = null, Flag!"After" after = No.After);
 
   /**
    * Signals that the enabled status of the named action has changed.
@@ -301,10 +302,11 @@ interface ActionGroup
    * Connect to ActionEnabledChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionEnabledChanged(ActionEnabledChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectActionEnabledChanged(ActionEnabledChangedCallback dlg, string detail = null, Flag!"After" after = No.After);
 
   /**
    * Signals that an action is just about to be removed from the group.
@@ -320,10 +322,11 @@ interface ActionGroup
    * Connect to ActionRemoved signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionRemoved(ActionRemovedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectActionRemoved(ActionRemovedCallback dlg, string detail = null, Flag!"After" after = No.After);
 
   /**
    * Signals that the state of the named action has changed.
@@ -338,8 +341,9 @@ interface ActionGroup
    * Connect to ActionStateChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActionStateChanged(ActionStateChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectActionStateChanged(ActionStateChangedCallback dlg, string detail = null, Flag!"After" after = No.After);
 }

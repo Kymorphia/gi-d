@@ -1,5 +1,6 @@
 module Gio.DatagramBasedT;
 
+public import Gio.DatagramBasedIfaceProxy;
 public import GLib.ErrorG;
 public import GLib.Source;
 public import GLib.Types;
@@ -55,7 +56,7 @@ public import Gio.c.types;
  * To use a `GDatagramBased` concurrently from multiple threads, you must
  * implement your own locking.
  */
-template DatagramBasedT(TStruct)
+template DatagramBasedT()
 {
 
   /**

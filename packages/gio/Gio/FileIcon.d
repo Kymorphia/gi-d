@@ -39,8 +39,8 @@ class FileIcon : ObjectG, Icon, LoadableIcon
     return getType();
   }
 
-  mixin IconT!GFileIcon;
-  mixin LoadableIconT!GFileIcon;
+  mixin IconT!();
+  mixin LoadableIconT!();
 
   /**
    * Creates a new icon for a file.

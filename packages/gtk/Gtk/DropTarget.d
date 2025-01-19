@@ -283,10 +283,10 @@ class DropTarget : EventController
    * Connect to Accept signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectAccept(AcceptCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectAccept(AcceptCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -300,7 +300,7 @@ class DropTarget : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("accept", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("accept", closure, after);
   }
 
   /**
@@ -324,10 +324,10 @@ class DropTarget : EventController
    * Connect to Drop signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectDrop(DropCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectDrop(DropCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -343,7 +343,7 @@ class DropTarget : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("drop", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("drop", closure, after);
   }
 
   /**
@@ -362,10 +362,10 @@ class DropTarget : EventController
    * Connect to Enter signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEnter(EnterCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEnter(EnterCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -380,7 +380,7 @@ class DropTarget : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("enter", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("enter", closure, after);
   }
 
   /**
@@ -395,10 +395,10 @@ class DropTarget : EventController
    * Connect to Leave signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectLeave(LeaveCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectLeave(LeaveCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -409,7 +409,7 @@ class DropTarget : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("leave", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("leave", closure, after);
   }
 
   /**
@@ -427,10 +427,10 @@ class DropTarget : EventController
    * Connect to Motion signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMotion(MotionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMotion(MotionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -445,6 +445,6 @@ class DropTarget : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("motion", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("motion", closure, after);
   }
 }

@@ -50,7 +50,7 @@ class WidgetPaintable : ObjectG, Paintable
     return getType();
   }
 
-  mixin PaintableT!GtkWidgetPaintable;
+  mixin PaintableT!();
 
   /**
    * Creates a new widget paintable observing the given widget.

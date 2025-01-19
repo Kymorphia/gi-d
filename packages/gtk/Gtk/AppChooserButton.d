@@ -2,7 +2,6 @@ module Gtk.AppChooserButton;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Icon;
 import Gio.IconT;
@@ -67,7 +66,7 @@ class AppChooserButton : Widget, AppChooser
     return getType();
   }
 
-  mixin AppChooserT!GtkAppChooserButton;
+  mixin AppChooserT!();
 
   /**
    * Creates a new `GtkAppChooserButton` for applications
@@ -255,10 +254,10 @@ class AppChooserButton : Widget, AppChooser
    * Connect to Activate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivate(ActivateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivate(ActivateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -269,7 +268,7 @@ class AppChooserButton : Widget, AppChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate", closure, after);
   }
 
   /**
@@ -282,10 +281,10 @@ class AppChooserButton : Widget, AppChooser
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -296,7 +295,7 @@ class AppChooserButton : Widget, AppChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("changed", closure, after);
   }
 
   /**
@@ -313,10 +312,11 @@ class AppChooserButton : Widget, AppChooser
    * Connect to CustomItemActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   detail = Signal detail or null (default)
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCustomItemActivated(CustomItemActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCustomItemActivated(CustomItemActivatedCallback dlg, string detail = null, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -328,6 +328,6 @@ class AppChooserButton : Widget, AppChooser
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("custom-item-activated", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("custom-item-activated"~ (detail.length ? "::" ~ detail : ""), closure, after);
   }
 }

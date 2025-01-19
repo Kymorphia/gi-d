@@ -2,7 +2,6 @@ module Gtk.EntryCompletion;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gtk.Buildable;
 import Gtk.BuildableT;
@@ -70,8 +69,8 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
     return getType();
   }
 
-  mixin BuildableT!GtkEntryCompletion;
-  mixin CellLayoutT!GtkEntryCompletion;
+  mixin BuildableT!();
+  mixin CellLayoutT!();
 
   /**
    * Creates a new `GtkEntryCompletion` object.
@@ -449,10 +448,10 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
    * Connect to CursorOnMatch signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCursorOnMatch(CursorOnMatchCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCursorOnMatch(CursorOnMatchCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -467,7 +466,7 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cursor-on-match", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cursor-on-match", closure, after);
   }
 
   /**
@@ -489,10 +488,10 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
    * Connect to InsertPrefix signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectInsertPrefix(InsertPrefixCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectInsertPrefix(InsertPrefixCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -506,7 +505,7 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("insert-prefix", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("insert-prefix", closure, after);
   }
 
   /**
@@ -528,10 +527,10 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
    * Connect to MatchSelected signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMatchSelected(MatchSelectedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMatchSelected(MatchSelectedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -546,7 +545,7 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("match-selected", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("match-selected", closure, after);
   }
 
   /**
@@ -561,10 +560,10 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
    * Connect to NoMatches signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNoMatches(NoMatchesCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNoMatches(NoMatchesCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -575,6 +574,6 @@ class EntryCompletion : ObjectG, Buildable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("no-matches", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("no-matches", closure, after);
   }
 }

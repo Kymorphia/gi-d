@@ -29,12 +29,12 @@ class SignalWriter
   private void process()
   {
     auto delegateName = signal.dName(true) ~ "Callback";
-    connectDecl = "ulong connect" ~ signal.dName(true) ~ "(" ~ delegateName
-      ~ " dlg, ConnectFlags flags = ConnectFlags.Default)";
+    connectDecl = "ulong connect" ~ signal.dName(true) ~ "(" ~ delegateName ~ " dlg, "
+      ~ (signal.detailed ? "string detail = null, "d : "") ~ "Flag!\"After\" after = No.After)";
     dlgDecl = "alias " ~ delegateName ~ " = ";
 
-    preCall ~= "extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals,"
-      ~ " void* _invocHint, void* _marshalData)\n{\n";
+    preCall ~= "extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams,"
+      ~ " const(GValue)* _paramVals, void* _invocHint, void* _marshalData)\n{\n";
     preCall ~= "assert(_nParams == " ~ (signal.params.length + 1).to!dstring
       ~ ", \"Unexpected number of signal parameters\");\n";
     preCall ~= "auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;\n";
@@ -55,8 +55,6 @@ class SignalWriter
 
     dlgDecl ~= ");";
     call ~= ");";
-
-    signal.repo.defs.importManager.add("GObject.Types"); // For ConnectFlags
   }
 
   // Helper to add parameter to call string with comma separator
@@ -231,18 +229,24 @@ class SignalWriter
    * Write signal binding to a CodeWriter.
    * Params:
    *   writer = Code writer to write to.
-   *   ifaceModule = Set to true when writing interface module (defaults to false which writes function for mixin template module)
+   *   moduleType = Module file type being written (defaults to ModuleType.Normal)
    */
-  void write(CodeWriter writer, bool ifaceModule = false)
+  void write(CodeWriter writer, ModuleType moduleType = ModuleType.Normal)
   {
     signal.writeDocs(writer);
 
     writer ~= [dlgDecl, ""];
 
     writer ~= ["/**", "* Connect to " ~ signal.dName(true) ~ " signal.", "* Params:",
-      "*   dlg = signal delegate callback to connect", "*   flags = connection flags", "* Returns: Signal ID", "*/"];
+      "*   dlg = signal delegate callback to connect"];
 
-    if (ifaceModule)
+    if (signal.detailed)
+      writer ~= "*   detail = Signal detail or null (default)";
+
+    writer ~= ["*   after = Yes.After to execute callback after default handler, No.After to execute before (default)",
+      "* Returns: Signal ID", "*/"];
+
+    if (moduleType == ModuleType.Iface)
     {
       writer ~= connectDecl ~ ";";
       return;
@@ -263,7 +267,8 @@ class SignalWriter
       writer ~= postCall;
 
     writer ~= ["}", "", "auto closure = new DClosure(dlg, &_cmarshal);"];
-    writer ~= ["return connectSignalClosure(\"" ~ signal.name ~ "\", closure, (flags & ConnectFlags.After) != 0);", "}"];
+    writer ~= ["return connectSignalClosure(\"" ~ signal.name ~ "\""
+      ~ (signal.detailed ? `~ (detail.length ? "::" ~ detail : "")`d : "") ~ ", closure, after);", "}"];
   }
 
   Func signal; /// The signal object being written

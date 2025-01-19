@@ -38,8 +38,8 @@ class IconPaintable : ObjectG, Paintable, SymbolicPaintable
     return getType();
   }
 
-  mixin PaintableT!GtkIconPaintable;
-  mixin SymbolicPaintableT!GtkIconPaintable;
+  mixin PaintableT!();
+  mixin SymbolicPaintableT!();
 
   /**
    * Creates a `GtkIconPaintable` for a file with a given size and scale.

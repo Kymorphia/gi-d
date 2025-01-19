@@ -3,7 +3,6 @@ module Gio.DBusServer;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Cancellable;
 import Gio.DBusAuthObserver;
@@ -55,7 +54,7 @@ class DBusServer : ObjectG, Initable
     return getType();
   }
 
-  mixin InitableT!GDBusServer;
+  mixin InitableT!();
 
   /**
    * Creates a new D-Bus server that listens on the first address in
@@ -192,10 +191,10 @@ class DBusServer : ObjectG, Initable
    * Connect to NewConnection signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectNewConnection(NewConnectionCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectNewConnection(NewConnectionCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -209,6 +208,6 @@ class DBusServer : ObjectG, Initable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("new-connection", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("new-connection", closure, after);
   }
 }

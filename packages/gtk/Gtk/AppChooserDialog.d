@@ -65,7 +65,7 @@ class AppChooserDialog : Dialog, AppChooser
     return getType();
   }
 
-  mixin AppChooserT!GtkAppChooserDialog;
+  mixin AppChooserT!();
 
   /**
    * Creates a new `GtkAppChooserDialog` for the provided `GFile`.

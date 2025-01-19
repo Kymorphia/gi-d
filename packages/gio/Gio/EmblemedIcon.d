@@ -39,7 +39,7 @@ class EmblemedIcon : ObjectG, Icon
     return getType();
   }
 
-  mixin IconT!GEmblemedIcon;
+  mixin IconT!();
 
   /**
    * Creates a new emblemed icon for icon with the emblem emblem.

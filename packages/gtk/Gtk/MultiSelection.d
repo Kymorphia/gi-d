@@ -38,9 +38,9 @@ class MultiSelection : ObjectG, ListModel, SectionModel, SelectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkMultiSelection;
-  mixin SectionModelT!GtkMultiSelection;
-  mixin SelectionModelT!GtkMultiSelection;
+  mixin ListModelT!();
+  mixin SectionModelT!();
+  mixin SelectionModelT!();
 
   /**
    * Creates a new selection to handle model.

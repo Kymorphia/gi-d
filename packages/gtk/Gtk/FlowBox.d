@@ -3,7 +3,6 @@ module Gtk.FlowBox;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.ListModel;
 import Gio.ListModelT;
@@ -77,7 +76,7 @@ class FlowBox : Widget, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkFlowBox;
+  mixin OrientableT!();
 
   /**
    * Creates a `GtkFlowBox`.
@@ -577,10 +576,10 @@ class FlowBox : Widget, Orientable
    * Connect to ActivateCursorChild signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivateCursorChild(ActivateCursorChildCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivateCursorChild(ActivateCursorChildCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -591,7 +590,7 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate-cursor-child", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate-cursor-child", closure, after);
   }
 
   /**
@@ -606,10 +605,10 @@ class FlowBox : Widget, Orientable
    * Connect to ChildActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChildActivated(ChildActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChildActivated(ChildActivatedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -621,7 +620,7 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("child-activated", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("child-activated", closure, after);
   }
 
   /**
@@ -653,10 +652,10 @@ class FlowBox : Widget, Orientable
    * Connect to MoveCursor signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveCursor(MoveCursorCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveCursor(MoveCursorCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -673,7 +672,7 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-cursor", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-cursor", closure, after);
   }
 
   /**
@@ -689,10 +688,10 @@ class FlowBox : Widget, Orientable
    * Connect to SelectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectAll(SelectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectAll(SelectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -703,7 +702,7 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("select-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("select-all", closure, after);
   }
 
   /**
@@ -719,10 +718,10 @@ class FlowBox : Widget, Orientable
    * Connect to SelectedChildrenChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSelectedChildrenChanged(SelectedChildrenChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSelectedChildrenChanged(SelectedChildrenChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -733,7 +732,7 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("selected-children-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("selected-children-changed", closure, after);
   }
 
   /**
@@ -748,10 +747,10 @@ class FlowBox : Widget, Orientable
    * Connect to ToggleCursorChild signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectToggleCursorChild(ToggleCursorChildCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectToggleCursorChild(ToggleCursorChildCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -762,7 +761,7 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("toggle-cursor-child", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("toggle-cursor-child", closure, after);
   }
 
   /**
@@ -778,10 +777,10 @@ class FlowBox : Widget, Orientable
    * Connect to UnselectAll signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUnselectAll(UnselectAllCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUnselectAll(UnselectAllCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -792,6 +791,6 @@ class FlowBox : Widget, Orientable
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("unselect-all", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("unselect-all", closure, after);
   }
 }

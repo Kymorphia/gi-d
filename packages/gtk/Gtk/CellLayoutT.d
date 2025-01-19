@@ -1,5 +1,6 @@
 module Gtk.CellLayoutT;
 
+public import Gtk.CellLayoutIfaceProxy;
 public import GLib.List;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -107,7 +108,7 @@ public import Gtk.c.types;
  * Deprecated: List views use widgets to display their contents.
  *   See [Gtk.LayoutManager] for layout manager delegate objects
  */
-template CellLayoutT(TStruct)
+template CellLayoutT()
 {
 
   /**

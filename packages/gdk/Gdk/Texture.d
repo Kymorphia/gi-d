@@ -52,9 +52,9 @@ class Texture : ObjectG, Paintable, Icon, LoadableIcon
     return getType();
   }
 
-  mixin PaintableT!GdkTexture;
-  mixin IconT!GdkTexture;
-  mixin LoadableIconT!GdkTexture;
+  mixin PaintableT!();
+  mixin IconT!();
+  mixin LoadableIconT!();
 
   /**
    * Creates a new texture object representing the `GdkPixbuf`.

@@ -144,7 +144,7 @@ class FileChooserNative : NativeDialog, FileChooser
     return getType();
   }
 
-  mixin FileChooserT!GtkFileChooserNative;
+  mixin FileChooserT!();
 
   /**
    * Creates a new `GtkFileChooserNative`.

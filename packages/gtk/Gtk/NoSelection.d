@@ -41,9 +41,9 @@ class NoSelection : ObjectG, ListModel, SectionModel, SelectionModel
     return getType();
   }
 
-  mixin ListModelT!GtkNoSelection;
-  mixin SectionModelT!GtkNoSelection;
-  mixin SelectionModelT!GtkNoSelection;
+  mixin ListModelT!();
+  mixin SectionModelT!();
+  mixin SelectionModelT!();
 
   /**
    * Creates a new selection to handle model.

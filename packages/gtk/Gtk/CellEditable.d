@@ -1,7 +1,7 @@
 module Gtk.CellEditable;
 
+public import Gtk.CellEditableIfaceProxy;
 import GObject.DClosure;
-import GObject.Types;
 import Gdk.Event;
 import Gid.gid;
 import Gtk.Types;
@@ -67,10 +67,10 @@ interface CellEditable
    * Connect to EditingDone signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEditingDone(EditingDoneCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectEditingDone(EditingDoneCallback dlg, Flag!"After" after = No.After);
 
   /**
    * This signal is meant to indicate that the cell is finished
@@ -91,8 +91,8 @@ interface CellEditable
    * Connect to RemoveWidget signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRemoveWidget(RemoveWidgetCallback dlg, ConnectFlags flags = ConnectFlags.Default);
+  ulong connectRemoveWidget(RemoveWidgetCallback dlg, Flag!"After" after = No.After);
 }

@@ -40,7 +40,7 @@ class ThemedIcon : ObjectG, Icon
     return getType();
   }
 
-  mixin IconT!GThemedIcon;
+  mixin IconT!();
 
   /**
    * Creates a new themed icon for iconname.

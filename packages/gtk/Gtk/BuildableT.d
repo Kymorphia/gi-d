@@ -1,5 +1,6 @@
 module Gtk.BuildableT;
 
+public import Gtk.BuildableIfaceProxy;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -17,7 +18,7 @@ public import Gtk.c.types;
  * An object only needs to implement this interface if it needs to extend the
  * `GtkBuilder` XML format or run any extra routines at deserialization time.
  */
-template BuildableT(TStruct)
+template BuildableT()
 {
 
   /**

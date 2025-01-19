@@ -1,5 +1,6 @@
 module Gio.SeekableT;
 
+public import Gio.SeekableIfaceProxy;
 public import GLib.ErrorG;
 public import GLib.Types;
 public import Gid.gid;
@@ -21,7 +22,7 @@ public import Gio.c.types;
  * [`lseek$(LPAREN)$(RPAREN)`]$(LPAREN)$(RPAREN)(man:lseek2) on a normal file.  Seeking past the end and writing
  * data will usually cause the stream to resize by introducing zero bytes.
  */
-template SeekableT(TStruct)
+template SeekableT()
 {
 
   /**

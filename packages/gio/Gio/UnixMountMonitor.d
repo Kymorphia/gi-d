@@ -2,7 +2,6 @@ module Gio.UnixMountMonitor;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gid.gid;
 import Gio.Types;
 import Gio.c.functions;
@@ -90,10 +89,10 @@ class UnixMountMonitor : ObjectG
    * Connect to MountpointsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMountpointsChanged(MountpointsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMountpointsChanged(MountpointsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -104,7 +103,7 @@ class UnixMountMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mountpoints-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mountpoints-changed", closure, after);
   }
 
   /**
@@ -117,10 +116,10 @@ class UnixMountMonitor : ObjectG
    * Connect to MountsChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMountsChanged(MountsChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMountsChanged(MountsChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -131,6 +130,6 @@ class UnixMountMonitor : ObjectG
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("mounts-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("mounts-changed", closure, after);
   }
 }

@@ -1,5 +1,6 @@
 module Gtk.AppChooserT;
 
+public import Gtk.AppChooserIfaceProxy;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.AppInfo;
@@ -30,7 +31,7 @@ public import Gtk.c.types;
  *   implemented according to the design of each platform and/or
  *   application requiring them.
  */
-template AppChooserT(TStruct)
+template AppChooserT()
 {
 
   /**

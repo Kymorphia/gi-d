@@ -40,8 +40,8 @@ class MemoryOutputStream : OutputStream, PollableOutputStream, Seekable
     return getType();
   }
 
-  mixin PollableOutputStreamT!GMemoryOutputStream;
-  mixin SeekableT!GMemoryOutputStream;
+  mixin PollableOutputStreamT!();
+  mixin SeekableT!();
 
   /**
    * Creates a new #GMemoryOutputStream, using [GLib.Global.realloc] and [GLib.Global.gfree]

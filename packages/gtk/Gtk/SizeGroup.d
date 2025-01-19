@@ -88,7 +88,7 @@ class SizeGroup : ObjectG, Buildable
     return getType();
   }
 
-  mixin BuildableT!GtkSizeGroup;
+  mixin BuildableT!();
 
   /**
    * Create a new `GtkSizeGroup`.

@@ -3,7 +3,6 @@ module Gtk.Gesture;
 import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Device;
 import Gdk.Event;
 import Gdk.EventSequence;
@@ -454,10 +453,10 @@ class Gesture : EventController
    * Connect to Begin signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectBegin(BeginCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectBegin(BeginCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -469,7 +468,7 @@ class Gesture : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("begin", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("begin", closure, after);
   }
 
   /**
@@ -491,10 +490,10 @@ class Gesture : EventController
    * Connect to Cancel signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCancel(CancelCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCancel(CancelCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -506,7 +505,7 @@ class Gesture : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("cancel", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("cancel", closure, after);
   }
 
   /**
@@ -529,10 +528,10 @@ class Gesture : EventController
    * Connect to End signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEnd(EndCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEnd(EndCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -544,7 +543,7 @@ class Gesture : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("end", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("end", closure, after);
   }
 
   /**
@@ -562,10 +561,10 @@ class Gesture : EventController
    * Connect to SequenceStateChanged signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectSequenceStateChanged(SequenceStateChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectSequenceStateChanged(SequenceStateChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -578,7 +577,7 @@ class Gesture : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("sequence-state-changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("sequence-state-changed", closure, after);
   }
 
   /**
@@ -594,10 +593,10 @@ class Gesture : EventController
    * Connect to Update signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectUpdate(UpdateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectUpdate(UpdateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -609,6 +608,6 @@ class Gesture : EventController
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("update", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("update", closure, after);
   }
 }

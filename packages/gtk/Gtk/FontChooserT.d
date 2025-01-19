@@ -1,8 +1,8 @@
 module Gtk.FontChooserT;
 
+public import Gtk.FontChooserIfaceProxy;
 public import GObject.DClosure;
 public import GObject.ObjectG;
-public import GObject.Types;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -22,7 +22,7 @@ public import Pango.FontMap;
  * Deprecated: Use [Gtk.FontDialog] and [Gtk.FontDialogButton]
  *   instead
  */
-template FontChooserT(TStruct)
+template FontChooserT()
 {
 
   /**
@@ -367,10 +367,10 @@ template FontChooserT(TStruct)
    * Connect to FontActivated signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFontActivated(FontActivatedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectFontActivated(FontActivatedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -382,6 +382,6 @@ template FontChooserT(TStruct)
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("font-activated", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("font-activated", closure, after);
   }
 }

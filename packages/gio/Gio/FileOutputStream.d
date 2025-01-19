@@ -50,7 +50,7 @@ class FileOutputStream : OutputStream, Seekable
     return getType();
   }
 
-  mixin SeekableT!GFileOutputStream;
+  mixin SeekableT!();
 
   /**
    * Gets the entity tag for the file when it has been written.

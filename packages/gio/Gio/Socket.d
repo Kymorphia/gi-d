@@ -104,8 +104,8 @@ class Socket : ObjectG, DatagramBased, Initable
     return getType();
   }
 
-  mixin DatagramBasedT!GSocket;
-  mixin InitableT!GSocket;
+  mixin DatagramBasedT!();
+  mixin InitableT!();
 
   /**
    * Creates a new #GSocket with the defined family, type and protocol.

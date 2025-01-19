@@ -1,5 +1,6 @@
 module Gio.ProxyT;
 
+public import Gio.ProxyIfaceProxy;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -20,25 +21,9 @@ public import Gio.c.types;
  * name `socks5` using the function
  * [Gio.IOExtensionPoint.getExtensionByName].
  */
-template ProxyT(TStruct)
+template ProxyT()
 {
 
-  /**
-   * Find the `gio-proxy` extension point for a proxy implementation that supports
-   * the specified protocol.
-   * Params:
-   *   protocol = the proxy protocol name $(LPAREN)e.g. http, socks, etc$(RPAREN)
-   * Returns: return a #GProxy or NULL if protocol
-   *   is not supported.
-   */
-  static Proxy getDefaultForProtocol(string protocol)
-  {
-    GProxy* _cretval;
-    const(char)* _protocol = protocol.toCString(false);
-    _cretval = g_proxy_get_default_for_protocol(_protocol);
-    auto _retval = _cretval ? ObjectG.getDObject!Proxy(cast(GProxy*)_cretval, true) : null;
-    return _retval;
-  }
 
   /**
    * Given connection to communicate with a proxy $(LPAREN)eg, a

@@ -1,5 +1,6 @@
 module Gio.RemoteActionGroup;
 
+public import Gio.RemoteActionGroupIfaceProxy;
 import GLib.Variant;
 import Gid.gid;
 import Gio.Types;

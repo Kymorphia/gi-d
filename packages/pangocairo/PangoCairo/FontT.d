@@ -1,5 +1,6 @@
 module PangoCairo.FontT;
 
+public import PangoCairo.FontIfaceProxy;
 public import Gid.gid;
 public import PangoCairo.Types;
 public import PangoCairo.c.functions;
@@ -12,7 +13,7 @@ public import cairo.ScaledFont;
  * The actual type of the font will depend on the particular
  * font technology Cairo was compiled to use.
  */
-template FontT(TStruct)
+template FontT()
 {
 
   /**

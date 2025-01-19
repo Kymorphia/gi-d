@@ -34,7 +34,7 @@ class CellRendererProgress : CellRenderer, Orientable
     return getType();
   }
 
-  mixin OrientableT!GtkCellRendererProgress;
+  mixin OrientableT!();
 
   /**
    * Creates a new `GtkCellRendererProgress`.

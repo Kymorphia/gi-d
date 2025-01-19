@@ -3,7 +3,6 @@ module Gtk.GLArea;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.GLContext;
 import Gdk.Types;
 import Gid.gid;
@@ -399,10 +398,10 @@ class GLArea : Widget
    * Connect to CreateContext signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectCreateContext(CreateContextCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectCreateContext(CreateContextCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -414,7 +413,7 @@ class GLArea : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("create-context", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("create-context", closure, after);
   }
 
   /**
@@ -433,10 +432,10 @@ class GLArea : Widget
    * Connect to Render signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectRender(RenderCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectRender(RenderCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -450,7 +449,7 @@ class GLArea : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("render", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("render", closure, after);
   }
 
   /**
@@ -473,10 +472,10 @@ class GLArea : Widget
    * Connect to Resize signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectResize(ResizeCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectResize(ResizeCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -489,6 +488,6 @@ class GLArea : Widget
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("resize", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("resize", closure, after);
   }
 }

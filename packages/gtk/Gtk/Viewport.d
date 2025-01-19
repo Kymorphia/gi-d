@@ -52,7 +52,7 @@ class Viewport : Widget, Scrollable
     return getType();
   }
 
-  mixin ScrollableT!GtkViewport;
+  mixin ScrollableT!();
 
   /**
    * Creates a new `GtkViewport`.

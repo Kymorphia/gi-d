@@ -1,5 +1,6 @@
 module Gtk.BuilderScopeT;
 
+public import Gtk.BuilderScopeIfaceProxy;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -20,6 +21,6 @@ public import Gtk.c.types;
  * may want to $(LPAREN)partially$(RPAREN) derive from or fall back to a [Gtk.BuilderCScope],
  * as that class implements support for automatic lookups from C symbols.
  */
-template BuilderScopeT(TStruct)
+template BuilderScopeT()
 {
 }

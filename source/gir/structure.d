@@ -293,13 +293,13 @@ final class Structure : TypeNode
    * Write structure module.
    * Params:
    *   path = Directory to store the structure file(s) to (interfaces have multiple files)
-   *   ifaceModule = Set to true to write interface module (defaults to false which writes the template mixin module for interfaces)
+   *   moduleType = Module file type being written (defaults to ModuleType.Normal)
    */
-  void write(string path, bool ifaceModule = false)
+  void write(string path, ModuleType moduleType = ModuleType.Normal)
   {
     codeTrap("struct.write", fullName);
 
-    auto isIfaceTemplate = kind == TypeKind.Interface && !ifaceModule;
+    auto isIfaceTemplate = kind == TypeKind.Interface && moduleType == ModuleType.IfaceTemplate;
     auto writer = new CodeWriter(buildPath(path, dType.to!string ~ (isIfaceTemplate ? "T" : "") ~ ".d")); // Append T to type name for interface mixin template module
     writer ~= ["module " ~ fullName ~ (isIfaceTemplate ? "T;"d : ";"d), ""];
 
@@ -343,6 +343,9 @@ final class Structure : TypeNode
       repo.defs.importManager.add("GLib.ErrorG");
     }
 
+    if (kind == TypeKind.Interface)
+      writer ~= "public import " ~ fullName ~ "IfaceProxy;";
+
     if (repo.defs.importManager.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
       writer ~= "";
 
@@ -356,12 +359,7 @@ final class Structure : TypeNode
     if (defCode.classDecl.empty)
     {
       if (kind == TypeKind.Interface)
-      {
-        if (ifaceModule)
-          writer ~= "interface " ~ dType;
-        else
-          writer ~= "template " ~ dType ~ "T(TStruct)";
-      }
+        writer ~= isIfaceTemplate ? ("template " ~ dType ~ "T()") : ("interface " ~ dType);
       else
       { // Create range of parent type and implemented interface types, but filter out interfaces already implemented by ancestors
         objIfaces = implementStructs.filter!(x => !getIfaceAncestor(x)).map!(x => x.dType).array;
@@ -375,14 +373,14 @@ final class Structure : TypeNode
     writer ~= "{";
 
     if (defCode.genInit)
-      writeInitCode(writer, propMethods, ifaceModule);
+      writeInitCode(writer, propMethods, moduleType);
 
     if (kind == TypeKind.Object && !objIfaces.empty)
     {
       writer ~= "";
 
       foreach (iface; objIfaces)
-        writer ~= "mixin " ~ iface ~ "T!" ~ cType ~ ";";
+        writer ~= "mixin " ~ iface ~ "T!();";
     }
 
     if (defCode.inClass.length > 0)
@@ -393,13 +391,13 @@ final class Structure : TypeNode
       foreach (fnWriter; funcWriters)
       {
         writer ~= "";
-        fnWriter.write(writer, ifaceModule);
+        fnWriter.write(writer, moduleType);
       }
 
       foreach (sigWriter; signalWriters)
       {
         writer ~= "";
-        sigWriter.write(writer, ifaceModule);
+        sigWriter.write(writer, moduleType);
       }
     }
 
@@ -424,7 +422,7 @@ final class Structure : TypeNode
   }
 
   // Write class init code
-  private void writeInitCode(CodeWriter writer, dstring[] propMethods, bool ifaceModule)
+  private void writeInitCode(CodeWriter writer, dstring[] propMethods, ModuleType moduleType)
   {
     if ((kind == TypeKind.Opaque && !pointer) || (kind == TypeKind.Reffed && !parentStruct))
       writer ~= [cTypeRemPtr ~ "* cInstancePtr;"];
@@ -480,7 +478,7 @@ final class Structure : TypeNode
     else if (kind == TypeKind.Wrap)
       writer ~= ["", "void* cPtr()", "{", "return cast(void*)&cInstance;", "}"];
 
-    if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && ifaceModule))
+    if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && moduleType == ModuleType.Iface))
       writer ~= ["", "static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
 
     if (kind.among(TypeKind.Boxed, TypeKind.Object))
@@ -706,3 +704,11 @@ enum StructType
 }
 
 immutable dstring[] StructTypeValues = ["class", "interface", "record", "union"];
+
+/// Module file type
+enum ModuleType
+{
+  Normal, /// Normal module file
+  Iface, /// Interface definition file
+  IfaceTemplate, /// Interface mixin template file
+}

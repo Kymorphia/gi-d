@@ -166,11 +166,11 @@ class ListStore : ObjectG, Buildable, TreeDragDest, TreeDragSource, TreeModel, T
     return getType();
   }
 
-  mixin BuildableT!GtkListStore;
-  mixin TreeDragDestT!GtkListStore;
-  mixin TreeDragSourceT!GtkListStore;
-  mixin TreeModelT!GtkListStore;
-  mixin TreeSortableT!GtkListStore;
+  mixin BuildableT!();
+  mixin TreeDragDestT!();
+  mixin TreeDragSourceT!();
+  mixin TreeModelT!();
+  mixin TreeSortableT!();
 
   /**
    * Creates a new `GtkListStore`.

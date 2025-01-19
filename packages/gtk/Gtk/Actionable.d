@@ -1,5 +1,6 @@
 module Gtk.Actionable;
 
+public import Gtk.ActionableIfaceProxy;
 import GLib.Variant;
 import Gid.gid;
 import Gtk.Types;

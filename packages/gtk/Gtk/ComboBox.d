@@ -2,7 +2,6 @@ module Gtk.ComboBox;
 
 import GObject.DClosure;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Device;
 import Gid.gid;
 import Gtk.Accessible;
@@ -93,8 +92,8 @@ class ComboBox : Widget, CellEditable, CellLayout
     return getType();
   }
 
-  mixin CellEditableT!GtkComboBox;
-  mixin CellLayoutT!GtkComboBox;
+  mixin CellEditableT!();
+  mixin CellLayoutT!();
 
   /**
    * Creates a new empty `GtkComboBox`.
@@ -538,10 +537,10 @@ class ComboBox : Widget, CellEditable, CellLayout
    * Connect to Activate signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectActivate(ActivateCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectActivate(ActivateCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -552,7 +551,7 @@ class ComboBox : Widget, CellEditable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("activate", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("activate", closure, after);
   }
 
   /**
@@ -568,10 +567,10 @@ class ComboBox : Widget, CellEditable, CellLayout
    * Connect to Changed signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectChanged(ChangedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectChanged(ChangedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -582,7 +581,7 @@ class ComboBox : Widget, CellEditable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("changed", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("changed", closure, after);
   }
 
   /**
@@ -624,10 +623,10 @@ class ComboBox : Widget, CellEditable, CellLayout
    * Connect to FormatEntryText signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectFormatEntryText(FormatEntryTextCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectFormatEntryText(FormatEntryTextCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -640,7 +639,7 @@ class ComboBox : Widget, CellEditable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("format-entry-text", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("format-entry-text", closure, after);
   }
 
   /**
@@ -656,10 +655,10 @@ class ComboBox : Widget, CellEditable, CellLayout
    * Connect to MoveActive signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectMoveActive(MoveActiveCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectMoveActive(MoveActiveCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -671,7 +670,7 @@ class ComboBox : Widget, CellEditable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("move-active", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("move-active", closure, after);
   }
 
   /**
@@ -687,10 +686,10 @@ class ComboBox : Widget, CellEditable, CellLayout
    * Connect to Popdown signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPopdown(PopdownCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPopdown(PopdownCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -703,7 +702,7 @@ class ComboBox : Widget, CellEditable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("popdown", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("popdown", closure, after);
   }
 
   /**
@@ -718,10 +717,10 @@ class ComboBox : Widget, CellEditable, CellLayout
    * Connect to Popup signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectPopup(PopupCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectPopup(PopupCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -732,6 +731,6 @@ class ComboBox : Widget, CellEditable, CellLayout
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("popup", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("popup", closure, after);
   }
 }

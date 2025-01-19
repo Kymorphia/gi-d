@@ -3,7 +3,6 @@ module Gtk.CellRenderer;
 import GObject.DClosure;
 import GObject.InitiallyUnowned;
 import GObject.ObjectG;
-import GObject.Types;
 import Gdk.Event;
 import Gdk.Rectangle;
 import Gid.gid;
@@ -446,10 +445,10 @@ class CellRenderer : InitiallyUnowned
    * Connect to EditingCanceled signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEditingCanceled(EditingCanceledCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEditingCanceled(EditingCanceledCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -460,7 +459,7 @@ class CellRenderer : InitiallyUnowned
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("editing-canceled", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("editing-canceled", closure, after);
   }
 
   /**
@@ -500,10 +499,10 @@ class CellRenderer : InitiallyUnowned
    * Connect to EditingStarted signal.
    * Params:
    *   dlg = signal delegate callback to connect
-   *   flags = connection flags
+   *   after = Yes.After to execute callback after default handler, No.After to execute before (default)
    * Returns: Signal ID
    */
-  ulong connectEditingStarted(EditingStartedCallback dlg, ConnectFlags flags = ConnectFlags.Default)
+  ulong connectEditingStarted(EditingStartedCallback dlg, Flag!"After" after = No.After)
   {
     extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams, const(GValue)* _paramVals, void* _invocHint, void* _marshalData)
     {
@@ -516,6 +515,6 @@ class CellRenderer : InitiallyUnowned
     }
 
     auto closure = new DClosure(dlg, &_cmarshal);
-    return connectSignalClosure("editing-started", closure, (flags & ConnectFlags.After) != 0);
+    return connectSignalClosure("editing-started", closure, after);
   }
 }
