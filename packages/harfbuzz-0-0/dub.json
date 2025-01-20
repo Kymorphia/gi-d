@@ -1,0 +1,15 @@
+{
+  "name": "harfbuzz-0-0",
+  "version": "0.9.0",
+  "description": "HarfBuzz library D binding",
+  "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
+  "authors": ["Element Green <element@kymorphia.com>"],
+  "license": "MIT",
+  "targetType": "dynamicLibrary",
+  "importPaths": [".", ".."],
+  "sourcePaths": ["HarfBuzz"],
+  "dependencies": {
+    "gid:freetype2-2-0": "==0.9.0",
+    "gid:glib-2-0": "==0.9.0"
+  }
+}

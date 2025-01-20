@@ -1,14 +1,14 @@
 {
-  "name": "graphene",
-  "version": "1.0.0",
-  "description": "Graphene library gi-d binding",
-  "copyright": "Copyright © 2024, Kymorphia, PBC",
+  "name": "graphene-1-0",
+  "version": "0.9.0",
+  "description": "Graphene library D binding",
+  "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
   "license": "MIT",
   "targetType": "dynamicLibrary",
   "importPaths": [".", ".."],
   "sourcePaths": ["Graphene"],
   "dependencies": {
-    "gid:glib": "*"
+    "gid:glib-2-0": "==0.9.0"
   }
 }

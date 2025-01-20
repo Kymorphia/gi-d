@@ -1,0 +1,15 @@
+{
+  "name": "gtk-4-0",
+  "version": "0.9.0",
+  "description": "Gtk library D binding",
+  "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
+  "authors": ["Element Green <element@kymorphia.com>"],
+  "license": "MIT",
+  "targetType": "dynamicLibrary",
+  "importPaths": [".", ".."],
+  "sourcePaths": ["Gtk"],
+  "dependencies": {
+    "gid:gdk-4-0": "==0.9.0",
+    "gid:gsk-4-0": "==0.9.0"
+  }
+}

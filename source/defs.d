@@ -299,9 +299,9 @@ class Defs
           break;
         case "info":
           if (curRepo)
-            curRepo.dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2].to!string;
+            curRepo.dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2];
           else
-            dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2].to!string;
+            dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2];
           break;
         case "kind":
           TypeKind kind;
@@ -318,7 +318,7 @@ class Defs
           curRepo.kindSubs[cmdTokens[1]] = kind;
           break;
         case "merge":
-          curRepo.merge = cmdTokens[1];
+          curRepo.mergeRepoName = cmdTokens[1];
           break;
         case "namespace":
           curRepo = new Repo(this, null);
@@ -473,16 +473,17 @@ class Defs
       if (auto val = dubInfo.get(key, null))
       {
         if (key == "authors")
-          output ~= `  "authors": [` ~ val.map!(x => `"` ~ x ~ `"`).join(", ") ~ "],\n";
+          output ~= `  "authors": [` ~ val.map!(x => `"` ~ x.to!string ~ `"`).join(", ") ~ "],\n";
         else
-          output ~= `  "` ~ key ~ `": "` ~ val[0] ~ "\",\n";
+          output ~= `  "` ~ key.to!string ~ `": "` ~ val[0].to!string ~ "\",\n";
       }
     }
 
     output ~= `  "targetType": "none",` ~ "\n";
 	  output ~= `  "dependencies": {` ~ "\n";
 
-    auto sortedRepos = repos.filter!(x => x.merge.empty).map!(x => x.name.to!string.toLower).array.sort;
+    auto sortedRepos = repos.filter!(x => x.mergeRepoName.empty).map!(x => x.dubPackageName.to!string.toLower)
+      .array.sort;
 
     output ~= sortedRepos.map!(x => `    ":` ~ x ~ `": "*"`).join(",\n");
     output ~= "\n  },\n";
@@ -844,7 +845,7 @@ class Defs
   bool[dstring] reservedWords; /// Reserved words (_ appended)
   dstring[dstring] cTypeSubs; /// Global C type substitutions
   dstring[dstring] dTypeSubs; /// Global D type substitutions
-  string[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
+  dstring[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
   XmlPatch[] patches; /// Global XML patches specified in definitions file
   Repo[] repos; /// Gir repositories
   Repo[dstring] repoHash; /// Hash of repositories by namespace

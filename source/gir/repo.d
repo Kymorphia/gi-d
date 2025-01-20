@@ -240,6 +240,20 @@ final class Repo : Base
   /// Fixup dependent data
   void fixup()
   {
+    if (auto dubName = dubInfo.get("name", null))
+      dubPackageName = dubName[0];
+    else
+    {
+      dubPackageName = namespace.toLower ~ "-"d ~ nsVersion.replace(".", "-");
+      dubInfo["name"] = [dubPackageName];
+    }
+
+    if ("version" !in dubInfo)
+      dubInfo["version"] = defs.dubInfo.get("version", ["0.0.0"d]);
+
+    if ("description" !in dubInfo)
+      dubInfo["description"] ~= namespace ~ " library D binding";
+
     foreach (al; aliases) // Fixup aliases
     {
       al.fixup;
@@ -333,8 +347,13 @@ final class Repo : Base
     if (namespace.empty)
       throw new Exception("Repo '" ~ filename ~ "' has empty namespace");
 
-    if (!merge.empty && merge !in defs.repoHash)
-      throw new Exception("Repo '" ~ merge.to!string ~ "' not found to merge '" ~ namespace.to!string ~ "' into");
+    if (mergeRepoName)
+    {
+      if (mergeRepoName !in defs.repoHash)
+        throw new Exception("Repo '" ~ mergeRepoName.to!string ~ "' not found to merge '" ~ namespace.to!string ~ "' into");
+
+      mergeRepo = defs.repoHash[mergeRepoName];
+    }
 
     foreach (al; aliases) // Verify aliases
     {
@@ -393,8 +412,8 @@ final class Repo : Base
    */
   void writePackage(string basePath = "packages")
   {
-    auto packageName = (!merge.empty ? merge : namespace).toLower.to!string; // Use the package of the merge namespace if merge specified
-    auto packagePath = buildPath(basePath, packageName);
+    auto pkgName = (mergeRepo ? mergeRepo : this).dubPackageName.to!string; // Use the package of the merge namespace if merge specified
+    auto packagePath = buildPath(basePath, pkgName);
     auto sourcePath = buildPath(packagePath, namespace.to!string);
     auto cSourcePath = buildPath(sourcePath, "c");
 
@@ -442,7 +461,7 @@ final class Repo : Base
       }
     }
 
-    if (merge.empty)
+    if (!mergeRepo)
       writeDubJsonFile(buildPath(packagePath, "dub.json"));
   }
 
@@ -475,21 +494,15 @@ final class Repo : Base
   private void writeDubJsonFile(string path)
   {
     string output = "{\n";
-    output ~= `  "name": "` ~ namespace.toLower.to!string ~ "\",\n";
-    output ~= `  "version": "` ~ nsVersion.to!string ~ "." ~ (buildVersion.empty ? "0" : buildVersion.to!string)
-      ~ "\",\n";
 
-    if ("description" !in dubInfo)
-      dubInfo["description"] ~= namespace.to!string ~ " library gi-d binding";
-
-    foreach (key; ["description", "copyright", "authors", "license"])
+    foreach (key; ["name", "version", "description", "copyright", "authors", "license"])
     {
       if (auto val = dubInfo.get(key, defs.dubInfo.get(key, null))) // Fall back to master dub info
       {
         if (key == "authors")
-          output ~= `  "authors": [` ~ val.map!(x => `"` ~ x ~ `"`).join(", ") ~ "],\n";
+          output ~= `  "authors": [` ~ val.map!(x => `"` ~ x.to!string ~ `"`).join(", ") ~ "],\n";
         else
-          output ~= `  "` ~ key ~ `": "` ~ val[0] ~ "\",\n";
+          output ~= `  "` ~ key.to!string ~ `": "` ~ val[0].to!string ~ "\",\n";
       }
     }
 
@@ -497,20 +510,24 @@ final class Repo : Base
     output ~= `  "importPaths": [".", ".."],` ~ "\n";
 
     // Include merged repos in sourcePaths list
-    auto namespaces = [namespace] ~ defs.repos.filter!(x => x.merge == namespace).map!(x => x.namespace).array;
+    auto namespaces = [namespace] ~ defs.repos.filter!(x => x.mergeRepoName == namespace).map!(x => x.namespace).array;
     output ~= `  "sourcePaths": [` ~ namespaces.map!(ns => '"' ~ ns.to!string ~ '"').join(", ") ~ `]`;
 
     if (!includes.empty)
     { // Use merge repo names as needed
       string depFunc(Include inc)
       {
-        string s = `    "gid:`;
-        auto incRepo = defs.repoHash.get(inc.name, null);
-        s ~= ((incRepo && incRepo.merge) ? incRepo.merge : inc.name).to!string.toLower;
-        return s ~ `": "*"`;
+        if (auto incRepo = defs.repoHash.get(inc.name, null))
+        {
+          auto repo = incRepo.mergeRepo ? incRepo.mergeRepo : incRepo;
+          auto versionStr = repo.dubInfo.get("version", null) ? ("==" ~ dubInfo["version"][0]) : "*";
+          return `    "gid:` ~ repo.dubPackageName.to!string ~ `": "` ~ versionStr.to!string ~ `"`;
+        }
+
+        return `    "gid:` ~ inc.name.to!string.toLower ~ `": "*"`;
       }
 
-      // Get depencies, remove duplicates, and sort
+      // Get dependencies, remove duplicates, and sort
       auto deps = includes.map!depFunc.assocArray(true.repeat).keys.array.sort;
 
       output ~= ",\n  \"dependencies\": {\n" ~ deps.join(",\n") ~ "\n  }";
@@ -863,8 +880,8 @@ final class Repo : Base
   string defsFilename; /// Defs filename responsible for loading this Repo object
 
   string filename; /// Gir filename
-  dstring packageName; /// Package name
-  dstring repoVersion; /// Version of the repo
+  dstring packageName; /// Gir package name
+  dstring repoVersion; /// Gir repository version (usually, if not always, 1.2)
 
   dstring namespace; /// Name space of symbols in gir file
   dstring nsVersion; /// Version of the namespace
@@ -872,6 +889,8 @@ final class Repo : Base
   dstring sharedLibrary; /// Namespace shared library (multiple values separated by commas)
   dstring identifierPrefixes; /// Prefix to identifiers
   dstring symbolPrefixes; /// C symbol prefix
+
+  dstring dubPackageName; /// Dub package name
 
   Alias[] aliases; /// Aliases
   Constant[] constants; /// Constants
@@ -889,8 +908,9 @@ final class Repo : Base
   dstring[dstring] dTypeSubs; /// D type substitutions defined in the definitions file
   TypeKind[dstring] kindSubs; /// Type kind substitutions defined in the definitions file
   DefCode[dstring] structDefCode; /// Code defined in definition file for structures
-  dstring merge; /// Package to merge this repo into identified by its namespace
-  string[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
+  dstring mergeRepoName; /// Package to merge this repo into identified by its namespace
+  Repo mergeRepo; /// Repo object to merge this repo into
+  dstring[][string] dubInfo; /// Dub JSON file info ("name", "description", "copyright", "authors", "license"), only "authors" uses multiple values
 
   TypeNode[dstring] typeObjectHash; /// Hash of type objects by name (Alias, Func (callback), Constant, Enumeration, or Structure)
 
