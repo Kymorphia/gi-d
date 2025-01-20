@@ -2068,11 +2068,11 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    *   of mnemonic labels; free this list with [GLib.List.free] when you
    *   are done with it.
    */
-  List!(Widget, GtkWidget) listMnemonicLabels()
+  List!(Widget) listMnemonicLabels()
   {
     GList* _cretval;
     _cretval = gtk_widget_list_mnemonic_labels(cast(GtkWidget*)cPtr);
-    List!(Widget, GtkWidget) _retval = new List!(Widget, GtkWidget)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(Widget) _retval = new List!(Widget)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

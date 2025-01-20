@@ -193,7 +193,7 @@ template ToplevelT()
    * Params:
    *   surfaces = A list of textures to use as icon, of different sizes
    */
-  override void setIconList(List!(Texture, GdkTexture) surfaces)
+  override void setIconList(List!(Texture) surfaces)
   {
     gdk_toplevel_set_icon_list(cast(GdkToplevel*)cPtr, surfaces.cPtr);
   }

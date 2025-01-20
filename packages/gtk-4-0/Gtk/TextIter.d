@@ -1024,11 +1024,11 @@ class TextIter : Boxed
    * The returned list is not in any meaningful order.
    * Returns: list of `GtkTextMark`
    */
-  SList!(TextMark, GtkTextMark) getMarks()
+  SList!(TextMark) getMarks()
   {
     GSList* _cretval;
     _cretval = gtk_text_iter_get_marks(cast(GtkTextIter*)cPtr);
-    SList!(TextMark, GtkTextMark) _retval = new SList!(TextMark, GtkTextMark)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(TextMark) _retval = new SList!(TextMark)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 
@@ -1091,11 +1091,11 @@ class TextIter : Boxed
    * Returns: list of
    *   `GtkTextTag`
    */
-  SList!(TextTag, GtkTextTag) getTags()
+  SList!(TextTag) getTags()
   {
     GSList* _cretval;
     _cretval = gtk_text_iter_get_tags(cast(GtkTextIter*)cPtr);
-    SList!(TextTag, GtkTextTag) _retval = new SList!(TextTag, GtkTextTag)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(TextTag) _retval = new SList!(TextTag)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 
@@ -1131,11 +1131,11 @@ class TextIter : Boxed
    * Returns: tags
    *   toggled at this point
    */
-  SList!(TextTag, GtkTextTag) getToggledTags(bool toggledOn)
+  SList!(TextTag) getToggledTags(bool toggledOn)
   {
     GSList* _cretval;
     _cretval = gtk_text_iter_get_toggled_tags(cast(GtkTextIter*)cPtr, toggledOn);
-    SList!(TextTag, GtkTextTag) _retval = new SList!(TextTag, GtkTextTag)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(TextTag) _retval = new SList!(TextTag)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

@@ -90,11 +90,11 @@ class MarkupParseContext : Boxed
    * processed.
    * Returns: the element stack, which must not be modified
    */
-  SList!(string, char*) getElementStack()
+  SList!(string) getElementStack()
   {
     const(GSList)* _cretval;
     _cretval = g_markup_parse_context_get_element_stack(cast(GMarkupParseContext*)cPtr);
-    SList!(string, char*) _retval = new SList!(string, char*)(cast(GSList*)_cretval, GidOwnership.None);
+    SList!(string) _retval = new SList!(string)(cast(GSList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

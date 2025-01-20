@@ -169,11 +169,11 @@ template CellLayoutT()
    *   been newly allocated and should be freed with [GLib.List.free]
    *   when no longer needed.
    */
-  override List!(CellRenderer, GtkCellRenderer) getCells()
+  override List!(CellRenderer) getCells()
   {
     GList* _cretval;
     _cretval = gtk_cell_layout_get_cells(cast(GtkCellLayout*)cPtr);
-    List!(CellRenderer, GtkCellRenderer) _retval = new List!(CellRenderer, GtkCellRenderer)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(CellRenderer) _retval = new List!(CellRenderer)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

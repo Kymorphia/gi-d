@@ -15,7 +15,7 @@ import GLib.Types;
 /**
  * Contains the public fields of a pointer array.
  */
-class PtrArray(T, CT)
+class PtrArray(T)
 {
   GPtrArray* cPtr; // The pointer array
   GidOwnership ownership; // Ownership of the array and data
@@ -65,14 +65,14 @@ class PtrArray(T, CT)
     g_ptr_array_remove_index(cPtr, cPtr.len - 1);
   }
 
-  PtrArray!(T, CT) save()
+  PtrArray!(T) save()
   {
     GPtrArray* newArray;
 
     foreach (i; 0 .. cPtr.len)
       g_ptr_array_add(cPtr, containerCopyItem!T(cPtr.pdata[i]));
 
-    return new PtrArray!(T, CT)(newArray, GidOwnership.Full);
+    return new PtrArray!(T)(newArray, GidOwnership.Full);
   }
 
   T opIndex(size_t index)

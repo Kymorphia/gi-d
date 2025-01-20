@@ -158,7 +158,7 @@ interface CellLayout
    *   been newly allocated and should be freed with [GLib.List.free]
    *   when no longer needed.
    */
-  List!(CellRenderer, GtkCellRenderer) getCells();
+  List!(CellRenderer) getCells();
 
   /**
    * Adds the cell to the end of cell_layout. If expand is %FALSE, then the

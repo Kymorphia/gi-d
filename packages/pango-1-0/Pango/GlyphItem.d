@@ -108,12 +108,12 @@ class GlyphItem : Boxed
    *   the elements using [Pango.GlyphItem.free], the list using
    *   [GLib.SList.free].
    */
-  SList!(GlyphItem, PangoGlyphItem) applyAttrs(string text, AttrList list)
+  SList!(GlyphItem) applyAttrs(string text, AttrList list)
   {
     GSList* _cretval;
     const(char)* _text = text.toCString(false);
     _cretval = pango_glyph_item_apply_attrs(cast(PangoGlyphItem*)cPtr, _text, list ? cast(PangoAttrList*)list.cPtr(false) : null);
-    SList!(GlyphItem, PangoGlyphItem) _retval = new SList!(GlyphItem, PangoGlyphItem)(cast(GSList*)_cretval, GidOwnership.Full);
+    SList!(GlyphItem) _retval = new SList!(GlyphItem)(cast(GSList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

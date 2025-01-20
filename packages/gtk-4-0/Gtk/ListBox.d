@@ -235,11 +235,11 @@ class ListBox : Widget
    * Returns: A `GList` containing the `GtkWidget` for each selected child.
    *   Free with [GLib.List.free] when done.
    */
-  List!(ListBoxRow, GtkListBoxRow) getSelectedRows()
+  List!(ListBoxRow) getSelectedRows()
   {
     GList* _cretval;
     _cretval = gtk_list_box_get_selected_rows(cast(GtkListBox*)cPtr);
-    List!(ListBoxRow, GtkListBoxRow) _retval = new List!(ListBoxRow, GtkListBoxRow)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(ListBoxRow) _retval = new List!(ListBoxRow)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

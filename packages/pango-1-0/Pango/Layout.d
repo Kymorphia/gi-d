@@ -455,11 +455,11 @@ class Layout : ObjectG
    *   `PangoLayout` and must be used with care. It will become invalid on any
    *   change to the layout's text or properties.
    */
-  SList!(LayoutLine, PangoLayoutLine) getLines()
+  SList!(LayoutLine) getLines()
   {
     GSList* _cretval;
     _cretval = pango_layout_get_lines(cast(PangoLayout*)cPtr);
-    SList!(LayoutLine, PangoLayoutLine) _retval = new SList!(LayoutLine, PangoLayoutLine)(cast(GSList*)_cretval, GidOwnership.None);
+    SList!(LayoutLine) _retval = new SList!(LayoutLine)(cast(GSList*)_cretval, GidOwnership.None);
     return _retval;
   }
 
@@ -474,11 +474,11 @@ class Layout : ObjectG
    *   change to the layout's text or properties. No changes should be made to
    *   the lines.
    */
-  SList!(LayoutLine, PangoLayoutLine) getLinesReadonly()
+  SList!(LayoutLine) getLinesReadonly()
   {
     GSList* _cretval;
     _cretval = pango_layout_get_lines_readonly(cast(PangoLayout*)cPtr);
-    SList!(LayoutLine, PangoLayoutLine) _retval = new SList!(LayoutLine, PangoLayoutLine)(cast(GSList*)_cretval, GidOwnership.None);
+    SList!(LayoutLine) _retval = new SList!(LayoutLine)(cast(GSList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

@@ -563,11 +563,11 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
    * Returns: A list of
    *   support image formats.
    */
-  static SList!(PixbufFormat, GdkPixbufFormat) getFormats()
+  static SList!(PixbufFormat) getFormats()
   {
     GSList* _cretval;
     _cretval = gdk_pixbuf_get_formats();
-    SList!(PixbufFormat, GdkPixbufFormat) _retval = new SList!(PixbufFormat, GdkPixbufFormat)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(PixbufFormat) _retval = new SList!(PixbufFormat)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

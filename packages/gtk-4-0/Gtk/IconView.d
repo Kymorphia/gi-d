@@ -501,11 +501,11 @@ class IconView : Widget, CellLayout, Scrollable
 
    * Deprecated: Use [Gtk.GridView] instead
    */
-  List!(TreePath, GtkTreePath) getSelectedItems()
+  List!(TreePath) getSelectedItems()
   {
     GList* _cretval;
     _cretval = gtk_icon_view_get_selected_items(cast(GtkIconView*)cPtr);
-    List!(TreePath, GtkTreePath) _retval = new List!(TreePath, GtkTreePath)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(TreePath) _retval = new List!(TreePath)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

@@ -128,12 +128,12 @@ class TreeSelection : ObjectG
 
    * Deprecated: Use GtkListView or GtkColumnView
    */
-  List!(TreePath, GtkTreePath) getSelectedRows(out TreeModel model)
+  List!(TreePath) getSelectedRows(out TreeModel model)
   {
     GList* _cretval;
     GtkTreeModel* _model;
     _cretval = gtk_tree_selection_get_selected_rows(cast(GtkTreeSelection*)cPtr, &_model);
-    List!(TreePath, GtkTreePath) _retval = new List!(TreePath, GtkTreePath)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(TreePath) _retval = new List!(TreePath)(cast(GList*)_cretval, GidOwnership.Full);
     model = _model ? ObjectG.getDObject!TreeModel(_model, false) : null;
     return _retval;
   }

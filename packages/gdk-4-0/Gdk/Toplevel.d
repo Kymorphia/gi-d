@@ -158,7 +158,7 @@ interface Toplevel
    * Params:
    *   surfaces = A list of textures to use as icon, of different sizes
    */
-  void setIconList(List!(Texture, GdkTexture) surfaces);
+  void setIconList(List!(Texture) surfaces);
 
   /**
    * Sets the toplevel to be modal.

@@ -69,11 +69,11 @@ class WindowGroup : ObjectG
    * Returns: A
    *   newly-allocated list of windows inside the group.
    */
-  List!(Window, GtkWindow) listWindows()
+  List!(Window) listWindows()
   {
     GList* _cretval;
     _cretval = gtk_window_group_list_windows(cast(GtkWindowGroup*)cPtr);
-    List!(Window, GtkWindow) _retval = new List!(Window, GtkWindow)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(Window) _retval = new List!(Window)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

@@ -4,7 +4,7 @@ import GLib.Types;
 /**
  * Array finite RandomAccessRange template for accessing a GArray.
  */
-class ArrayG(T, CT)
+class ArrayG(T)
 {
   GArray* cPtr; // The GArray
   long elemSize; // The size of each array element
@@ -56,14 +56,14 @@ class ArrayG(T, CT)
     g_array_remove_index(cPtr, cPtr.len - 1);
   }
 
-  ArrayG!(T, CT) save()
+  ArrayG!(T) save()
   {
     auto newArray = g_array_sized_new(false, false, elemSize, cPtr.len);
 
     foreach (i; 0 .. cPtr.len)
       g_ptr_array_add(newArray, containerCopyItem!T(&cPtr.data[i * elemSize]));
 
-    return new ArrayG!(T, CT)(newArray, GidOwnership.Full);
+    return new ArrayG!(T)(newArray, GidOwnership.Full);
   }
 
   T opIndex(size_t index)

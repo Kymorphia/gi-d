@@ -57,7 +57,7 @@ class AppLaunchContext : ObjectG
    *   files = a #GList of #GFile objects
    * Returns: a display string for the display.
    */
-  string getDisplay(AppInfo info, List!(File, GFile) files)
+  string getDisplay(AppInfo info, List!(File) files)
   {
     char* _cretval;
     _cretval = g_app_launch_context_get_display(cast(GAppLaunchContext*)cPtr, info ? cast(GAppInfo*)(cast(ObjectG)info).cPtr(false) : null, files.cPtr);
@@ -107,7 +107,7 @@ class AppLaunchContext : ObjectG
    * Returns: a startup notification ID for the application, or %NULL if
    *   not supported.
    */
-  string getStartupNotifyId(AppInfo info, List!(File, GFile) files)
+  string getStartupNotifyId(AppInfo info, List!(File) files)
   {
     char* _cretval;
     _cretval = g_app_launch_context_get_startup_notify_id(cast(GAppLaunchContext*)cPtr, info ? cast(GAppInfo*)(cast(ObjectG)info).cPtr(false) : null, files.cPtr);

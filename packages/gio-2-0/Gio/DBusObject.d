@@ -41,7 +41,7 @@ interface DBusObject
    *   The returned list must be freed by [GLib.List.free] after each element has been freed
    *   with [GObject.ObjectG.unref].
    */
-  List!(DBusInterface, GDBusInterface) getInterfaces();
+  List!(DBusInterface) getInterfaces();
 
   /**
    * Gets the object path for object.

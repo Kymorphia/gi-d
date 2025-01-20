@@ -106,11 +106,11 @@ interface AppInfo
    * the `Hidden` key set.
    * Returns: a newly allocated #GList of references to #GAppInfos.
    */
-  static List!(AppInfo, GAppInfo) getAll()
+  static List!(AppInfo) getAll()
   {
     GList* _cretval;
     _cretval = g_app_info_get_all();
-    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(AppInfo) _retval = new List!(AppInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -124,12 +124,12 @@ interface AppInfo
    * Returns: #GList of #GAppInfos
    *   for given content_type or %NULL on error.
    */
-  static List!(AppInfo, GAppInfo) getAllForType(string contentType)
+  static List!(AppInfo) getAllForType(string contentType)
   {
     GList* _cretval;
     const(char)* _contentType = contentType.toCString(false);
     _cretval = g_app_info_get_all_for_type(_contentType);
-    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(AppInfo) _retval = new List!(AppInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -268,12 +268,12 @@ interface AppInfo
    * Returns: #GList of #GAppInfos
    *   for given content_type or %NULL on error.
    */
-  static List!(AppInfo, GAppInfo) getFallbackForType(string contentType)
+  static List!(AppInfo) getFallbackForType(string contentType)
   {
     GList* _cretval;
     const(char)* _contentType = contentType.toCString(false);
     _cretval = g_app_info_get_fallback_for_type(_contentType);
-    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(AppInfo) _retval = new List!(AppInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -289,12 +289,12 @@ interface AppInfo
    * Returns: #GList of #GAppInfos
    *   for given content_type or %NULL on error.
    */
-  static List!(AppInfo, GAppInfo) getRecommendedForType(string contentType)
+  static List!(AppInfo) getRecommendedForType(string contentType)
   {
     GList* _cretval;
     const(char)* _contentType = contentType.toCString(false);
     _cretval = g_app_info_get_recommended_for_type(_contentType);
-    List!(AppInfo, GAppInfo) _retval = new List!(AppInfo, GAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(AppInfo) _retval = new List!(AppInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -528,7 +528,7 @@ interface AppInfo
    *   context = a #GAppLaunchContext or %NULL
    * Returns: %TRUE on successful launch, %FALSE otherwise.
    */
-  bool launch(List!(File, GFile) files, AppLaunchContext context);
+  bool launch(List!(File) files, AppLaunchContext context);
 
   /**
    * Launches the application. This passes the uris to the launched application
@@ -546,7 +546,7 @@ interface AppInfo
    *   context = a #GAppLaunchContext or %NULL
    * Returns: %TRUE on successful launch, %FALSE otherwise.
    */
-  bool launchUris(List!(string, char*) uris, AppLaunchContext context);
+  bool launchUris(List!(string) uris, AppLaunchContext context);
 
   /**
    * Async version of [Gio.AppInfo.launchUris].
@@ -560,7 +560,7 @@ interface AppInfo
    *   cancellable = a #GCancellable
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  void launchUrisAsync(List!(string, char*) uris, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback);
+  void launchUrisAsync(List!(string) uris, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback);
 
   /**
    * Finishes a [Gio.AppInfo.launchUrisAsync] operation.

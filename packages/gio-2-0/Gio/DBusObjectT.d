@@ -43,11 +43,11 @@ template DBusObjectT()
    *   The returned list must be freed by [GLib.List.free] after each element has been freed
    *   with [GObject.ObjectG.unref].
    */
-  override List!(DBusInterface, GDBusInterface) getInterfaces()
+  override List!(DBusInterface) getInterfaces()
   {
     GList* _cretval;
     _cretval = g_dbus_object_get_interfaces(cast(GDBusObject*)cPtr);
-    List!(DBusInterface, GDBusInterface) _retval = new List!(DBusInterface, GDBusInterface)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(DBusInterface) _retval = new List!(DBusInterface)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

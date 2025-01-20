@@ -96,11 +96,11 @@ class IOExtensionPoint
    *   #GIOExtensions. The list is owned by GIO and should not be
    *   modified.
    */
-  List!(IOExtension, GIOExtension) getExtensions()
+  List!(IOExtension) getExtensions()
   {
     GList* _cretval;
     _cretval = g_io_extension_point_get_extensions(cast(GIOExtensionPoint*)cPtr);
-    List!(IOExtension, GIOExtension) _retval = new List!(IOExtension, GIOExtension)(cast(GList*)_cretval, GidOwnership.None);
+    List!(IOExtension) _retval = new List!(IOExtension)(cast(GList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

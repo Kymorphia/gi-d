@@ -152,11 +152,11 @@ class Window : Widget, Native, Root, ShortcutManager
    * Returns: list of
    *   toplevel widgets
    */
-  static List!(Widget, GtkWidget) listToplevels()
+  static List!(Widget) listToplevels()
   {
     GList* _cretval;
     _cretval = gtk_window_list_toplevels();
-    List!(Widget, GtkWidget) _retval = new List!(Widget, GtkWidget)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(Widget) _retval = new List!(Widget)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

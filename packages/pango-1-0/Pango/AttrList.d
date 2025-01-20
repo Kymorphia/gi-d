@@ -145,11 +145,11 @@ class AttrList : Boxed
    *   call [Pango.Attribute.destroy] on each value and
    *   [GLib.SList.free] on the list.
    */
-  SList!(Attribute, PangoAttribute) getAttributes()
+  SList!(Attribute) getAttributes()
   {
     GSList* _cretval;
     _cretval = pango_attr_list_get_attributes(cast(PangoAttrList*)cPtr);
-    SList!(Attribute, PangoAttribute) _retval = new SList!(Attribute, PangoAttribute)(cast(GSList*)_cretval, GidOwnership.Full);
+    SList!(Attribute) _retval = new SList!(Attribute)(cast(GSList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

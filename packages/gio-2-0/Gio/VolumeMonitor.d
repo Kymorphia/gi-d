@@ -109,11 +109,11 @@ class VolumeMonitor : ObjectG
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: a #GList of connected #GDrive objects.
    */
-  List!(Drive, GDrive) getConnectedDrives()
+  List!(Drive) getConnectedDrives()
   {
     GList* _cretval;
     _cretval = g_volume_monitor_get_connected_drives(cast(GVolumeMonitor*)cPtr);
-    List!(Drive, GDrive) _retval = new List!(Drive, GDrive)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(Drive) _retval = new List!(Drive)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -139,11 +139,11 @@ class VolumeMonitor : ObjectG
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: a #GList of #GMount objects.
    */
-  List!(Mount, GMount) getMounts()
+  List!(Mount) getMounts()
   {
     GList* _cretval;
     _cretval = g_volume_monitor_get_mounts(cast(GVolumeMonitor*)cPtr);
-    List!(Mount, GMount) _retval = new List!(Mount, GMount)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(Mount) _retval = new List!(Mount)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -169,11 +169,11 @@ class VolumeMonitor : ObjectG
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: a #GList of #GVolume objects.
    */
-  List!(Volume, GVolume) getVolumes()
+  List!(Volume) getVolumes()
   {
     GList* _cretval;
     _cretval = g_volume_monitor_get_volumes(cast(GVolumeMonitor*)cPtr);
-    List!(Volume, GVolume) _retval = new List!(Volume, GVolume)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(Volume) _retval = new List!(Volume)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

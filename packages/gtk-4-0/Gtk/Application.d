@@ -214,11 +214,11 @@ class Application : DGioApplication
    * Returns: a `GList` of `GtkWindow`
    *   instances
    */
-  List!(Window, GtkWindow) getWindows()
+  List!(Window) getWindows()
   {
     GList* _cretval;
     _cretval = gtk_application_get_windows(cast(GtkApplication*)cPtr);
-    List!(Window, GtkWindow) _retval = new List!(Window, GtkWindow)(cast(GList*)_cretval, GidOwnership.None);
+    List!(Window) _retval = new List!(Window)(cast(GList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

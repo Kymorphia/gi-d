@@ -166,11 +166,11 @@ class RecentManager : ObjectG
    *   [Gtk.RecentInfo.unref] on each item inside the list, and then
    *   free the list itself using [GLib.List.free].
    */
-  List!(RecentInfo, GtkRecentInfo) getItems()
+  List!(RecentInfo) getItems()
   {
     GList* _cretval;
     _cretval = gtk_recent_manager_get_items(cast(GtkRecentManager*)cPtr);
-    List!(RecentInfo, GtkRecentInfo) _retval = new List!(RecentInfo, GtkRecentInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(RecentInfo) _retval = new List!(RecentInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

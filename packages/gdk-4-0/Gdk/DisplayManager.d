@@ -104,11 +104,11 @@ class DisplayManager : ObjectG
    * Returns: a newly
    *   allocated `GSList` of `GdkDisplay` objects
    */
-  SList!(Display, GdkDisplay) listDisplays()
+  SList!(Display) listDisplays()
   {
     GSList* _cretval;
     _cretval = gdk_display_manager_list_displays(cast(GdkDisplayManager*)cPtr);
-    SList!(Display, GdkDisplay) _retval = new SList!(Display, GdkDisplay)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(Display) _retval = new SList!(Display)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

@@ -391,11 +391,11 @@ class PaperSize : Boxed
    * Returns: a newly allocated list of newly
    *   allocated `GtkPaperSize` objects
    */
-  static List!(PaperSize, GtkPaperSize) getPaperSizes(bool includeCustom)
+  static List!(PaperSize) getPaperSizes(bool includeCustom)
   {
     GList* _cretval;
     _cretval = gtk_paper_size_get_paper_sizes(includeCustom);
-    List!(PaperSize, GtkPaperSize) _retval = new List!(PaperSize, GtkPaperSize)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(PaperSize) _retval = new List!(PaperSize)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 }

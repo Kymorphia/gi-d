@@ -241,11 +241,11 @@ class FlowBox : Widget, Orientable
    * Returns: A `GList` containing the `GtkWidget` for each selected child.
    *   Free with [GLib.List.free] when done.
    */
-  List!(FlowBoxChild, GtkFlowBoxChild) getSelectedChildren()
+  List!(FlowBoxChild) getSelectedChildren()
   {
     GList* _cretval;
     _cretval = gtk_flow_box_get_selected_children(cast(GtkFlowBox*)cPtr);
-    List!(FlowBoxChild, GtkFlowBoxChild) _retval = new List!(FlowBoxChild, GtkFlowBoxChild)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(FlowBoxChild) _retval = new List!(FlowBoxChild)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

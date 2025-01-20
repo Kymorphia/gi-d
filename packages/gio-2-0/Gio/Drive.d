@@ -189,7 +189,7 @@ interface Drive
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: #GList containing any #GVolume objects on the given drive.
    */
-  List!(Volume, GVolume) getVolumes();
+  List!(Volume) getVolumes();
 
   /**
    * Checks if the drive has media. Note that the OS may not be polling

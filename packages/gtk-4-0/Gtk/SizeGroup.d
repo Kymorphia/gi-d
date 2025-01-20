@@ -138,11 +138,11 @@ class SizeGroup : ObjectG, Buildable
    * Returns: a `GSList` of
    *   widgets. The list is owned by GTK and should not be modified.
    */
-  SList!(Widget, GtkWidget) getWidgets()
+  SList!(Widget) getWidgets()
   {
     GSList* _cretval;
     _cretval = gtk_size_group_get_widgets(cast(GtkSizeGroup*)cPtr);
-    SList!(Widget, GtkWidget) _retval = new SList!(Widget, GtkWidget)(cast(GSList*)_cretval, GidOwnership.None);
+    SList!(Widget) _retval = new SList!(Widget)(cast(GSList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

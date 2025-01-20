@@ -330,11 +330,11 @@ class Printer : ObjectG
    * Returns: a newly
    *   allocated list of newly allocated `GtkPageSetup`s.
    */
-  List!(PageSetup, GtkPageSetup) listPapers()
+  List!(PageSetup) listPapers()
   {
     GList* _cretval;
     _cretval = gtk_printer_list_papers(cast(GtkPrinter*)cPtr);
-    List!(PageSetup, GtkPageSetup) _retval = new List!(PageSetup, GtkPageSetup)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(PageSetup) _retval = new List!(PageSetup)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

@@ -99,11 +99,11 @@ class DBusInterfaceSkeleton : ObjectG, DBusInterface
    *   list should be freed with [GLib.List.free] after each element has
    *   been freed with [GObject.ObjectG.unref].
    */
-  List!(DBusConnection, GDBusConnection) getConnections()
+  List!(DBusConnection) getConnections()
   {
     GList* _cretval;
     _cretval = g_dbus_interface_skeleton_get_connections(cast(GDBusInterfaceSkeleton*)cPtr);
-    List!(DBusConnection, GDBusConnection) _retval = new List!(DBusConnection, GDBusConnection)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(DBusConnection) _retval = new List!(DBusConnection)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

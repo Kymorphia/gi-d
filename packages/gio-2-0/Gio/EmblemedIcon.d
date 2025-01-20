@@ -78,11 +78,11 @@ class EmblemedIcon : ObjectG, Icon
    * Returns: a #GList of
    *   #GEmblems that is owned by emblemed
    */
-  List!(Emblem, GEmblem) getEmblems()
+  List!(Emblem) getEmblems()
   {
     GList* _cretval;
     _cretval = g_emblemed_icon_get_emblems(cast(GEmblemedIcon*)cPtr);
-    List!(Emblem, GEmblem) _retval = new List!(Emblem, GEmblem)(cast(GList*)_cretval, GidOwnership.None);
+    List!(Emblem) _retval = new List!(Emblem)(cast(GList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

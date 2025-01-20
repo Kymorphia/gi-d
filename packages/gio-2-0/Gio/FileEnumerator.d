@@ -352,14 +352,14 @@ class FileEnumerator : ObjectG
    *   [GLib.List.free] and unref the infos with [GObject.ObjectG.unref] when you're
    *   done with them.
    */
-  List!(FileInfo, GFileInfo) nextFilesFinish(AsyncResult result)
+  List!(FileInfo) nextFilesFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_file_enumerator_next_files_finish(cast(GFileEnumerator*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(FileInfo, GFileInfo) _retval = new List!(FileInfo, GFileInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(FileInfo) _retval = new List!(FileInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

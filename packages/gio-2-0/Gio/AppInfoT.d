@@ -318,7 +318,7 @@ template AppInfoT()
    *   context = a #GAppLaunchContext or %NULL
    * Returns: %TRUE on successful launch, %FALSE otherwise.
    */
-  override bool launch(List!(File, GFile) files, AppLaunchContext context)
+  override bool launch(List!(File) files, AppLaunchContext context)
   {
     bool _retval;
     GError *_err;
@@ -344,7 +344,7 @@ template AppInfoT()
    *   context = a #GAppLaunchContext or %NULL
    * Returns: %TRUE on successful launch, %FALSE otherwise.
    */
-  override bool launchUris(List!(string, char*) uris, AppLaunchContext context)
+  override bool launchUris(List!(string) uris, AppLaunchContext context)
   {
     bool _retval;
     GError *_err;
@@ -366,7 +366,7 @@ template AppInfoT()
    *   cancellable = a #GCancellable
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  override void launchUrisAsync(List!(string, char*) uris, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback)
+  override void launchUrisAsync(List!(string) uris, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {

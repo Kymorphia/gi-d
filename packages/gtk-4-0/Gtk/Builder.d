@@ -574,11 +574,11 @@ class Builder : ObjectG
    *   constructed by the `GtkBuilder instance`. It should be
    *   freed by [GLib.SList.free]
    */
-  SList!(ObjectG, ObjectC) getObjects()
+  SList!(ObjectG) getObjects()
   {
     GSList* _cretval;
     _cretval = gtk_builder_get_objects(cast(GtkBuilder*)cPtr);
-    SList!(ObjectG, ObjectC) _retval = new SList!(ObjectG, ObjectC)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(ObjectG) _retval = new SList!(ObjectG)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

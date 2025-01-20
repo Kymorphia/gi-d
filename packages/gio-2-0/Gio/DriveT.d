@@ -302,11 +302,11 @@ template DriveT()
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: #GList containing any #GVolume objects on the given drive.
    */
-  override List!(Volume, GVolume) getVolumes()
+  override List!(Volume) getVolumes()
   {
     GList* _cretval;
     _cretval = g_drive_get_volumes(cast(GDrive*)cPtr);
-    List!(Volume, GVolume) _retval = new List!(Volume, GVolume)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(Volume) _retval = new List!(Volume)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

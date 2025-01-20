@@ -552,11 +552,11 @@ void contentTypeSetMimeDirs(string[] dirs)
  * Returns: list of the registered
  *   content types
  */
-List!(string, char*) contentTypesGetRegistered()
+List!(string) contentTypesGetRegistered()
 {
   GList* _cretval;
   _cretval = g_content_types_get_registered();
-  List!(string, char*) _retval = new List!(string, char*)(cast(GList*)_cretval, GidOwnership.Full);
+  List!(string) _retval = new List!(string)(cast(GList*)_cretval, GidOwnership.Full);
   return _retval;
 }
 
@@ -1033,12 +1033,12 @@ Quark ioErrorQuark()
  *   [GObject.TypeModule.unuse] on all the modules. Free the list
  *   with [GLib.List.free].
  */
-List!(IOModule, GIOModule) ioModulesLoadAllInDirectory(string dirname)
+List!(IOModule) ioModulesLoadAllInDirectory(string dirname)
 {
   GList* _cretval;
   const(char)* _dirname = dirname.toCString(false);
   _cretval = g_io_modules_load_all_in_directory(_dirname);
-  List!(IOModule, GIOModule) _retval = new List!(IOModule, GIOModule)(cast(GList*)_cretval, GidOwnership.Full);
+  List!(IOModule) _retval = new List!(IOModule)(cast(GList*)_cretval, GidOwnership.Full);
   return _retval;
 }
 
@@ -1058,12 +1058,12 @@ List!(IOModule, GIOModule) ioModulesLoadAllInDirectory(string dirname)
  *   [GObject.TypeModule.unuse] on all the modules. Free the list
  *   with [GLib.List.free].
  */
-List!(IOModule, GIOModule) ioModulesLoadAllInDirectoryWithScope(string dirname, IOModuleScope scope_)
+List!(IOModule) ioModulesLoadAllInDirectoryWithScope(string dirname, IOModuleScope scope_)
 {
   GList* _cretval;
   const(char)* _dirname = dirname.toCString(false);
   _cretval = g_io_modules_load_all_in_directory_with_scope(_dirname, scope_ ? cast(GIOModuleScope*)scope_.cPtr : null);
-  List!(IOModule, GIOModule) _retval = new List!(IOModule, GIOModule)(cast(GList*)_cretval, GidOwnership.Full);
+  List!(IOModule) _retval = new List!(IOModule)(cast(GList*)_cretval, GidOwnership.Full);
   return _retval;
 }
 
@@ -1889,11 +1889,11 @@ bool unixMountPointsChangedSince(ulong time)
  *   timeRead = guint64 to contain a timestamp.
  * Returns: a #GList of the UNIX mountpoints.
  */
-List!(UnixMountPoint, GUnixMountPoint) unixMountPointsGet(out ulong timeRead)
+List!(UnixMountPoint) unixMountPointsGet(out ulong timeRead)
 {
   GList* _cretval;
   _cretval = g_unix_mount_points_get(cast(ulong*)&timeRead);
-  List!(UnixMountPoint, GUnixMountPoint) _retval = new List!(UnixMountPoint, GUnixMountPoint)(cast(GList*)_cretval, GidOwnership.Full);
+  List!(UnixMountPoint) _retval = new List!(UnixMountPoint)(cast(GList*)_cretval, GidOwnership.Full);
   return _retval;
 }
 
@@ -1919,10 +1919,10 @@ bool unixMountsChangedSince(ulong time)
  *   timeRead = guint64 to contain a timestamp, or %NULL
  * Returns: a #GList of the UNIX mounts.
  */
-List!(UnixMountEntry, GUnixMountEntry) unixMountsGet(out ulong timeRead)
+List!(UnixMountEntry) unixMountsGet(out ulong timeRead)
 {
   GList* _cretval;
   _cretval = g_unix_mounts_get(cast(ulong*)&timeRead);
-  List!(UnixMountEntry, GUnixMountEntry) _retval = new List!(UnixMountEntry, GUnixMountEntry)(cast(GList*)_cretval, GidOwnership.Full);
+  List!(UnixMountEntry) _retval = new List!(UnixMountEntry)(cast(GList*)_cretval, GidOwnership.Full);
   return _retval;
 }

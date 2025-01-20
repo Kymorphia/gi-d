@@ -67,7 +67,7 @@ class FileList : Boxed
    *   files = a list of files
    * Returns: the newly created files list
    */
-  static FileList newFromList(SList!(File, GFile) files)
+  static FileList newFromList(SList!(File) files)
   {
     GdkFileList* _cretval;
     _cretval = gdk_file_list_new_from_list(files.cPtr);
@@ -80,11 +80,11 @@ class FileList : Boxed
    * This function is meant for language bindings.
    * Returns: the files inside the list
    */
-  SList!(File, GFile) getFiles()
+  SList!(File) getFiles()
   {
     GSList* _cretval;
     _cretval = gdk_file_list_get_files(cast(GdkFileList*)cPtr);
-    SList!(File, GFile) _retval = new SList!(File, GFile)(cast(GSList*)_cretval, GidOwnership.Container);
+    SList!(File) _retval = new SList!(File)(cast(GSList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 }

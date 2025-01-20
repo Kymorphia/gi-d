@@ -164,11 +164,11 @@ class Gesture : EventController
    * Returns: The list
    *   of `GtkGesture`s, free with [GLib.List.free]
    */
-  List!(Gesture, GtkGesture) getGroup()
+  List!(Gesture) getGroup()
   {
     GList* _cretval;
     _cretval = gtk_gesture_get_group(cast(GtkGesture*)cPtr);
-    List!(Gesture, GtkGesture) _retval = new List!(Gesture, GtkGesture)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(Gesture) _retval = new List!(Gesture)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 
@@ -241,11 +241,11 @@ class Gesture : EventController
    *   not be freed or modified, the list itself must be deleted
    *   through [GLib.List.free]
    */
-  List!(EventSequence, GdkEventSequence) getSequences()
+  List!(EventSequence) getSequences()
   {
     GList* _cretval;
     _cretval = gtk_gesture_get_sequences(cast(GtkGesture*)cPtr);
-    List!(EventSequence, GdkEventSequence) _retval = new List!(EventSequence, GdkEventSequence)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(EventSequence) _retval = new List!(EventSequence)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

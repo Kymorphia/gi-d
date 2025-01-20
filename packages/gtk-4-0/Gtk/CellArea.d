@@ -712,11 +712,11 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    * Returns: A `GList` of `GtkCellRenderer`s.
    *   The returned list is internal and should not be freed.
    */
-  List!(CellRenderer, GtkCellRenderer) getFocusSiblings(CellRenderer renderer)
+  List!(CellRenderer) getFocusSiblings(CellRenderer renderer)
   {
     const(GList)* _cretval;
     _cretval = gtk_cell_area_get_focus_siblings(cast(GtkCellArea*)cPtr, renderer ? cast(GtkCellRenderer*)renderer.cPtr(false) : null);
-    List!(CellRenderer, GtkCellRenderer) _retval = new List!(CellRenderer, GtkCellRenderer)(cast(GList*)_cretval, GidOwnership.None);
+    List!(CellRenderer) _retval = new List!(CellRenderer)(cast(GList*)_cretval, GidOwnership.None);
     return _retval;
   }
 

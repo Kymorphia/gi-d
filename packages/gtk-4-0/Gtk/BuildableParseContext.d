@@ -56,11 +56,11 @@ class BuildableParseContext
    * processed.
    * Returns: the element stack, which must not be modified
    */
-  PtrArray!(string, char*) getElementStack()
+  PtrArray!(string) getElementStack()
   {
     GPtrArray* _cretval;
     _cretval = gtk_buildable_parse_context_get_element_stack(cast(GtkBuildableParseContext*)cPtr);
-    PtrArray!(string, char*) _retval = new PtrArray!(string, char*)(cast(GPtrArray*)_cretval, GidOwnership.None);
+    PtrArray!(string) _retval = new PtrArray!(string)(cast(GPtrArray*)_cretval, GidOwnership.None);
     return _retval;
   }
 

@@ -109,13 +109,13 @@ class Completion
 
    * Deprecated: Rarely used API
    */
-  List!(string, char*) completeUtf8(string prefix, out string newPrefix)
+  List!(string) completeUtf8(string prefix, out string newPrefix)
   {
     GList* _cretval;
     const(char)* _prefix = prefix.toCString(false);
     char* _newPrefix;
     _cretval = g_completion_complete_utf8(cast(GCompletion*)cPtr, _prefix, &_newPrefix);
-    List!(string, char*) _retval = new List!(string, char*)(cast(GList*)_cretval, GidOwnership.None);
+    List!(string) _retval = new List!(string)(cast(GList*)_cretval, GidOwnership.None);
     newPrefix = _newPrefix.fromCString(true);
     return _retval;
   }

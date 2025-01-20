@@ -105,12 +105,12 @@ class DesktopAppInfo : ObjectG, AppInfo
    * Returns: a list of #GDesktopAppInfo
    *   objects.
    */
-  static List!(DesktopAppInfo, GDesktopAppInfo) getImplementations(string interface_)
+  static List!(DesktopAppInfo) getImplementations(string interface_)
   {
     GList* _cretval;
     const(char)* _interface_ = interface_.toCString(false);
     _cretval = g_desktop_app_info_get_implementations(_interface_);
-    List!(DesktopAppInfo, GDesktopAppInfo) _retval = new List!(DesktopAppInfo, GDesktopAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(DesktopAppInfo) _retval = new List!(DesktopAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

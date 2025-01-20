@@ -78,11 +78,11 @@ class ParamSpecPool
    *   #GList of all #GParamSpecs owned by owner_type in
    *   the pool#GParamSpecs.
    */
-  List!(ParamSpec, GParamSpec) listOwned(GType ownerType)
+  List!(ParamSpec) listOwned(GType ownerType)
   {
     GList* _cretval;
     _cretval = g_param_spec_pool_list_owned(cast(GParamSpecPool*)cPtr, ownerType);
-    List!(ParamSpec, GParamSpec) _retval = new List!(ParamSpec, GParamSpec)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(ParamSpec) _retval = new List!(ParamSpec)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

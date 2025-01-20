@@ -57,11 +57,11 @@ class Seat : ObjectG
    *   of `GdkDevices`. The list must be freed with [GLib.List.free],
    *   the elements are owned by GTK and must not be freed.
    */
-  List!(Device, GdkDevice) getDevices(SeatCapabilities capabilities)
+  List!(Device) getDevices(SeatCapabilities capabilities)
   {
     GList* _cretval;
     _cretval = gdk_seat_get_devices(cast(GdkSeat*)cPtr, capabilities);
-    List!(Device, GdkDevice) _retval = new List!(Device, GdkDevice)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(Device) _retval = new List!(Device)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 
@@ -108,11 +108,11 @@ class Seat : ObjectG
    * Returns all `GdkDeviceTools` that are known to the application.
    * Returns: A list of tools. Free with [GLib.List.free].
    */
-  List!(DeviceTool, GdkDeviceTool) getTools()
+  List!(DeviceTool) getTools()
   {
     GList* _cretval;
     _cretval = gdk_seat_get_tools(cast(GdkSeat*)cPtr);
-    List!(DeviceTool, GdkDeviceTool) _retval = new List!(DeviceTool, GdkDeviceTool)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(DeviceTool) _retval = new List!(DeviceTool)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

@@ -78,11 +78,11 @@ template DBusObjectManagerT()
    *   [GLib.List.free] after each element has been freed with
    *   [GObject.ObjectG.unref].
    */
-  override List!(DBusObject, GDBusObject) getObjects()
+  override List!(DBusObject) getObjects()
   {
     GList* _cretval;
     _cretval = g_dbus_object_manager_get_objects(cast(GDBusObjectManager*)cPtr);
-    List!(DBusObject, GDBusObject) _retval = new List!(DBusObject, GDBusObject)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(DBusObject) _retval = new List!(DBusObject)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

@@ -62,7 +62,7 @@ interface DBusObjectManager
    *   [GLib.List.free] after each element has been freed with
    *   [GObject.ObjectG.unref].
    */
-  List!(DBusObject, GDBusObject) getObjects();
+  List!(DBusObject) getObjects();
 
   /**
    * Emitted when interface is added to object.

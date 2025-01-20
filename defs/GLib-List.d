@@ -2,9 +2,9 @@ import GLib.Boxed;
 import GLib.Types;
 
 /**
- * List BidirectionalRange template. Creates an object which wraps a GList of C type (CT) items into a D type (T) items.
+ * List BidirectionalRange template. Creates an object which wraps a GList of D type (T) items.
  */
-class List(T, CT)
+class List(T)
 {
   GList* cPtr; // Front of list
   private GList* _backItem; // Back of list, will be null if not initialized or empty (cPtr also null)
@@ -79,13 +79,13 @@ class List(T, CT)
     }
   }
 
-  List!(T, CT) save()
+  List!(T) save()
   {
     GList* newList;
 
     for (auto p = cPtr; p; p = p.next)
       newList = g_list_prepend(newList, containerCopyItem!T(p.data));
 
-    return new List!(T, CT)(g_list_reverse(newList), GidOwnership.Full);
+    return new List!(T)(g_list_reverse(newList), GidOwnership.Full);
   }
 }

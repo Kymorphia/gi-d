@@ -40,7 +40,7 @@ class TypeNode : Base
     super.name(val);
   }
 
-  /// Get the D type string. Subject to subtype type substitutions and alises if defs.openModule() has been called and there is a conflict.
+  /// Get the D type string. Subject to subtype type substitutions and aliases if defs.openModule() has been called and there is a conflict.
   @property dstring dType()
   {
     if (repo.defs.importManager)
@@ -372,8 +372,7 @@ class TypeNode : Base
       else if (containerType == ContainerType.ByteArray && elemTypes.length == 1) // ByteArray is not a template
         _dType = containerType.to!dstring;
       else if (elemTypes.length == 1)
-        _dType = containerType.to!dstring ~ "!(" ~ elemTypes.map!(x => x._dType ~ ", " ~ x.cType)
-          .join(", ") ~ ")"; // All other types use templates
+        _dType = containerType.to!dstring ~ "!(" ~ elemTypes.map!(x => x._dType).join(", ") ~ ")"; // All other types use templates
     }
   }
 

@@ -237,14 +237,14 @@ class TlsDatabase : ObjectG
    * Returns: a newly allocated list of #GTlsCertificate
    *   objects. Use [GObject.ObjectG.unref] on each certificate, and [GLib.List.free] on the release the list.
    */
-  List!(TlsCertificate, GTlsCertificate) lookupCertificatesIssuedBy(ByteArray issuerRawDn, TlsInteraction interaction, TlsDatabaseLookupFlags flags, Cancellable cancellable)
+  List!(TlsCertificate) lookupCertificatesIssuedBy(ByteArray issuerRawDn, TlsInteraction interaction, TlsDatabaseLookupFlags flags, Cancellable cancellable)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_tls_database_lookup_certificates_issued_by(cast(GTlsDatabase*)cPtr, issuerRawDn.cPtr, interaction ? cast(GTlsInteraction*)interaction.cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(TlsCertificate, GTlsCertificate) _retval = new List!(TlsCertificate, GTlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(TlsCertificate) _retval = new List!(TlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -283,14 +283,14 @@ class TlsDatabase : ObjectG
    * Returns: a newly allocated list of #GTlsCertificate
    *   objects. Use [GObject.ObjectG.unref] on each certificate, and [GLib.List.free] on the release the list.
    */
-  List!(TlsCertificate, GTlsCertificate) lookupCertificatesIssuedByFinish(AsyncResult result)
+  List!(TlsCertificate) lookupCertificatesIssuedByFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_tls_database_lookup_certificates_issued_by_finish(cast(GTlsDatabase*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(TlsCertificate, GTlsCertificate) _retval = new List!(TlsCertificate, GTlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(TlsCertificate) _retval = new List!(TlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

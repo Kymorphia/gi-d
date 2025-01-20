@@ -352,11 +352,11 @@ class Display : ObjectG
    * Returns: the
    *   list of seats known to the `GdkDisplay`
    */
-  List!(Seat, GdkSeat) listSeats()
+  List!(Seat) listSeats()
   {
     GList* _cretval;
     _cretval = gdk_display_list_seats(cast(GdkDisplay*)cPtr);
-    List!(Seat, GdkSeat) _retval = new List!(Seat, GdkSeat)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(Seat) _retval = new List!(Seat)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 

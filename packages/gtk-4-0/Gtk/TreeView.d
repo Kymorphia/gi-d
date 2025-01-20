@@ -472,11 +472,11 @@ class TreeView : Widget, Scrollable
 
    * Deprecated: Use [Gtk.ListView] or [Gtk.ColumnView] instead
    */
-  List!(TreeViewColumn, GtkTreeViewColumn) getColumns()
+  List!(TreeViewColumn) getColumns()
   {
     GList* _cretval;
     _cretval = gtk_tree_view_get_columns(cast(GtkTreeView*)cPtr);
-    List!(TreeViewColumn, GtkTreeViewColumn) _retval = new List!(TreeViewColumn, GtkTreeViewColumn)(cast(GList*)_cretval, GidOwnership.Container);
+    List!(TreeViewColumn) _retval = new List!(TreeViewColumn)(cast(GList*)_cretval, GidOwnership.Container);
     return _retval;
   }
 
