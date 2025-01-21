@@ -243,17 +243,15 @@ class TreeSelection : ObjectG
    */
   void selectedForeach(TreeSelectionForeachFunc func)
   {
-    static TreeSelectionForeachFunc _static_func;
-
     extern(C) void _funcCallback(GtkTreeModel* model, GtkTreePath* path, GtkTreeIter* iter, void* data)
     {
-      _static_func(model ? ObjectG.getDObject!TreeModel(cast(void*)model, false) : null, path ? new TreePath(cast(void*)path, false) : null, iter ? new TreeIter(cast(void*)iter, false) : null);
+      auto _dlg = cast(TreeSelectionForeachFunc*)data;
+
+      (*_dlg)(model ? ObjectG.getDObject!TreeModel(cast(void*)model, false) : null, path ? new TreePath(cast(void*)path, false) : null, iter ? new TreeIter(cast(void*)iter, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_tree_selection_selected_foreach(cast(GtkTreeSelection*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

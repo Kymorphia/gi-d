@@ -99,7 +99,7 @@ char* toCString(string dstr, bool transfer)
 
   if (transfer)
   {
-    char* cstr = cast(char*)g_malloc(dstr.length + 1);
+    char* cstr = cast(char*)g_try_malloc(dstr.length + 1);
 
     if (!cstr)
       throw new OutOfMemoryError();
@@ -156,7 +156,7 @@ char* strdup(const(char)* s)
 
   auto len = strlen(s);
 
-  if (auto dup = cast(char*)g_malloc(len))
+  if (auto dup = cast(char*)g_try_malloc(len))
   {
     dup[0 .. len] = s[0 .. len];
     return dup;
@@ -196,13 +196,13 @@ T* arrayDtoC(T, Flag!"UseMalloc" useMalloc = No.UseMalloc, Flag!"ZeroTerm" zeroT
   {
     static if (zeroTerm)
     {
-      retArray = cast(T*)g_malloc((array.length + 1) * T.sizeof);
+      retArray = cast(T*)g_try_malloc((array.length + 1) * T.sizeof);
 
       if (retArray)
         zero(cast(void*)&retArray[array.length], T.sizeof);
     }
     else
-      retArray = cast(T*)g_malloc(array.length * T.sizeof);
+      retArray = cast(T*)g_try_malloc(array.length * T.sizeof);
 
     if (!retArray)
       throw new OutOfMemoryError;
@@ -212,7 +212,7 @@ T* arrayDtoC(T, Flag!"UseMalloc" useMalloc = No.UseMalloc, Flag!"ZeroTerm" zeroT
     static if (zeroTerm)
     {
       retArray = new T[array.length + 1].ptr;
-      zero(&retArray[array.length], T.sizeof);
+      zero(&retArray[array.length], T.sizeof); // Zero terminate
     }
     else
       retArray = new T[array.length].ptr;

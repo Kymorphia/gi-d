@@ -98,6 +98,9 @@
 //!set record[DBusSignalInfo].field[args].array[][zero-terminated] 1
 //!set record[DBusSignalInfo].field[annotations].array[][zero-terminated] 1
 
+//# Set parameters to out
+//!set callback[DBusSubtreeDispatchFunc].parameters.parameter[out_user_data][direction] out
+
 //!class ListModel
 
   /**

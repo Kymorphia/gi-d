@@ -399,6 +399,18 @@ class Vec4 : Boxed
   }
 
   /**
+   * Stores the components of the given #graphene_vec4_t into an array
+   * of floating point values.
+   * Params:
+   *   dest = return location for
+   *     an array of floating point values
+   */
+  void toFloat(ref float[] dest)
+  {
+    graphene_vec4_to_float(cast(graphene_vec4_t*)cPtr, dest.ptr);
+  }
+
+  /**
    * Retrieves a pointer to a #graphene_vec4_t with all its
    * components set to 1.
    * Returns: a constant vector

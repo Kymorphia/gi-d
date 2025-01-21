@@ -136,6 +136,30 @@ class PixbufFormat : Boxed
   }
 
   /**
+   * Returns the filename extensions typically used for files in the
+   * given format.
+   * Returns: an array of
+   *   filename extensions
+   */
+  string[] getExtensions()
+  {
+    char** _cretval;
+    _cretval = gdk_pixbuf_format_get_extensions(cast(GdkPixbufFormat*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
    * Returns information about the license of the image loader for the format.
    * The returned string should be a shorthand for a well known license, e.g.
    * "LGPL", "GPL", "QPL", "GPL/QPL", or "other" to indicate some other license.
@@ -146,6 +170,28 @@ class PixbufFormat : Boxed
     char* _cretval;
     _cretval = gdk_pixbuf_format_get_license(cast(GdkPixbufFormat*)cPtr);
     string _retval = _cretval.fromCString(true);
+    return _retval;
+  }
+
+  /**
+   * Returns the mime types supported by the format.
+   * Returns: an array of mime types
+   */
+  string[] getMimeTypes()
+  {
+    char** _cretval;
+    _cretval = gdk_pixbuf_format_get_mime_types(cast(GdkPixbufFormat*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
     return _retval;
   }
 

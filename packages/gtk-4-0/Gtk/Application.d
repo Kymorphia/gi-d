@@ -141,6 +141,69 @@ class Application : DGioApplication
   }
 
   /**
+   * Gets the accelerators that are currently associated with
+   * the given action.
+   * Params:
+   *   detailedActionName = a detailed action name, specifying an action
+   *     and target to obtain accelerators for
+   * Returns: accelerators for `detailed_action_name`
+   */
+  string[] getAccelsForAction(string detailedActionName)
+  {
+    char** _cretval;
+    const(char)* _detailedActionName = detailedActionName.toCString(false);
+    _cretval = gtk_application_get_accels_for_action(cast(GtkApplication*)cPtr, _detailedActionName);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
+   * Returns the list of actions $(LPAREN)possibly empty$(RPAREN) that `accel` maps to.
+   * Each item in the list is a detailed action name in the usual form.
+   * This might be useful to discover if an accel already exists in
+   * order to prevent installation of a conflicting accelerator $(LPAREN)from
+   * an accelerator editor or a plugin system, for example$(RPAREN). Note that
+   * having more than one action per accelerator may not be a bad thing
+   * and might make sense in cases where the actions never appear in the
+   * same context.
+   * In case there are no actions for a given accelerator, an empty array
+   * is returned. `NULL` is never returned.
+   * It is a programmer error to pass an invalid accelerator string.
+   * If you are unsure, check it with funcGtk.accelerator_parse first.
+   * Params:
+   *   accel = an accelerator that can be parsed by funcGtk.accelerator_parse
+   * Returns: a %NULL-terminated array of actions for `accel`
+   */
+  string[] getActionsForAccel(string accel)
+  {
+    char** _cretval;
+    const(char)* _accel = accel.toCString(false);
+    _cretval = gtk_application_get_actions_for_accel(cast(GtkApplication*)cPtr, _accel);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
    * Gets the “active” window for the application.
    * The active window is the one that was most recently focused $(LPAREN)within
    * the application$(RPAREN).  This window may not have the focus at the moment
@@ -256,6 +319,29 @@ class Application : DGioApplication
     uint _retval;
     const(char)* _reason = reason.toCString(false);
     _retval = gtk_application_inhibit(cast(GtkApplication*)cPtr, window ? cast(GtkWindow*)window.cPtr(false) : null, flags, _reason);
+    return _retval;
+  }
+
+  /**
+   * Lists the detailed action names which have associated accelerators.
+   * See [Gtk.Application.setAccelsForAction].
+   * Returns: the detailed action names
+   */
+  string[] listActionDescriptions()
+  {
+    char** _cretval;
+    _cretval = gtk_application_list_action_descriptions(cast(GtkApplication*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
     return _retval;
   }
 

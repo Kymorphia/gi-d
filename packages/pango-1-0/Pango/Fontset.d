@@ -46,18 +46,16 @@ class Fontset : ObjectG
    */
   void foreach_(FontsetForeachFunc func)
   {
-    static FontsetForeachFunc _static_func;
-
     extern(C) bool _funcCallback(PangoFontset* fontset, PangoFont* font, void* userData)
     {
-      bool _retval = _static_func(fontset ? ObjectG.getDObject!Fontset(cast(void*)fontset, false) : null, font ? ObjectG.getDObject!Font(cast(void*)font, false) : null);
+      auto _dlg = cast(FontsetForeachFunc*)userData;
+
+      bool _retval = (*_dlg)(fontset ? ObjectG.getDObject!Fontset(cast(void*)fontset, false) : null, font ? ObjectG.getDObject!Font(cast(void*)font, false) : null);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     pango_fontset_foreach(cast(PangoFontset*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

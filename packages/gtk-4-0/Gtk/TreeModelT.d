@@ -208,18 +208,16 @@ template TreeModelT()
    */
   override void foreach_(TreeModelForeachFunc func)
   {
-    static TreeModelForeachFunc _static_func;
-
     extern(C) bool _funcCallback(GtkTreeModel* model, GtkTreePath* path, GtkTreeIter* iter, void* data)
     {
-      bool _retval = _static_func(model ? ObjectG.getDObject!TreeModel(cast(void*)model, false) : null, path ? new TreePath(cast(void*)path, false) : null, iter ? new TreeIter(cast(void*)iter, false) : null);
+      auto _dlg = cast(TreeModelForeachFunc*)data;
+
+      bool _retval = (*_dlg)(model ? ObjectG.getDObject!TreeModel(cast(void*)model, false) : null, path ? new TreePath(cast(void*)path, false) : null, iter ? new TreeIter(cast(void*)iter, false) : null);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_tree_model_foreach(cast(GtkTreeModel*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

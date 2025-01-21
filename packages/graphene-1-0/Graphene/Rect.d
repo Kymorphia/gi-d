@@ -5,6 +5,7 @@ import Gid.gid;
 import Graphene.Point;
 import Graphene.Size;
 import Graphene.Types;
+import Graphene.Vec2;
 import Graphene.c.functions;
 import Graphene.c.types;
 
@@ -191,6 +192,22 @@ class Rect : Boxed
     graphene_point_t _p;
     graphene_rect_get_top_right(cast(graphene_rect_t*)cPtr, &_p);
     p = new Point(cast(void*)&_p, false);
+  }
+
+  /**
+   * Computes the four vertices of a #graphene_rect_t.
+   * Params:
+   *   vertices = return location for an array
+   *     of 4 #graphene_vec2_t
+   */
+  void getVertices(ref Vec2[] vertices)
+  {
+    graphene_vec2_t[] _vertices;
+    _vertices.length = 4;
+    graphene_rect_get_vertices(cast(graphene_rect_t*)cPtr, _vertices.ptr);
+    vertices.length = 4;
+    foreach (i; 0 .. 4)
+      vertices[i] = new Vec2(cast(void*)&_vertices[i], false);
   }
 
   /**

@@ -83,7 +83,8 @@ class GestureStylus : GestureSingle
     uint _nElems;
     GdkTimeCoord* _backlog;
     _retval = gtk_gesture_stylus_get_backlog(cast(GtkGestureStylus*)cPtr, &_backlog, &_nElems);
-    backlog = _backlog[0 .. _nElems];
+    backlog.length = _nElems;
+    backlog[0 .. $] = _backlog[0 .. _nElems];
     safeFree(cast(void*)_backlog);
     return _retval;
   }

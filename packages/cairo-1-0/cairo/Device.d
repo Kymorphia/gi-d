@@ -182,6 +182,35 @@ class Device : Boxed
   }
 
   /**
+   * Prints the device log using the given function.
+   * Params:
+   *   writeFunc = the write function
+   * Returns: the status after the operation
+   */
+  Status observerPrint(WriteFunc writeFunc)
+  {
+    extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+    {
+      Status _dretval;
+      auto _dlg = cast(WriteFunc*)closure;
+      ubyte[] _data;
+      _data.length = length;
+      _data[0 .. length] = data[0 .. length];
+
+      _dretval = (*_dlg)(_data);
+      auto _retval = cast(cairo_status_t)_dretval;
+
+      return _retval;
+    }
+
+    cairo_status_t _cretval;
+    auto _writeFunc = cast(void*)&writeFunc;
+    _cretval = cairo_device_observer_print(cast(cairo_device_t*)cPtr, &_writeFuncCallback, _writeFunc);
+    Status _retval = cast(Status)_cretval;
+    return _retval;
+  }
+
+  /**
    * Returns the elapsed time of the stroke operations.
    * Returns: the elapsed time, in nanoseconds.
    */

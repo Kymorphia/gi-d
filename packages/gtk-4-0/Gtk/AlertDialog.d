@@ -90,6 +90,28 @@ class AlertDialog : ObjectG
   }
 
   /**
+   * Returns the button labels for the alert.
+   * Returns: the button labels
+   */
+  string[] getButtons()
+  {
+    const(char*)* _cretval;
+    _cretval = gtk_alert_dialog_get_buttons(cast(GtkAlertDialog*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(false);
+    }
+    return _retval;
+  }
+
+  /**
    * Returns the index of the cancel button.
    * Returns: the index of the cancel button, or -1
    */
@@ -145,6 +167,21 @@ class AlertDialog : ObjectG
     bool _retval;
     _retval = gtk_alert_dialog_get_modal(cast(GtkAlertDialog*)cPtr);
     return _retval;
+  }
+
+  /**
+   * Sets the button labels for the alert.
+   * Params:
+   *   labels = the new button labels
+   */
+  void setButtons(string[] labels)
+  {
+    char*[] _tmplabels;
+    foreach (s; labels)
+      _tmplabels ~= s.toCString(false);
+    _tmplabels ~= null;
+    const(char*)* _labels = _tmplabels.ptr;
+    gtk_alert_dialog_set_buttons(cast(GtkAlertDialog*)cPtr, _labels);
   }
 
   /**

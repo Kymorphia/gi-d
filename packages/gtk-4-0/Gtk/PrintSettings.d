@@ -131,20 +131,17 @@ class PrintSettings : ObjectG
    */
   void foreach_(PrintSettingsFunc func)
   {
-    static PrintSettingsFunc _static_func;
-
     extern(C) void _funcCallback(const(char)* key, const(char)* value, void* userData)
     {
+      auto _dlg = cast(PrintSettingsFunc*)userData;
       string _key = key.fromCString(false);
       string _value = value.fromCString(false);
 
-      _static_func(_key, _value);
+      (*_dlg)(_key, _value);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_print_settings_foreach(cast(GtkPrintSettings*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

@@ -403,8 +403,11 @@ class TypeNode : Base
         throw new Exception("Could not determine member type for array type '" ~ cType.to!string ~ "'");
 
       if (cType.empty && fixedSize == 0) // No array C type and not fixed size?
+      {
         warning(xmlLocation ~ "No array c:type for array of D type '" ~ _dType.to!string ~ "' in '"
             ~ fullName.to!string ~ "'");
+        TypeNode.dumpSelectorOnWarning(this);
+      }
 
       if (elemTypes[0]._dType == "ubyte" && cType.canFind("char"))
         throw new Exception("Unsure if array is a null terminated string or not for array cType "
@@ -435,7 +438,10 @@ class TypeNode : Base
       {
         auto parentTypeNode = cast(TypeNode)parent;
         if (!parentTypeNode || parentTypeNode.containerType != ContainerType.Array) // Warn if not an array container type (handled separately)
+        {
           warning(xmlLocation ~ "No c:type for D type '" ~ _dType.to!string ~ "' in '" ~ fullName.to!string ~ "'");
+          dumpSelectorOnWarning(this);
+        }
       }
 
       if (kind.among(TypeKind.Unknown, TypeKind.Namespace))
@@ -443,8 +449,17 @@ class TypeNode : Base
             ~ _dType.to!string ~ "'");
 
       if (!elemTypes.empty)
+      {
         warning(xmlLocation ~ "Unexpected element type in unrecognized container '" ~ fullName.to!string ~ "'");
+        dumpSelectorOnWarning(this);
+      }
     }
+  }
+
+  static void dumpSelectorOnWarning(TypeNode node)
+  {
+    if (dumpSelectorWarnings)
+      writeln("//set " ~ node.xmlSelector);
   }
 
   Repo typeRepo; /// Repo containing the dType (can be this.repo)
@@ -462,6 +477,8 @@ class TypeNode : Base
   bool zeroTerminated; /// true if array is zero terminated
   int fixedSize = ArrayNotFixed; /// Non-zero if array is a fixed size
   int lengthParamIndex = ArrayNoLengthParam; /// >= 0 if a length parameter index is set
+
+  static bool dumpSelectorWarnings; /// Enable dumping of XML selectors for warnings
 }
 
 enum ArrayNotFixed = 0; /// Value for TypeNode.fixedSize which indicates size is not fixed

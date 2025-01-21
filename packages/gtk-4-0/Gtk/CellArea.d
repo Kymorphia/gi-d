@@ -547,18 +547,16 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    */
   void foreach_(CellCallback callback)
   {
-    static CellCallback _static_callback;
-
     extern(C) bool _callbackCallback(GtkCellRenderer* renderer, void* data)
     {
-      bool _retval = _static_callback(renderer ? ObjectG.getDObject!CellRenderer(cast(void*)renderer, false) : null);
+      auto _dlg = cast(CellCallback*)data;
+
+      bool _retval = (*_dlg)(renderer ? ObjectG.getDObject!CellRenderer(cast(void*)renderer, false) : null);
       return _retval;
     }
 
-    _static_callback = callback;
-    auto _callback = freezeDelegate(cast(void*)&callback);
+    auto _callback = cast(void*)&callback;
     gtk_cell_area_foreach(cast(GtkCellArea*)cPtr, &_callbackCallback, _callback);
-    _static_callback = null;
   }
 
   /**
@@ -573,18 +571,16 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    */
   void foreachAlloc(CellAreaContext context, Widget widget, Rectangle cellArea, Rectangle backgroundArea, CellAllocCallback callback)
   {
-    static CellAllocCallback _static_callback;
-
     extern(C) bool _callbackCallback(GtkCellRenderer* renderer, const(GdkRectangle)* cellArea, const(GdkRectangle)* cellBackground, void* data)
     {
-      bool _retval = _static_callback(renderer ? ObjectG.getDObject!CellRenderer(cast(void*)renderer, false) : null, cellArea ? new Rectangle(cast(void*)cellArea, false) : null, cellBackground ? new Rectangle(cast(void*)cellBackground, false) : null);
+      auto _dlg = cast(CellAllocCallback*)data;
+
+      bool _retval = (*_dlg)(renderer ? ObjectG.getDObject!CellRenderer(cast(void*)renderer, false) : null, cellArea ? new Rectangle(cast(void*)cellArea, false) : null, cellBackground ? new Rectangle(cast(void*)cellBackground, false) : null);
       return _retval;
     }
 
-    _static_callback = callback;
-    auto _callback = freezeDelegate(cast(void*)&callback);
+    auto _callback = cast(void*)&callback;
     gtk_cell_area_foreach_alloc(cast(GtkCellArea*)cPtr, context ? cast(GtkCellAreaContext*)context.cPtr(false) : null, widget ? cast(GtkWidget*)widget.cPtr(false) : null, cellArea ? cast(GdkRectangle*)cellArea.cPtr(false) : null, backgroundArea ? cast(GdkRectangle*)backgroundArea.cPtr(false) : null, &_callbackCallback, _callback);
-    _static_callback = null;
   }
 
   /**

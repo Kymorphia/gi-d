@@ -122,19 +122,17 @@ class AttrList : Boxed
    */
   AttrList filter(AttrFilterFunc func)
   {
-    static AttrFilterFunc _static_func;
-
     extern(C) bool _funcCallback(PangoAttribute* attribute, void* userData)
     {
-      bool _retval = _static_func(attribute ? new Attribute(cast(void*)attribute, false) : null);
+      auto _dlg = cast(AttrFilterFunc*)userData;
+
+      bool _retval = (*_dlg)(attribute ? new Attribute(cast(void*)attribute, false) : null);
       return _retval;
     }
 
-    _static_func = func;
     PangoAttrList* _cretval;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     _cretval = pango_attr_list_filter(cast(PangoAttrList*)cPtr, &_funcCallback, _func);
-    _static_func = null;
     auto _retval = _cretval ? new AttrList(cast(void*)_cretval, true) : null;
     return _retval;
   }

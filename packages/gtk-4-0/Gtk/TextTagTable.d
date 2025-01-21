@@ -86,17 +86,15 @@ class TextTagTable : ObjectG, Buildable
    */
   void foreach_(TextTagTableForeach func)
   {
-    static TextTagTableForeach _static_func;
-
     extern(C) void _funcCallback(GtkTextTag* tag, void* data)
     {
-      _static_func(tag ? ObjectG.getDObject!TextTag(cast(void*)tag, false) : null);
+      auto _dlg = cast(TextTagTableForeach*)data;
+
+      (*_dlg)(tag ? ObjectG.getDObject!TextTag(cast(void*)tag, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_text_tag_table_foreach(cast(GtkTextTagTable*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

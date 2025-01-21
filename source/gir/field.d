@@ -117,6 +117,7 @@ final class Field : TypeNode
       writable = false;
       warning(xmlLocation ~ "Setting writable to false for field '" ~ fullName.to!string ~ "' with unhandled type '"
           ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
+      TypeNode.dumpSelectorOnWarning(this);
     }
 
     if (callback)

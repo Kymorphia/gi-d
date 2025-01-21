@@ -828,6 +828,19 @@ class Matrix : Boxed
   }
 
   /**
+   * Converts a #graphene_matrix_t to an array of floating point
+   * values.
+   * Params:
+   *   v = return location
+   *     for an array of floating point values. The array must be capable
+   *     of holding at least 16 values.
+   */
+  void toFloat(ref float[] v)
+  {
+    graphene_matrix_to_float(cast(graphene_matrix_t*)cPtr, v.ptr);
+  }
+
+  /**
    * Transforms each corner of a #graphene_rect_t using the given matrix m.
    * The result is the axis aligned bounding rectangle containing the coplanar
    * quadrilateral.

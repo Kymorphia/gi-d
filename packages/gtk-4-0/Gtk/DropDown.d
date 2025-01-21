@@ -101,6 +101,26 @@ class DropDown : Widget
   }
 
   /**
+   * Creates a new `GtkDropDown` that is populated with
+   * the strings.
+   * Params:
+   *   strings = The strings to put in the dropdown
+   * Returns: a new `GtkDropDown`
+   */
+  static DropDown newFromStrings(string[] strings)
+  {
+    GtkWidget* _cretval;
+    char*[] _tmpstrings;
+    foreach (s; strings)
+      _tmpstrings ~= s.toCString(false);
+    _tmpstrings ~= null;
+    const(char*)* _strings = _tmpstrings.ptr;
+    _cretval = gtk_drop_down_new_from_strings(_strings);
+    auto _retval = _cretval ? ObjectG.getDObject!DropDown(cast(GtkWidget*)_cretval, false) : null;
+    return _retval;
+  }
+
+  /**
    * Returns whether search is enabled.
    * Returns: %TRUE if the popup includes a search entry
    */

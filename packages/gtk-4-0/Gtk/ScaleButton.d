@@ -60,6 +60,32 @@ class ScaleButton : Widget, AccessibleRange, Orientable
   mixin OrientableT!();
 
   /**
+   * Creates a `GtkScaleButton`.
+   * The new scale button has a range between min and max,
+   * with a stepping of step.
+   * Params:
+   *   min = the minimum value of the scale $(LPAREN)usually 0$(RPAREN)
+   *   max = the maximum value of the scale $(LPAREN)usually 100$(RPAREN)
+   *   step = the stepping of value when a scroll-wheel event,
+   *     or up/down arrow event occurs $(LPAREN)usually 2$(RPAREN)
+   *   icons = a %NULL-terminated
+   *     array of icon names, or %NULL if you want to set the list
+   *     later with [Gtk.ScaleButton.setIcons]
+   * Returns: a new `GtkScaleButton`
+   */
+  this(double min, double max, double step, string[] icons)
+  {
+    GtkWidget* _cretval;
+    char*[] _tmpicons;
+    foreach (s; icons)
+      _tmpicons ~= s.toCString(false);
+    _tmpicons ~= null;
+    const(char*)* _icons = _tmpicons.ptr;
+    _cretval = gtk_scale_button_new(min, max, step, _icons);
+    this(_cretval, false);
+  }
+
+  /**
    * Queries a `GtkScaleButton` and returns its current state.
    * Returns %TRUE if the scale button is pressed in and %FALSE
    * if it is raised.
@@ -165,6 +191,21 @@ class ScaleButton : Widget, AccessibleRange, Orientable
   void setHasFrame(bool hasFrame)
   {
     gtk_scale_button_set_has_frame(cast(GtkScaleButton*)cPtr, hasFrame);
+  }
+
+  /**
+   * Sets the icons to be used by the scale button.
+   * Params:
+   *   icons = a %NULL-terminated array of icon names
+   */
+  void setIcons(string[] icons)
+  {
+    char*[] _tmpicons;
+    foreach (s; icons)
+      _tmpicons ~= s.toCString(false);
+    _tmpicons ~= null;
+    const(char*)* _icons = _tmpicons.ptr;
+    gtk_scale_button_set_icons(cast(GtkScaleButton*)cPtr, _icons);
   }
 
   /**

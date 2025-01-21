@@ -12,7 +12,7 @@ import utils;
 /// Delegate C callback marshal writer class
 class DelegWriter
 {
-  this(Param delegParam)
+  this(Param delegParam, bool staticDelegatePtr)
   {
     this.delegParam = delegParam;
     callback = cast(Func)delegParam.typeObjectRoot;
@@ -20,11 +20,11 @@ class DelegWriter
     assert(this.callback, "DelegWriter parameter " ~ delegParam.fullName.to!string ~ " has "
       ~ delegParam.typeObjectRoot.to!string ~ " typeObjectRoot");
 
-    process();
+    process(staticDelegatePtr);
   }
 
   // Process the delegate parameter
-  private void process()
+  private void process(bool staticDelegatePtr)
   {
     decl ~= "extern(C) ";
 
@@ -35,7 +35,7 @@ class DelegWriter
 
     decl ~= "_" ~ delegParam.dName ~ "Callback(";
 
-    if (delegParam.scope_ != ParamScope.Call)
+    if (!staticDelegatePtr)
     {
       preCall ~= "auto _dlg = cast(" ~ delegParam.dType ~ "*)" ~ callback.closureParam.dName ~ ";\n";
       call ~= "(*_dlg)(";
@@ -173,8 +173,7 @@ class DelegWriter
         case Enum, Flags:
           postCall ~= "_retval[i] = cast(" ~ elemType.cType ~ ")_dretval[i];\n";
           break;
-        case Simple:
-        case Pointer:
+        case Simple, Pointer:
           postCall ~= "_retval[i] = _dretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed, Object, Interface:
@@ -328,24 +327,27 @@ class DelegWriter
       else
         assert(0); // This should be prevented by defs.fixupRepos()
 
+      preCall ~= "_" ~ param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+
       final switch (elemType.kind) with (TypeKind)
       {
         case Basic, BasicAlias, Enum, Flags, Simple, Pointer:
-          preCall ~= "_" ~ param.dName ~ " = cast(" ~ elemType.dType ~ "[])" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
+          preCall ~= "_" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "] = " ~ param.dName
+            ~ "[0 .. " ~ lengthStr ~ "];\n";
           break;
         case String:
-          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ param.dName ~ "[i].fromCString("
-            ~ param.fullOwnerStr ~ ");\n";
+          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ "[i] = "
+            ~ param.dName ~ "[i].fromCString(" ~ param.fullOwnerStr ~ ");\n";
           break;
         case Opaque, Boxed, Wrap, Reffed:
-          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= new " ~ elemType.dType ~ "(cast("
-            ~ elemType.cType.stripConst ~ "*)&" ~ param.dName ~ "[i]"
+          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ "[i] = "
+            ~ "new " ~ elemType.dType ~ "(cast(" ~ elemType.cType.stripConst ~ "*)&" ~ param.dName ~ "[i]"
             ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
           break;
         case Object, Interface:
           auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
-          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ objectGSym ~ ".getDObject("
-            ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+          preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ "[i] = "
+            ~ objectGSym ~ ".getDObject(" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
           break;
         case Unknown, Callback, Container, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string

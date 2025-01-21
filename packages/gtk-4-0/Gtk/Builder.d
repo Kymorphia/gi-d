@@ -473,6 +473,102 @@ class Builder : ObjectG
   }
 
   /**
+   * Parses a file containing a UI definition building only the
+   * requested objects and merges them with the current contents
+   * of builder.
+   * Upon errors, 0 will be returned and error will be assigned a
+   * `GError` from the %GTK_BUILDER_ERROR, %G_MARKUP_ERROR or %G_FILE_ERROR
+   * domain.
+   * If you are adding an object that depends on an object that is not
+   * its child $(LPAREN)for instance a `GtkTreeView` that depends on its
+   * `GtkTreeModel`$(RPAREN), you have to explicitly list all of them in object_ids.
+   * Params:
+   *   filename = the name of the file to parse
+   *   objectIds = nul-terminated array of objects to build
+   * Returns: %TRUE on success, %FALSE if an error occurred
+   */
+  bool addObjectsFromFile(string filename, string[] objectIds)
+  {
+    bool _retval;
+    const(char)* _filename = filename.toCString(false);
+    const(char)*[] _tmpobjectIds;
+    foreach (s; objectIds)
+      _tmpobjectIds ~= s.toCString(false);
+    _tmpobjectIds ~= null;
+    const(char*)* _objectIds = _tmpobjectIds.ptr;
+
+    GError *_err;
+    _retval = gtk_builder_add_objects_from_file(cast(GtkBuilder*)cPtr, _filename, _objectIds, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
+
+  /**
+   * Parses a resource file containing a UI definition, building
+   * only the requested objects and merges them with the current
+   * contents of builder.
+   * Upon errors, 0 will be returned and error will be assigned a
+   * `GError` from the %GTK_BUILDER_ERROR, %G_MARKUP_ERROR or %G_RESOURCE_ERROR
+   * domain.
+   * If you are adding an object that depends on an object that is not
+   * its child $(LPAREN)for instance a `GtkTreeView` that depends on its
+   * `GtkTreeModel`$(RPAREN), you have to explicitly list all of them in object_ids.
+   * Params:
+   *   resourcePath = the path of the resource file to parse
+   *   objectIds = nul-terminated array of objects to build
+   * Returns: %TRUE on success, %FALSE if an error occurred
+   */
+  bool addObjectsFromResource(string resourcePath, string[] objectIds)
+  {
+    bool _retval;
+    const(char)* _resourcePath = resourcePath.toCString(false);
+    const(char)*[] _tmpobjectIds;
+    foreach (s; objectIds)
+      _tmpobjectIds ~= s.toCString(false);
+    _tmpobjectIds ~= null;
+    const(char*)* _objectIds = _tmpobjectIds.ptr;
+
+    GError *_err;
+    _retval = gtk_builder_add_objects_from_resource(cast(GtkBuilder*)cPtr, _resourcePath, _objectIds, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
+
+  /**
+   * Parses a string containing a UI definition, building only the
+   * requested objects and merges them with the current contents of
+   * builder.
+   * Upon errors %FALSE will be returned and error will be assigned a
+   * `GError` from the %GTK_BUILDER_ERROR or %G_MARKUP_ERROR domain.
+   * If you are adding an object that depends on an object that is not
+   * its child $(LPAREN)for instance a `GtkTreeView` that depends on its
+   * `GtkTreeModel`$(RPAREN), you have to explicitly list all of them in object_ids.
+   * Params:
+   *   buffer = the string to parse
+   *   length = the length of buffer $(LPAREN)may be -1 if buffer is nul-terminated$(RPAREN)
+   *   objectIds = nul-terminated array of objects to build
+   * Returns: %TRUE on success, %FALSE if an error occurred
+   */
+  bool addObjectsFromString(string buffer, ptrdiff_t length, string[] objectIds)
+  {
+    bool _retval;
+    const(char)* _buffer = buffer.toCString(false);
+    const(char)*[] _tmpobjectIds;
+    foreach (s; objectIds)
+      _tmpobjectIds ~= s.toCString(false);
+    _tmpobjectIds ~= null;
+    const(char*)* _objectIds = _tmpobjectIds.ptr;
+
+    GError *_err;
+    _retval = gtk_builder_add_objects_from_string(cast(GtkBuilder*)cPtr, _buffer, length, _objectIds, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
+
+  /**
    * Creates a closure to invoke the function called function_name.
    * This is using the create_closure$(LPAREN)$(RPAREN) implementation of builder's
    * [Gtk.BuilderScope].

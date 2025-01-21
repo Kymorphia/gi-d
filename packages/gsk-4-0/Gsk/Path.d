@@ -70,19 +70,17 @@ class Path : Boxed
    */
   bool foreach_(PathForeachFlags flags, PathForeachFunc func)
   {
-    static PathForeachFunc _static_func;
-
     extern(C) bool _funcCallback(GskPathOperation op, const(graphene_point_t)* pts, size_t nPts, float weight, void* userData)
     {
-      bool _retval = _static_func(op, pts ? new Point(cast(void*)pts, false) : null, nPts, weight);
+      auto _dlg = cast(PathForeachFunc*)userData;
+
+      bool _retval = (*_dlg)(op, pts ? new Point(cast(void*)pts, false) : null, nPts, weight);
       return _retval;
     }
 
-    _static_func = func;
     bool _retval;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     _retval = gsk_path_foreach(cast(GskPath*)cPtr, flags, &_funcCallback, _func);
-    _static_func = null;
     return _retval;
   }
 

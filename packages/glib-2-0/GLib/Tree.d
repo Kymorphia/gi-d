@@ -62,18 +62,16 @@ class Tree : Boxed
    */
   void foreach_(TraverseFunc func)
   {
-    static TraverseFunc _static_func;
-
     extern(C) bool _funcCallback(void* key, void* value, void* data)
     {
-      bool _retval = _static_func(key, value);
+      auto _dlg = cast(TraverseFunc*)data;
+
+      bool _retval = (*_dlg)(key, value);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_tree_foreach(cast(GTree*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -90,18 +88,16 @@ class Tree : Boxed
    */
   void foreachNode(TraverseNodeFunc func)
   {
-    static TraverseNodeFunc _static_func;
-
     extern(C) bool _funcCallback(GTreeNode* node, void* data)
     {
-      bool _retval = _static_func(node ? new TreeNode(cast(void*)node, false) : null);
+      auto _dlg = cast(TraverseNodeFunc*)data;
+
+      bool _retval = (*_dlg)(node ? new TreeNode(cast(void*)node, false) : null);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_tree_foreach_node(cast(GTree*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -365,18 +361,16 @@ class Tree : Boxed
    */
   void traverse(TraverseFunc traverseFunc, TraverseType traverseType)
   {
-    static TraverseFunc _static_traverseFunc;
-
     extern(C) bool _traverseFuncCallback(void* key, void* value, void* data)
     {
-      bool _retval = _static_traverseFunc(key, value);
+      auto _dlg = cast(TraverseFunc*)data;
+
+      bool _retval = (*_dlg)(key, value);
       return _retval;
     }
 
-    _static_traverseFunc = traverseFunc;
-    auto _traverseFunc = freezeDelegate(cast(void*)&traverseFunc);
+    auto _traverseFunc = cast(void*)&traverseFunc;
     g_tree_traverse(cast(GTree*)cPtr, &_traverseFuncCallback, traverseType, _traverseFunc);
-    _static_traverseFunc = null;
   }
 
   /**

@@ -17,6 +17,7 @@ import Gio.IconT;
 import Gio.InputStream;
 import Gio.LoadableIcon;
 import Gio.LoadableIconT;
+import Gio.OutputStream;
 import Gio.Types;
 
 /**
@@ -466,6 +467,27 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
     _cretval = gdk_pixbuf_new_from_stream_finish(asyncResult ? cast(GAsyncResult*)(cast(ObjectG)asyncResult).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
+    auto _retval = _cretval ? ObjectG.getDObject!Pixbuf(cast(PixbufC*)_cretval, true) : null;
+    return _retval;
+  }
+
+  /**
+   * Creates a new pixbuf by parsing XPM data in memory.
+   * This data is commonly the result of including an XPM file into a
+   * program's C source.
+   * Params:
+   *   data = Pointer to inline XPM data.
+   * Returns: A newly-created pixbuf
+   */
+  static Pixbuf newFromXpmData(string[] data)
+  {
+    PixbufC* _cretval;
+    char*[] _tmpdata;
+    foreach (s; data)
+      _tmpdata ~= s.toCString(false);
+    _tmpdata ~= null;
+    const(char*)* _data = _tmpdata.ptr;
+    _cretval = gdk_pixbuf_new_from_xpm_data(_data);
     auto _retval = _cretval ? ObjectG.getDObject!Pixbuf(cast(PixbufC*)_cretval, true) : null;
     return _retval;
   }
@@ -1126,6 +1148,213 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
   void saturateAndPixelate(Pixbuf dest, float saturation, bool pixelate)
   {
     gdk_pixbuf_saturate_and_pixelate(cast(PixbufC*)cPtr, dest ? cast(PixbufC*)dest.cPtr(false) : null, saturation, pixelate);
+  }
+
+  /**
+   * Vector version of `[GdkPixbuf.Pixbuf.saveToBuffer]`.
+   * Saves pixbuf to a new buffer in format type, which is currently "jpeg",
+   * "tiff", "png", "ico" or "bmp".
+   * See [GdkPixbuf.Pixbuf.saveToBuffer] for more details.
+   * Params:
+   *   buffer = location to receive a pointer to the new buffer.
+   *   type = name of file format.
+   *   optionKeys = name of options to set
+   *   optionValues = values for named options
+   * Returns: whether an error was set
+   */
+  bool saveToBufferv(out ubyte[] buffer, string type, string[] optionKeys, string[] optionValues)
+  {
+    bool _retval;
+    size_t _bufferSize;
+    ubyte* _buffer;
+    const(char)* _type = type.toCString(false);
+    char*[] _tmpoptionKeys;
+    foreach (s; optionKeys)
+      _tmpoptionKeys ~= s.toCString(false);
+    _tmpoptionKeys ~= null;
+    char** _optionKeys = _tmpoptionKeys.ptr;
+
+    char*[] _tmpoptionValues;
+    foreach (s; optionValues)
+      _tmpoptionValues ~= s.toCString(false);
+    _tmpoptionValues ~= null;
+    char** _optionValues = _tmpoptionValues.ptr;
+
+    GError *_err;
+    _retval = gdk_pixbuf_save_to_bufferv(cast(PixbufC*)cPtr, &_buffer, &_bufferSize, _type, _optionKeys, _optionValues, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    buffer.length = _bufferSize;
+    buffer[0 .. $] = _buffer[0 .. _bufferSize];
+    safeFree(cast(void*)_buffer);
+    return _retval;
+  }
+
+  /**
+   * Vector version of `[GdkPixbuf.Pixbuf.saveToCallback]`.
+   * Saves pixbuf to a callback in format type, which is currently "jpeg",
+   * "png", "tiff", "ico" or "bmp".
+   * If error is set, `FALSE` will be returned.
+   * See [GdkPixbuf.Pixbuf.saveToCallback] for more details.
+   * Params:
+   *   saveFunc = a function that is called to save each block of data that
+   *     the save routine generates.
+   *   type = name of file format.
+   *   optionKeys = name of options to set
+   *   optionValues = values for named options
+   * Returns: whether an error was set
+   */
+  bool saveToCallbackv(PixbufSaveFunc saveFunc, string type, string[] optionKeys, string[] optionValues)
+  {
+    extern(C) bool _saveFuncCallback(const(ubyte)* buf, size_t count, GError** error, void* data)
+    {
+      auto _dlg = cast(PixbufSaveFunc*)data;
+      ubyte[] _buf;
+      _buf.length = count;
+      _buf[0 .. count] = buf[0 .. count];
+      auto _error = new ErrorG(error, false);
+
+      bool _retval = (*_dlg)(_buf, _error);
+       *error = *cast(GError**)_error.cPtr;
+
+      return _retval;
+    }
+
+    bool _retval;
+    auto _saveFunc = cast(void*)&saveFunc;
+    const(char)* _type = type.toCString(false);
+    char*[] _tmpoptionKeys;
+    foreach (s; optionKeys)
+      _tmpoptionKeys ~= s.toCString(false);
+    _tmpoptionKeys ~= null;
+    char** _optionKeys = _tmpoptionKeys.ptr;
+
+    char*[] _tmpoptionValues;
+    foreach (s; optionValues)
+      _tmpoptionValues ~= s.toCString(false);
+    _tmpoptionValues ~= null;
+    char** _optionValues = _tmpoptionValues.ptr;
+
+    GError *_err;
+    _retval = gdk_pixbuf_save_to_callbackv(cast(PixbufC*)cPtr, &_saveFuncCallback, _saveFunc, _type, _optionKeys, _optionValues, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
+
+  /**
+   * Saves `pixbuf` to an output stream.
+   * Supported file formats are currently "jpeg", "tiff", "png", "ico" or
+   * "bmp".
+   * See [GdkPixbuf.Pixbuf.saveToStream] for more details.
+   * Params:
+   *   stream = a `GOutputStream` to save the pixbuf to
+   *   type = name of file format
+   *   optionKeys = name of options to set
+   *   optionValues = values for named options
+   *   cancellable = optional `GCancellable` object, `NULL` to ignore
+   * Returns: `TRUE` if the pixbuf was saved successfully, `FALSE` if an
+   *   error was set.
+   */
+  bool saveToStreamv(OutputStream stream, string type, string[] optionKeys, string[] optionValues, Cancellable cancellable)
+  {
+    bool _retval;
+    const(char)* _type = type.toCString(false);
+    char*[] _tmpoptionKeys;
+    foreach (s; optionKeys)
+      _tmpoptionKeys ~= s.toCString(false);
+    _tmpoptionKeys ~= null;
+    char** _optionKeys = _tmpoptionKeys.ptr;
+
+    char*[] _tmpoptionValues;
+    foreach (s; optionValues)
+      _tmpoptionValues ~= s.toCString(false);
+    _tmpoptionValues ~= null;
+    char** _optionValues = _tmpoptionValues.ptr;
+
+    GError *_err;
+    _retval = gdk_pixbuf_save_to_streamv(cast(PixbufC*)cPtr, stream ? cast(GOutputStream*)stream.cPtr(false) : null, _type, _optionKeys, _optionValues, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
+  }
+
+  /**
+   * Saves `pixbuf` to an output stream asynchronously.
+   * For more details see [GdkPixbuf.Pixbuf.saveToStreamv], which is the synchronous
+   * version of this function.
+   * When the operation is finished, `callback` will be called in the main thread.
+   * You can then call [GdkPixbuf.Pixbuf.saveToStreamFinish] to get the result of
+   * the operation.
+   * Params:
+   *   stream = a `GOutputStream` to which to save the pixbuf
+   *   type = name of file format
+   *   optionKeys = name of options to set
+   *   optionValues = values for named options
+   *   cancellable = optional `GCancellable` object, `NULL` to ignore
+   *   callback = a `GAsyncReadyCallback` to call when the pixbuf is saved
+   */
+  void saveToStreamvAsync(OutputStream stream, string type, string[] optionKeys, string[] optionValues, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)* _type = type.toCString(false);
+    char*[] _tmpoptionKeys;
+    foreach (s; optionKeys)
+      _tmpoptionKeys ~= s.toCString(false);
+    _tmpoptionKeys ~= null;
+    char** _optionKeys = _tmpoptionKeys.ptr;
+
+    char*[] _tmpoptionValues;
+    foreach (s; optionValues)
+      _tmpoptionValues ~= s.toCString(false);
+    _tmpoptionValues ~= null;
+    char** _optionValues = _tmpoptionValues.ptr;
+
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    gdk_pixbuf_save_to_streamv_async(cast(PixbufC*)cPtr, stream ? cast(GOutputStream*)stream.cPtr(false) : null, _type, _optionKeys, _optionValues, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
+
+  /**
+   * Vector version of `[GdkPixbuf.Pixbuf.save]`.
+   * Saves pixbuf to a file in `type`, which is currently "jpeg", "png", "tiff", "ico" or "bmp".
+   * If error is set, `FALSE` will be returned.
+   * See [GdkPixbuf.Pixbuf.save] for more details.
+   * Params:
+   *   filename = name of file to save.
+   *   type = name of file format.
+   *   optionKeys = name of options to set
+   *   optionValues = values for named options
+   * Returns: whether an error was set
+   */
+  bool savev(string filename, string type, string[] optionKeys, string[] optionValues)
+  {
+    bool _retval;
+    const(char)* _filename = filename.toCString(false);
+    const(char)* _type = type.toCString(false);
+    char*[] _tmpoptionKeys;
+    foreach (s; optionKeys)
+      _tmpoptionKeys ~= s.toCString(false);
+    _tmpoptionKeys ~= null;
+    char** _optionKeys = _tmpoptionKeys.ptr;
+
+    char*[] _tmpoptionValues;
+    foreach (s; optionValues)
+      _tmpoptionValues ~= s.toCString(false);
+    _tmpoptionValues ~= null;
+    char** _optionValues = _tmpoptionValues.ptr;
+
+    GError *_err;
+    _retval = gdk_pixbuf_savev(cast(PixbufC*)cPtr, _filename, _type, _optionKeys, _optionValues, &_err);
+    if (_err)
+      throw new ErrorG(_err);
+    return _retval;
   }
 
   /**

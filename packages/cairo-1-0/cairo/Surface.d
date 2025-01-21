@@ -294,6 +294,24 @@ class Surface : Boxed
   }
 
   /**
+   * Return mime data previously attached to surface using the
+   * specified mime type.  If no data has been attached with the given
+   * mime type, data is set %NULL.
+   * Params:
+   *   mimeType = the mime type of the image data
+   *   data = the image data to attached to the surface
+   */
+  void getMimeData(string mimeType, out ubyte[] data)
+  {
+    const(char)* _mimeType = mimeType.toCString(false);
+    ulong _length;
+    const(ubyte)* _data;
+    cairo_surface_get_mime_data(cast(cairo_surface_t*)cPtr, _mimeType, &_data, &_length);
+    data.length = _length;
+    data[0 .. $] = _data[0 .. _length];
+  }
+
+  /**
    * This function returns the type of the backend used to create
    * a surface. See #cairo_surface_type_t for available types.
    * Returns: The type of surface.
@@ -412,6 +430,35 @@ class Surface : Boxed
   }
 
   /**
+   * Prints the observer log using the given callback.
+   * Params:
+   *   writeFunc = callback for writing on a stream
+   * Returns: the status of the print operation
+   */
+  Status observerPrint(WriteFunc writeFunc)
+  {
+    extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+    {
+      Status _dretval;
+      auto _dlg = cast(WriteFunc*)closure;
+      ubyte[] _data;
+      _data.length = length;
+      _data[0 .. length] = data[0 .. length];
+
+      _dretval = (*_dlg)(_data);
+      auto _retval = cast(cairo_status_t)_dretval;
+
+      return _retval;
+    }
+
+    cairo_status_t _cretval;
+    auto _writeFunc = cast(void*)&writeFunc;
+    _cretval = cairo_surface_observer_print(cast(cairo_surface_t*)cPtr, &_writeFuncCallback, _writeFunc);
+    Status _retval = cast(Status)_cretval;
+    return _retval;
+  }
+
+  /**
    * Sets an offset that is added to the device coordinates determined
    * by the CTM when drawing to surface. One use case for this function
    * is when we want to create a #cairo_surface_t that redirects drawing
@@ -477,6 +524,65 @@ class Surface : Boxed
   void setFallbackResolution(double xPixelsPerInch, double yPixelsPerInch)
   {
     cairo_surface_set_fallback_resolution(cast(cairo_surface_t*)cPtr, xPixelsPerInch, yPixelsPerInch);
+  }
+
+  /**
+   * Attach an image in the format mime_type to surface. To remove
+   * the data from a surface, call this function with same mime type
+   * and %NULL for data.
+   * The attached image $(LPAREN)or filename$(RPAREN) data can later be used by backends
+   * which support it $(LPAREN)currently: PDF, PS, SVG and Win32 Printing
+   * surfaces$(RPAREN) to emit this data instead of making a snapshot of the
+   * surface.  This approach tends to be faster and requires less
+   * memory and disk space.
+   * The recognized MIME types are the following: %CAIRO_MIME_TYPE_JPEG,
+   * %CAIRO_MIME_TYPE_PNG, %CAIRO_MIME_TYPE_JP2, %CAIRO_MIME_TYPE_URI,
+   * %CAIRO_MIME_TYPE_UNIQUE_ID, %CAIRO_MIME_TYPE_JBIG2,
+   * %CAIRO_MIME_TYPE_JBIG2_GLOBAL, %CAIRO_MIME_TYPE_JBIG2_GLOBAL_ID,
+   * %CAIRO_MIME_TYPE_CCITT_FAX, %CAIRO_MIME_TYPE_CCITT_FAX_PARAMS.
+   * See corresponding backend surface docs for details about which MIME
+   * types it can handle. Caution: the associated MIME data will be
+   * discarded if you draw on the surface afterwards. Use this function
+   * with care.
+   * Even if a backend supports a MIME type, that does not mean cairo
+   * will always be able to use the attached MIME data. For example, if
+   * the backend does not natively support the compositing operation used
+   * to apply the MIME data to the backend. In that case, the MIME data
+   * will be ignored. Therefore, to apply an image in all cases, it is best
+   * to create an image surface which contains the decoded image data and
+   * then attach the MIME data to that. This ensures the image will always
+   * be used while still allowing the MIME data to be used whenever
+   * possible.
+   * Params:
+   *   mimeType = the MIME type of the image data
+   *   data = the image data to attach to the surface
+   *   destroy = a #cairo_destroy_func_t which will be called when the
+   *     surface is destroyed or when new image data is attached using the
+   *     same mime type.
+   * Returns: %CAIRO_STATUS_SUCCESS or %CAIRO_STATUS_NO_MEMORY if a
+   *   slot could not be allocated for the user data.
+   */
+  Status setMimeData(string mimeType, ubyte[] data, DestroyFunc destroy)
+  {
+    extern(C) void _destroyCallback(void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(DestroyFunc*)data;
+
+      (*_dlg)();
+    }
+
+    cairo_status_t _cretval;
+    const(char)* _mimeType = mimeType.toCString(false);
+    ulong _length;
+    if (data)
+      _length = cast(ulong)data.length;
+
+    auto _data = cast(const(ubyte)*)data.ptr;
+    auto _destroy = freezeDelegate(cast(void*)&destroy);
+    _cretval = cairo_surface_set_mime_data(cast(cairo_surface_t*)cPtr, _mimeType, _data, _length, &_destroyCallback, _destroy);
+    Status _retval = cast(Status)_cretval;
+    return _retval;
   }
 
   /**
@@ -554,6 +660,40 @@ class Surface : Boxed
     cairo_status_t _cretval;
     const(char)* _filename = filename.toCString(false);
     _cretval = cairo_surface_write_to_png(cast(cairo_surface_t*)cPtr, _filename);
+    Status _retval = cast(Status)_cretval;
+    return _retval;
+  }
+
+  /**
+   * Writes the image surface to the write function.
+   * Params:
+   *   writeFunc = a #cairo_write_func_t
+   * Returns: %CAIRO_STATUS_SUCCESS if the PNG file was written
+   *   successfully.  Otherwise, %CAIRO_STATUS_NO_MEMORY is returned if
+   *   memory could not be allocated for the operation,
+   *   %CAIRO_STATUS_SURFACE_TYPE_MISMATCH if the surface does not have
+   *   pixel contents, or %CAIRO_STATUS_PNG_ERROR if libpng
+   *   returned an error.
+   */
+  Status writeToPngStream(WriteFunc writeFunc)
+  {
+    extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+    {
+      Status _dretval;
+      auto _dlg = cast(WriteFunc*)closure;
+      ubyte[] _data;
+      _data.length = length;
+      _data[0 .. length] = data[0 .. length];
+
+      _dretval = (*_dlg)(_data);
+      auto _retval = cast(cairo_status_t)_dretval;
+
+      return _retval;
+    }
+
+    cairo_status_t _cretval;
+    auto _writeFunc = cast(void*)&writeFunc;
+    _cretval = cairo_surface_write_to_png_stream(cast(cairo_surface_t*)cPtr, &_writeFuncCallback, _writeFunc);
     Status _retval = cast(Status)_cretval;
     return _retval;
   }

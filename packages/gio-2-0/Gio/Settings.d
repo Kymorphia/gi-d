@@ -804,20 +804,18 @@ class Settings : ObjectG
    */
   void* getMapped(string key, SettingsGetMapping mapping)
   {
-    static SettingsGetMapping _static_mapping;
-
     extern(C) bool _mappingCallback(GVariant* value, void** result, void* userData)
     {
-      bool _retval = _static_mapping(value ? new Variant(cast(void*)value, false) : null, *result);
+      auto _dlg = cast(SettingsGetMapping*)userData;
+
+      bool _retval = (*_dlg)(value ? new Variant(cast(void*)value, false) : null, *result);
       return _retval;
     }
 
-    _static_mapping = mapping;
     void* _retval;
     const(char)* _key = key.toCString(false);
-    auto _mapping = freezeDelegate(cast(void*)&mapping);
+    auto _mapping = cast(void*)&mapping;
     _retval = g_settings_get_mapped(cast(GSettings*)cPtr, _key, &_mappingCallback, _mapping);
-    _static_mapping = null;
     return _retval;
   }
 

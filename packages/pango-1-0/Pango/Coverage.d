@@ -134,7 +134,8 @@ class Coverage : ObjectG
     int _nBytes;
     ubyte* _bytes;
     pango_coverage_to_bytes(cast(PangoCoverage*)cPtr, &_bytes, &_nBytes);
-    bytes = _bytes[0 .. _nBytes];
+    bytes.length = _nBytes;
+    bytes[0 .. $] = _bytes[0 .. _nBytes];
     safeFree(cast(void*)_bytes);
   }
 }

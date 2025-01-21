@@ -1099,16 +1099,13 @@ void atomicRcBoxRelease(void* memBlock)
  */
 void atomicRcBoxReleaseFull(void* memBlock, DestroyNotify clearFunc)
 {
-  static DestroyNotify _static_clearFunc;
-
   extern(C) void _clearFuncCallback(void* data)
   {
-    _static_clearFunc();
-  }
+    auto _dlg = cast(DestroyNotify*)data;
 
-  _static_clearFunc = clearFunc;
+    (*_dlg)();
+  }
   g_atomic_rc_box_release_full(memBlock, &_clearFuncCallback);
-  _static_clearFunc = null;
 }
 
 /**
@@ -1975,17 +1972,15 @@ void datasetDestroy(const(void)* datasetLocation)
  */
 void datasetForeach(const(void)* datasetLocation, DataForeachFunc func)
 {
-  static DataForeachFunc _static_func;
-
   extern(C) void _funcCallback(GQuark keyId, void* data, void* userData)
   {
-    _static_func(keyId, data);
+    auto _dlg = cast(DataForeachFunc*)userData;
+
+    (*_dlg)(keyId, data);
   }
 
-  _static_func = func;
-  auto _func = freezeDelegate(cast(void*)&func);
+  auto _func = cast(void*)&func;
   g_dataset_foreach(datasetLocation, &_funcCallback, _func);
-  _static_func = null;
 }
 
 /**
@@ -2322,7 +2317,8 @@ bool fileGetContents(string filename, out ubyte[] contents)
   _retval = g_file_get_contents(_filename, &_contents, &_length, &_err);
   if (_err)
     throw new ErrorG(_err);
-  contents = _contents[0 .. _length];
+  contents.length = _length;
+  contents[0 .. $] = _contents[0 .. _length];
   safeFree(cast(void*)_contents);
   return _retval;
 }
@@ -4336,8 +4332,9 @@ void logSetWriterFunc(LogWriterFunc func)
     LogWriterOutput _dretval;
     auto _dlg = cast(LogWriterFunc*)userData;
     LogField[] _fields;
+    _fields.length = nFields;
     foreach (i; 0 .. nFields)
-      _fields ~= new LogField(cast(GLogField*)&fields[i], false);
+      _fields[i] = new LogField(cast(GLogField*)&fields[i], false);
 
     _dretval = (*_dlg)(logLevel, _fields);
     auto _retval = cast(GLogWriterOutput)_dretval;
@@ -5497,18 +5494,16 @@ void propagateError(out ErrorG dest, ErrorG src)
  */
 void qsortWithData(const(void)* pbase, int totalElems, size_t size, CompareDataFunc compareFunc)
 {
-  static CompareDataFunc _static_compareFunc;
-
   extern(C) int _compareFuncCallback(const(void)* a, const(void)* b, void* userData)
   {
-    int _retval = _static_compareFunc(a, b);
+    auto _dlg = cast(CompareDataFunc*)userData;
+
+    int _retval = (*_dlg)(a, b);
     return _retval;
   }
 
-  _static_compareFunc = compareFunc;
-  auto _compareFunc = freezeDelegate(cast(void*)&compareFunc);
+  auto _compareFunc = cast(void*)&compareFunc;
   g_qsort_with_data(pbase, totalElems, size, &_compareFuncCallback, _compareFunc);
-  _static_compareFunc = null;
 }
 
 /**
@@ -5759,16 +5754,13 @@ void rcBoxRelease(void* memBlock)
  */
 void rcBoxReleaseFull(void* memBlock, DestroyNotify clearFunc)
 {
-  static DestroyNotify _static_clearFunc;
-
   extern(C) void _clearFuncCallback(void* data)
   {
-    _static_clearFunc();
-  }
+    auto _dlg = cast(DestroyNotify*)data;
 
-  _static_clearFunc = clearFunc;
+    (*_dlg)();
+  }
   g_rc_box_release_full(memBlock, &_clearFuncCallback);
-  _static_clearFunc = null;
 }
 
 /**
@@ -6962,14 +6954,13 @@ Quark spawnExitErrorQuark()
  */
 bool spawnSync(string workingDirectory, string[] argv, string[] envp, SpawnFlags flags, SpawnChildSetupFunc childSetup, out string standardOutput, out string standardError, out int waitStatus)
 {
-  static SpawnChildSetupFunc _static_childSetup;
-
   extern(C) void _childSetupCallback(void* data)
   {
-    _static_childSetup();
+    auto _dlg = cast(SpawnChildSetupFunc*)data;
+
+    (*_dlg)();
   }
 
-  _static_childSetup = childSetup;
   bool _retval;
   const(char)* _workingDirectory = workingDirectory.toCString(false);
   char*[] _tmpargv;
@@ -6984,14 +6975,13 @@ bool spawnSync(string workingDirectory, string[] argv, string[] envp, SpawnFlags
   _tmpenvp ~= null;
   char** _envp = _tmpenvp.ptr;
 
-  auto _childSetup = freezeDelegate(cast(void*)&childSetup);
+  auto _childSetup = cast(void*)&childSetup;
   char* _standardOutput;
   char* _standardError;
   GError *_err;
   _retval = g_spawn_sync(_workingDirectory, _argv, _envp, flags, &_childSetupCallback, _childSetup, &_standardOutput, &_standardError, cast(int*)&waitStatus, &_err);
   if (_err)
     throw new ErrorG(_err);
-  _static_childSetup = null;
   standardOutput = _standardOutput.fromCString(true);
   standardError = _standardError.fromCString(true);
   return _retval;
@@ -7450,6 +7440,38 @@ string strdup(string str)
 }
 
 /**
+ * Copies an array of strings. The copy is a deep copy; each string is also
+ * copied.
+ * If called on a `NULL` value, `[GLib.Global.strdupv]` simply returns `NULL`.
+ * Params:
+ *   strArray = an array of strings to copy
+ * Returns: a
+ *   newly-allocated array of strings. Use funcGLib.strfreev to free it.
+ */
+string[] strdupv(string[] strArray)
+{
+  char** _cretval;
+  char*[] _tmpstrArray;
+  foreach (s; strArray)
+    _tmpstrArray ~= s.toCString(false);
+  _tmpstrArray ~= null;
+  char** _strArray = _tmpstrArray.ptr;
+  _cretval = g_strdupv(_strArray);
+  string[] _retval;
+
+  if (_cretval)
+  {
+    uint _cretlength;
+    for (; _cretval[_cretlength] !is null; _cretlength++)
+      break;
+    _retval = new string[_cretlength];
+    foreach (i; 0 .. _cretlength)
+      _retval[i] = _cretval[i].fromCString(true);
+  }
+  return _retval;
+}
+
+/**
  * Returns a string corresponding to the given error code, e.g. "no
  * such process".
  * Unlike `strerror$(LPAREN)$(RPAREN)`, this always returns a string in
@@ -7517,6 +7539,32 @@ string stripContext(string msgid, string msgval)
   const(char)* _msgval = msgval.toCString(false);
   _cretval = g_strip_context(_msgid, _msgval);
   string _retval = _cretval.fromCString(false);
+  return _retval;
+}
+
+/**
+ * Joins an array of strings together to form one long string, with the
+ * optional separator inserted between each of them.
+ * If str_array has no items, the return value will be an
+ * empty string. If str_array contains a single item, separator will not
+ * appear in the resulting string.
+ * Params:
+ *   separator = a string to insert between each of the strings
+ *   strArray = an array of strings to join
+ * Returns: a newly-allocated string containing all of the strings joined
+ *   together, with separator between them
+ */
+string strjoinv(string separator, string[] strArray)
+{
+  char* _cretval;
+  const(char)* _separator = separator.toCString(false);
+  char*[] _tmpstrArray;
+  foreach (s; strArray)
+    _tmpstrArray ~= s.toCString(false);
+  _tmpstrArray ~= null;
+  char** _strArray = _tmpstrArray.ptr;
+  _cretval = g_strjoinv(_separator, _strArray);
+  string _retval = _cretval.fromCString(true);
   return _retval;
 }
 
@@ -7883,10 +7931,84 @@ string strup(string string_)
   return _retval;
 }
 
+/**
+ * Checks if an array of strings contains the string str according to
+ * funcGLib.str_equal. strv must not be `NULL`.
+ * Params:
+ *   strv = an array of strings to search in
+ *   str = the string to search for
+ * Returns: true if str is an element of strv
+ */
+bool strvContains(string[] strv, string str)
+{
+  bool _retval;
+  char*[] _tmpstrv;
+  foreach (s; strv)
+    _tmpstrv ~= s.toCString(false);
+  _tmpstrv ~= null;
+  const(char*)* _strv = _tmpstrv.ptr;
+
+  const(char)* _str = str.toCString(false);
+  _retval = g_strv_contains(_strv, _str);
+  return _retval;
+}
+
+/**
+ * Checks if two arrays of strings contain exactly the same elements in
+ * exactly the same order.
+ * Elements are compared using funcGLib.str_equal. To match independently
+ * of order, sort the arrays first $(LPAREN)using funcGLib.qsort_with_data
+ * or similar$(RPAREN).
+ * Elements are compared using funcGLib.str_equal. To match independently
+ * of order, sort the arrays first $(LPAREN)using funcGLib.qsort_with_data
+ * or similar$(RPAREN).
+ * Two empty arrays are considered equal. Neither strv1 nor strv2 may be
+ * `NULL`.
+ * Params:
+ *   strv1 = an array of strings to compare to strv2
+ *   strv2 = an array of strings to compare to strv1
+ * Returns: true if strv1 and strv2 are equal
+ */
+bool strvEqual(string[] strv1, string[] strv2)
+{
+  bool _retval;
+  char*[] _tmpstrv1;
+  foreach (s; strv1)
+    _tmpstrv1 ~= s.toCString(false);
+  _tmpstrv1 ~= null;
+  const(char*)* _strv1 = _tmpstrv1.ptr;
+
+  char*[] _tmpstrv2;
+  foreach (s; strv2)
+    _tmpstrv2 ~= s.toCString(false);
+  _tmpstrv2 ~= null;
+  const(char*)* _strv2 = _tmpstrv2.ptr;
+  _retval = g_strv_equal(_strv1, _strv2);
+  return _retval;
+}
+
 GType strvGetType()
 {
   GType _retval;
   _retval = g_strv_get_type();
+  return _retval;
+}
+
+/**
+ * Returns the length of an array of strings. str_array must not be `NULL`.
+ * Params:
+ *   strArray = an array of strings
+ * Returns: length of str_array
+ */
+uint strvLength(string[] strArray)
+{
+  uint _retval;
+  char*[] _tmpstrArray;
+  foreach (s; strArray)
+    _tmpstrArray ~= s.toCString(false);
+  _tmpstrArray ~= null;
+  char** _strArray = _tmpstrArray.ptr;
+  _retval = g_strv_length(_strArray);
   return _retval;
 }
 
@@ -8443,6 +8565,100 @@ void testTrapSubprocess(string testPath, ulong usecTimeout, TestSubprocessFlags 
 {
   const(char)* _testPath = testPath.toCString(false);
   g_test_trap_subprocess(_testPath, usecTimeout, testFlags);
+}
+
+/**
+ * Respawns the test program to run only test_path in a subprocess with the
+ * given envp environment.
+ * This can be used for a test case that might not return, or that
+ * might abort.
+ * If test_path is %NULL then the same test is re-run in a subprocess.
+ * You can use [GLib.Global.testSubprocess] to determine whether the test is in
+ * a subprocess or not.
+ * test_path can also be the name of the parent test, followed by
+ * "`/subprocess/`" and then a name for the specific subtest $(LPAREN)or just
+ * ending with "`/subprocess`" if the test only has one child test$(RPAREN);
+ * tests with names of this form will automatically be skipped in the
+ * parent process.
+ * If envp is %NULL, the parent process’ environment will be inherited.
+ * If usec_timeout is non-0, the test subprocess is aborted and
+ * considered failing if its run time exceeds it.
+ * The subprocess behavior can be configured with the
+ * #GTestSubprocessFlags flags.
+ * You can use methods such as g_test_trap_assert_passed$(LPAREN)$(RPAREN),
+ * g_test_trap_assert_failed$(LPAREN)$(RPAREN), and g_test_trap_assert_stderr$(LPAREN)$(RPAREN) to
+ * check the results of the subprocess. $(LPAREN)But note that
+ * g_test_trap_assert_stdout$(LPAREN)$(RPAREN) and g_test_trap_assert_stderr$(LPAREN)$(RPAREN)
+ * cannot be used if test_flags specifies that the child should
+ * inherit the parent stdout/stderr.$(RPAREN)
+ * If your `main $(LPAREN)$(RPAREN)` needs to behave differently in
+ * the subprocess, you can call [GLib.Global.testSubprocess] $(LPAREN)after calling
+ * [GLib.Global.testInit]$(RPAREN) to see whether you are in a subprocess.
+ * Internally, this function tracks the child process using
+ * [GLib.Global.childWatchSourceNew], so your process must not ignore `SIGCHLD`, and
+ * must not attempt to watch or wait for the child process via another
+ * mechanism.
+ * The following example tests that calling
+ * `my_object_new$(LPAREN)1000000$(RPAREN)` will abort with an error
+ * message.
+ * |[<!-- language\="C" -->
+ * static void
+ * test_create_large_object $(LPAREN)void$(RPAREN)
+ * {
+ * if $(LPAREN)g_test_subprocess $(LPAREN)$(RPAREN)$(RPAREN)
+ * {
+ * my_object_new $(LPAREN)1000000$(RPAREN);
+ * return;
+ * }
+ * // Reruns this same test in a subprocess
+ * g_test_trap_subprocess $(LPAREN)NULL, 0, G_TEST_SUBPROCESS_DEFAULT$(RPAREN);
+ * g_test_trap_assert_failed $(LPAREN)$(RPAREN);
+ * g_test_trap_assert_stderr $(LPAREN)"*ERROR*too large*"$(RPAREN);
+ * }
+ * static void
+ * test_different_username $(LPAREN)void$(RPAREN)
+ * {
+ * if $(LPAREN)g_test_subprocess $(LPAREN)$(RPAREN)$(RPAREN)
+ * {
+ * // Code under test goes here
+ * g_message $(LPAREN)"Username is now simulated as %s", g_getenv $(LPAREN)"USER"$(RPAREN)$(RPAREN);
+ * return;
+ * }
+ * // Reruns this same test in a subprocess
+ * g_autoptr$(LPAREN)GStrv$(RPAREN) envp \= g_get_environ $(LPAREN)$(RPAREN);
+ * envp \= g_environ_setenv $(LPAREN)g_steal_pointer $(LPAREN)&envp$(RPAREN), "USER", "charlie", TRUE$(RPAREN);
+ * g_test_trap_subprocess_with_envp $(LPAREN)NULL, envp, 0, G_TEST_SUBPROCESS_DEFAULT$(RPAREN);
+ * g_test_trap_assert_passed $(LPAREN)$(RPAREN);
+ * g_test_trap_assert_stdout $(LPAREN)"Username is now simulated as charlie"$(RPAREN);
+ * }
+ * int
+ * main $(LPAREN)int argc, char **argv$(RPAREN)
+ * {
+ * g_test_init $(LPAREN)&argc, &argv, NULL$(RPAREN);
+ * g_test_add_func $(LPAREN)"/myobject/create-large-object",
+ * test_create_large_object$(RPAREN);
+ * g_test_add_func $(LPAREN)"/myobject/different-username",
+ * test_different_username$(RPAREN);
+ * return g_test_run $(LPAREN)$(RPAREN);
+ * }
+ * ]|
+ * Params:
+ *   testPath = Test to run in a subprocess
+ *   envp = Environment
+ *     to run the test in, or %NULL to inherit the parent’s environment. This must
+ *     be in the GLib filename encoding.
+ *   usecTimeout = Timeout for the subprocess test in micro seconds.
+ *   testFlags = Flags to modify subprocess behaviour.
+ */
+void testTrapSubprocessWithEnvp(string testPath, string[] envp, ulong usecTimeout, TestSubprocessFlags testFlags)
+{
+  const(char)* _testPath = testPath.toCString(false);
+  const(char)*[] _tmpenvp;
+  foreach (s; envp)
+    _tmpenvp ~= s.toCString(false);
+  _tmpenvp ~= null;
+  const(char*)* _envp = _tmpenvp.ptr;
+  g_test_trap_subprocess_with_envp(_testPath, _envp, usecTimeout, testFlags);
 }
 
 /**

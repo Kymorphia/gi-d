@@ -197,7 +197,8 @@ class LayoutLine : Boxed
     int _nRanges;
     int* _ranges;
     pango_layout_line_get_x_ranges(cast(PangoLayoutLine*)cPtr, startIndex, endIndex, &_ranges, &_nRanges);
-    ranges = _ranges[0 .. _nRanges];
+    ranges.length = _nRanges;
+    ranges[0 .. $] = _ranges[0 .. _nRanges];
     safeFree(cast(void*)_ranges);
   }
 

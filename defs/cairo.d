@@ -10,6 +10,13 @@
 //!set record[Surface].method[get_type][name] get_surface_type
 
 //# Set basic parameters to out
+//!set callback[UserScaledFontUnicodeToGlyphFunc].parameters.parameter[glyph_index][direction] out
+//!set function[pdf_get_versions].parameters.parameter[versions][direction] out
+//!set function[pdf_get_versions].parameters.parameter[num_versions][direction] out
+//!set function[ps_get_levels].parameters.parameter[levels][direction] out
+//!set function[ps_get_levels].parameters.parameter[num_levels][direction] out
+//!set function[svg_get_versions].parameters.parameter[versions][direction] out
+//!set function[svg_get_versions].parameters.parameter[num_versions][direction] out
 //!set record[Context].method[clip_extents].parameters.parameter[x1][direction] out
 //!set record[Context].method[clip_extents].parameters.parameter[y1][direction] out
 //!set record[Context].method[clip_extents].parameters.parameter[x2][direction] out
@@ -83,3 +90,30 @@
 //!set record[Surface].method[get_device_scale].parameters.parameter[y_scale][direction] out
 //!set record[Surface].method[get_fallback_resolution].parameters.parameter[x_pixels_per_inch][direction] out
 //!set record[Surface].method[get_fallback_resolution].parameters.parameter[y_pixels_per_inch][direction] out
+//!set record[Surface].method[get_mime_data].parameters.parameter[data][direction] out
+//!set record[Surface].method[get_mime_data].parameters.parameter[length][direction] out
+
+//# Fix array information
+//!set callback[ReadFunc].parameters.parameter[data].type '<array length="2" zero-terminated="0" c:type="guint8*"><type name="guint8" c:type="guint8"/></array>'
+//!set callback[WriteFunc].parameters.parameter[data].type '<array length="2" zero-terminated="0" c:type="const guint8*"><type name="guint8" c:type="guint8"/></array>'
+//!set record[Context].method[set_dash].parameters.parameter[dashes].type '<array length="1" zero-terminated="0" c:type="const double*"><type name="double" c:type="double"/></array>'
+//!set function[pdf_get_versions].parameters.parameter[versions].type '<array length="1" zero-terminated="0" c:type="const cairo_pdf_version_t **"><type name="PdfVersion" c:type="cairo_pdf_version_t"/></array>'
+//!set function[ps_get_levels].parameters.parameter[levels].type '<array length="1" zero-terminated="0" c:type="const cairo_ps_level_t **"><type name="PsLevel" c:type="cairo_ps_level_t"/></array>'
+//!set function[svg_get_versions].parameters.parameter[versions].type '<array length="1" zero-terminated="0" c:type="const cairo_svg_version_t **"><type name="SvgVersion" c:type="cairo_ps_level_t"/></array>'
+//!set record[Surface].method[get_mime_data].parameters.parameter[data].type '<array length="2" zero-terminated="0" c:type="const guint8**"><type name="guint8" c:type="guint8"/></array>'
+//!set record[Surface].method[set_mime_data].parameters.parameter[data].type '<array length="2" zero-terminated="0" c:type="const guint8*"><type name="guint8" c:type="guint8"/></array>'
+
+//# Designate parameters as closure data
+//!set callback[ReadFunc].parameters.parameter[closure][closure] 0
+//!set callback[WriteFunc].parameters.parameter[closure][closure] 0
+
+//# Designate closure data parameter
+//!set function[image_surface_create_from_png_stream].parameters.parameter[read_func][closure] 1
+//!set function[pdf_surface_create_for_stream].parameters.parameter[write_func][closure] 1
+//!set function[ps_surface_create_for_stream].parameters.parameter[write_func][closure] 1
+//!set function[script_create_for_stream].parameters.parameter[write_func][closure] 1
+//!set function[svg_surface_create_for_stream].parameters.parameter[write_func][closure] 1
+//!set record[Device].method[observer_print].parameters.parameter[write_func][closure] 1
+//!set record[Surface].method[observer_print].parameters.parameter[write_func][closure] 1
+//!set record[Surface].method[set_mime_data].parameters.parameter[destroy][closure] 4
+//!set record[Surface].method[write_to_png_stream].parameters.parameter[write_func][closure] 1

@@ -1183,6 +1183,33 @@ void shapeWithFlags(string itemText, int itemLength, string paragraphText, int p
 }
 
 /**
+ * Splits a %G_SEARCHPATH_SEPARATOR-separated list of files, stripping
+ * white space and substituting ~/ with \$HOME/.
+ * Params:
+ *   str = a %G_SEARCHPATH_SEPARATOR separated list of filenames
+ * Returns: a list of
+ *   strings to be freed with [GLib.Global.strfreev]
+ */
+string[] splitFileList(string str)
+{
+  char** _cretval;
+  const(char)* _str = str.toCString(false);
+  _cretval = pango_split_file_list(_str);
+  string[] _retval;
+
+  if (_cretval)
+  {
+    uint _cretlength;
+    for (; _cretval[_cretlength] !is null; _cretlength++)
+      break;
+    _retval = new string[_cretlength];
+    foreach (i; 0 .. _cretlength)
+      _retval[i] = _cretval[i].fromCString(true);
+  }
+  return _retval;
+}
+
+/**
  * Apply language-specific tailoring to the breaks in attrs.
  * The line breaks are assumed to have been produced by funcPango.default_break.
  * If offset is not -1, it is used to apply attributes from analysis that are

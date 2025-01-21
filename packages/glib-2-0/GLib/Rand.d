@@ -62,6 +62,25 @@ class Rand : Boxed
   }
 
   /**
+   * Creates a new random number generator initialized with seed.
+   * Params:
+   *   seed = an array of seeds to initialize the random number generator
+   * Returns: the new #GRand
+   */
+  static Rand newWithSeedArray(uint[] seed)
+  {
+    GRand* _cretval;
+    uint _seedLength;
+    if (seed)
+      _seedLength = cast(uint)seed.length;
+
+    auto _seed = cast(const(uint)*)seed.ptr;
+    _cretval = g_rand_new_with_seed_array(_seed, _seedLength);
+    auto _retval = _cretval ? new Rand(cast(void*)_cretval, true) : null;
+    return _retval;
+  }
+
+  /**
    * Copies a #GRand into a new one with the same exact state as before.
    * This way you can take a snapshot of the random number generator for
    * replaying later.

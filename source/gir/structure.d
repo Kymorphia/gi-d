@@ -246,10 +246,13 @@ final class Structure : TypeNode
 
     if (!parentType.empty && !parentStruct)
       throw new Exception("Failed to resolve parent type '" ~ parentType.to!string ~ "'");
-
+ 
     foreach (ifaceName; implements)
       if (!cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
+      {
         warning(xmlLocation ~ "Unable to resolve structure " ~ fullName.to!string ~ " interface " ~ ifaceName.to!string);
+        TypeNode.dumpSelectorOnWarning(this);
+      }
 
     if (!defCode.genFuncs) // Skip verification of functions, signals, and fields if they aren't being generated
       return;
@@ -261,6 +264,7 @@ final class Structure : TypeNode
         fn.disable = true;
         warning(fn.xmlLocation ~ "Disabling function '" ~ fn.fullName.to!string ~ "' of type '" ~ fn.funcType.to!string
             ~ "' which is not supported");
+        TypeNode.dumpSelectorOnWarning(fn);
       }
       else
         fn.verify;
@@ -274,6 +278,7 @@ final class Structure : TypeNode
       {
         sig.disable = true;
         warning(sig.xmlLocation ~ "Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
+        TypeNode.dumpSelectorOnWarning(sig);
       }
     }
 
@@ -285,6 +290,7 @@ final class Structure : TypeNode
       {
         f.disable = true;
         warning(f.xmlLocation ~ "Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
+        TypeNode.dumpSelectorOnWarning(f);
       }
     }
   }

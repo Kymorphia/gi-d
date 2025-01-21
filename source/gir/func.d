@@ -264,11 +264,12 @@ final class Func : TypeNode
     if (disable)
       return;
 
-    void disableFunc(string msg)
+    void disableFunc(string msg, TypeNode errorNode = null)
     {
       disable = true;
       warning(xmlLocation ~ "Disabling " ~ (funcType == FuncType.Signal ? "signal '" : "function '" )
         ~ fullName.to!string ~ "': " ~ msg);
+      TypeNode.dumpSelectorOnWarning(errorNode ? errorNode : this);
     }
 
     if (!shadows.empty && !shadowsFunc)
@@ -283,26 +284,27 @@ final class Func : TypeNode
         returnVal.verify; // Verify the return type
       catch (Exception e)
       {
-        disableFunc("Return type error: " ~ e.msg);
+        disableFunc("Return type error: " ~ e.msg, returnVal);
         return;
       }
     }
 
     if (returnVal.containerType == ContainerType.None && returnVal.kind.among(TypeKind.Basic, TypeKind.BasicAlias)
         && returnVal.cType.countStars != 0 && !returnVal.cType.among("void*"d, "const(void)*"d))
-      disableFunc("Unexpected basic return type '" ~ returnVal.cType.to!string ~ "'");
+      disableFunc("Unexpected basic return type '" ~ returnVal.cType.to!string ~ "'", returnVal);
 
     if (funcType == FuncType.Signal)
     {
       if (returnVal.containerType != ContainerType.None)
       {
-        disableFunc("signal container return type '" ~ returnVal.containerType.to!string ~ "' not supported");
+        disableFunc("signal container return type '" ~ returnVal.containerType.to!string ~ "' not supported",
+          returnVal);
         return;
       }
 
       with(TypeKind) if (returnVal.kind.among(Simple, Pointer, Callback, Opaque, Unknown, Namespace))
       {
-        disableFunc("signal return type '" ~ returnVal.kind.to!string ~ "' is not supported");
+        disableFunc("signal return type '" ~ returnVal.kind.to!string ~ "' is not supported", returnVal);
         return;
       }
     }
@@ -313,13 +315,13 @@ final class Func : TypeNode
       {
         if (!returnVal.lengthParam) // Return array has invalid length argument?
         {
-          disableFunc("invalid return array length parameter index");
+          disableFunc("invalid return array length parameter index", returnVal);
           return;
         }
 
         if (returnVal.lengthParam.direction != ParamDirection.Out)
         {
-          disableFunc("return array length parameter direction must be Out");
+          disableFunc("return array length parameter direction must be Out", returnVal.lengthParam);
           return;
         }
       }
@@ -328,18 +330,18 @@ final class Func : TypeNode
     foreach (pi, pa; params)
     {
       if (pa.isInstanceParam && pi != 0)
-        disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'");
+        disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'", pa);
 
       if (pa.isClosure && pa != closureParam)
-        disableFunc("multiple closure parameters");
+        disableFunc("multiple closure parameters", pa);
 
       try
         pa.verify; // Verify parameter
       catch (Exception e)
-        disableFunc("Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg);
+        disableFunc("Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg, pa);
 
       if (!pa.resolved)
-        disableFunc("Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "'");
+        disableFunc("Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "'", pa);
 
       // Resolve parameter type aliases to see if any are disabled and disable parameter if so
       for (TypeNode tn = pa.typeObject; tn; tn = typeRepo.typeObjectHash.get((cast(Alias)tn).dType, null))
@@ -352,7 +354,7 @@ final class Func : TypeNode
       }
 
       if (pa.disable)
-        disableFunc("Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled");
+        disableFunc("Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled", pa);
     }
   }
 

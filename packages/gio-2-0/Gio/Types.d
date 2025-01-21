@@ -210,6 +210,7 @@ alias DBusInterfaceSetPropertyFunc = bool delegate(DBusConnection connection, st
 alias DBusMessageFilterFunction = DBusMessage delegate(DBusConnection connection, DBusMessage message, bool incoming);
 alias DBusProxyTypeFunc = GType delegate(DBusObjectManagerClient manager, string objectPath, string interfaceName);
 alias DBusSignalCallback = void delegate(DBusConnection connection, string senderName, string objectPath, string interfaceName, string signalName, Variant parameters);
+alias DBusSubtreeDispatchFunc = DBusInterfaceVTable delegate(DBusConnection connection, string sender, string objectPath, string interfaceName, string node, out void* outUserData);
 alias DBusSubtreeEnumerateFunc = string[] delegate(DBusConnection connection, string sender, string objectPath);
 alias DBusSubtreeIntrospectFunc = DBusInterfaceInfo[] delegate(DBusConnection connection, string sender, string objectPath, string node);
 alias DatagramBasedSourceFunc = bool delegate(DatagramBased datagramBased, IOCondition condition);

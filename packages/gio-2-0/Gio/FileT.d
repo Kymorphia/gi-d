@@ -270,21 +270,19 @@ template FileT()
    */
   override bool copy(File destination, FileCopyFlags flags, Cancellable cancellable, FileProgressCallback progressCallback)
   {
-    static FileProgressCallback _static_progressCallback;
-
     extern(C) void _progressCallbackCallback(long currentNumBytes, long totalNumBytes, void* data)
     {
-      _static_progressCallback(currentNumBytes, totalNumBytes);
+      auto _dlg = cast(FileProgressCallback*)data;
+
+      (*_dlg)(currentNumBytes, totalNumBytes);
     }
 
-    _static_progressCallback = progressCallback;
     bool _retval;
-    auto _progressCallback = freezeDelegate(cast(void*)&progressCallback);
+    auto _progressCallback = cast(void*)&progressCallback;
     GError *_err;
     _retval = g_file_copy(cast(GFile*)cPtr, destination ? cast(GFile*)(cast(ObjectG)destination).cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_progressCallbackCallback, _progressCallback, &_err);
     if (_err)
       throw new ErrorG(_err);
-    _static_progressCallback = null;
     return _retval;
   }
 
@@ -1266,7 +1264,8 @@ template FileT()
     _retval = g_file_load_contents(cast(GFile*)cPtr, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_contents, &_length, &_etagOut, &_err);
     if (_err)
       throw new ErrorG(_err);
-    contents = _contents[0 .. _length];
+    contents.length = _length;
+    contents[0 .. $] = _contents[0 .. _length];
     safeFree(cast(void*)_contents);
     etagOut = _etagOut.fromCString(true);
     return _retval;
@@ -1325,7 +1324,8 @@ template FileT()
     _retval = g_file_load_contents_finish(cast(GFile*)cPtr, res ? cast(GAsyncResult*)(cast(ObjectG)res).cPtr(false) : null, &_contents, &_length, &_etagOut, &_err);
     if (_err)
       throw new ErrorG(_err);
-    contents = _contents[0 .. _length];
+    contents.length = _length;
+    contents[0 .. $] = _contents[0 .. _length];
     safeFree(cast(void*)_contents);
     etagOut = _etagOut.fromCString(true);
     return _retval;
@@ -1355,7 +1355,8 @@ template FileT()
     _retval = g_file_load_partial_contents_finish(cast(GFile*)cPtr, res ? cast(GAsyncResult*)(cast(ObjectG)res).cPtr(false) : null, &_contents, &_length, &_etagOut, &_err);
     if (_err)
       throw new ErrorG(_err);
-    contents = _contents[0 .. _length];
+    contents.length = _length;
+    contents[0 .. $] = _contents[0 .. _length];
     safeFree(cast(void*)_contents);
     etagOut = _etagOut.fromCString(true);
     return _retval;
@@ -1552,21 +1553,19 @@ template FileT()
    */
   override bool measureDiskUsage(FileMeasureFlags flags, Cancellable cancellable, FileMeasureProgressCallback progressCallback, out ulong diskUsage, out ulong numDirs, out ulong numFiles)
   {
-    static FileMeasureProgressCallback _static_progressCallback;
-
     extern(C) void _progressCallbackCallback(bool reporting, ulong currentSize, ulong numDirs, ulong numFiles, void* data)
     {
-      _static_progressCallback(reporting, currentSize, numDirs, numFiles);
+      auto _dlg = cast(FileMeasureProgressCallback*)data;
+
+      (*_dlg)(reporting, currentSize, numDirs, numFiles);
     }
 
-    _static_progressCallback = progressCallback;
     bool _retval;
-    auto _progressCallback = freezeDelegate(cast(void*)&progressCallback);
+    auto _progressCallback = cast(void*)&progressCallback;
     GError *_err;
     _retval = g_file_measure_disk_usage(cast(GFile*)cPtr, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_progressCallbackCallback, _progressCallback, cast(ulong*)&diskUsage, cast(ulong*)&numDirs, cast(ulong*)&numFiles, &_err);
     if (_err)
       throw new ErrorG(_err);
-    _static_progressCallback = null;
     return _retval;
   }
 
@@ -1819,21 +1818,19 @@ template FileT()
    */
   override bool move(File destination, FileCopyFlags flags, Cancellable cancellable, FileProgressCallback progressCallback)
   {
-    static FileProgressCallback _static_progressCallback;
-
     extern(C) void _progressCallbackCallback(long currentNumBytes, long totalNumBytes, void* data)
     {
-      _static_progressCallback(currentNumBytes, totalNumBytes);
+      auto _dlg = cast(FileProgressCallback*)data;
+
+      (*_dlg)(currentNumBytes, totalNumBytes);
     }
 
-    _static_progressCallback = progressCallback;
     bool _retval;
-    auto _progressCallback = freezeDelegate(cast(void*)&progressCallback);
+    auto _progressCallback = cast(void*)&progressCallback;
     GError *_err;
     _retval = g_file_move(cast(GFile*)cPtr, destination ? cast(GFile*)(cast(ObjectG)destination).cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_progressCallbackCallback, _progressCallback, &_err);
     if (_err)
       throw new ErrorG(_err);
-    _static_progressCallback = null;
     return _retval;
   }
 

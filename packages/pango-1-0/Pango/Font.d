@@ -182,6 +182,33 @@ class Font : ObjectG
   }
 
   /**
+   * Returns the languages that are supported by font.
+   * If the font backend does not provide this information,
+   * %NULL is returned. For the fontconfig backend, this
+   * corresponds to the FC_LANG member of the FcPattern.
+   * The returned array is only valid as long as the font
+   * and its fontmap are valid.
+   * Returns: an array of `PangoLanguage`
+   */
+  PgLanguage[] getLanguages()
+  {
+    PangoLanguage** _cretval;
+    _cretval = pango_font_get_languages(cast(PangoFont*)cPtr);
+    PgLanguage[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new PgLanguage[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = new PgLanguage(cast(void*)_cretval[i], false);
+    }
+    return _retval;
+  }
+
+  /**
    * Gets overall metric information for a font.
    * Since the metrics may be substantially different for different scripts,
    * a language tag can be provided to indicate that the metrics should be

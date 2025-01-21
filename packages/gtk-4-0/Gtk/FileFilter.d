@@ -162,6 +162,32 @@ class FileFilter : Filter, Buildable
   }
 
   /**
+   * Gets the attributes that need to be filled in for the `GFileInfo`
+   * passed to this filter.
+   * This function will not typically be used by applications;
+   * it is intended principally for use in the implementation
+   * of `GtkFileChooser`.
+   * Returns: the attributes
+   */
+  string[] getAttributes()
+  {
+    const(char*)* _cretval;
+    _cretval = gtk_file_filter_get_attributes(cast(GtkFileFilter*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(false);
+    }
+    return _retval;
+  }
+
+  /**
    * Gets the human-readable name for the filter.
    * See [Gtk.FileFilter.setName].
    * Returns: The human-readable name of the filter

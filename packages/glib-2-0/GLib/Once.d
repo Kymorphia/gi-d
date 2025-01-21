@@ -74,6 +74,13 @@ class Once
     return _retval;
   }
 
+  static bool initEnterImpl(out size_t location)
+  {
+    bool _retval;
+    _retval = g_once_init_enter_impl(cast(size_t*)&location);
+    return _retval;
+  }
+
   /**
    * This functions behaves in the same way as [GLib.Once.initEnter], but can
    * can be used to initialize pointers $(LPAREN)or #guintptr$(RPAREN) instead of #gsize.

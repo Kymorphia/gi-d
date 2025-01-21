@@ -382,9 +382,11 @@ class Display : ObjectG
     GdkKeymapKey* _keys;
     uint* _keyvals;
     _retval = gdk_display_map_keycode(cast(GdkDisplay*)cPtr, keycode, &_keys, &_keyvals, &_nEntries);
-    keys = _keys[0 .. _nEntries];
+    keys.length = _nEntries;
+    keys[0 .. $] = _keys[0 .. _nEntries];
     safeFree(cast(void*)_keys);
-    keyvals = _keyvals[0 .. _nEntries];
+    keyvals.length = _nEntries;
+    keyvals[0 .. $] = _keyvals[0 .. _nEntries];
     safeFree(cast(void*)_keyvals);
     return _retval;
   }
@@ -413,7 +415,8 @@ class Display : ObjectG
     int _nKeys;
     GdkKeymapKey* _keys;
     _retval = gdk_display_map_keyval(cast(GdkDisplay*)cPtr, keyval, &_keys, &_nKeys);
-    keys = _keys[0 .. _nKeys];
+    keys.length = _nKeys;
+    keys[0 .. $] = _keys[0 .. _nKeys];
     safeFree(cast(void*)_keys);
     return _retval;
   }

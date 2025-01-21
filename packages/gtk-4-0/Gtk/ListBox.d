@@ -374,17 +374,15 @@ class ListBox : Widget
    */
   void selectedForeach(ListBoxForeachFunc func)
   {
-    static ListBoxForeachFunc _static_func;
-
     extern(C) void _funcCallback(GtkListBox* box, GtkListBoxRow* row, void* userData)
     {
-      _static_func(box ? ObjectG.getDObject!ListBox(cast(void*)box, false) : null, row ? ObjectG.getDObject!ListBoxRow(cast(void*)row, false) : null);
+      auto _dlg = cast(ListBoxForeachFunc*)userData;
+
+      (*_dlg)(box ? ObjectG.getDObject!ListBox(cast(void*)box, false) : null, row ? ObjectG.getDObject!ListBoxRow(cast(void*)row, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_list_box_selected_foreach(cast(GtkListBox*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

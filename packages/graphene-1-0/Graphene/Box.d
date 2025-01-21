@@ -225,6 +225,22 @@ class Box : Boxed
   }
 
   /**
+   * Computes the vertices of the given #graphene_box_t.
+   * Params:
+   *   vertices = return location for an array
+   *     of 8 #graphene_vec3_t
+   */
+  void getVertices(ref Vec3[] vertices)
+  {
+    graphene_vec3_t[] _vertices;
+    _vertices.length = 8;
+    graphene_box_get_vertices(cast(graphene_box_t*)cPtr, _vertices.ptr);
+    vertices.length = 8;
+    foreach (i; 0 .. 8)
+      vertices[i] = new Vec3(cast(void*)&_vertices[i], false);
+  }
+
+  /**
    * Retrieves the size of the box on the X axis.
    * Returns: the width of the box
    */

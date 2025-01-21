@@ -164,6 +164,45 @@ bool acceleratorParse(string accelerator, out uint acceleratorKey, out ModifierT
 }
 
 /**
+ * Parses a string representing an accelerator.
+ * This is similar to funcGtk.accelerator_parse but handles keycodes as
+ * well. This is only useful for system-level components, applications should
+ * use funcGtk.accelerator_parse instead.
+ * If accelerator_codes is given and the result stored in it is non-%NULL,
+ * the result must be freed with [GLib.Global.gfree].
+ * If a keycode is present in the accelerator and no accelerator_codes
+ * is given, the parse will fail.
+ * If the parse fails, accelerator_key, accelerator_mods and
+ * accelerator_codes will be set to 0 $(LPAREN)zero$(RPAREN).
+ * Params:
+ *   accelerator = string representing an accelerator
+ *   display = the `GdkDisplay` to look up accelerator_codes in
+ *   acceleratorKey = return location for accelerator keyval
+ *   acceleratorCodes = return location for accelerator keycodes
+ *   acceleratorMods = return location for accelerator
+ *     modifier mask
+ * Returns: %TRUE if parsing succeeded
+ */
+bool acceleratorParseWithKeycode(string accelerator, Display display, out uint acceleratorKey, out uint[] acceleratorCodes, out ModifierType acceleratorMods)
+{
+  bool _retval;
+  const(char)* _accelerator = accelerator.toCString(false);
+  uint* _acceleratorCodes;
+  _retval = gtk_accelerator_parse_with_keycode(_accelerator, display ? cast(GdkDisplay*)display.cPtr(false) : null, cast(uint*)&acceleratorKey, &_acceleratorCodes, &acceleratorMods);
+  uint _lenacceleratorCodes;
+  if (_acceleratorCodes)
+  {
+    for (; _acceleratorCodes[_lenacceleratorCodes] != 0; _lenacceleratorCodes++)
+    {
+    }
+  }
+  acceleratorCodes.length = _lenacceleratorCodes;
+  acceleratorCodes[0 .. $] = _acceleratorCodes[0 .. _lenacceleratorCodes];
+  safeFree(cast(void*)_acceleratorCodes);
+  return _retval;
+}
+
+/**
  * Determines whether a given keyval and modifier mask constitute
  * a valid keyboard accelerator.
  * For example, the %GDK_KEY_a keyval plus %GDK_CONTROL_MASK mark is valid,

@@ -504,27 +504,25 @@ class Regex : Boxed
    */
   string replaceEval(string string_, int startPosition, RegexMatchFlags matchOptions, RegexEvalCallback eval)
   {
-    static RegexEvalCallback _static_eval;
-
     extern(C) bool _evalCallback(const(GMatchInfo)* matchInfo, GString* result, void* userData)
     {
-      bool _retval = _static_eval(matchInfo ? new MatchInfo(cast(void*)matchInfo, false) : null, result ? new String(cast(void*)result, false) : null);
+      auto _dlg = cast(RegexEvalCallback*)userData;
+
+      bool _retval = (*_dlg)(matchInfo ? new MatchInfo(cast(void*)matchInfo, false) : null, result ? new String(cast(void*)result, false) : null);
       return _retval;
     }
 
-    _static_eval = eval;
     char* _cretval;
     ptrdiff_t _stringLen;
     if (string_)
       _stringLen = cast(ptrdiff_t)string_.length;
 
     auto _string_ = cast(const(char)*)string_.ptr;
-    auto _eval = freezeDelegate(cast(void*)&eval);
+    auto _eval = cast(void*)&eval;
     GError *_err;
     _cretval = g_regex_replace_eval(cast(GRegex*)cPtr, _string_, _stringLen, startPosition, matchOptions, &_evalCallback, _eval, &_err);
     if (_err)
       throw new RegexException(_err);
-    _static_eval = null;
     string _retval = _cretval.fromCString(true);
     return _retval;
   }

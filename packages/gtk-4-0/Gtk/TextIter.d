@@ -131,19 +131,17 @@ class TextIter : Boxed
    */
   bool backwardFindChar(TextCharPredicate pred, TextIter limit)
   {
-    static TextCharPredicate _static_pred;
-
     extern(C) bool _predCallback(dchar ch, void* userData)
     {
-      bool _retval = _static_pred(ch);
+      auto _dlg = cast(TextCharPredicate*)userData;
+
+      bool _retval = (*_dlg)(ch);
       return _retval;
     }
 
-    _static_pred = pred;
     bool _retval;
-    auto _pred = freezeDelegate(cast(void*)&pred);
+    auto _pred = cast(void*)&pred;
     _retval = gtk_text_iter_backward_find_char(cast(GtkTextIter*)cPtr, &_predCallback, _pred, limit ? cast(GtkTextIter*)limit.cPtr(false) : null);
-    _static_pred = null;
     return _retval;
   }
 
@@ -618,19 +616,17 @@ class TextIter : Boxed
    */
   bool forwardFindChar(TextCharPredicate pred, TextIter limit)
   {
-    static TextCharPredicate _static_pred;
-
     extern(C) bool _predCallback(dchar ch, void* userData)
     {
-      bool _retval = _static_pred(ch);
+      auto _dlg = cast(TextCharPredicate*)userData;
+
+      bool _retval = (*_dlg)(ch);
       return _retval;
     }
 
-    _static_pred = pred;
     bool _retval;
-    auto _pred = freezeDelegate(cast(void*)&pred);
+    auto _pred = cast(void*)&pred;
     _retval = gtk_text_iter_forward_find_char(cast(GtkTextIter*)cPtr, &_predCallback, _pred, limit ? cast(GtkTextIter*)limit.cPtr(false) : null);
-    _static_pred = null;
     return _retval;
   }
 

@@ -406,6 +406,17 @@ class Vec3 : Boxed
   }
 
   /**
+   * Copies the components of a #graphene_vec3_t into the given array.
+   * Params:
+   *   dest = return location for
+   *     an array of floating point values
+   */
+  void toFloat(ref float[] dest)
+  {
+    graphene_vec3_to_float(cast(graphene_vec3_t*)cPtr, dest.ptr);
+  }
+
+  /**
    * Provides a constant pointer to a vector with three components,
    * all sets to 1.
    * Returns: a constant vector

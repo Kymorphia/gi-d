@@ -60,18 +60,16 @@ class RenderNode
    */
   static RenderNode deserialize(Bytes bytes, ParseErrorFunc errorFunc)
   {
-    static ParseErrorFunc _static_errorFunc;
-
     extern(C) void _errorFuncCallback(const(GskParseLocation)* start, const(GskParseLocation)* end, const(GError)* error, void* userData)
     {
-      _static_errorFunc(*start, *end, error ? new ErrorG(cast(void*)error, false) : null);
+      auto _dlg = cast(ParseErrorFunc*)userData;
+
+      (*_dlg)(*start, *end, error ? new ErrorG(cast(void*)error, false) : null);
     }
 
-    _static_errorFunc = errorFunc;
     GskRenderNode* _cretval;
-    auto _errorFunc = freezeDelegate(cast(void*)&errorFunc);
+    auto _errorFunc = cast(void*)&errorFunc;
     _cretval = gsk_render_node_deserialize(bytes ? cast(GBytes*)bytes.cPtr(false) : null, &_errorFuncCallback, _errorFunc);
-    _static_errorFunc = null;
     auto _retval = _cretval ? new RenderNode(cast(GskRenderNode*)_cretval, true) : null;
     return _retval;
   }

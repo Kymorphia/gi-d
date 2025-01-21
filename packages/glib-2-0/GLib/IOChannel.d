@@ -370,7 +370,8 @@ class IOChannel : Boxed
     if (_err)
       throw new IOChannelException(_err);
     IOStatus _retval = cast(IOStatus)_cretval;
-    strReturn = _strReturn[0 .. _length];
+    strReturn.length = _length;
+    strReturn[0 .. $] = _strReturn[0 .. _length];
     safeFree(cast(void*)_strReturn);
     return _retval;
   }

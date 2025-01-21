@@ -1038,8 +1038,9 @@ ulong signalAddEmissionHook(uint signalId, Quark detail, SignalEmissionHook hook
   {
     auto _dlg = cast(SignalEmissionHook*)data;
     Value[] _paramValues;
+    _paramValues.length = nParamValues;
     foreach (i; 0 .. nParamValues)
-      _paramValues ~= new Value(cast(GValue*)&paramValues[i], false);
+      _paramValues[i] = new Value(cast(GValue*)&paramValues[i], false);
 
     bool _retval = (*_dlg)(*ihint, _paramValues);
     return _retval;
@@ -1446,8 +1447,9 @@ uint signalNewv(string signalName, GType itype, SignalFlags signalFlags, Closure
   {
     auto _dlg = cast(SignalCMarshaller*)marshalData;
     Value[] _paramValues;
+    _paramValues.length = nParamValues;
     foreach (i; 0 .. nParamValues)
-      _paramValues ~= new Value(cast(GValue*)&paramValues[i], false);
+      _paramValues[i] = new Value(cast(GValue*)&paramValues[i], false);
 
     (*_dlg)(closure ? new Closure(cast(void*)closure, false) : null, returnValue ? new Value(cast(void*)returnValue, false) : null, _paramValues, invocationHint);
   }

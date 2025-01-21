@@ -216,4 +216,35 @@ class PgLanguage : Boxed
     auto _retval = _cretval ? new PgLanguage(cast(void*)_cretval, false) : null;
     return _retval;
   }
+
+  /**
+   * Returns the list of languages that the user prefers.
+   * The list is specified by the `PANGO_LANGUAGE` or `LANGUAGE`
+   * environment variables, in order of preference. Note that this
+   * list does not necessarily include the language returned by
+   * [Pango.PgLanguage.getDefault].
+   * When choosing language-specific resources, such as the sample
+   * text returned by [Pango.PgLanguage.getSampleString],
+   * you should first try the default language, followed by the
+   * languages returned by this function.
+   * Returns: a %NULL-terminated array
+   *   of `PangoLanguage`*
+   */
+  static PgLanguage[] getPreferred()
+  {
+    PangoLanguage** _cretval;
+    _cretval = pango_language_get_preferred();
+    PgLanguage[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new PgLanguage[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = new PgLanguage(cast(void*)_cretval[i], false);
+    }
+    return _retval;
+  }
 }

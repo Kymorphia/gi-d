@@ -89,17 +89,15 @@ class Node
    */
   void childrenForeach(TraverseFlags flags, NodeForeachFunc func)
   {
-    static NodeForeachFunc _static_func;
-
     extern(C) void _funcCallback(GNode* node, void* data)
     {
-      _static_func(node ? new Node(cast(void*)node, false) : null);
+      auto _dlg = cast(NodeForeachFunc*)data;
+
+      (*_dlg)(node ? new Node(cast(void*)node, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_node_children_foreach(cast(GNode*)cPtr, flags, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -205,18 +203,16 @@ class Node
    */
   void traverse(TraverseType order, TraverseFlags flags, int maxDepth, NodeTraverseFunc func)
   {
-    static NodeTraverseFunc _static_func;
-
     extern(C) bool _funcCallback(GNode* node, void* data)
     {
-      bool _retval = _static_func(node ? new Node(cast(void*)node, false) : null);
+      auto _dlg = cast(NodeTraverseFunc*)data;
+
+      bool _retval = (*_dlg)(node ? new Node(cast(void*)node, false) : null);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_node_traverse(cast(GNode*)cPtr, order, flags, maxDepth, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

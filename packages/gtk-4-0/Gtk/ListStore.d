@@ -388,6 +388,23 @@ class ListStore : ObjectG, Buildable, TreeDragDest, TreeDragSource, TreeModel, T
   }
 
   /**
+   * Reorders store to follow the order indicated by new_order. Note that
+   * this function only works with unsorted stores.
+   * Params:
+   *   newOrder = an array of integers mapping the new
+   *     position of each child to its old position before the re-ordering,
+   *     i.e. new_order`[newpos] \= oldpos`. It must have
+   *     exactly as many items as the list store’s length.
+
+   * Deprecated: Use list models
+   */
+  void reorder(int[] newOrder)
+  {
+    auto _newOrder = cast(int*)(newOrder ~ int.init).ptr;
+    gtk_list_store_reorder(cast(GtkListStore*)cPtr, _newOrder);
+  }
+
+  /**
    * Sets the types of the columns of a list store.
    * This function is meant primarily for objects that inherit
    * from `GtkListStore`, and should only be used when constructing

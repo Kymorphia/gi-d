@@ -1272,6 +1272,40 @@ class Context : Boxed
   }
 
   /**
+   * Sets the dash pattern to be used by [cairo.Context.stroke]. A dash pattern
+   * is specified by dashes, an array of positive values. Each value
+   * provides the length of alternate "on" and "off" portions of the
+   * stroke. The offset specifies an offset into the pattern at which
+   * the stroke begins.
+   * Each "on" segment will have caps applied as if the segment were a
+   * separate sub-path. In particular, it is valid to use an "on" length
+   * of 0.0 with %CAIRO_LINE_CAP_ROUND or %CAIRO_LINE_CAP_SQUARE in order
+   * to distributed dots or squares along a path.
+   * Note: The length values are in user-space units as evaluated at the
+   * time of stroking. This is not necessarily the same as the user
+   * space at the time of [cairo.Context.setDash].
+   * If num_dashes is 0 dashing is disabled.
+   * If num_dashes is 1 a symmetric pattern is assumed with alternating
+   * on and off portions of the size specified by the single value in
+   * dashes.
+   * If any value in dashes is negative, or if all values are 0, then
+   * cr will be put into an error state with a status of
+   * %CAIRO_STATUS_INVALID_DASH.
+   * Params:
+   *   dashes = an array specifying alternate lengths of on and off stroke portions
+   *   offset = an offset into the dash pattern at which the stroke should start
+   */
+  void setDash(double[] dashes, double offset)
+  {
+    int _numDashes;
+    if (dashes)
+      _numDashes = cast(int)dashes.length;
+
+    auto _dashes = cast(const(double)*)dashes.ptr;
+    cairo_set_dash(cast(cairo_t*)cPtr, _dashes, _numDashes, offset);
+  }
+
+  /**
    * Set the current fill rule within the cairo context. The fill rule
    * is used to determine which regions are inside or outside a complex
    * $(LPAREN)potentially self-intersecting$(RPAREN) path. The current fill rule affects

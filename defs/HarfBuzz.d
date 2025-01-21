@@ -49,6 +49,9 @@
 //!set function[ot_var_get_axis_infos].parameters.parameter[axes_count][direction] inout
 //!set function[ot_var_named_instance_get_design_coords].parameters.parameter[coords_length][direction] inout
 
+//# Set parameter to out
+//!set function[ot_layout_script_find_language].parameters.parameter[language_index][direction] out
+
 //# Set array parameters to be caller-allocates
 //!set callback[font_get_glyph_name_func_t].parameters.parameter[name][caller-allocates] 1
 //!set callback[font_get_glyph_name_func_t].parameters.parameter[size][direction] in
@@ -64,3 +67,11 @@
 //!set function[ot_layout_table_get_feature_tags].parameters.parameter[feature_tags][caller-allocates] 1
 //!set function[ot_layout_table_get_script_tags].parameters.parameter[script_tags][caller-allocates] 1
 //!set function[ot_var_named_instance_get_design_coords].parameters.parameter[coords][caller-allocates] 1
+
+//# Fix array information
+//!set function[ot_layout_lookup_would_substitute].parameters.parameter[glyphs].type '<array length="3" zero-terminated="0" c:type="const hb_codepoint_t *"><type name="codepoint_t" c:type="hb_codepoint_t"/></array>'
+//!set function[ot_layout_script_select_language].parameters.parameter[language_tags].type '<array length="3" zero-terminated="0" c:type="const hb_tag_t *"><type name="tag_t" c:type="hb_tag_t"/></array>'
+//!set function[ot_layout_script_select_language2].parameters.parameter[language_tags].type '<array length="3" zero-terminated="0" c:type="const hb_tag_t *"><type name="tag_t" c:type="hb_tag_t"/></array>'
+//!set function[ot_layout_table_find_feature_variations].parameters.parameter[coords].type '<array length="3" zero-terminated="0" c:type="const int *"><type name="int" c:type="int"/></array>'
+//!set function[ot_layout_table_select_script].parameters.parameter[script_tags].type '<array length="2" zero-terminated="0" c:type="const hb_tag_t *"><type name="tag_t" c:type="hb_tag_t"/></array>'
+//!set function[ot_var_normalize_coords].parameters.parameter[design_coords].type '<array length="1" zero-terminated="0" c:type="const float *"><type name="float" c:type="float"/></array>'

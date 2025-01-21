@@ -199,19 +199,17 @@ class ValueArray : Boxed
    */
   ValueArray sort(CompareDataFunc compareFunc)
   {
-    static CompareDataFunc _static_compareFunc;
-
     extern(C) int _compareFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_compareFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_compareFunc = compareFunc;
     GValueArray* _cretval;
-    auto _compareFunc = freezeDelegate(cast(void*)&compareFunc);
+    auto _compareFunc = cast(void*)&compareFunc;
     _cretval = g_value_array_sort_with_data(cast(GValueArray*)cPtr, &_compareFuncCallback, _compareFunc);
-    _static_compareFunc = null;
     auto _retval = _cretval ? new ValueArray(cast(void*)_cretval, false) : null;
     return _retval;
   }

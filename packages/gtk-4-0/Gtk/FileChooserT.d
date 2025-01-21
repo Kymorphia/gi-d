@@ -51,6 +51,40 @@ template FileChooserT()
 {
 
   /**
+   * Adds a 'choice' to the file chooser.
+   * This is typically implemented as a combobox or, for boolean choices,
+   * as a checkbutton. You can select a value using
+   * [Gtk.FileChooser.setChoice] before the dialog is shown,
+   * and you can obtain the user-selected value in the
+   * [Gtk.Dialog.response] signal handler using
+   * [Gtk.FileChooser.getChoice].
+   * Params:
+   *   id = id for the added choice
+   *   label = user-visible label for the added choice
+   *   options = ids for the options of the choice, or %NULL for a boolean choice
+   *   optionLabels = user-visible labels for the options, must be the same length as options
+
+   * Deprecated: Use [Gtk.FileDialog] instead
+   */
+  override void addChoice(string id, string label, string[] options, string[] optionLabels)
+  {
+    const(char)* _id = id.toCString(false);
+    const(char)* _label = label.toCString(false);
+    char*[] _tmpoptions;
+    foreach (s; options)
+      _tmpoptions ~= s.toCString(false);
+    _tmpoptions ~= null;
+    const(char*)* _options = _tmpoptions.ptr;
+
+    char*[] _tmpoptionLabels;
+    foreach (s; optionLabels)
+      _tmpoptionLabels ~= s.toCString(false);
+    _tmpoptionLabels ~= null;
+    const(char*)* _optionLabels = _tmpoptionLabels.ptr;
+    gtk_file_chooser_add_choice(cast(GtkFileChooser*)cPtr, _id, _label, _options, _optionLabels);
+  }
+
+  /**
    * Adds filter to the list of filters that the user can select between.
    * When a filter is selected, only files that are passed by that
    * filter are displayed.

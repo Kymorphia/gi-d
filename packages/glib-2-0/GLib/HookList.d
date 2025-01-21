@@ -129,17 +129,15 @@ class HookList
    */
   void marshal(bool mayRecurse, HookMarshaller marshaller)
   {
-    static HookMarshaller _static_marshaller;
-
     extern(C) void _marshallerCallback(GHook* hook, void* marshalData)
     {
-      _static_marshaller(hook ? new Hook(cast(void*)hook, false) : null);
+      auto _dlg = cast(HookMarshaller*)marshalData;
+
+      (*_dlg)(hook ? new Hook(cast(void*)hook, false) : null);
     }
 
-    _static_marshaller = marshaller;
-    auto _marshaller = freezeDelegate(cast(void*)&marshaller);
+    auto _marshaller = cast(void*)&marshaller;
     g_hook_list_marshal(cast(GHookList*)cPtr, mayRecurse, &_marshallerCallback, _marshaller);
-    _static_marshaller = null;
   }
 
   /**
@@ -153,17 +151,15 @@ class HookList
    */
   void marshalCheck(bool mayRecurse, HookCheckMarshaller marshaller)
   {
-    static HookCheckMarshaller _static_marshaller;
-
     extern(C) bool _marshallerCallback(GHook* hook, void* marshalData)
     {
-      bool _retval = _static_marshaller(hook ? new Hook(cast(void*)hook, false) : null);
+      auto _dlg = cast(HookCheckMarshaller*)marshalData;
+
+      bool _retval = (*_dlg)(hook ? new Hook(cast(void*)hook, false) : null);
       return _retval;
     }
 
-    _static_marshaller = marshaller;
-    auto _marshaller = freezeDelegate(cast(void*)&marshaller);
+    auto _marshaller = cast(void*)&marshaller;
     g_hook_list_marshal_check(cast(GHookList*)cPtr, mayRecurse, &_marshallerCallback, _marshaller);
-    _static_marshaller = null;
   }
 }

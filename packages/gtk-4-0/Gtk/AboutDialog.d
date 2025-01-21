@@ -90,6 +90,71 @@ class AboutDialog : Window
   }
 
   /**
+   * Creates a new section in the "Credits" page.
+   * Params:
+   *   sectionName = The name of the section
+   *   people = The people who belong to that section
+   */
+  void addCreditSection(string sectionName, string[] people)
+  {
+    const(char)* _sectionName = sectionName.toCString(false);
+    char*[] _tmppeople;
+    foreach (s; people)
+      _tmppeople ~= s.toCString(false);
+    _tmppeople ~= null;
+    const(char*)* _people = _tmppeople.ptr;
+    gtk_about_dialog_add_credit_section(cast(GtkAboutDialog*)cPtr, _sectionName, _people);
+  }
+
+  /**
+   * Returns the names of the artists which are displayed
+   * in the credits page.
+   * Returns: A
+   *   `NULL`-terminated string array containing the artists
+   */
+  string[] getArtists()
+  {
+    const(char*)* _cretval;
+    _cretval = gtk_about_dialog_get_artists(cast(GtkAboutDialog*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(false);
+    }
+    return _retval;
+  }
+
+  /**
+   * Returns the names of the authors which are displayed
+   * in the credits page.
+   * Returns: A
+   *   `NULL`-terminated string array containing the authors
+   */
+  string[] getAuthors()
+  {
+    const(char*)* _cretval;
+    _cretval = gtk_about_dialog_get_authors(cast(GtkAboutDialog*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(false);
+    }
+    return _retval;
+  }
+
+  /**
    * Returns the comments string.
    * Returns: The comments
    */
@@ -110,6 +175,30 @@ class AboutDialog : Window
     const(char)* _cretval;
     _cretval = gtk_about_dialog_get_copyright(cast(GtkAboutDialog*)cPtr);
     string _retval = _cretval.fromCString(false);
+    return _retval;
+  }
+
+  /**
+   * Returns the name of the documenters which are displayed
+   * in the credits page.
+   * Returns: A
+   *   `NULL`-terminated string array containing the documenters
+   */
+  string[] getDocumenters()
+  {
+    const(char*)* _cretval;
+    _cretval = gtk_about_dialog_get_documenters(cast(GtkAboutDialog*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(false);
+    }
     return _retval;
   }
 
@@ -250,6 +339,39 @@ class AboutDialog : Window
   }
 
   /**
+   * Sets the names of the artists to be displayed
+   * in the "Credits" page.
+   * Params:
+   *   artists = the authors of the artwork
+   *     of the application
+   */
+  void setArtists(string[] artists)
+  {
+    char*[] _tmpartists;
+    foreach (s; artists)
+      _tmpartists ~= s.toCString(false);
+    _tmpartists ~= null;
+    const(char*)* _artists = _tmpartists.ptr;
+    gtk_about_dialog_set_artists(cast(GtkAboutDialog*)cPtr, _artists);
+  }
+
+  /**
+   * Sets the names of the authors which are displayed
+   * in the "Credits" page of the about dialog.
+   * Params:
+   *   authors = the authors of the application
+   */
+  void setAuthors(string[] authors)
+  {
+    char*[] _tmpauthors;
+    foreach (s; authors)
+      _tmpauthors ~= s.toCString(false);
+    _tmpauthors ~= null;
+    const(char*)* _authors = _tmpauthors.ptr;
+    gtk_about_dialog_set_authors(cast(GtkAboutDialog*)cPtr, _authors);
+  }
+
+  /**
    * Sets the comments string to display in the about dialog.
    * This should be a short string of one or two lines.
    * Params:
@@ -271,6 +393,23 @@ class AboutDialog : Window
   {
     const(char)* _copyright = copyright.toCString(false);
     gtk_about_dialog_set_copyright(cast(GtkAboutDialog*)cPtr, _copyright);
+  }
+
+  /**
+   * Sets the names of the documenters which are displayed
+   * in the "Credits" page.
+   * Params:
+   *   documenters = the authors of the documentation
+   *     of the application
+   */
+  void setDocumenters(string[] documenters)
+  {
+    char*[] _tmpdocumenters;
+    foreach (s; documenters)
+      _tmpdocumenters ~= s.toCString(false);
+    _tmpdocumenters ~= null;
+    const(char*)* _documenters = _tmpdocumenters.ptr;
+    gtk_about_dialog_set_documenters(cast(GtkAboutDialog*)cPtr, _documenters);
   }
 
   /**

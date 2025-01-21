@@ -360,17 +360,15 @@ class FlowBox : Widget, Orientable
    */
   void selectedForeach(FlowBoxForeachFunc func)
   {
-    static FlowBoxForeachFunc _static_func;
-
     extern(C) void _funcCallback(GtkFlowBox* box, GtkFlowBoxChild* child, void* userData)
     {
-      _static_func(box ? ObjectG.getDObject!FlowBox(cast(void*)box, false) : null, child ? ObjectG.getDObject!FlowBoxChild(cast(void*)child, false) : null);
+      auto _dlg = cast(FlowBoxForeachFunc*)userData;
+
+      (*_dlg)(box ? ObjectG.getDObject!FlowBox(cast(void*)box, false) : null, child ? ObjectG.getDObject!FlowBoxChild(cast(void*)child, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_flow_box_selected_foreach(cast(GtkFlowBox*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

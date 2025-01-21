@@ -211,6 +211,46 @@ Surface imageSurfaceCreateFromPng(string filename)
 }
 
 /**
+ * Creates a new image surface from PNG data read incrementally
+ * via the read_func function.
+ * Params:
+ *   readFunc = function called to read the data of the file
+ * Returns: a new #cairo_surface_t initialized with the contents
+ *   of the PNG file or a "nil" surface if the data read is not a valid PNG image
+ *   or memory could not be allocated for the operation.  A nil
+ *   surface can be checked for with cairo_surface_status$(LPAREN)surface$(RPAREN) which
+ *   may return one of the following values:
+ *   %CAIRO_STATUS_NO_MEMORY
+ *   %CAIRO_STATUS_READ_ERROR
+ *   %CAIRO_STATUS_PNG_ERROR
+ *   Alternatively, you can allow errors to propagate through the drawing
+ *   operations and check the status on the context upon completion
+ *   using [cairo.Context.status].
+ */
+Surface imageSurfaceCreateFromPngStream(ReadFunc readFunc)
+{
+  extern(C) cairo_status_t _readFuncCallback(void* closure, ubyte* data, uint length)
+  {
+    Status _dretval;
+    auto _dlg = cast(ReadFunc*)closure;
+    ubyte[] _data;
+    _data.length = length;
+    _data[0 .. length] = data[0 .. length];
+
+    _dretval = (*_dlg)(_data);
+    auto _retval = cast(cairo_status_t)_dretval;
+
+    return _retval;
+  }
+
+  cairo_surface_t* _cretval;
+  auto _readFunc = cast(void*)&readFunc;
+  _cretval = cairo_image_surface_create_from_png_stream(&_readFuncCallback, _readFunc);
+  auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
+  return _retval;
+}
+
+/**
  * Get the format of the surface.
  * Params:
  *   surface = a #cairo_image_surface_t
@@ -830,6 +870,21 @@ Pattern patternCreateRgba(double red, double green, double blue, double alpha)
 }
 
 /**
+ * Used to retrieve the list of supported versions. See
+ * [cairo.Global.pdfSurfaceRestrictToVersion].
+ * Params:
+ *   versions = supported version list
+ */
+void pdfGetVersions(out PdfVersion[] versions)
+{
+  int _numVersions;
+  const(cairo_pdf_version_t)* _versions;
+  cairo_pdf_get_versions(&_versions, &_numVersions);
+  versions.length = _numVersions;
+  versions[0 .. $] = _versions[0 .. _numVersions];
+}
+
+/**
  * Add an item to the document outline hierarchy with the name utf8
  * that links to the location specified by link_attribs. Link
  * attributes have the same keys and values as the [Link Tag][link],
@@ -875,6 +930,46 @@ Surface pdfSurfaceCreate(string filename, double widthInPoints, double heightInP
   cairo_surface_t* _cretval;
   const(char)* _filename = filename.toCString(false);
   _cretval = cairo_pdf_surface_create(_filename, widthInPoints, heightInPoints);
+  auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
+  return _retval;
+}
+
+/**
+ * Creates a PDF surface of the specified size in points to be written
+ * incrementally to the stream represented by write_func and closure.
+ * Params:
+ *   writeFunc = a #cairo_write_func_t to accept the output data, may be %NULL
+ *     to indicate a no-op write_func. With a no-op write_func,
+ *     the surface may be queried or used as a source without
+ *     generating any temporary files.
+ *   widthInPoints = width of the surface, in points $(LPAREN)1 point \=\= 1/72.0 inch$(RPAREN)
+ *   heightInPoints = height of the surface, in points $(LPAREN)1 point \=\= 1/72.0 inch$(RPAREN)
+ * Returns: a pointer to the newly created surface. The caller
+ *   owns the surface and should call [cairo.Surface.destroy] when done
+ *   with it.
+ *   This function always returns a valid pointer, but it will return a
+ *   pointer to a "nil" surface if an error such as out of memory
+ *   occurs. You can use [cairo.Surface.status] to check for this.
+ */
+Surface pdfSurfaceCreateForStream(WriteFunc writeFunc, double widthInPoints, double heightInPoints)
+{
+  extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+  {
+    Status _dretval;
+    auto _dlg = cast(WriteFunc*)closure;
+    ubyte[] _data;
+    _data.length = length;
+    _data[0 .. length] = data[0 .. length];
+
+    _dretval = (*_dlg)(_data);
+    auto _retval = cast(cairo_status_t)_dretval;
+
+    return _retval;
+  }
+
+  cairo_surface_t* _cretval;
+  auto _writeFunc = cast(void*)&writeFunc;
+  _cretval = cairo_pdf_surface_create_for_stream(&_writeFuncCallback, _writeFunc, widthInPoints, heightInPoints);
   auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
   return _retval;
 }
@@ -1000,6 +1095,21 @@ string pdfVersionToString(PdfVersion version_)
 }
 
 /**
+ * Used to retrieve the list of supported levels. See
+ * [cairo.Global.psSurfaceRestrictToLevel].
+ * Params:
+ *   levels = supported level list
+ */
+void psGetLevels(out PsLevel[] levels)
+{
+  int _numLevels;
+  const(cairo_ps_level_t)* _levels;
+  cairo_ps_get_levels(&_levels, &_numLevels);
+  levels.length = _numLevels;
+  levels[0 .. $] = _levels[0 .. _numLevels];
+}
+
+/**
  * Get the string representation of the given level id. This function
  * will return %NULL if level id isn't valid. See [cairo.Global.psGetLevels]
  * for a way to get the list of valid level ids.
@@ -1041,6 +1151,50 @@ Surface psSurfaceCreate(string filename, double widthInPoints, double heightInPo
   cairo_surface_t* _cretval;
   const(char)* _filename = filename.toCString(false);
   _cretval = cairo_ps_surface_create(_filename, widthInPoints, heightInPoints);
+  auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
+  return _retval;
+}
+
+/**
+ * Creates a PostScript surface of the specified size in points to be
+ * written incrementally to the stream represented by write_func and
+ * closure. See [cairo.Global.psSurfaceCreate] for a more convenient way
+ * to simply direct the PostScript output to a named file.
+ * Note that the size of individual pages of the PostScript
+ * output can vary. See [cairo.Global.psSurfaceSetSize].
+ * Params:
+ *   writeFunc = a #cairo_write_func_t to accept the output data, may be %NULL
+ *     to indicate a no-op write_func. With a no-op write_func,
+ *     the surface may be queried or used as a source without
+ *     generating any temporary files.
+ *   widthInPoints = width of the surface, in points $(LPAREN)1 point \=\= 1/72.0 inch$(RPAREN)
+ *   heightInPoints = height of the surface, in points $(LPAREN)1 point \=\= 1/72.0 inch$(RPAREN)
+ * Returns: a pointer to the newly created surface. The caller
+ *   owns the surface and should call [cairo.Surface.destroy] when done
+ *   with it.
+ *   This function always returns a valid pointer, but it will return a
+ *   pointer to a "nil" surface if an error such as out of memory
+ *   occurs. You can use [cairo.Surface.status] to check for this.
+ */
+Surface psSurfaceCreateForStream(WriteFunc writeFunc, double widthInPoints, double heightInPoints)
+{
+  extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+  {
+    Status _dretval;
+    auto _dlg = cast(WriteFunc*)closure;
+    ubyte[] _data;
+    _data.length = length;
+    _data[0 .. length] = data[0 .. length];
+
+    _dretval = (*_dlg)(_data);
+    auto _retval = cast(cairo_status_t)_dretval;
+
+    return _retval;
+  }
+
+  cairo_surface_t* _cretval;
+  auto _writeFunc = cast(void*)&writeFunc;
+  _cretval = cairo_ps_surface_create_for_stream(&_writeFuncCallback, _writeFunc, widthInPoints, heightInPoints);
   auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
   return _retval;
 }
@@ -1400,6 +1554,41 @@ Device scriptCreate(string filename)
 }
 
 /**
+ * Creates a output device for emitting the script, used when
+ * creating the individual surfaces.
+ * Params:
+ *   writeFunc = callback function passed the bytes written to the script
+ * Returns: a pointer to the newly created device. The caller
+ *   owns the surface and should call [cairo.Device.destroy] when done
+ *   with it.
+ *   This function always returns a valid pointer, but it will return a
+ *   pointer to a "nil" device if an error such as out of memory
+ *   occurs. You can use [cairo.Device.status] to check for this.
+ */
+Device scriptCreateForStream(WriteFunc writeFunc)
+{
+  extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+  {
+    Status _dretval;
+    auto _dlg = cast(WriteFunc*)closure;
+    ubyte[] _data;
+    _data.length = length;
+    _data[0 .. length] = data[0 .. length];
+
+    _dretval = (*_dlg)(_data);
+    auto _retval = cast(cairo_status_t)_dretval;
+
+    return _retval;
+  }
+
+  cairo_device_t* _cretval;
+  auto _writeFunc = cast(void*)&writeFunc;
+  _cretval = cairo_script_create_for_stream(&_writeFuncCallback, _writeFunc);
+  auto _retval = _cretval ? new Device(cast(void*)_cretval, true) : null;
+  return _retval;
+}
+
+/**
  * Converts the record operations in recording_surface into a script.
  * Params:
  *   script = the script $(LPAREN)output device$(RPAREN)
@@ -1510,6 +1699,21 @@ string statusToString(Status status)
 }
 
 /**
+ * Used to retrieve the list of supported versions. See
+ * [cairo.Global.svgSurfaceRestrictToVersion].
+ * Params:
+ *   versions = supported version list
+ */
+void svgGetVersions(out SvgVersion[] versions)
+{
+  int _numVersions;
+  const(cairo_svg_version_t)* _versions;
+  cairo_svg_get_versions(&_versions, &_numVersions);
+  versions.length = _numVersions;
+  versions[0 .. $] = _versions[0 .. _numVersions];
+}
+
+/**
  * Creates a SVG surface of the specified size in points to be written
  * to filename.
  * The SVG surface backend recognizes the following MIME types for the
@@ -1546,6 +1750,46 @@ Surface svgSurfaceCreate(string filename, double widthInPoints, double heightInP
   cairo_surface_t* _cretval;
   const(char)* _filename = filename.toCString(false);
   _cretval = cairo_svg_surface_create(_filename, widthInPoints, heightInPoints);
+  auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
+  return _retval;
+}
+
+/**
+ * Creates a SVG surface of the specified size in points to be written
+ * incrementally to the stream represented by write_func and closure.
+ * Params:
+ *   writeFunc = a #cairo_write_func_t to accept the output data, may be %NULL
+ *     to indicate a no-op write_func. With a no-op write_func,
+ *     the surface may be queried or used as a source without
+ *     generating any temporary files.
+ *   widthInPoints = width of the surface, in points $(LPAREN)1 point \=\= 1/72.0 inch$(RPAREN)
+ *   heightInPoints = height of the surface, in points $(LPAREN)1 point \=\= 1/72.0 inch$(RPAREN)
+ * Returns: a pointer to the newly created surface. The caller
+ *   owns the surface and should call [cairo.Surface.destroy] when done
+ *   with it.
+ *   This function always returns a valid pointer, but it will return a
+ *   pointer to a "nil" surface if an error such as out of memory
+ *   occurs. You can use [cairo.Surface.status] to check for this.
+ */
+Surface svgSurfaceCreateForStream(WriteFunc writeFunc, double widthInPoints, double heightInPoints)
+{
+  extern(C) cairo_status_t _writeFuncCallback(void* closure, const(ubyte)* data, uint length)
+  {
+    Status _dretval;
+    auto _dlg = cast(WriteFunc*)closure;
+    ubyte[] _data;
+    _data.length = length;
+    _data[0 .. length] = data[0 .. length];
+
+    _dretval = (*_dlg)(_data);
+    auto _retval = cast(cairo_status_t)_dretval;
+
+    return _retval;
+  }
+
+  cairo_surface_t* _cretval;
+  auto _writeFunc = cast(void*)&writeFunc;
+  _cretval = cairo_svg_surface_create_for_stream(&_writeFuncCallback, _writeFunc, widthInPoints, heightInPoints);
   auto _retval = _cretval ? new Surface(cast(void*)_cretval, true) : null;
   return _retval;
 }

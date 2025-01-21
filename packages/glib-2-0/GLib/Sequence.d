@@ -58,17 +58,15 @@ class Sequence
    */
   void foreach_(Func func)
   {
-    static Func _static_func;
-
     extern(C) void _funcCallback(void* data, void* userData)
     {
-      _static_func(data);
+      auto _dlg = cast(Func*)userData;
+
+      (*_dlg)(data);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_sequence_foreach(cast(GSequence*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -141,19 +139,17 @@ class Sequence
    */
   SequenceIter insertSorted(void* data, CompareDataFunc cmpFunc)
   {
-    static CompareDataFunc _static_cmpFunc;
-
     extern(C) int _cmpFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_cmpFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_cmpFunc = cmpFunc;
     GSequenceIter* _cretval;
-    auto _cmpFunc = freezeDelegate(cast(void*)&cmpFunc);
+    auto _cmpFunc = cast(void*)&cmpFunc;
     _cretval = g_sequence_insert_sorted(cast(GSequence*)cPtr, data, &_cmpFuncCallback, _cmpFunc);
-    _static_cmpFunc = null;
     auto _retval = _cretval ? new SequenceIter(cast(GSequenceIter*)_cretval, false) : null;
     return _retval;
   }
@@ -176,19 +172,17 @@ class Sequence
    */
   SequenceIter insertSortedIter(void* data, SequenceIterCompareFunc iterCmp)
   {
-    static SequenceIterCompareFunc _static_iterCmp;
-
     extern(C) int _iterCmpCallback(GSequenceIter* a, GSequenceIter* b, void* data)
     {
-      int _retval = _static_iterCmp(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
+      auto _dlg = cast(SequenceIterCompareFunc*)data;
+
+      int _retval = (*_dlg)(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
       return _retval;
     }
 
-    _static_iterCmp = iterCmp;
     GSequenceIter* _cretval;
-    auto _iterCmp = freezeDelegate(cast(void*)&iterCmp);
+    auto _iterCmp = cast(void*)&iterCmp;
     _cretval = g_sequence_insert_sorted_iter(cast(GSequence*)cPtr, data, &_iterCmpCallback, _iterCmp);
-    _static_iterCmp = null;
     auto _retval = _cretval ? new SequenceIter(cast(GSequenceIter*)_cretval, false) : null;
     return _retval;
   }
@@ -228,19 +222,17 @@ class Sequence
    */
   SequenceIter lookup(void* data, CompareDataFunc cmpFunc)
   {
-    static CompareDataFunc _static_cmpFunc;
-
     extern(C) int _cmpFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_cmpFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_cmpFunc = cmpFunc;
     GSequenceIter* _cretval;
-    auto _cmpFunc = freezeDelegate(cast(void*)&cmpFunc);
+    auto _cmpFunc = cast(void*)&cmpFunc;
     _cretval = g_sequence_lookup(cast(GSequence*)cPtr, data, &_cmpFuncCallback, _cmpFunc);
-    _static_cmpFunc = null;
     auto _retval = _cretval ? new SequenceIter(cast(GSequenceIter*)_cretval, false) : null;
     return _retval;
   }
@@ -263,19 +255,17 @@ class Sequence
    */
   SequenceIter lookupIter(void* data, SequenceIterCompareFunc iterCmp)
   {
-    static SequenceIterCompareFunc _static_iterCmp;
-
     extern(C) int _iterCmpCallback(GSequenceIter* a, GSequenceIter* b, void* data)
     {
-      int _retval = _static_iterCmp(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
+      auto _dlg = cast(SequenceIterCompareFunc*)data;
+
+      int _retval = (*_dlg)(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
       return _retval;
     }
 
-    _static_iterCmp = iterCmp;
     GSequenceIter* _cretval;
-    auto _iterCmp = freezeDelegate(cast(void*)&iterCmp);
+    auto _iterCmp = cast(void*)&iterCmp;
     _cretval = g_sequence_lookup_iter(cast(GSequence*)cPtr, data, &_iterCmpCallback, _iterCmp);
-    _static_iterCmp = null;
     auto _retval = _cretval ? new SequenceIter(cast(GSequenceIter*)_cretval, false) : null;
     return _retval;
   }
@@ -313,19 +303,17 @@ class Sequence
    */
   SequenceIter search(void* data, CompareDataFunc cmpFunc)
   {
-    static CompareDataFunc _static_cmpFunc;
-
     extern(C) int _cmpFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_cmpFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_cmpFunc = cmpFunc;
     GSequenceIter* _cretval;
-    auto _cmpFunc = freezeDelegate(cast(void*)&cmpFunc);
+    auto _cmpFunc = cast(void*)&cmpFunc;
     _cretval = g_sequence_search(cast(GSequence*)cPtr, data, &_cmpFuncCallback, _cmpFunc);
-    _static_cmpFunc = null;
     auto _retval = _cretval ? new SequenceIter(cast(GSequenceIter*)_cretval, false) : null;
     return _retval;
   }
@@ -350,19 +338,17 @@ class Sequence
    */
   SequenceIter searchIter(void* data, SequenceIterCompareFunc iterCmp)
   {
-    static SequenceIterCompareFunc _static_iterCmp;
-
     extern(C) int _iterCmpCallback(GSequenceIter* a, GSequenceIter* b, void* data)
     {
-      int _retval = _static_iterCmp(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
+      auto _dlg = cast(SequenceIterCompareFunc*)data;
+
+      int _retval = (*_dlg)(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
       return _retval;
     }
 
-    _static_iterCmp = iterCmp;
     GSequenceIter* _cretval;
-    auto _iterCmp = freezeDelegate(cast(void*)&iterCmp);
+    auto _iterCmp = cast(void*)&iterCmp;
     _cretval = g_sequence_search_iter(cast(GSequence*)cPtr, data, &_iterCmpCallback, _iterCmp);
-    _static_iterCmp = null;
     auto _retval = _cretval ? new SequenceIter(cast(GSequenceIter*)_cretval, false) : null;
     return _retval;
   }
@@ -378,18 +364,16 @@ class Sequence
    */
   void sort(CompareDataFunc cmpFunc)
   {
-    static CompareDataFunc _static_cmpFunc;
-
     extern(C) int _cmpFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_cmpFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_cmpFunc = cmpFunc;
-    auto _cmpFunc = freezeDelegate(cast(void*)&cmpFunc);
+    auto _cmpFunc = cast(void*)&cmpFunc;
     g_sequence_sort(cast(GSequence*)cPtr, &_cmpFuncCallback, _cmpFunc);
-    _static_cmpFunc = null;
   }
 
   /**
@@ -404,18 +388,16 @@ class Sequence
    */
   void sortIter(SequenceIterCompareFunc cmpFunc)
   {
-    static SequenceIterCompareFunc _static_cmpFunc;
-
     extern(C) int _cmpFuncCallback(GSequenceIter* a, GSequenceIter* b, void* data)
     {
-      int _retval = _static_cmpFunc(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
+      auto _dlg = cast(SequenceIterCompareFunc*)data;
+
+      int _retval = (*_dlg)(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
       return _retval;
     }
 
-    _static_cmpFunc = cmpFunc;
-    auto _cmpFunc = freezeDelegate(cast(void*)&cmpFunc);
+    auto _cmpFunc = cast(void*)&cmpFunc;
     g_sequence_sort_iter(cast(GSequence*)cPtr, &_cmpFuncCallback, _cmpFunc);
-    _static_cmpFunc = null;
   }
 
   /**
@@ -429,17 +411,15 @@ class Sequence
    */
   static void foreachRange(SequenceIter begin, SequenceIter end, Func func)
   {
-    static Func _static_func;
-
     extern(C) void _funcCallback(void* data, void* userData)
     {
-      _static_func(data);
+      auto _dlg = cast(Func*)userData;
+
+      (*_dlg)(data);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_sequence_foreach_range(begin ? cast(GSequenceIter*)begin.cPtr : null, end ? cast(GSequenceIter*)end.cPtr : null, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -578,18 +558,16 @@ class Sequence
    */
   static void sortChanged(SequenceIter iter, CompareDataFunc cmpFunc)
   {
-    static CompareDataFunc _static_cmpFunc;
-
     extern(C) int _cmpFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_cmpFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_cmpFunc = cmpFunc;
-    auto _cmpFunc = freezeDelegate(cast(void*)&cmpFunc);
+    auto _cmpFunc = cast(void*)&cmpFunc;
     g_sequence_sort_changed(iter ? cast(GSequenceIter*)iter.cPtr : null, &_cmpFuncCallback, _cmpFunc);
-    _static_cmpFunc = null;
   }
 
   /**
@@ -607,18 +585,16 @@ class Sequence
    */
   static void sortChangedIter(SequenceIter iter, SequenceIterCompareFunc iterCmp)
   {
-    static SequenceIterCompareFunc _static_iterCmp;
-
     extern(C) int _iterCmpCallback(GSequenceIter* a, GSequenceIter* b, void* data)
     {
-      int _retval = _static_iterCmp(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
+      auto _dlg = cast(SequenceIterCompareFunc*)data;
+
+      int _retval = (*_dlg)(a ? new SequenceIter(cast(void*)a, false) : null, b ? new SequenceIter(cast(void*)b, false) : null);
       return _retval;
     }
 
-    _static_iterCmp = iterCmp;
-    auto _iterCmp = freezeDelegate(cast(void*)&iterCmp);
+    auto _iterCmp = cast(void*)&iterCmp;
     g_sequence_sort_changed_iter(iter ? cast(GSequenceIter*)iter.cPtr : null, &_iterCmpCallback, _iterCmp);
-    _static_iterCmp = null;
   }
 
   /**

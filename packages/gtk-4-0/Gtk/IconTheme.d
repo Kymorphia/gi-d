@@ -137,6 +137,105 @@ class IconTheme : ObjectG
   }
 
   /**
+   * Lists the names of icons in the current icon theme.
+   * Returns: a string array
+   *   holding the names of all the icons in the theme. You must
+   *   free the array using [GLib.Global.strfreev].
+   */
+  string[] getIconNames()
+  {
+    char** _cretval;
+    _cretval = gtk_icon_theme_get_icon_names(cast(GtkIconTheme*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
+   * Returns an array of integers describing the sizes at which
+   * the icon is available without scaling.
+   * A size of -1 means that the icon is available in a scalable
+   * format. The array is zero-terminated.
+   * Params:
+   *   iconName = the name of an icon
+   * Returns: A newly
+   *   allocated array describing the sizes at which the icon is
+   *   available. The array should be freed with [GLib.Global.gfree] when it is no
+   *   longer needed.
+   */
+  int[] getIconSizes(string iconName)
+  {
+    int* _cretval;
+    const(char)* _iconName = iconName.toCString(false);
+    _cretval = gtk_icon_theme_get_icon_sizes(cast(GtkIconTheme*)cPtr, _iconName);
+    int[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] != 0; _cretlength++)
+        break;
+      _retval = cast(int[] )_cretval[0 .. _cretlength];
+    }
+    return _retval;
+  }
+
+  /**
+   * Gets the current resource path.
+   * See [Gtk.IconTheme.setResourcePath].
+   * Returns: A list of resource paths
+   */
+  string[] getResourcePath()
+  {
+    char** _cretval;
+    _cretval = gtk_icon_theme_get_resource_path(cast(GtkIconTheme*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
+   * Gets the current search path.
+   * See [Gtk.IconTheme.setSearchPath].
+   * Returns: a list of icon theme path directories
+   */
+  string[] getSearchPath()
+  {
+    char** _cretval;
+    _cretval = gtk_icon_theme_get_search_path(cast(GtkIconTheme*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
    * Gets the current icon theme name.
    * Returns $(LPAREN)transfer full$(RPAREN): the current icon theme name,
    * Returns:
@@ -198,6 +297,95 @@ class IconTheme : ObjectG
     _cretval = gtk_icon_theme_lookup_by_gicon(cast(GtkIconTheme*)cPtr, icon ? cast(GIcon*)(cast(ObjectG)icon).cPtr(false) : null, size, scale, direction, flags);
     auto _retval = _cretval ? ObjectG.getDObject!IconPaintable(cast(GtkIconPaintable*)_cretval, true) : null;
     return _retval;
+  }
+
+  /**
+   * Looks up a named icon for a desired size and window scale,
+   * returning a `GtkIconPaintable`.
+   * The icon can then be rendered by using it as a `GdkPaintable`,
+   * or you can get information such as the filename and size.
+   * If the available icon_name is not available and fallbacks are
+   * provided, they will be tried in order.
+   * If no matching icon is found, then a paintable that renders the
+   * "missing icon" icon is returned. If you need to do something else
+   * for missing icons you need to use [Gtk.IconTheme.hasIcon].
+   * Note that you probably want to listen for icon theme changes and
+   * update the icon. This is usually done by overriding the
+   * GtkWidgetClass.css-changed$(LPAREN)$(RPAREN) function.
+   * Params:
+   *   iconName = the name of the icon to lookup
+   *   fallbacks =
+   *   size = desired icon size.
+   *   scale = the window scale this will be displayed on
+   *   direction = text direction the icon will be displayed in
+   *   flags = flags modifying the behavior of the icon lookup
+   * Returns: a `GtkIconPaintable` object
+   *   containing the icon.
+   */
+  IconPaintable lookupIcon(string iconName, string[] fallbacks, int size, int scale, TextDirection direction, IconLookupFlags flags)
+  {
+    GtkIconPaintable* _cretval;
+    const(char)* _iconName = iconName.toCString(false);
+    char*[] _tmpfallbacks;
+    foreach (s; fallbacks)
+      _tmpfallbacks ~= s.toCString(false);
+    _tmpfallbacks ~= null;
+    const(char*)* _fallbacks = _tmpfallbacks.ptr;
+    _cretval = gtk_icon_theme_lookup_icon(cast(GtkIconTheme*)cPtr, _iconName, _fallbacks, size, scale, direction, flags);
+    auto _retval = _cretval ? ObjectG.getDObject!IconPaintable(cast(GtkIconPaintable*)_cretval, true) : null;
+    return _retval;
+  }
+
+  /**
+   * Sets the resource paths that will be looked at when
+   * looking for icons, similar to search paths.
+   * The resources are considered as part of the hicolor icon theme
+   * and must be located in subdirectories that are defined in the
+   * hicolor icon theme, such as `path/16x16/actions/run.png`
+   * or `path/scalable/actions/run.svg`.
+   * Icons that are directly placed in the resource path instead
+   * of a subdirectory are also considered as ultimate fallback,
+   * but they are treated like unthemed icons.
+   * Params:
+   *   path = NULL-terminated array of resource paths
+   *     that are searched for icons
+   */
+  void setResourcePath(string[] path)
+  {
+    const(char)*[] _tmppath;
+    foreach (s; path)
+      _tmppath ~= s.toCString(false);
+    _tmppath ~= null;
+    const(char*)* _path = _tmppath.ptr;
+    gtk_icon_theme_set_resource_path(cast(GtkIconTheme*)cPtr, _path);
+  }
+
+  /**
+   * Sets the search path for the icon theme object.
+   * When looking for an icon theme, GTK will search for a subdirectory
+   * of one or more of the directories in path with the same name
+   * as the icon theme containing an index.theme file. $(LPAREN)Themes from
+   * multiple of the path elements are combined to allow themes to be
+   * extended by adding icons in the user’s home directory.$(RPAREN)
+   * In addition if an icon found isn’t found either in the current
+   * icon theme or the default icon theme, and an image file with
+   * the right name is found directly in one of the elements of
+   * path, then that image will be used for the icon name.
+   * $(LPAREN)This is legacy feature, and new icons should be put
+   * into the fallback icon theme, which is called hicolor,
+   * rather than directly on the icon path.$(RPAREN)
+   * Params:
+   *   path = NULL-terminated
+   *     array of directories that are searched for icon themes
+   */
+  void setSearchPath(string[] path)
+  {
+    const(char)*[] _tmppath;
+    foreach (s; path)
+      _tmppath ~= s.toCString(false);
+    _tmppath ~= null;
+    const(char*)* _path = _tmppath.ptr;
+    gtk_icon_theme_set_search_path(cast(GtkIconTheme*)cPtr, _path);
   }
 
   /**

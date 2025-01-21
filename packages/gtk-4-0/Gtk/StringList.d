@@ -59,6 +59,24 @@ class StringList : ObjectG, ListModel, Buildable
   mixin BuildableT!();
 
   /**
+   * Creates a new `GtkStringList` with the given strings.
+   * Params:
+   *   strings = The strings to put in the model
+   * Returns: a new `GtkStringList`
+   */
+  this(string[] strings)
+  {
+    GtkStringList* _cretval;
+    char*[] _tmpstrings;
+    foreach (s; strings)
+      _tmpstrings ~= s.toCString(false);
+    _tmpstrings ~= null;
+    const(char*)* _strings = _tmpstrings.ptr;
+    _cretval = gtk_string_list_new(_strings);
+    this(_cretval, true);
+  }
+
+  /**
    * Appends string to self.
    * The string will be copied. See
    * [Gtk.StringList.take] for a way to avoid that.
@@ -98,6 +116,31 @@ class StringList : ObjectG, ListModel, Buildable
   void remove(uint position)
   {
     gtk_string_list_remove(cast(GtkStringList*)cPtr, position);
+  }
+
+  /**
+   * Changes self by removing n_removals strings and adding additions
+   * to it.
+   * This function is more efficient than [Gtk.StringList.append]
+   * and [Gtk.StringList.remove], because it only emits the
+   * ::items-changed signal once for the change.
+   * This function copies the strings in additions.
+   * The parameters position and n_removals must be correct $(LPAREN)ie:
+   * position + n_removals must be less than or equal to the length
+   * of the list at the time this function is called$(RPAREN).
+   * Params:
+   *   position = the position at which to make the change
+   *   nRemovals = the number of strings to remove
+   *   additions = The strings to add
+   */
+  void splice(uint position, uint nRemovals, string[] additions)
+  {
+    char*[] _tmpadditions;
+    foreach (s; additions)
+      _tmpadditions ~= s.toCString(false);
+    _tmpadditions ~= null;
+    const(char*)* _additions = _tmpadditions.ptr;
+    gtk_string_list_splice(cast(GtkStringList*)cPtr, position, nRemovals, _additions);
   }
 
   /**

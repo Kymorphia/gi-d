@@ -976,6 +976,30 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
   }
 
   /**
+   * Returns the list of style classes applied to widget.
+   * Returns: a %NULL-terminated list of
+   *   css classes currently applied to widget. The returned
+   *   list must freed using [GLib.Global.strfreev].
+   */
+  string[] getCssClasses()
+  {
+    char** _cretval;
+    _cretval = gtk_widget_get_css_classes(cast(GtkWidget*)cPtr);
+    string[] _retval;
+
+    if (_cretval)
+    {
+      uint _cretlength;
+      for (; _cretval[_cretlength] !is null; _cretlength++)
+        break;
+      _retval = new string[_cretlength];
+      foreach (i; 0 .. _cretlength)
+        _retval[i] = _cretval[i].fromCString(true);
+    }
+    return _retval;
+  }
+
+  /**
    * Returns the CSS name that is used for self.
    * Returns: the CSS name
    */
@@ -2354,6 +2378,22 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
   void setChildVisible(bool childVisible)
   {
     gtk_widget_set_child_visible(cast(GtkWidget*)cPtr, childVisible);
+  }
+
+  /**
+   * Clear all style classes applied to widget
+   * and replace them with classes.
+   * Params:
+   *   classes = %NULL-terminated list of style classes to apply to widget.
+   */
+  void setCssClasses(string[] classes)
+  {
+    char*[] _tmpclasses;
+    foreach (s; classes)
+      _tmpclasses ~= s.toCString(false);
+    _tmpclasses ~= null;
+    const(char*)* _classes = _tmpclasses.ptr;
+    gtk_widget_set_css_classes(cast(GtkWidget*)cPtr, _classes);
   }
 
   /**

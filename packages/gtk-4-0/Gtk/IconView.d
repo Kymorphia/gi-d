@@ -707,17 +707,15 @@ class IconView : Widget, CellLayout, Scrollable
    */
   void selectedForeach(IconViewForeachFunc func)
   {
-    static IconViewForeachFunc _static_func;
-
     extern(C) void _funcCallback(GtkIconView* iconView, GtkTreePath* path, void* data)
     {
-      _static_func(iconView ? ObjectG.getDObject!IconView(cast(void*)iconView, false) : null, path ? new TreePath(cast(void*)path, false) : null);
+      auto _dlg = cast(IconViewForeachFunc*)data;
+
+      (*_dlg)(iconView ? ObjectG.getDObject!IconView(cast(void*)iconView, false) : null, path ? new TreePath(cast(void*)path, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_icon_view_selected_foreach(cast(GtkIconView*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

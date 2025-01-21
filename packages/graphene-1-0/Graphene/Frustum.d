@@ -87,6 +87,22 @@ class Frustum : Boxed
   }
 
   /**
+   * Retrieves the planes that define the given #graphene_frustum_t.
+   * Params:
+   *   planes = return location for an array
+   *     of 6 #graphene_plane_t
+   */
+  void getPlanes(ref Plane[] planes)
+  {
+    graphene_plane_t[] _planes;
+    _planes.length = 6;
+    graphene_frustum_get_planes(cast(graphene_frustum_t*)cPtr, _planes.ptr);
+    planes.length = 6;
+    foreach (i; 0 .. 6)
+      planes[i] = new Plane(cast(void*)&_planes[i], false);
+  }
+
+  /**
    * Initializes the given #graphene_frustum_t using the provided
    * clipping planes.
    * Params:

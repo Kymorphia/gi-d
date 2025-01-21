@@ -61,16 +61,13 @@ class Queue
    */
   void clearFull(DestroyNotify freeFunc)
   {
-    static DestroyNotify _static_freeFunc;
-
     extern(C) void _freeFuncCallback(void* data)
     {
-      _static_freeFunc();
-    }
+      auto _dlg = cast(DestroyNotify*)data;
 
-    _static_freeFunc = freeFunc;
+      (*_dlg)();
+    }
     g_queue_clear_full(cast(GQueue*)cPtr, &_freeFuncCallback);
-    _static_freeFunc = null;
   }
 
   /**
@@ -83,17 +80,15 @@ class Queue
    */
   void foreach_(Func func)
   {
-    static Func _static_func;
-
     extern(C) void _funcCallback(void* data, void* userData)
     {
-      _static_func(data);
+      auto _dlg = cast(Func*)userData;
+
+      (*_dlg)(data);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_queue_foreach(cast(GQueue*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -106,16 +101,13 @@ class Queue
    */
   void freeFull(DestroyNotify freeFunc)
   {
-    static DestroyNotify _static_freeFunc;
-
     extern(C) void _freeFuncCallback(void* data)
     {
-      _static_freeFunc();
-    }
+      auto _dlg = cast(DestroyNotify*)data;
 
-    _static_freeFunc = freeFunc;
+      (*_dlg)();
+    }
     g_queue_free_full(cast(GQueue*)cPtr, &_freeFuncCallback);
-    _static_freeFunc = null;
   }
 
   /**
@@ -166,18 +158,16 @@ class Queue
    */
   void insertSorted(void* data, CompareDataFunc func)
   {
-    static CompareDataFunc _static_func;
-
     extern(C) int _funcCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_func(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_queue_insert_sorted(cast(GQueue*)cPtr, data, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -343,17 +333,15 @@ class Queue
    */
   void sort(CompareDataFunc compareFunc)
   {
-    static CompareDataFunc _static_compareFunc;
-
     extern(C) int _compareFuncCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_compareFunc(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_compareFunc = compareFunc;
-    auto _compareFunc = freezeDelegate(cast(void*)&compareFunc);
+    auto _compareFunc = cast(void*)&compareFunc;
     g_queue_sort(cast(GQueue*)cPtr, &_compareFuncCallback, _compareFunc);
-    _static_compareFunc = null;
   }
 }

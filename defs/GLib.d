@@ -109,10 +109,18 @@
 //!set function[spawn_async_with_pipes].parameters.parameter[envp].array[][zero-terminated] 1
 //!set function[spawn_sync].parameters.parameter[argv].array[][zero-terminated] 1
 //!set function[spawn_sync].parameters.parameter[envp].array[][zero-terminated] 1
+//!set function[strdupv].parameters.parameter[str_array].array[][zero-terminated] 1
+//!set function[strdupv].return-value.array[][zero-terminated] 1
+//!set function[strjoinv].parameters.parameter[str_array].array[][zero-terminated] 1
 //!set function[strsplit].return-value.array[][zero-terminated] 1
 //!set function[strsplit_set].return-value.array[][zero-terminated] 1
 //!set function[str_tokenize_and_fold].return-value.array[][zero-terminated] 1
 //!set function[str_tokenize_and_fold].parameters.parameter[ascii_alternates].array[][zero-terminated] 1
+//!set function[strv_contains].parameters.parameter[strv].array[][zero-terminated] 1
+//!set function[strv_equal].parameters.parameter[strv1].array[][zero-terminated] 1
+//!set function[strv_equal].parameters.parameter[strv2].array[][zero-terminated] 1
+//!set function[strv_length].parameters.parameter[str_array].array[][zero-terminated] 1
+//!set function[test_trap_subprocess_with_envp].parameters.parameter[envp].array[][zero-terminated] 1
 //!set record[KeyFile].method[get_groups].return-value.array[][zero-terminated] 1
 //!set record[KeyFile].method[get_keys].return-value.array[][zero-terminated] 1
 //!set record[KeyFile].method[load_from_dirs].parameters.parameter[search_dirs].array[][zero-terminated] 1
@@ -172,6 +180,7 @@
 //!set record[IOChannel].method[read].parameters.parameter[bytes_read][direction] out
 //!set record[IOChannel].method[read_line_string].parameters.parameter[terminator_pos][direction] out
 //!set record[IOChannel].method[write].parameters.parameter[bytes_written][direction] out
+//!set record[Once].function[init_enter_impl].parameters.parameter[location][direction] out
 
 //# Fix string array parameters with lengths to be array of chars not array of strings
 //!set record[Regex].method[match_all_full].parameters.parameter[string].array.type[][name] char
@@ -234,6 +243,7 @@
 //!set record[IOChannel].method[read].parameters.parameter[buf][caller-allocates] 1
 //!set record[IOChannel].method[read].parameters.parameter[buf][direction] out
 //!set record[Rand].method[set_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
+//!set record[Rand].constructor[new_with_seed_array].parameters.parameter[seed].type '<array length="1" zero-terminated="0" c:type="const guint32*"><type name="guint32" c:type="guint32"/></array>'
 //!set record[TestLogBuffer].method[push].parameters.parameter[bytes].type '<array length="0" zero-terminated="0" c:type="const guint8*"><type name="guint8" c:type="guint8"/></array>'
 //!set record[StrvBuilder].method[end].return-value.array '<array zero-terminated="1" c:type="char**"><type name="utf8" c:type="char*"/></array>'
 

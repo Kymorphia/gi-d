@@ -82,17 +82,15 @@ class Cache
    */
   void keyForeach(HFunc func)
   {
-    static HFunc _static_func;
-
     extern(C) void _funcCallback(void* key, void* value, void* userData)
     {
-      _static_func(key, value);
+      auto _dlg = cast(HFunc*)userData;
+
+      (*_dlg)(key, value);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_cache_key_foreach(cast(GCache*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -119,16 +117,14 @@ class Cache
    */
   void valueForeach(HFunc func)
   {
-    static HFunc _static_func;
-
     extern(C) void _funcCallback(void* key, void* value, void* userData)
     {
-      _static_func(key, value);
+      auto _dlg = cast(HFunc*)userData;
+
+      (*_dlg)(key, value);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_cache_value_foreach(cast(GCache*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 }

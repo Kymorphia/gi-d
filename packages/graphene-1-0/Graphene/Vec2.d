@@ -315,6 +315,17 @@ class Vec2 : Boxed
   }
 
   /**
+   * Stores the components of v into an array.
+   * Params:
+   *   dest = return location
+   *     for an array of floating point values with at least 2 elements
+   */
+  void toFloat(ref float[] dest)
+  {
+    graphene_vec2_to_float(cast(graphene_vec2_t*)cPtr, dest.ptr);
+  }
+
+  /**
    * Retrieves a constant vector with $(LPAREN)1, 1$(RPAREN) components.
    * Returns: the one vector
    */

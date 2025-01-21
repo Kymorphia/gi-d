@@ -1047,17 +1047,15 @@ class TreeView : Widget, Scrollable
    */
   void mapExpandedRows(TreeViewMappingFunc func)
   {
-    static TreeViewMappingFunc _static_func;
-
     extern(C) void _funcCallback(GtkTreeView* treeView, GtkTreePath* path, void* userData)
     {
-      _static_func(treeView ? ObjectG.getDObject!TreeView(cast(void*)treeView, false) : null, path ? new TreePath(cast(void*)path, false) : null);
+      auto _dlg = cast(TreeViewMappingFunc*)userData;
+
+      (*_dlg)(treeView ? ObjectG.getDObject!TreeView(cast(void*)treeView, false) : null, path ? new TreePath(cast(void*)path, false) : null);
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     gtk_tree_view_map_expanded_rows(cast(GtkTreeView*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

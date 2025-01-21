@@ -37,19 +37,21 @@ class FuncWriter
     foreach (param; func.params)
     {
       if (param.kind == TypeKind.Callback && !param.isDestroy)
-      {
-        if (param.scope_ == ParamScope.Call)
+      { // Use a static delegate pointer if there is no closure data argument
+        auto staticDelegatePtr = !param.typeObjectRoot || !(cast(Func)param.typeObjectRoot).closureParam;
+
+        if (staticDelegatePtr)
           preCall ~= "static " ~ param.dType ~ " _static_" ~ param.dName ~ ";\n\n";
 
-        auto delegWriter = new DelegWriter(param);
+        auto delegWriter = new DelegWriter(param, staticDelegatePtr);
         preCall ~= delegWriter.generate() ~ "\n";
 
-        if (param.scope_ == ParamScope.Call)
+        if (staticDelegatePtr)
         {
           preCall ~= "_static_" ~ param.dName ~ " = " ~ param.dName ~ ";\n";
           postCall ~= "_static_" ~ param.dName ~ " = null;\n"; // Clear the delegate pointer to allow it to be collected
         }
-      }
+     }
     }
 
     processReturn();
@@ -341,10 +343,11 @@ class FuncWriter
       if (param.callbackIndex != NoCallback)
       {
         auto callbackParam = func.params[param.callbackIndex];
+        auto freezeDeleg = callbackParam.scope_ != ParamScope.Call;
 
-        if (param.scope_ != ParamScope.Call) // Duplicate delegate to malloc heap memory and pin the context if not Call scope
-          preCall ~= "auto _" ~ callbackParam.dName ~ " = freezeDelegate(cast(void*)&" ~ callbackParam.dName ~ ");\n";
-
+        // Duplicate delegate to malloc heap memory and pin the context if not Call scope
+        preCall ~= "auto _" ~ callbackParam.dName ~ " = " ~ (freezeDeleg ? "freezeDelegate("d : ""d)
+          ~ "cast(void*)&" ~ callbackParam.dName ~ (freezeDeleg ? ");\n"d : ";\n"d);
         addCallParam("_" ~ callbackParam.dName); // Pass the duplicate pinned delegate as closure data
       }
       else
@@ -570,7 +573,7 @@ class FuncWriter
     else if (param.zeroTerminated) // Array is zero terminated?
     {
       postCall ~= "uint _len" ~ param.dName ~ ";\nif (_" ~ param.dName ~ ")\n{\nfor (; _" ~ param.dName
-        ~ "[_len" ~ param.dName ~ "] " ~ (elemType.cType.endsWith("*") ? "!is null"d : "!= 0") ~ "; _len" ~ param.dName
+        ~ "[_len" ~ param.dName ~ "] " ~ (elemType.cTypeRemPtr.endsWith("*") ? "!is null"d : "!= 0") ~ "; _len" ~ param.dName
         ~ "++)\n{\n}\n}\n";
       lengthStr = "_len" ~ param.dName;
     }
@@ -584,7 +587,8 @@ class FuncWriter
         {
           preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = _" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
+          postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
+          postCall ~= param.dName ~ "[0 .. $] = _" ~ param.dName ~ "[0 .. " ~ lengthStr ~ "];\n";
 
           if (param.ownership != Ownership.None)
             postCall ~= "safeFree(cast(void*)_" ~ param.dName ~ ");\n";

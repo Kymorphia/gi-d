@@ -264,12 +264,14 @@ final class Param : TypeNode
           if (cType.countStars != 1)
             throw new Exception("Caller allocated output array has unexpected C type '" ~ cType.to!string ~ "'");
 
-          if (!lengthParam)
-            throw new Exception("Caller allocated output array has no length parameter");
-
-          if (lengthParam.direction == Out)
-            throw new Exception("Caller allocated output array has unsupported length parameter direction '"
-              ~ lengthParam.direction.to!string ~ "'");
+          if (lengthParam)
+          {
+            if (lengthParam.direction == Out)
+              throw new Exception("Caller allocated output array has unsupported length parameter direction '"
+                ~ lengthParam.direction.to!string ~ "'");
+          }
+          else if (fixedSize == ArrayNotFixed)
+            throw new Exception("Caller allocated output array has indeterminate length");
         }
         else // Caller does not allocate
         {

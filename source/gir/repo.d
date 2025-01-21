@@ -363,6 +363,7 @@ final class Repo : Base
       {
         al.disable = true;
         warning(al.xmlLocation ~ "Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
+        TypeNode.dumpSelectorOnWarning(al);
       }
     }
 
@@ -374,6 +375,7 @@ final class Repo : Base
       {
         con.disable = true;
         warning(con.xmlLocation ~ "Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
+        TypeNode.dumpSelectorOnWarning(con);
       }
     }
 
@@ -390,6 +392,7 @@ final class Repo : Base
       {
         cb.disable = true;
         warning(cb.xmlLocation ~ "Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
+        TypeNode.dumpSelectorOnWarning(cb);
       }
     }
 
@@ -401,6 +404,7 @@ final class Repo : Base
       {
         st.disable = true;
         warning(st.xmlLocation ~ "Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
+        TypeNode.dumpSelectorOnWarning(st);
       }
     }
   }

@@ -112,6 +112,39 @@ class Clipboard : ObjectG
   }
 
   /**
+   * Asynchronously requests an input stream to read the clipboard's
+   * contents from.
+   * When the operation is finished callback will be called. You must then
+   * call [Gdk.Clipboard.readFinish] to get the result of the operation.
+   * The clipboard will choose the most suitable mime type from the given list
+   * to fulfill the request, preferring the ones listed first.
+   * Params:
+   *   mimeTypes = a %NULL-terminated array of mime types to choose from
+   *   ioPriority = the I/O priority of the request
+   *   cancellable = optional `GCancellable` object
+   *   callback = callback to call when the request is satisfied
+   */
+  void readAsync(string[] mimeTypes, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    char*[] _tmpmimeTypes;
+    foreach (s; mimeTypes)
+      _tmpmimeTypes ~= s.toCString(false);
+    _tmpmimeTypes ~= null;
+    const(char*)* _mimeTypes = _tmpmimeTypes.ptr;
+
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    gdk_clipboard_read_async(cast(GdkClipboard*)cPtr, _mimeTypes, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
+
+  /**
    * Finishes an asynchronous clipboard read.
    * See [Gdk.Clipboard.readAsync].
    * Params:

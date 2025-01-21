@@ -153,6 +153,36 @@ class Drop : ObjectG
   }
 
   /**
+   * Asynchronously read the dropped data from a `GdkDrop`
+   * in a format that complies with one of the mime types.
+   * Params:
+   *   mimeTypes = pointer to an array of mime types
+   *   ioPriority = the I/O priority for the read operation
+   *   cancellable = optional `GCancellable` object
+   *   callback = a `GAsyncReadyCallback` to call when
+   *     the request is satisfied
+   */
+  void readAsync(string[] mimeTypes, int ioPriority, Cancellable cancellable, AsyncReadyCallback callback)
+  {
+    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
+    {
+      ptrThawGC(data);
+      auto _dlg = cast(AsyncReadyCallback*)data;
+
+      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
+    }
+
+    const(char)*[] _tmpmimeTypes;
+    foreach (s; mimeTypes)
+      _tmpmimeTypes ~= s.toCString(false);
+    _tmpmimeTypes ~= null;
+    const(char*)* _mimeTypes = _tmpmimeTypes.ptr;
+
+    auto _callback = freezeDelegate(cast(void*)&callback);
+    gdk_drop_read_async(cast(GdkDrop*)cPtr, _mimeTypes, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+  }
+
+  /**
    * Finishes an async drop read operation.
    * Note that you must not use blocking read calls on the returned stream
    * in the GTK thread, since some platforms might require communication with

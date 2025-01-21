@@ -162,18 +162,16 @@ class AsyncQueue
    */
   void pushSorted(void* data, CompareDataFunc func)
   {
-    static CompareDataFunc _static_func;
-
     extern(C) int _funcCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_func(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_async_queue_push_sorted(cast(GAsyncQueue*)cPtr, data, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -194,18 +192,16 @@ class AsyncQueue
    */
   void pushSortedUnlocked(void* data, CompareDataFunc func)
   {
-    static CompareDataFunc _static_func;
-
     extern(C) int _funcCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_func(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_async_queue_push_sorted_unlocked(cast(GAsyncQueue*)cPtr, data, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -282,18 +278,16 @@ class AsyncQueue
    */
   void sort(CompareDataFunc func)
   {
-    static CompareDataFunc _static_func;
-
     extern(C) int _funcCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_func(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_async_queue_sort(cast(GAsyncQueue*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**
@@ -309,18 +303,16 @@ class AsyncQueue
    */
   void sortUnlocked(CompareDataFunc func)
   {
-    static CompareDataFunc _static_func;
-
     extern(C) int _funcCallback(const(void)* a, const(void)* b, void* userData)
     {
-      int _retval = _static_func(a, b);
+      auto _dlg = cast(CompareDataFunc*)userData;
+
+      int _retval = (*_dlg)(a, b);
       return _retval;
     }
 
-    _static_func = func;
-    auto _func = freezeDelegate(cast(void*)&func);
+    auto _func = cast(void*)&func;
     g_async_queue_sort_unlocked(cast(GAsyncQueue*)cPtr, &_funcCallback, _func);
-    _static_func = null;
   }
 
   /**

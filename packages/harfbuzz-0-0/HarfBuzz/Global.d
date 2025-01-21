@@ -2093,7 +2093,8 @@ void fontFuncsSetGlyphFromNameFunc(FontFuncs ffuncs, FontGetGlyphFromNameFunc fu
   {
     auto _dlg = cast(FontGetGlyphFromNameFunc*)userData;
     char[] _name;
-    _name = cast(char[])name[0 .. len];
+    _name.length = len;
+    _name[0 .. len] = name[0 .. len];
 
     hb_bool_t _retval = (*_dlg)(font ? new Font(cast(void*)font, false) : null, fontData, _name, *glyph);
     return _retval;
@@ -4368,6 +4369,47 @@ Position otLayoutLookupGetOpticalBound(Font font, uint lookupIndex, Direction di
 }
 
 /**
+ * Tests whether a specified lookup in the specified face would
+ * trigger a substitution on the given glyph sequence.
+ * Params:
+ *   face = #hb_face_t to work upon
+ *   lookupIndex = The index of the lookup to query
+ *   glyphs = The sequence of glyphs to query for substitution
+ *   zeroContext = #hb_bool_t indicating whether pre-/post-context are disallowed
+ *     in substitutions
+ * Returns: `true` if a substitution would be triggered, `false` otherwise
+ */
+Bool otLayoutLookupWouldSubstitute(HBFace face, uint lookupIndex, Codepoint[] glyphs, Bool zeroContext)
+{
+  Bool _retval;
+  uint _glyphsLength;
+  if (glyphs)
+    _glyphsLength = cast(uint)glyphs.length;
+
+  auto _glyphs = cast(const(hb_codepoint_t)*)glyphs.ptr;
+  _retval = hb_ot_layout_lookup_would_substitute(face ? cast(hb_face_t*)face.cPtr(false) : null, lookupIndex, _glyphs, _glyphsLength, zeroContext);
+  return _retval;
+}
+
+/**
+ * Fetches the index of a given language tag in the specified face's GSUB table
+ * or GPOS table, underneath the specified script tag.
+ * Params:
+ *   face = #hb_face_t to work upon
+ *   tableTag = #HB_OT_TAG_GSUB or #HB_OT_TAG_GPOS
+ *   scriptIndex = The index of the requested script tag
+ *   languageTag = The #hb_tag_t of the requested language
+ *   languageIndex = The index of the requested language
+ * Returns: `true` if the language tag is found, `false` otherwise
+ */
+Bool otLayoutScriptFindLanguage(HBFace face, Tag tableTag, uint scriptIndex, Tag languageTag, out uint languageIndex)
+{
+  Bool _retval;
+  _retval = hb_ot_layout_script_find_language(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, scriptIndex, languageTag, cast(uint*)&languageIndex);
+  return _retval;
+}
+
+/**
  * Fetches a list of language tags in the given face's GSUB or GPOS table, underneath
  * the specified script index. The list returned will begin at the offset provided.
  * Params:
@@ -4383,6 +4425,82 @@ uint otLayoutScriptGetLanguageTags(HBFace face, Tag tableTag, uint scriptIndex, 
   uint _retval;
   uint _languageCount;
   _retval = hb_ot_layout_script_get_language_tags(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, scriptIndex, startOffset, &_languageCount, languageTags.ptr);
+  return _retval;
+}
+
+/**
+ * Fetches the index of the first language tag fom language_tags that is present
+ * in the specified face's GSUB or GPOS table, underneath the specified script
+ * index.
+ * If none of the given language tags is found, `false` is returned and
+ * language_index is set to the default language index.
+ * Params:
+ *   face = #hb_face_t to work upon
+ *   tableTag = #HB_OT_TAG_GSUB or #HB_OT_TAG_GPOS
+ *   scriptIndex = The index of the requested script tag
+ *   languageTags = The array of language tags
+ *   languageIndex = The index of the requested language
+ * Returns: `true` if one of the given language tags is found, `false` otherwise
+ */
+Bool otLayoutScriptSelectLanguage(HBFace face, Tag tableTag, uint scriptIndex, Tag[] languageTags, out uint languageIndex)
+{
+  Bool _retval;
+  uint _languageCount;
+  if (languageTags)
+    _languageCount = cast(uint)languageTags.length;
+
+  auto _languageTags = cast(const(hb_tag_t)*)languageTags.ptr;
+  _retval = hb_ot_layout_script_select_language(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, scriptIndex, _languageCount, _languageTags, cast(uint*)&languageIndex);
+  return _retval;
+}
+
+/**
+ * Fetches the index of the first language tag fom language_tags that is present
+ * in the specified face's GSUB or GPOS table, underneath the specified script
+ * index.
+ * If none of the given language tags is found, `false` is returned and
+ * language_index is set to #HB_OT_LAYOUT_DEFAULT_LANGUAGE_INDEX and
+ * chosen_language is set to #HB_TAG_NONE.
+ * Params:
+ *   face = #hb_face_t to work upon
+ *   tableTag = #HB_OT_TAG_GSUB or #HB_OT_TAG_GPOS
+ *   scriptIndex = The index of the requested script tag
+ *   languageTags = The array of language tags
+ *   languageIndex = The index of the chosen language
+ *   chosenLanguage = #hb_tag_t of the chosen language
+ * Returns: `true` if one of the given language tags is found, `false` otherwise
+ */
+Bool otLayoutScriptSelectLanguage2(HBFace face, Tag tableTag, uint scriptIndex, Tag[] languageTags, out uint languageIndex, out Tag chosenLanguage)
+{
+  Bool _retval;
+  uint _languageCount;
+  if (languageTags)
+    _languageCount = cast(uint)languageTags.length;
+
+  auto _languageTags = cast(const(hb_tag_t)*)languageTags.ptr;
+  _retval = hb_ot_layout_script_select_language2(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, scriptIndex, _languageCount, _languageTags, cast(uint*)&languageIndex, cast(hb_tag_t*)&chosenLanguage);
+  return _retval;
+}
+
+/**
+ * Fetches a list of feature variations in the specified face's GSUB table
+ * or GPOS table, at the specified variation coordinates.
+ * Params:
+ *   face = #hb_face_t to work upon
+ *   tableTag = #HB_OT_TAG_GSUB or #HB_OT_TAG_GPOS
+ *   coords = The variation coordinates to query
+ *   variationsIndex = The array of feature variations found for the query
+ * Returns: `true` if feature variations were found, `false` otherwise.
+ */
+Bool otLayoutTableFindFeatureVariations(HBFace face, Tag tableTag, int[] coords, out uint variationsIndex)
+{
+  Bool _retval;
+  uint _numCoords;
+  if (coords)
+    _numCoords = cast(uint)coords.length;
+
+  auto _coords = cast(const(int)*)coords.ptr;
+  _retval = hb_ot_layout_table_find_feature_variations(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, _coords, _numCoords, cast(uint*)&variationsIndex);
   return _retval;
 }
 
@@ -4452,6 +4570,33 @@ uint otLayoutTableGetScriptTags(HBFace face, Tag tableTag, uint startOffset, ref
   uint _retval;
   uint _scriptCount;
   _retval = hb_ot_layout_table_get_script_tags(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, startOffset, &_scriptCount, scriptTags.ptr);
+  return _retval;
+}
+
+/**
+ * Selects an OpenType script for table_tag from the script_tags array.
+ * If the table does not have any of the requested scripts, then `DFLT`,
+ * `dflt`, and `latn` tags are tried in that order. If the table still does not
+ * have any of these scripts, script_index is set to
+ * #HB_OT_LAYOUT_NO_SCRIPT_INDEX and chosen_script is set to #HB_TAG_NONE.
+ * Params:
+ *   face = #hb_face_t to work upon
+ *   tableTag = #HB_OT_TAG_GSUB or #HB_OT_TAG_GPOS
+ *   scriptTags = Array of #hb_tag_t script tags
+ *   scriptIndex = The index of the requested script
+ *   chosenScript = #hb_tag_t of the requested script
+ * Returns: `true` if one of the requested scripts is selected, `false` if a fallback
+ *   script is selected or if no scripts are selected.
+ */
+Bool otLayoutTableSelectScript(HBFace face, Tag tableTag, Tag[] scriptTags, out uint scriptIndex, out Tag chosenScript)
+{
+  Bool _retval;
+  uint _scriptCount;
+  if (scriptTags)
+    _scriptCount = cast(uint)scriptTags.length;
+
+  auto _scriptTags = cast(const(hb_tag_t)*)scriptTags.ptr;
+  _retval = hb_ot_layout_table_select_script(face ? cast(hb_face_t*)face.cPtr(false) : null, tableTag, _scriptCount, _scriptTags, cast(uint*)&scriptIndex, cast(hb_tag_t*)&chosenScript);
   return _retval;
 }
 
@@ -5011,6 +5156,29 @@ OtNameId otVarNamedInstanceGetSubfamilyNameId(HBFace face, uint instanceIndex)
   OtNameId _retval;
   _retval = hb_ot_var_named_instance_get_subfamily_name_id(face ? cast(hb_face_t*)face.cPtr(false) : null, instanceIndex);
   return _retval;
+}
+
+/**
+ * Normalizes the given design-space coordinates. The minimum and maximum
+ * values for the axis are mapped to the interval [-1,1], with the default
+ * axis value mapped to 0.
+ * The normalized values have 14 bits of fixed-point sub-integer precision as per
+ * OpenType specification.
+ * Any additional scaling defined in the face's `avar` table is also
+ * applied, as described at https://docs.microsoft.com/en-us/typography/opentype/spec/avar
+ * Params:
+ *   face = The #hb_face_t to work on
+ *   designCoords = The design-space coordinates to normalize
+ *   normalizedCoords = The normalized coordinates
+ */
+void otVarNormalizeCoords(HBFace face, float[] designCoords, out int normalizedCoords)
+{
+  uint _coordsLength;
+  if (designCoords)
+    _coordsLength = cast(uint)designCoords.length;
+
+  auto _designCoords = cast(const(float)*)designCoords.ptr;
+  hb_ot_var_normalize_coords(face ? cast(hb_face_t*)face.cPtr(false) : null, _coordsLength, _designCoords, cast(int*)&normalizedCoords);
 }
 
 /**
