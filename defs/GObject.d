@@ -102,7 +102,5 @@
     Boxed = 18 << GTypeFundamentalShift,
     Param = 19 << GTypeFundamentalShift,
     Object = 20 << GTypeFundamentalShift,
-    Gtype = 21 << GTypeFundamentalShift,
-    Variant = 22 << GTypeFundamentalShift,
-    Checksum = 23 << GTypeFundamentalShift,
+    Variant = 21 << GTypeFundamentalShift,
   }

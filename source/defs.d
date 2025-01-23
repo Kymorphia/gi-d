@@ -28,20 +28,25 @@ class Defs
   }
 
   /**
-   * Load definition control files from a directory.
+   * Load binding definition files
    * Params:
-   *   path = Path of definition files
+   *   paths = One or more paths to files or directories to load .d definition files from
    */
-  void loadDefFiles(string path = "defs")
+  void loadDefFiles(string[] defPaths)
   {
     string[] classFiles;
 
-    foreach (string filename; dirEntries(path, "*.d", SpanMode.shallow).array.sort)
-    { // Process class files, which contain a dash in the filename, after the main repo files
-      if (filename.baseName.canFind('-'))
-        classFiles ~= filename;
-      else
-        loadDefs(filename);
+    foreach (path; defPaths)
+    { // If path is a file load it as a single definition file, otherwise assume it is a directory and load all .d files it contains
+      auto files = isFile(path) ? [path] : dirEntries(path, "*.d", SpanMode.shallow).map!(f => f.name).array.sort.array;
+
+      foreach (filename; files)
+      { // Process class files, which contain a dash in the filename, after the main repo files
+        if (filename.baseName.canFind('-'))
+          classFiles ~= filename;
+        else
+          loadDefs(filename);
+      }
     }
 
     foreach (filename; classFiles)
@@ -739,7 +744,7 @@ class Defs
     dstring subType; // Substitute type string being built
     int starCount; // Number of stars
 
-    if (auto s = subs.get(type, null)) // See if the type exactly matches a substitution (handles multi word substitions too)
+    if (auto s = subs.get(type, null)) // See if the type exactly matches a substitution (handles multi word substitutions too)
       return s;
 
     // Loop over the type string consuming it head first
@@ -887,6 +892,27 @@ struct DefCmd
   int argCount;
   BitFlags!DefCmdFlags flags;
   string help;
+}
+
+/// Display binding definition file help
+void displayDefHelp()
+{
+  writeln("gi-d binding definition command help\n"
+    ~ "Commands are prefixed with '//!'.\n"
+    ~ "gi-d comments are prefixed with '//#' and aren't output to binding code.\n"
+    ~ "Strings can be single or double quoted.\n"
+    ~ "Some commands support multi-line values using opening and close braces within gi-d comment lines ('block' flag).\n"
+    ~ "Commands indicating 'repo' in parenthesis require a repo to have been specified, 'class' requires a class (or struct).\n"
+    ~ "Commands:\n"
+  );
+
+  foreach (cmd; defCommandInfo)
+  {
+    auto flags = cast(int)cmd.flags;
+    auto flagStr = flags != DefCmdFlags.None ? (" (" ~ 3.iota.filter!(x => (flags & (1 << x)))
+      .map!(x => ["Block", "Repo", "Class"][x]).join(", ") ~ ")") : "";
+    writeln(cmd.help ~ flagStr);
+  }
 }
 
 // Command information

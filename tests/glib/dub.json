@@ -1,14 +1,15 @@
 {
-  "name": "test-glib",
+  "name": "glib",
   "description": "GLib library gi-d binding tests",
   "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
 	"authors": ["Element Green <element@kymorphia.com>"],
   "license": "MIT",
   "targetType": "executable",
   "sourcePaths": ["."],
+  "importPaths" : [
+    "../../packages"
+  ],
   "dependencies": {
-    "gid:glib-2-0": {
-      "path": "../../packages"
-    }
+    "gid:glib-2-0": "*"
   }
 }

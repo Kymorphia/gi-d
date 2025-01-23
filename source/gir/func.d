@@ -414,9 +414,9 @@ final class Func : TypeNode
       throw new Exception("Cannot construct exception class from function " ~ fullName.to!string);
 
     if (!exceptionName.empty)
-      exceptionName = st.dType ~ exceptionName.stripRight("_").camelCase(true);
+      exceptionName = st.origDType ~ exceptionName.stripRight("_").camelCase(true);
     else
-      exceptionName = st.dType;
+      exceptionName = st.origDType;
 
     output = "class " ~ exceptionName ~ "Exception : ErrorG\n{\n";
     output ~= "this(GError* err)\n{\nsuper(err);\n}\n\n";

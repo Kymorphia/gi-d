@@ -6,7 +6,7 @@ build:
 
 .PHONY: binding
 binding:
-	./gi-d --gir-path gir
+	./gi-d --defs defs --gir-path gir
 
 .PHONY: packages
 packages:

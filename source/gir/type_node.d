@@ -232,6 +232,10 @@ class TypeNode : Base
 
     codeTrap("type.fixup", fullName);
 
+    // Regular <array> containers don't have dType set, use the first element's dType so that symbol substitutions below work correctly
+    if (!origDType && containerType != ContainerType.None && elemTypes.length == 1)
+      origDType = elemTypes[0].origDType;
+
     origDType = parseRepoType(origDType, typeRepo);
     _dType = repo.defs.subTypeStr(origDType, repo.defs.dTypeSubs, typeRepo.dTypeSubs);
 

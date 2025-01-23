@@ -18,26 +18,36 @@ int main(string[] args)
   LogLevel logLevel = LogLevel.warning;
   string[] traps;
   arraySep = ","; // Allow comma separated values for array parameters (traps)
+  string[] defPaths;
   string[] girPaths;
+  bool defHelp;
 
   try
   {
     auto helpInformation = getopt(
         args,
+        "d|defs", "Add a path to a directory of binding definition files or a single file (one or more required)", &defPaths,
+        "g|gir-path", "Add a path to search for GIR files (one or more required)", &girPaths,
+        "def-help", "Display binding definition file command help", &defHelp,
+        "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string).join(", ") ~ ")", &logLevel,
+        "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
+        "dump-selectors", "Dump XML selectors for warnings", &TypeNode.dumpSelectorWarnings,
         "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
         "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
-        "dump-selector-matches", "Dump XML patch selector matches", &XmlPatch.dumpSelectorMatches,
-        "dump-selector-warnings", "Dump XML selectors for warnings", &TypeNode.dumpSelectorWarnings,
+        "dump-matches", "Dump XML patch selector matches", &XmlPatch.dumpSelectorMatches,
         "dump-traps", "Dump code trap actions", &codeTrapsDump,
-        "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string).join(", ") ~ ")", &logLevel,
-        "g|gir-path", "Add a path to search for GIR files", &girPaths,
-        "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
         "trap", "Add gdb breakpoint 'action:regex', action: domain (help to list), regex: pattern to match", &traps,
     );
 
     if (helpInformation.helpWanted)
     {
       defaultGetoptPrinter("GObject Introspection Dlang binding generator", helpInformation.options);
+      return 0;
+    }
+
+    if (defHelp)
+    {
+      displayDefHelp;
       return 0;
     }
   }
@@ -48,7 +58,10 @@ int main(string[] args)
   }
 
   if (girPaths.empty)
-     girPaths = ["/usr/share/gir-1.0"];
+  {
+    error("At least one --gir-path (-g) option is required");
+    return 1;
+  }
 
   globalLogLevel(logLevel);
 
@@ -71,7 +84,7 @@ int main(string[] args)
   }
 
   auto defs = new Defs();
-  defs.loadDefFiles();
+  defs.loadDefFiles(defPaths);
   defs.loadRepos(girPaths);
   defs.writePackages();
 

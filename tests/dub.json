@@ -1,12 +1,12 @@
 {
-	"name": "gidtest",
+	"name": "test",
 	"description": "GObject introspection D binding repository tests",
 	"copyright": "Copyright © 2024-2025, Kymorphia, PBC",
 	"authors": ["Element Green <element@kymorphia.com>"],
 	"license": "MIT",
 	"targetType": "none",
 	"dependencies": {
-		"gid:glib": "*"
+		":glib": "*"
 	},
 	"subPackages" : [
 		"./glib/"

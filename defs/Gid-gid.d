@@ -4,7 +4,7 @@ import core.exception : OutOfMemoryError;
 import core.memory : GC;
 import core.stdc.string : memset, strlen;
 import std.string : toStringz;
-import std.traits : hasMember;
+import std.traits : hasMember, isCopyable;
 public import std.typecons : Flag, No, Yes;
 
 import GLib.Boxed;
@@ -278,7 +278,7 @@ GHashTable* mapToHashTable(K, V)(V[K] map)
 }
 
 /**
-* Template to get a D item from a container C data item. Used internally for binding containers.
+* Template to get a D value from a container C data item. Used internally for binding containers.
 * Params:
 *   T = The D item type
 *   data = The container C data pointer
@@ -286,14 +286,41 @@ GHashTable* mapToHashTable(K, V)(V[K] map)
 */
 T containerGetItem(T)(void* data)
 {
-  static if (is(T : ObjectG) || is(T == interface) || is(T : Boxed))
+  static if (is(T : ObjectG) || is(T == interface))
     return ObjectG.getDObject!T(data, false);
   else static if (is(T : string))
     return fromCString(cast(const(char)*)data, false);
   else static if (__traits(compiles, new T(data, false)))
     return new T(data, false);
-  else static if (is(T : void*))
-    return data;
+  else static if (isCopyable!T)
+    return *(cast(T*)data);
+  else
+    assert(0);
+}
+
+/**
+* Template to set a C container item from a D value. Used internally for binding containers.
+* Params:
+*   T = The D item type
+*   data = The container C data pointer
+*/
+void containerSetItem(T)(T val, void* data)
+{
+  static if (is(T : ObjectG))
+    *(cast(ObjectC**)data) = val.cPtr(true);
+  else static if (is(T == interface))
+  {
+    if (auto objG = cast(ObjectG)val)
+      *(cast(ObjectC**)data) = objG.cPtr(true);
+    else
+      assert(0, "Object implementing " ~ T.stringof ~ " interface is not an ObjectG");
+  }
+  else static if (is(T : Boxed))
+    *data = val.copy_;
+  else static if (is(T : string))
+    *cast(char**)data = toCString(cast(const(char)*)data, true); // Transfer the string to C (use g_malloc)
+  else static if (isCopyable!T)
+    *(cast(T*)data) = val;
   else
     assert(0);
 }
@@ -318,7 +345,7 @@ void* containerCopyItem(T)(void* data)
     return strdup(cast(const(char)*)data);
   else static if (__traits(compiles, T.ref_(data)))
     return T.ref_(data);
-  else static if (is(T : void*))
+  else static if (isCopyable!T)
     return data;
   else
     assert(0);
@@ -326,9 +353,11 @@ void* containerCopyItem(T)(void* data)
 
 /**
  * Free a container C item. Used internally for binding containers.
+ * Should only be used for data which is !isCopyable
  * Params:
  *   T = The D item type
  *   data = The container C data pointer
+ * Throws: AssertionError if T is not supported
  */
 void containerFreeItem(T)(void* data)
 {
@@ -340,9 +369,6 @@ void containerFreeItem(T)(void* data)
     g_free(data);
   else static if (__traits(compiles, T.unref(data)))
     T.unref(data);
-  else static if (is(T : void*))
-  {
-  }
   else
     assert(0);
 }
