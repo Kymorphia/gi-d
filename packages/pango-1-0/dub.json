@@ -1,6 +1,5 @@
 {
   "name": "pango-1-0",
-  "version": "0.9.0",
   "description": "Pango library D binding",
   "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
@@ -9,9 +8,9 @@
   "importPaths": [".", ".."],
   "sourcePaths": ["Pango"],
   "dependencies": {
-    "gid:cairo-1-0": "==0.9.0",
-    "gid:gio-2-0": "==0.9.0",
-    "gid:glib-2-0": "==0.9.0",
-    "gid:harfbuzz-0-0": "==0.9.0"
+    "gid:cairo-1-0": "*",
+    "gid:gio-2-0": "*",
+    "gid:glib-2-0": "*",
+    "gid:harfbuzz-0-0": "*"
   }
 }

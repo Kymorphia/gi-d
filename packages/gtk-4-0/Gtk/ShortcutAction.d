@@ -1,7 +1,7 @@
 module Gtk.ShortcutAction;
 
 import GLib.String;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.Types;
@@ -90,10 +90,10 @@ class ShortcutAction : ObjectG
    *   args = arguments to pass
    * Returns: %TRUE if this action was activated successfully
    */
-  bool activate(ShortcutActionFlags flags, Widget widget, Variant args)
+  bool activate(ShortcutActionFlags flags, Widget widget, VariantG args)
   {
     bool _retval;
-    _retval = gtk_shortcut_action_activate(cast(GtkShortcutAction*)cPtr, flags, widget ? cast(GtkWidget*)widget.cPtr(false) : null, args ? cast(GVariant*)args.cPtr(false) : null);
+    _retval = gtk_shortcut_action_activate(cast(GtkShortcutAction*)cPtr, flags, widget ? cast(GtkWidget*)widget.cPtr(false) : null, args ? cast(VariantC*)args.cPtr(false) : null);
     return _retval;
   }
 

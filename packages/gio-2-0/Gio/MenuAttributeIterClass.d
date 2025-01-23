@@ -31,7 +31,7 @@ class MenuAttributeIterClass
     return new ObjectClass(cast(GObjectClass*)&(cast(GMenuAttributeIterClass*)cPtr).parentClass);
   }
 
-  alias GetNextFuncType = extern(C) bool function(GMenuAttributeIter* iter, const(char*)* outName, GVariant** value);
+  alias GetNextFuncType = extern(C) bool function(GMenuAttributeIter* iter, const(char*)* outName, VariantC** value);
 
   @property GetNextFuncType getNext()
   {

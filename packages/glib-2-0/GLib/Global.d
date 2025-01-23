@@ -9,7 +9,7 @@ import GLib.Source;
 import GLib.TestSuite;
 import GLib.TimeVal;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.c.functions;
 import GLib.c.types;
 import GObject.Types;
@@ -4375,7 +4375,7 @@ void logStructuredArray(LogLevelFlags logLevel, LogField[] fields)
 }
 
 /**
- * Log a message with structured data, accepting the data within a [GLib.Variant].
+ * Log a message with structured data, accepting the data within a [GLib.VariantG].
  * This version is especially useful for use in other languages, via introspection.
  * The only mandatory item in the fields dictionary is the `"MESSAGE"` which must
  * contain the text shown to the user.
@@ -4384,19 +4384,19 @@ void logStructuredArray(LogLevelFlags logLevel, LogField[] fields)
  * supported. In this case the message is handled as binary and will be forwarded
  * to the log writer as such. The size of the array should not be higher than
  * `G_MAXSSIZE`. Otherwise it will be truncated to this size. For other types
- * [GLib.Variant.print] will be used to convert the value into a string.
+ * [GLib.VariantG.print] will be used to convert the value into a string.
  * For more details on its usage and about the parameters, see funcGLib.log_structured.
  * Params:
  *   logDomain = log domain, usually `G_LOG_DOMAIN`
  *   logLevel = log level, either from [GLib], or a user-defined
  *     level
- *   fields = a dictionary $(LPAREN)[GLib.Variant] of the type `G_VARIANT_TYPE_VARDICT`$(RPAREN)
+ *   fields = a dictionary $(LPAREN)[GLib.VariantG] of the type `G_VARIANT_TYPE_VARDICT`$(RPAREN)
  *     containing the key-value pairs of message data.
  */
-void logVariant(string logDomain, LogLevelFlags logLevel, Variant fields)
+void logVariant(string logDomain, LogLevelFlags logLevel, VariantG fields)
 {
   const(char)* _logDomain = logDomain.toCString(false);
-  g_log_variant(_logDomain, logLevel, fields ? cast(GVariant*)fields.cPtr(false) : null);
+  g_log_variant(_logDomain, logLevel, fields ? cast(VariantC*)fields.cPtr(false) : null);
 }
 
 /**

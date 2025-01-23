@@ -1,6 +1,6 @@
 module Gtk.CallbackAction;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.ShortcutAction;
@@ -43,11 +43,11 @@ class CallbackAction : ShortcutAction
    */
   this(ShortcutFunc callback)
   {
-    extern(C) bool _callbackCallback(GtkWidget* widget, GVariant* args, void* userData)
+    extern(C) bool _callbackCallback(GtkWidget* widget, VariantC* args, void* userData)
     {
       auto _dlg = cast(ShortcutFunc*)userData;
 
-      bool _retval = (*_dlg)(widget ? ObjectG.getDObject!Widget(cast(void*)widget, false) : null, args ? new Variant(cast(void*)args, false) : null);
+      bool _retval = (*_dlg)(widget ? ObjectG.getDObject!Widget(cast(void*)widget, false) : null, args ? new VariantG(cast(void*)args, false) : null);
       return _retval;
     }
 

@@ -34,7 +34,7 @@ class SettingsBackendClass
     return new ObjectClass(cast(GObjectClass*)&(cast(GSettingsBackendClass*)cPtr).parentClass);
   }
 
-  alias ReadFuncType = extern(C) GVariant* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType, bool defaultValue);
+  alias ReadFuncType = extern(C) VariantC* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType, bool defaultValue);
 
   @property ReadFuncType read()
   {
@@ -48,7 +48,7 @@ class SettingsBackendClass
     return (cast(GSettingsBackendClass*)cPtr).getWritable;
   }
 
-  alias WriteFuncType = extern(C) bool function(GSettingsBackend* backend, const(char)* key, GVariant* value, void* originTag);
+  alias WriteFuncType = extern(C) bool function(GSettingsBackend* backend, const(char)* key, VariantC* value, void* originTag);
 
   @property WriteFuncType write()
   {
@@ -90,7 +90,7 @@ class SettingsBackendClass
     return (cast(GSettingsBackendClass*)cPtr).sync;
   }
 
-  alias ReadUserValueFuncType = extern(C) GVariant* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType);
+  alias ReadUserValueFuncType = extern(C) VariantC* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType);
 
   @property ReadUserValueFuncType readUserValue()
   {

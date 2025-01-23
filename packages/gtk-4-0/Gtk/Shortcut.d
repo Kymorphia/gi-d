@@ -1,6 +1,6 @@
 module Gtk.Shortcut;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.ShortcutAction;
@@ -77,11 +77,11 @@ class Shortcut : ObjectG
    * Gets the arguments that are passed when activating the shortcut.
    * Returns: the arguments
    */
-  Variant getArguments()
+  VariantG getArguments()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = gtk_shortcut_get_arguments(cast(GtkShortcut*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -113,9 +113,9 @@ class Shortcut : ObjectG
    * Params:
    *   args = arguments to pass when activating self
    */
-  void setArguments(Variant args)
+  void setArguments(VariantG args)
   {
-    gtk_shortcut_set_arguments(cast(GtkShortcut*)cPtr, args ? cast(GVariant*)args.cPtr(false) : null);
+    gtk_shortcut_set_arguments(cast(GtkShortcut*)cPtr, args ? cast(VariantC*)args.cPtr(false) : null);
   }
 
   /**

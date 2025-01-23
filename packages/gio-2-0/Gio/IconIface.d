@@ -57,7 +57,7 @@ class IconIface
     return (cast(GIconIface*)cPtr).toTokens;
   }
 
-  alias SerializeFuncType = extern(C) GVariant* function(GIcon* icon);
+  alias SerializeFuncType = extern(C) VariantC* function(GIcon* icon);
 
   @property SerializeFuncType serialize()
   {

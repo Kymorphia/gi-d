@@ -2,7 +2,7 @@ module Gio.IconT;
 
 public import Gio.IconIfaceProxy;
 public import GLib.ErrorG;
-public import GLib.Variant;
+public import GLib.VariantG;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.Types;
@@ -73,11 +73,11 @@ template IconT()
    * $(LPAREN)as opposed to over the network$(RPAREN), and within the same file system namespace.
    * Returns: a #GVariant, or %NULL when serialization fails. The #GVariant will not be floating.
    */
-  override Variant serialize()
+  override VariantG serialize()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_icon_serialize(cast(GIcon*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

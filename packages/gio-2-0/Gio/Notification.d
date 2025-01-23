@@ -1,6 +1,6 @@
 module Gio.Notification;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Icon;
@@ -118,11 +118,11 @@ class Notification : ObjectG
    *   action = an action name
    *   target = a #GVariant to use as action's parameter, or %NULL
    */
-  void addButtonWithTarget(string label, string action, Variant target)
+  void addButtonWithTarget(string label, string action, VariantG target)
   {
     const(char)* _label = label.toCString(false);
     const(char)* _action = action.toCString(false);
-    g_notification_add_button_with_target_value(cast(GNotification*)cPtr, _label, _action, target ? cast(GVariant*)target.cPtr(false) : null);
+    g_notification_add_button_with_target_value(cast(GNotification*)cPtr, _label, _action, target ? cast(VariantC*)target.cPtr(false) : null);
   }
 
   /**
@@ -182,10 +182,10 @@ class Notification : ObjectG
    *   action = an action name
    *   target = a #GVariant to use as action's parameter, or %NULL
    */
-  void setDefaultActionAndTarget(string action, Variant target)
+  void setDefaultActionAndTarget(string action, VariantG target)
   {
     const(char)* _action = action.toCString(false);
-    g_notification_set_default_action_and_target_value(cast(GNotification*)cPtr, _action, target ? cast(GVariant*)target.cPtr(false) : null);
+    g_notification_set_default_action_and_target_value(cast(GNotification*)cPtr, _action, target ? cast(VariantC*)target.cPtr(false) : null);
   }
 
   /**

@@ -1,7 +1,7 @@
 module Gio.DBusObjectManagerClient;
 
 import GLib.ErrorG;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -314,7 +314,7 @@ class DBusObjectManagerClient : ObjectG, AsyncInitable, DBusObjectManager, Inita
    *     array of properties that were invalidated.
    *   dBusObjectManagerClient = the instance the signal is connected to
    */
-  alias InterfaceProxyPropertiesChangedCallback = void delegate(DBusObjectProxy objectProxy, DBusProxy interfaceProxy, Variant changedProperties, string[] invalidatedProperties, DBusObjectManagerClient dBusObjectManagerClient);
+  alias InterfaceProxyPropertiesChangedCallback = void delegate(DBusObjectProxy objectProxy, DBusProxy interfaceProxy, VariantG changedProperties, string[] invalidatedProperties, DBusObjectManagerClient dBusObjectManagerClient);
 
   /**
    * Connect to InterfaceProxyPropertiesChanged signal.
@@ -332,7 +332,7 @@ class DBusObjectManagerClient : ObjectG, AsyncInitable, DBusObjectManager, Inita
       auto dBusObjectManagerClient = getVal!DBusObjectManagerClient(_paramVals);
       auto objectProxy = getVal!DBusObjectProxy(&_paramVals[1]);
       auto interfaceProxy = getVal!DBusProxy(&_paramVals[2]);
-      auto changedProperties = getVal!Variant(&_paramVals[3]);
+      auto changedProperties = getVal!VariantG(&_paramVals[3]);
       auto invalidatedProperties = getVal!(char**)(&_paramVals[4]);
       string[] _invalidatedProperties;
       uint _leninvalidatedProperties;
@@ -363,7 +363,7 @@ class DBusObjectManagerClient : ObjectG, AsyncInitable, DBusObjectManager, Inita
    *   parameters = A #GVariant tuple with parameters for the signal.
    *   dBusObjectManagerClient = the instance the signal is connected to
    */
-  alias InterfaceProxySignalCallback = void delegate(DBusObjectProxy objectProxy, DBusProxy interfaceProxy, string senderName, string signalName, Variant parameters, DBusObjectManagerClient dBusObjectManagerClient);
+  alias InterfaceProxySignalCallback = void delegate(DBusObjectProxy objectProxy, DBusProxy interfaceProxy, string senderName, string signalName, VariantG parameters, DBusObjectManagerClient dBusObjectManagerClient);
 
   /**
    * Connect to InterfaceProxySignal signal.
@@ -383,7 +383,7 @@ class DBusObjectManagerClient : ObjectG, AsyncInitable, DBusObjectManager, Inita
       auto interfaceProxy = getVal!DBusProxy(&_paramVals[2]);
       auto senderName = getVal!string(&_paramVals[3]);
       auto signalName = getVal!string(&_paramVals[4]);
-      auto parameters = getVal!Variant(&_paramVals[5]);
+      auto parameters = getVal!VariantG(&_paramVals[5]);
       _dgClosure.dlg(objectProxy, interfaceProxy, senderName, signalName, parameters, dBusObjectManagerClient);
     }
 

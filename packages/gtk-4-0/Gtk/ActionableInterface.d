@@ -42,14 +42,14 @@ class ActionableInterface
     return (cast(GtkActionableInterface*)cPtr).setActionName;
   }
 
-  alias GetActionTargetValueFuncType = extern(C) GVariant* function(GtkActionable* actionable);
+  alias GetActionTargetValueFuncType = extern(C) VariantC* function(GtkActionable* actionable);
 
   @property GetActionTargetValueFuncType getActionTargetValue()
   {
     return (cast(GtkActionableInterface*)cPtr).getActionTargetValue;
   }
 
-  alias SetActionTargetValueFuncType = extern(C) void function(GtkActionable* actionable, GVariant* targetValue);
+  alias SetActionTargetValueFuncType = extern(C) void function(GtkActionable* actionable, VariantC* targetValue);
 
   @property SetActionTargetValueFuncType setActionTargetValue()
   {

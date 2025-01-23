@@ -69,28 +69,28 @@ class ActionGroupInterface
     return (cast(GActionGroupInterface*)cPtr).getActionStateType;
   }
 
-  alias GetActionStateHintFuncType = extern(C) GVariant* function(GActionGroup* actionGroup, const(char)* actionName);
+  alias GetActionStateHintFuncType = extern(C) VariantC* function(GActionGroup* actionGroup, const(char)* actionName);
 
   @property GetActionStateHintFuncType getActionStateHint()
   {
     return (cast(GActionGroupInterface*)cPtr).getActionStateHint;
   }
 
-  alias GetActionStateFuncType = extern(C) GVariant* function(GActionGroup* actionGroup, const(char)* actionName);
+  alias GetActionStateFuncType = extern(C) VariantC* function(GActionGroup* actionGroup, const(char)* actionName);
 
   @property GetActionStateFuncType getActionState()
   {
     return (cast(GActionGroupInterface*)cPtr).getActionState;
   }
 
-  alias ChangeActionStateFuncType = extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* value);
+  alias ChangeActionStateFuncType = extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* value);
 
   @property ChangeActionStateFuncType changeActionState()
   {
     return (cast(GActionGroupInterface*)cPtr).changeActionState;
   }
 
-  alias ActivateActionFuncType = extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* parameter);
+  alias ActivateActionFuncType = extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* parameter);
 
   @property ActivateActionFuncType activateAction()
   {
@@ -118,14 +118,14 @@ class ActionGroupInterface
     return (cast(GActionGroupInterface*)cPtr).actionEnabledChanged;
   }
 
-  alias ActionStateChangedFuncType = extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* state);
+  alias ActionStateChangedFuncType = extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* state);
 
   @property ActionStateChangedFuncType actionStateChanged()
   {
     return (cast(GActionGroupInterface*)cPtr).actionStateChanged;
   }
 
-  alias QueryActionFuncType = extern(C) bool function(GActionGroup* actionGroup, const(char)* actionName, bool* enabled, const(GVariantType*)* parameterType, const(GVariantType*)* stateType, GVariant** stateHint, GVariant** state);
+  alias QueryActionFuncType = extern(C) bool function(GActionGroup* actionGroup, const(char)* actionName, bool* enabled, const(GVariantType*)* parameterType, const(GVariantType*)* stateType, VariantC** stateHint, VariantC** state);
 
   @property QueryActionFuncType queryAction()
   {

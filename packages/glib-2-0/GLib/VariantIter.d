@@ -1,7 +1,7 @@
 module GLib.VariantIter;
 
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.c.functions;
 import GLib.c.types;
 import Gid.gid;
@@ -52,7 +52,7 @@ class VariantIter
   /**
    * Gets the next item in the container.  If no more items remain then
    * %NULL is returned.
-   * Use [GLib.Variant.unref] to drop your reference on the return value when
+   * Use [GLib.VariantG.unref] to drop your reference on the return value when
    * you no longer need it.
    * Here is an example for iterating with [GLib.VariantIter.nextValue]:
    * |[<!-- language\="C" -->
@@ -74,11 +74,11 @@ class VariantIter
    * ]|
    * Returns: a #GVariant, or %NULL
    */
-  Variant nextValue()
+  VariantG nextValue()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_iter_next_value(cast(GVariantIter*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 }

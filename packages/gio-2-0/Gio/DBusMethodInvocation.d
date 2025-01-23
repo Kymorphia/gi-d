@@ -2,7 +2,7 @@ module Gio.DBusMethodInvocation;
 
 import GLib.ErrorG;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.DBusConnection;
@@ -136,11 +136,11 @@ class DBusMethodInvocation : ObjectG
    * parameters then this will return a GVariant with 0 children rather than NULL.
    * Returns: A #GVariant tuple. Do not unref this because it is owned by invocation.
    */
-  Variant getParameters()
+  VariantG getParameters()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_dbus_method_invocation_get_parameters(cast(GDBusMethodInvocation*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -250,9 +250,9 @@ class DBusMethodInvocation : ObjectG
    * Params:
    *   parameters = A #GVariant tuple with out parameters for the method or %NULL if not passing any parameters.
    */
-  void returnValue(Variant parameters)
+  void returnValue(VariantG parameters)
   {
-    g_dbus_method_invocation_return_value(cast(GDBusMethodInvocation*)cPtr, parameters ? cast(GVariant*)parameters.cPtr(false) : null);
+    g_dbus_method_invocation_return_value(cast(GDBusMethodInvocation*)cPtr, parameters ? cast(VariantC*)parameters.cPtr(false) : null);
   }
 
   /**
@@ -265,8 +265,8 @@ class DBusMethodInvocation : ObjectG
    *   parameters = A #GVariant tuple with out parameters for the method or %NULL if not passing any parameters.
    *   fdList = A #GUnixFDList or %NULL.
    */
-  void returnValueWithUnixFdList(Variant parameters, UnixFDList fdList)
+  void returnValueWithUnixFdList(VariantG parameters, UnixFDList fdList)
   {
-    g_dbus_method_invocation_return_value_with_unix_fd_list(cast(GDBusMethodInvocation*)cPtr, parameters ? cast(GVariant*)parameters.cPtr(false) : null, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null);
+    g_dbus_method_invocation_return_value_with_unix_fd_list(cast(GDBusMethodInvocation*)cPtr, parameters ? cast(VariantC*)parameters.cPtr(false) : null, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null);
   }
 }

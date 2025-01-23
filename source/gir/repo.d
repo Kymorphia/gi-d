@@ -248,8 +248,8 @@ final class Repo : Base
       dubInfo["name"] = [dubPackageName];
     }
 
-    if ("version" !in dubInfo)
-      dubInfo["version"] = defs.dubInfo.get("version", ["0.0.0"d]);
+    if ("version" !in dubInfo && "version" in defs.dubInfo)
+      dubInfo["version"] = defs.dubInfo["version"];
 
     if ("description" !in dubInfo)
       dubInfo["description"] ~= namespace ~ " library D binding";

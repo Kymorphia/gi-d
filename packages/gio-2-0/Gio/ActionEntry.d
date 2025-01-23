@@ -46,7 +46,7 @@ class ActionEntry
     (cast(GActionEntry*)cPtr).name = propval.toCString(true);
   }
 
-  alias ActivateFuncType = extern(C) void function(GSimpleAction* action, GVariant* parameter, void* userData);
+  alias ActivateFuncType = extern(C) void function(GSimpleAction* action, VariantC* parameter, void* userData);
 
   @property ActivateFuncType activate()
   {
@@ -75,7 +75,7 @@ class ActionEntry
     (cast(GActionEntry*)cPtr).state = propval.toCString(true);
   }
 
-  alias ChangeStateFuncType = extern(C) void function(GSimpleAction* action, GVariant* value, void* userData);
+  alias ChangeStateFuncType = extern(C) void function(GSimpleAction* action, VariantC* value, void* userData);
 
   @property ChangeStateFuncType changeState()
   {

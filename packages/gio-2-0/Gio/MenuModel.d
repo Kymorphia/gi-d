@@ -1,6 +1,6 @@
 module Gio.MenuModel;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -142,12 +142,12 @@ class MenuModel : ObjectG
    *     %NULL
    * Returns: the value of the attribute
    */
-  Variant getItemAttributeValue(int itemIndex, string attribute, VariantType expectedType)
+  VariantG getItemAttributeValue(int itemIndex, string attribute, VariantType expectedType)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _attribute = attribute.toCString(false);
     _cretval = g_menu_model_get_item_attribute_value(cast(GMenuModel*)cPtr, itemIndex, _attribute, expectedType ? cast(GVariantType*)expectedType.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

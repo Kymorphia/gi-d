@@ -2,7 +2,7 @@ module Gio.DBusInterfaceSkeleton;
 
 import GLib.ErrorG;
 import GLib.List;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -150,13 +150,13 @@ class DBusInterfaceSkeleton : ObjectG, DBusInterface
    * Gets all D-Bus properties for interface_.
    * Returns: A #GVariant of type
    *   ['a{sv}'][G-VARIANT-TYPE-VARDICT:CAPS].
-   *   Free with [GLib.Variant.unref].
+   *   Free with [GLib.VariantG.unref].
    */
-  Variant getProperties()
+  VariantG getProperties()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_dbus_interface_skeleton_get_properties(cast(GDBusInterfaceSkeleton*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

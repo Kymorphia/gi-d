@@ -59,7 +59,7 @@ class MenuModelClass
     return (cast(GMenuModelClass*)cPtr).iterateItemAttributes;
   }
 
-  alias GetItemAttributeValueFuncType = extern(C) GVariant* function(GMenuModel* model, int itemIndex, const(char)* attribute, const(GVariantType)* expectedType);
+  alias GetItemAttributeValueFuncType = extern(C) VariantC* function(GMenuModel* model, int itemIndex, const(char)* attribute, const(GVariantType)* expectedType);
 
   @property GetItemAttributeValueFuncType getItemAttributeValue()
   {

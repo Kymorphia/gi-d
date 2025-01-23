@@ -2,7 +2,7 @@ module GLib.VariantDict;
 
 import GLib.Boxed;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GLib.c.functions;
 import GLib.c.types;
@@ -118,10 +118,10 @@ class VariantDict : Boxed
    *     dictionary
    * Returns: a #GVariantDict
    */
-  this(Variant fromAsv)
+  this(VariantG fromAsv)
   {
     GVariantDict* _cretval;
-    _cretval = g_variant_dict_new(fromAsv ? cast(GVariant*)fromAsv.cPtr(false) : null);
+    _cretval = g_variant_dict_new(fromAsv ? cast(VariantC*)fromAsv.cPtr(false) : null);
     this(_cretval, true);
   }
 
@@ -167,11 +167,11 @@ class VariantDict : Boxed
    * the case of stack-allocated$(RPAREN).
    * Returns: a new, floating, #GVariant
    */
-  Variant end()
+  VariantG end()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_dict_end(cast(GVariantDict*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -182,10 +182,10 @@ class VariantDict : Boxed
    *   key = the key to insert a value for
    *   value = the value to insert
    */
-  void insertValue(string key, Variant value)
+  void insertValue(string key, VariantG value)
   {
     const(char)* _key = key.toCString(false);
-    g_variant_dict_insert_value(cast(GVariantDict*)cPtr, _key, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_variant_dict_insert_value(cast(GVariantDict*)cPtr, _key, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**
@@ -202,12 +202,12 @@ class VariantDict : Boxed
    *   expectedType = a #GVariantType, or %NULL
    * Returns: the value of the dictionary key, or %NULL
    */
-  Variant lookupValue(string key, VariantType expectedType)
+  VariantG lookupValue(string key, VariantType expectedType)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _key = key.toCString(false);
     _cretval = g_variant_dict_lookup_value(cast(GVariantDict*)cPtr, _key, expectedType ? cast(GVariantType*)expectedType.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

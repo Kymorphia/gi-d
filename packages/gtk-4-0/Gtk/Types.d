@@ -1,7 +1,7 @@
 module Gtk.Types;
 
 import GLib.ErrorG;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import GObject.Value;
 import Gdk.FrameClock;
@@ -292,7 +292,7 @@ alias PrintJobCompleteFunc = void delegate(PrintJob printJob, ErrorG error);
 alias PrintSettingsFunc = void delegate(string key, string value);
 alias PrinterFunc = bool delegate(Printer printer);
 alias ScaleFormatValueFunc = string delegate(Scale scale, double value);
-alias ShortcutFunc = bool delegate(Widget widget, Variant args);
+alias ShortcutFunc = bool delegate(Widget widget, VariantG args);
 alias TextCharPredicate = bool delegate(dchar ch);
 alias TextTagTableForeach = void delegate(TextTag tag);
 alias TickCallback = bool delegate(Widget widget, FrameClock frameClock);
@@ -308,7 +308,7 @@ alias TreeViewColumnDropFunc = bool delegate(TreeView treeView, TreeViewColumn c
 alias TreeViewMappingFunc = void delegate(TreeView treeView, TreePath path);
 alias TreeViewRowSeparatorFunc = bool delegate(TreeModel model, TreeIter iter);
 alias TreeViewSearchEqualFunc = bool delegate(TreeModel model, int column, string key, TreeIter iter);
-alias WidgetActionActivateFunc = void delegate(Widget widget, string actionName, Variant parameter);
+alias WidgetActionActivateFunc = void delegate(Widget widget, string actionName, VariantG parameter);
 
 /**
  * An attribute for the background color, expressed as an RGB value

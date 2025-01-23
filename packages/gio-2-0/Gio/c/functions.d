@@ -17,15 +17,15 @@ __gshared extern(C)
   // Action
   GType function() c_g_action_get_type;
   bool function(const(char)* actionName) c_g_action_name_is_valid;
-  bool function(const(char)* detailedName, char** actionName, GVariant** targetValue, GError** _err) c_g_action_parse_detailed_name;
-  char* function(const(char)* actionName, GVariant* targetValue) c_g_action_print_detailed_name;
-  void function(GAction* action, GVariant* parameter) c_g_action_activate;
-  void function(GAction* action, GVariant* value) c_g_action_change_state;
+  bool function(const(char)* detailedName, char** actionName, VariantC** targetValue, GError** _err) c_g_action_parse_detailed_name;
+  char* function(const(char)* actionName, VariantC* targetValue) c_g_action_print_detailed_name;
+  void function(GAction* action, VariantC* parameter) c_g_action_activate;
+  void function(GAction* action, VariantC* value) c_g_action_change_state;
   bool function(GAction* action) c_g_action_get_enabled;
   const(char)* function(GAction* action) c_g_action_get_name;
   const(GVariantType)* function(GAction* action) c_g_action_get_parameter_type;
-  GVariant* function(GAction* action) c_g_action_get_state;
-  GVariant* function(GAction* action) c_g_action_get_state_hint;
+  VariantC* function(GAction* action) c_g_action_get_state;
+  VariantC* function(GAction* action) c_g_action_get_state_hint;
   const(GVariantType)* function(GAction* action) c_g_action_get_state_type;
 
   // ActionGroup
@@ -33,17 +33,17 @@ __gshared extern(C)
   void function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_action_added;
   void function(GActionGroup* actionGroup, const(char)* actionName, bool enabled) c_g_action_group_action_enabled_changed;
   void function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_action_removed;
-  void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* state) c_g_action_group_action_state_changed;
-  void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* parameter) c_g_action_group_activate_action;
-  void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* value) c_g_action_group_change_action_state;
+  void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* state) c_g_action_group_action_state_changed;
+  void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* parameter) c_g_action_group_activate_action;
+  void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* value) c_g_action_group_change_action_state;
   bool function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_enabled;
   const(GVariantType)* function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_parameter_type;
-  GVariant* function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_state;
-  GVariant* function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_state_hint;
+  VariantC* function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_state;
+  VariantC* function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_state_hint;
   const(GVariantType)* function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_get_action_state_type;
   bool function(GActionGroup* actionGroup, const(char)* actionName) c_g_action_group_has_action;
   char** function(GActionGroup* actionGroup) c_g_action_group_list_actions;
-  bool function(GActionGroup* actionGroup, const(char)* actionName, bool* enabled, const(GVariantType*)* parameterType, const(GVariantType*)* stateType, GVariant** stateHint, GVariant** state) c_g_action_group_query_action;
+  bool function(GActionGroup* actionGroup, const(char)* actionName, bool* enabled, const(GVariantType*)* parameterType, const(GVariantType*)* stateType, VariantC** stateHint, VariantC** state) c_g_action_group_query_action;
 
   // ActionMap
   GType function() c_g_action_map_get_type;
@@ -162,7 +162,7 @@ __gshared extern(C)
   int function(GApplicationCommandLine* cmdline) c_g_application_command_line_get_exit_status;
   bool function(GApplicationCommandLine* cmdline) c_g_application_command_line_get_is_remote;
   GVariantDict* function(GApplicationCommandLine* cmdline) c_g_application_command_line_get_options_dict;
-  GVariant* function(GApplicationCommandLine* cmdline) c_g_application_command_line_get_platform_data;
+  VariantC* function(GApplicationCommandLine* cmdline) c_g_application_command_line_get_platform_data;
   GInputStream* function(GApplicationCommandLine* cmdline) c_g_application_command_line_get_stdin;
   const(char)* function(GApplicationCommandLine* cmdline, const(char)* name) c_g_application_command_line_getenv;
   void function(GApplicationCommandLine* cmdline, const(char)* format,  ...) c_g_application_command_line_print;
@@ -295,16 +295,16 @@ __gshared extern(C)
   void function(GIOStream* stream, const(char)* guid, GDBusConnectionFlags flags, GDBusAuthObserver* observer, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_new;
   void function(const(char)* address, GDBusConnectionFlags flags, GDBusAuthObserver* observer, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_new_for_address;
   uint function(GDBusConnection* connection, GDBusMessageFilterFunction filterFunction, void* userData, GDestroyNotify userDataFreeFunc) c_g_dbus_connection_add_filter;
-  void function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, GVariant* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_call;
-  GVariant* function(GDBusConnection* connection, GAsyncResult* res, GError** _err) c_g_dbus_connection_call_finish;
-  GVariant* function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, GVariant* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GError** _err) c_g_dbus_connection_call_sync;
-  void function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, GVariant* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_call_with_unix_fd_list;
-  GVariant* function(GDBusConnection* connection, GUnixFDList** outFdList, GAsyncResult* res, GError** _err) c_g_dbus_connection_call_with_unix_fd_list_finish;
-  GVariant* function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, GVariant* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GUnixFDList** outFdList, GCancellable* cancellable, GError** _err) c_g_dbus_connection_call_with_unix_fd_list_sync;
+  void function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, VariantC* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_call;
+  VariantC* function(GDBusConnection* connection, GAsyncResult* res, GError** _err) c_g_dbus_connection_call_finish;
+  VariantC* function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, VariantC* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GError** _err) c_g_dbus_connection_call_sync;
+  void function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, VariantC* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_call_with_unix_fd_list;
+  VariantC* function(GDBusConnection* connection, GUnixFDList** outFdList, GAsyncResult* res, GError** _err) c_g_dbus_connection_call_with_unix_fd_list_finish;
+  VariantC* function(GDBusConnection* connection, const(char)* busName, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, VariantC* parameters, const(GVariantType)* replyType, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GUnixFDList** outFdList, GCancellable* cancellable, GError** _err) c_g_dbus_connection_call_with_unix_fd_list_sync;
   void function(GDBusConnection* connection, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_close;
   bool function(GDBusConnection* connection, GAsyncResult* res, GError** _err) c_g_dbus_connection_close_finish;
   bool function(GDBusConnection* connection, GCancellable* cancellable, GError** _err) c_g_dbus_connection_close_sync;
-  bool function(GDBusConnection* connection, const(char)* destinationBusName, const(char)* objectPath, const(char)* interfaceName, const(char)* signalName, GVariant* parameters, GError** _err) c_g_dbus_connection_emit_signal;
+  bool function(GDBusConnection* connection, const(char)* destinationBusName, const(char)* objectPath, const(char)* interfaceName, const(char)* signalName, VariantC* parameters, GError** _err) c_g_dbus_connection_emit_signal;
   uint function(GDBusConnection* connection, const(char)* objectPath, GActionGroup* actionGroup, GError** _err) c_g_dbus_connection_export_action_group;
   uint function(GDBusConnection* connection, const(char)* objectPath, GMenuModel* menu, GError** _err) c_g_dbus_connection_export_menu_model;
   void function(GDBusConnection* connection, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_connection_flush;
@@ -363,7 +363,7 @@ __gshared extern(C)
   GDBusInterfaceSkeletonFlags function(GDBusInterfaceSkeleton* interface_) c_g_dbus_interface_skeleton_get_flags;
   GDBusInterfaceInfo* function(GDBusInterfaceSkeleton* interface_) c_g_dbus_interface_skeleton_get_info;
   const(char)* function(GDBusInterfaceSkeleton* interface_) c_g_dbus_interface_skeleton_get_object_path;
-  GVariant* function(GDBusInterfaceSkeleton* interface_) c_g_dbus_interface_skeleton_get_properties;
+  VariantC* function(GDBusInterfaceSkeleton* interface_) c_g_dbus_interface_skeleton_get_properties;
   GDBusInterfaceVTable* function(GDBusInterfaceSkeleton* interface_) c_g_dbus_interface_skeleton_get_vtable;
   bool function(GDBusInterfaceSkeleton* interface_, GDBusConnection* connection) c_g_dbus_interface_skeleton_has_connection;
   void function(GDBusInterfaceSkeleton* interface_, GDBusInterfaceSkeletonFlags flags) c_g_dbus_interface_skeleton_set_flags;
@@ -384,12 +384,12 @@ __gshared extern(C)
   GDBusMessage* function(GDBusMessage* message, GError** _err) c_g_dbus_message_copy;
   const(char)* function(GDBusMessage* message) c_g_dbus_message_get_arg0;
   const(char)* function(GDBusMessage* message) c_g_dbus_message_get_arg0_path;
-  GVariant* function(GDBusMessage* message) c_g_dbus_message_get_body;
+  VariantC* function(GDBusMessage* message) c_g_dbus_message_get_body;
   GDBusMessageByteOrder function(GDBusMessage* message) c_g_dbus_message_get_byte_order;
   const(char)* function(GDBusMessage* message) c_g_dbus_message_get_destination;
   const(char)* function(GDBusMessage* message) c_g_dbus_message_get_error_name;
   GDBusMessageFlags function(GDBusMessage* message) c_g_dbus_message_get_flags;
-  GVariant* function(GDBusMessage* message, GDBusMessageHeaderField headerField) c_g_dbus_message_get_header;
+  VariantC* function(GDBusMessage* message, GDBusMessageHeaderField headerField) c_g_dbus_message_get_header;
   ubyte* function(GDBusMessage* message) c_g_dbus_message_get_header_fields;
   const(char)* function(GDBusMessage* message) c_g_dbus_message_get_interface;
   bool function(GDBusMessage* message) c_g_dbus_message_get_locked;
@@ -408,12 +408,12 @@ __gshared extern(C)
   GDBusMessage* function(GDBusMessage* methodCallMessage, const(char)* errorName, const(char)* errorMessageFormat, void* varArgs) c_g_dbus_message_new_method_error_valist;
   GDBusMessage* function(GDBusMessage* methodCallMessage) c_g_dbus_message_new_method_reply;
   char* function(GDBusMessage* message, uint indent) c_g_dbus_message_print;
-  void function(GDBusMessage* message, GVariant* body_) c_g_dbus_message_set_body;
+  void function(GDBusMessage* message, VariantC* body_) c_g_dbus_message_set_body;
   void function(GDBusMessage* message, GDBusMessageByteOrder byteOrder) c_g_dbus_message_set_byte_order;
   void function(GDBusMessage* message, const(char)* value) c_g_dbus_message_set_destination;
   void function(GDBusMessage* message, const(char)* value) c_g_dbus_message_set_error_name;
   void function(GDBusMessage* message, GDBusMessageFlags flags) c_g_dbus_message_set_flags;
-  void function(GDBusMessage* message, GDBusMessageHeaderField headerField, GVariant* value) c_g_dbus_message_set_header;
+  void function(GDBusMessage* message, GDBusMessageHeaderField headerField, VariantC* value) c_g_dbus_message_set_header;
   void function(GDBusMessage* message, const(char)* value) c_g_dbus_message_set_interface;
   void function(GDBusMessage* message, const(char)* value) c_g_dbus_message_set_member;
   void function(GDBusMessage* message, GDBusMessageType type) c_g_dbus_message_set_message_type;
@@ -440,7 +440,7 @@ __gshared extern(C)
   const(GDBusMethodInfo)* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_method_info;
   const(char)* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_method_name;
   const(char)* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_object_path;
-  GVariant* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_parameters;
+  VariantC* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_parameters;
   const(GDBusPropertyInfo)* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_property_info;
   const(char)* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_sender;
   void* function(GDBusMethodInvocation* invocation) c_g_dbus_method_invocation_get_user_data;
@@ -449,8 +449,8 @@ __gshared extern(C)
   void function(GDBusMethodInvocation* invocation, GQuark domain, int code, const(char)* message) c_g_dbus_method_invocation_return_error_literal;
   void function(GDBusMethodInvocation* invocation, GQuark domain, int code, const(char)* format, void* varArgs) c_g_dbus_method_invocation_return_error_valist;
   void function(GDBusMethodInvocation* invocation, const(GError)* error) c_g_dbus_method_invocation_return_gerror;
-  void function(GDBusMethodInvocation* invocation, GVariant* parameters) c_g_dbus_method_invocation_return_value;
-  void function(GDBusMethodInvocation* invocation, GVariant* parameters, GUnixFDList* fdList) c_g_dbus_method_invocation_return_value_with_unix_fd_list;
+  void function(GDBusMethodInvocation* invocation, VariantC* parameters) c_g_dbus_method_invocation_return_value;
+  void function(GDBusMethodInvocation* invocation, VariantC* parameters, GUnixFDList* fdList) c_g_dbus_method_invocation_return_value_with_unix_fd_list;
   void function(GDBusMethodInvocation* invocation, GError* error) c_g_dbus_method_invocation_take_error;
 
   // DBusNodeInfo
@@ -524,13 +524,13 @@ __gshared extern(C)
   GDBusProxy* function(GDBusConnection* connection, GDBusProxyFlags flags, GDBusInterfaceInfo* info, const(char)* name, const(char)* objectPath, const(char)* interfaceName, GCancellable* cancellable, GError** _err) c_g_dbus_proxy_new_sync;
   void function(GDBusConnection* connection, GDBusProxyFlags flags, GDBusInterfaceInfo* info, const(char)* name, const(char)* objectPath, const(char)* interfaceName, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_proxy_new;
   void function(GBusType busType, GDBusProxyFlags flags, GDBusInterfaceInfo* info, const(char)* name, const(char)* objectPath, const(char)* interfaceName, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_proxy_new_for_bus;
-  void function(GDBusProxy* proxy, const(char)* methodName, GVariant* parameters, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_proxy_call;
-  GVariant* function(GDBusProxy* proxy, GAsyncResult* res, GError** _err) c_g_dbus_proxy_call_finish;
-  GVariant* function(GDBusProxy* proxy, const(char)* methodName, GVariant* parameters, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GError** _err) c_g_dbus_proxy_call_sync;
-  void function(GDBusProxy* proxy, const(char)* methodName, GVariant* parameters, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_proxy_call_with_unix_fd_list;
-  GVariant* function(GDBusProxy* proxy, GUnixFDList** outFdList, GAsyncResult* res, GError** _err) c_g_dbus_proxy_call_with_unix_fd_list_finish;
-  GVariant* function(GDBusProxy* proxy, const(char)* methodName, GVariant* parameters, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GUnixFDList** outFdList, GCancellable* cancellable, GError** _err) c_g_dbus_proxy_call_with_unix_fd_list_sync;
-  GVariant* function(GDBusProxy* proxy, const(char)* propertyName) c_g_dbus_proxy_get_cached_property;
+  void function(GDBusProxy* proxy, const(char)* methodName, VariantC* parameters, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_proxy_call;
+  VariantC* function(GDBusProxy* proxy, GAsyncResult* res, GError** _err) c_g_dbus_proxy_call_finish;
+  VariantC* function(GDBusProxy* proxy, const(char)* methodName, VariantC* parameters, GDBusCallFlags flags, int timeoutMsec, GCancellable* cancellable, GError** _err) c_g_dbus_proxy_call_sync;
+  void function(GDBusProxy* proxy, const(char)* methodName, VariantC* parameters, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GCancellable* cancellable, GAsyncReadyCallback callback, void* userData) c_g_dbus_proxy_call_with_unix_fd_list;
+  VariantC* function(GDBusProxy* proxy, GUnixFDList** outFdList, GAsyncResult* res, GError** _err) c_g_dbus_proxy_call_with_unix_fd_list_finish;
+  VariantC* function(GDBusProxy* proxy, const(char)* methodName, VariantC* parameters, GDBusCallFlags flags, int timeoutMsec, GUnixFDList* fdList, GUnixFDList** outFdList, GCancellable* cancellable, GError** _err) c_g_dbus_proxy_call_with_unix_fd_list_sync;
+  VariantC* function(GDBusProxy* proxy, const(char)* propertyName) c_g_dbus_proxy_get_cached_property;
   char** function(GDBusProxy* proxy) c_g_dbus_proxy_get_cached_property_names;
   GDBusConnection* function(GDBusProxy* proxy) c_g_dbus_proxy_get_connection;
   int function(GDBusProxy* proxy) c_g_dbus_proxy_get_default_timeout;
@@ -540,7 +540,7 @@ __gshared extern(C)
   const(char)* function(GDBusProxy* proxy) c_g_dbus_proxy_get_name;
   char* function(GDBusProxy* proxy) c_g_dbus_proxy_get_name_owner;
   const(char)* function(GDBusProxy* proxy) c_g_dbus_proxy_get_object_path;
-  void function(GDBusProxy* proxy, const(char)* propertyName, GVariant* value) c_g_dbus_proxy_set_cached_property;
+  void function(GDBusProxy* proxy, const(char)* propertyName, VariantC* value) c_g_dbus_proxy_set_cached_property;
   void function(GDBusProxy* proxy, int timeoutMsec) c_g_dbus_proxy_set_default_timeout;
   void function(GDBusProxy* proxy, GDBusInterfaceInfo* info) c_g_dbus_proxy_set_interface_info;
 
@@ -1084,8 +1084,8 @@ __gshared extern(C)
   char* function(const(char)* s) c_g_dbus_escape_object_path;
   char* function(const(ubyte)* bytes) c_g_dbus_escape_object_path_bytestring;
   char* function() c_g_dbus_generate_guid;
-  GVariant* function(const(GValue)* gvalue, const(GVariantType)* type) c_g_dbus_gvalue_to_gvariant;
-  void function(GVariant* value, GValue* outGvalue) c_g_dbus_gvariant_to_gvalue;
+  VariantC* function(const(GValue)* gvalue, const(GVariantType)* type) c_g_dbus_gvalue_to_gvariant;
+  void function(VariantC* value, GValue* outGvalue) c_g_dbus_gvariant_to_gvalue;
   bool function(const(char)* string_) c_g_dbus_is_address;
   bool function(const(char)* string_) c_g_dbus_is_error_name;
   bool function(const(char)* string_) c_g_dbus_is_guid;
@@ -1194,11 +1194,11 @@ __gshared extern(C)
 
   // Icon
   GType function() c_g_icon_get_type;
-  GIcon* function(GVariant* value) c_g_icon_deserialize;
+  GIcon* function(VariantC* value) c_g_icon_deserialize;
   GIcon* function(const(char)* str, GError** _err) c_g_icon_new_for_string;
   bool function(GIcon* icon1, GIcon* icon2) c_g_icon_equal;
   uint function(GIcon* icon) c_g_icon_hash;
-  GVariant* function(GIcon* icon) c_g_icon_serialize;
+  VariantC* function(GIcon* icon) c_g_icon_serialize;
   char* function(GIcon* icon) c_g_icon_to_string;
 
   // InetAddress
@@ -1344,8 +1344,8 @@ __gshared extern(C)
   // MenuAttributeIter
   GType function() c_g_menu_attribute_iter_get_type;
   const(char)* function(GMenuAttributeIter* iter) c_g_menu_attribute_iter_get_name;
-  bool function(GMenuAttributeIter* iter, const(char*)* outName, GVariant** value) c_g_menu_attribute_iter_get_next;
-  GVariant* function(GMenuAttributeIter* iter) c_g_menu_attribute_iter_get_value;
+  bool function(GMenuAttributeIter* iter, const(char*)* outName, VariantC** value) c_g_menu_attribute_iter_get_next;
+  VariantC* function(GMenuAttributeIter* iter) c_g_menu_attribute_iter_get_value;
   bool function(GMenuAttributeIter* iter) c_g_menu_attribute_iter_next;
 
   // MenuItem
@@ -1355,12 +1355,12 @@ __gshared extern(C)
   GMenuItem* function(const(char)* label, GMenuModel* section) c_g_menu_item_new_section;
   GMenuItem* function(const(char)* label, GMenuModel* submenu) c_g_menu_item_new_submenu;
   bool function(GMenuItem* menuItem, const(char)* attribute, const(char)* formatString,  ...) c_g_menu_item_get_attribute;
-  GVariant* function(GMenuItem* menuItem, const(char)* attribute, const(GVariantType)* expectedType) c_g_menu_item_get_attribute_value;
+  VariantC* function(GMenuItem* menuItem, const(char)* attribute, const(GVariantType)* expectedType) c_g_menu_item_get_attribute_value;
   GMenuModel* function(GMenuItem* menuItem, const(char)* link) c_g_menu_item_get_link;
   void function(GMenuItem* menuItem, const(char)* action, const(char)* formatString,  ...) c_g_menu_item_set_action_and_target;
-  void function(GMenuItem* menuItem, const(char)* action, GVariant* targetValue) c_g_menu_item_set_action_and_target_value;
+  void function(GMenuItem* menuItem, const(char)* action, VariantC* targetValue) c_g_menu_item_set_action_and_target_value;
   void function(GMenuItem* menuItem, const(char)* attribute, const(char)* formatString,  ...) c_g_menu_item_set_attribute;
-  void function(GMenuItem* menuItem, const(char)* attribute, GVariant* value) c_g_menu_item_set_attribute_value;
+  void function(GMenuItem* menuItem, const(char)* attribute, VariantC* value) c_g_menu_item_set_attribute_value;
   void function(GMenuItem* menuItem, const(char)* detailedAction) c_g_menu_item_set_detailed_action;
   void function(GMenuItem* menuItem, GIcon* icon) c_g_menu_item_set_icon;
   void function(GMenuItem* menuItem, const(char)* label) c_g_menu_item_set_label;
@@ -1378,7 +1378,7 @@ __gshared extern(C)
   // MenuModel
   GType function() c_g_menu_model_get_type;
   bool function(GMenuModel* model, int itemIndex, const(char)* attribute, const(char)* formatString,  ...) c_g_menu_model_get_item_attribute;
-  GVariant* function(GMenuModel* model, int itemIndex, const(char)* attribute, const(GVariantType)* expectedType) c_g_menu_model_get_item_attribute_value;
+  VariantC* function(GMenuModel* model, int itemIndex, const(char)* attribute, const(GVariantType)* expectedType) c_g_menu_model_get_item_attribute_value;
   GMenuModel* function(GMenuModel* model, int itemIndex, const(char)* link) c_g_menu_model_get_item_link;
   int function(GMenuModel* model) c_g_menu_model_get_n_items;
   bool function(GMenuModel* model) c_g_menu_model_is_mutable;
@@ -1480,12 +1480,12 @@ __gshared extern(C)
   GNotification* function(const(char)* title) c_g_notification_new;
   void function(GNotification* notification, const(char)* label, const(char)* detailedAction) c_g_notification_add_button;
   void function(GNotification* notification, const(char)* label, const(char)* action, const(char)* targetFormat,  ...) c_g_notification_add_button_with_target;
-  void function(GNotification* notification, const(char)* label, const(char)* action, GVariant* target) c_g_notification_add_button_with_target_value;
+  void function(GNotification* notification, const(char)* label, const(char)* action, VariantC* target) c_g_notification_add_button_with_target_value;
   void function(GNotification* notification, const(char)* body_) c_g_notification_set_body;
   void function(GNotification* notification, const(char)* category) c_g_notification_set_category;
   void function(GNotification* notification, const(char)* detailedAction) c_g_notification_set_default_action;
   void function(GNotification* notification, const(char)* action, const(char)* targetFormat,  ...) c_g_notification_set_default_action_and_target;
-  void function(GNotification* notification, const(char)* action, GVariant* target) c_g_notification_set_default_action_and_target_value;
+  void function(GNotification* notification, const(char)* action, VariantC* target) c_g_notification_set_default_action_and_target_value;
   void function(GNotification* notification, GIcon* icon) c_g_notification_set_icon;
   void function(GNotification* notification, GNotificationPriority priority) c_g_notification_set_priority;
   void function(GNotification* notification, const(char)* title) c_g_notification_set_title;
@@ -1594,8 +1594,8 @@ __gshared extern(C)
 
   // RemoteActionGroup
   GType function() c_g_remote_action_group_get_type;
-  void function(GRemoteActionGroup* remote, const(char)* actionName, GVariant* parameter, GVariant* platformData) c_g_remote_action_group_activate_action_full;
-  void function(GRemoteActionGroup* remote, const(char)* actionName, GVariant* value, GVariant* platformData) c_g_remote_action_group_change_action_state_full;
+  void function(GRemoteActionGroup* remote, const(char)* actionName, VariantC* parameter, VariantC* platformData) c_g_remote_action_group_activate_action_full;
+  void function(GRemoteActionGroup* remote, const(char)* actionName, VariantC* value, VariantC* platformData) c_g_remote_action_group_change_action_state_full;
 
   // Resolver
   GType function() c_g_resolver_get_type;
@@ -1660,7 +1660,7 @@ __gshared extern(C)
   void function(GSettings* settings, const(char)* key, const(char)* format,  ...) c_g_settings_get;
   bool function(GSettings* settings, const(char)* key) c_g_settings_get_boolean;
   GSettings* function(GSettings* settings, const(char)* name) c_g_settings_get_child;
-  GVariant* function(GSettings* settings, const(char)* key) c_g_settings_get_default_value;
+  VariantC* function(GSettings* settings, const(char)* key) c_g_settings_get_default_value;
   double function(GSettings* settings, const(char)* key) c_g_settings_get_double;
   int function(GSettings* settings, const(char)* key) c_g_settings_get_enum;
   uint function(GSettings* settings, const(char)* key) c_g_settings_get_flags;
@@ -1668,17 +1668,17 @@ __gshared extern(C)
   int function(GSettings* settings, const(char)* key) c_g_settings_get_int;
   long function(GSettings* settings, const(char)* key) c_g_settings_get_int64;
   void* function(GSettings* settings, const(char)* key, GSettingsGetMapping mapping, void* userData) c_g_settings_get_mapped;
-  GVariant* function(GSettings* settings, const(char)* key) c_g_settings_get_range;
+  VariantC* function(GSettings* settings, const(char)* key) c_g_settings_get_range;
   char* function(GSettings* settings, const(char)* key) c_g_settings_get_string;
   char** function(GSettings* settings, const(char)* key) c_g_settings_get_strv;
   uint function(GSettings* settings, const(char)* key) c_g_settings_get_uint;
   ulong function(GSettings* settings, const(char)* key) c_g_settings_get_uint64;
-  GVariant* function(GSettings* settings, const(char)* key) c_g_settings_get_user_value;
-  GVariant* function(GSettings* settings, const(char)* key) c_g_settings_get_value;
+  VariantC* function(GSettings* settings, const(char)* key) c_g_settings_get_user_value;
+  VariantC* function(GSettings* settings, const(char)* key) c_g_settings_get_value;
   bool function(GSettings* settings, const(char)* name) c_g_settings_is_writable;
   char** function(GSettings* settings) c_g_settings_list_children;
   char** function(GSettings* settings) c_g_settings_list_keys;
-  bool function(GSettings* settings, const(char)* key, GVariant* value) c_g_settings_range_check;
+  bool function(GSettings* settings, const(char)* key, VariantC* value) c_g_settings_range_check;
   void function(GSettings* settings, const(char)* key) c_g_settings_reset;
   void function(GSettings* settings) c_g_settings_revert;
   bool function(GSettings* settings, const(char)* key, const(char)* format,  ...) c_g_settings_set;
@@ -1692,11 +1692,11 @@ __gshared extern(C)
   bool function(GSettings* settings, const(char)* key, const(char*)* value) c_g_settings_set_strv;
   bool function(GSettings* settings, const(char)* key, uint value) c_g_settings_set_uint;
   bool function(GSettings* settings, const(char)* key, ulong value) c_g_settings_set_uint64;
-  bool function(GSettings* settings, const(char)* key, GVariant* value) c_g_settings_set_value;
+  bool function(GSettings* settings, const(char)* key, VariantC* value) c_g_settings_set_value;
 
   // SettingsBackend
   GType function() c_g_settings_backend_get_type;
-  void function(GTree* tree, char** path, const(char**)* keys, GVariant*** values) c_g_settings_backend_flatten_tree;
+  void function(GTree* tree, char** path, const(char**)* keys, VariantC*** values) c_g_settings_backend_flatten_tree;
   GSettingsBackend* function() c_g_settings_backend_get_default;
   void function(GSettingsBackend* backend, const(char)* key, void* originTag) c_g_settings_backend_changed;
   void function(GSettingsBackend* backend, GTree* tree, void* originTag) c_g_settings_backend_changed_tree;
@@ -1718,13 +1718,13 @@ __gshared extern(C)
 
   // SettingsSchemaKey
   GType function() c_g_settings_schema_key_get_type;
-  GVariant* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_default_value;
+  VariantC* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_default_value;
   const(char)* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_description;
   const(char)* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_name;
-  GVariant* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_range;
+  VariantC* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_range;
   const(char)* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_summary;
   const(GVariantType)* function(GSettingsSchemaKey* key) c_g_settings_schema_key_get_value_type;
-  bool function(GSettingsSchemaKey* key, GVariant* value) c_g_settings_schema_key_range_check;
+  bool function(GSettingsSchemaKey* key, VariantC* value) c_g_settings_schema_key_range_check;
   GSettingsSchemaKey* function(GSettingsSchemaKey* key) c_g_settings_schema_key_ref;
   void function(GSettingsSchemaKey* key) c_g_settings_schema_key_unref;
 
@@ -1740,10 +1740,10 @@ __gshared extern(C)
   // SimpleAction
   GType function() c_g_simple_action_get_type;
   GSimpleAction* function(const(char)* name, const(GVariantType)* parameterType) c_g_simple_action_new;
-  GSimpleAction* function(const(char)* name, const(GVariantType)* parameterType, GVariant* state) c_g_simple_action_new_stateful;
+  GSimpleAction* function(const(char)* name, const(GVariantType)* parameterType, VariantC* state) c_g_simple_action_new_stateful;
   void function(GSimpleAction* simple, bool enabled) c_g_simple_action_set_enabled;
-  void function(GSimpleAction* simple, GVariant* value) c_g_simple_action_set_state;
-  void function(GSimpleAction* simple, GVariant* stateHint) c_g_simple_action_set_state_hint;
+  void function(GSimpleAction* simple, VariantC* value) c_g_simple_action_set_state;
+  void function(GSimpleAction* simple, VariantC* stateHint) c_g_simple_action_set_state_hint;
 
   // SimpleActionGroup
   GType function() c_g_simple_action_group_get_type;

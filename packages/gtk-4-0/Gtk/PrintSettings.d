@@ -2,7 +2,7 @@ module Gtk.PrintSettings;
 
 import GLib.ErrorG;
 import GLib.KeyFile;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.PaperSize;
@@ -81,10 +81,10 @@ class PrintSettings : ObjectG
    *   variant = an a{sv} `GVariant`
    * Returns: a new `GtkPrintSettings` object
    */
-  static PrintSettings newFromGvariant(Variant variant)
+  static PrintSettings newFromGvariant(VariantG variant)
   {
     GtkPrintSettings* _cretval;
-    _cretval = gtk_print_settings_new_from_gvariant(variant ? cast(GVariant*)variant.cPtr(false) : null);
+    _cretval = gtk_print_settings_new_from_gvariant(variant ? cast(VariantC*)variant.cPtr(false) : null);
     auto _retval = _cretval ? ObjectG.getDObject!PrintSettings(cast(GtkPrintSettings*)_cretval, true) : null;
     return _retval;
   }
@@ -987,11 +987,11 @@ class PrintSettings : ObjectG
    * Serialize print settings to an a{sv} variant.
    * Returns: a new, floating, `GVariant`
    */
-  Variant toGvariant()
+  VariantG toGvariant()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = gtk_print_settings_to_gvariant(cast(GtkPrintSettings*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 

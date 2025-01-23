@@ -2,7 +2,7 @@ module Gio.DBusConnection;
 
 import GLib.ErrorG;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.Closure;
 import GObject.DClosure;
@@ -344,7 +344,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    * %G_VARIANT_TYPE_UNIT, the reply_type will be a tuple containing one or more
    * values.
    * If the parameters #GVariant is floating, it is consumed. This allows
-   * convenient 'inline' use of [GLib.Variant.new_], e.g.:
+   * convenient 'inline' use of [GLib.VariantG.new_], e.g.:
    * |[<!-- language\="C" -->
    * g_dbus_connection_call $(LPAREN)connection,
    * "org.freedesktop.StringThings",
@@ -388,7 +388,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    *     is satisfied or %NULL if you don't care about the result of the
    *     method invocation
    */
-  void call(string busName, string objectPath, string interfaceName, string methodName, Variant parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable, AsyncReadyCallback callback)
+  void call(string busName, string objectPath, string interfaceName, string methodName, VariantG parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {
@@ -403,7 +403,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
     const(char)* _interfaceName = interfaceName.toCString(false);
     const(char)* _methodName = methodName.toCString(false);
     auto _callback = freezeDelegate(cast(void*)&callback);
-    g_dbus_connection_call(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+    g_dbus_connection_call(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**
@@ -411,16 +411,16 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    * Params:
    *   res = a #GAsyncResult obtained from the #GAsyncReadyCallback passed to [Gio.DBusConnection.call]
    * Returns: %NULL if error is set. Otherwise a non-floating
-   *   #GVariant tuple with return values. Free with [GLib.Variant.unref].
+   *   #GVariant tuple with return values. Free with [GLib.VariantG.unref].
    */
-  Variant callFinish(AsyncResult res)
+  VariantG callFinish(AsyncResult res)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     GError *_err;
     _cretval = g_dbus_connection_call_finish(cast(GDBusConnection*)cPtr, res ? cast(GAsyncResult*)(cast(ObjectG)res).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -438,7 +438,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    * another way, if you give a reply_type then any non-%NULL return
    * value will be of this type.
    * If the parameters #GVariant is floating, it is consumed.
-   * This allows convenient 'inline' use of [GLib.Variant.new_], e.g.:
+   * This allows convenient 'inline' use of [GLib.VariantG.new_], e.g.:
    * |[<!-- language\="C" -->
    * g_dbus_connection_call_sync $(LPAREN)connection,
    * "org.freedesktop.StringThings",
@@ -471,20 +471,20 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    *     timeout or %G_MAXINT for no timeout
    *   cancellable = a #GCancellable or %NULL
    * Returns: %NULL if error is set. Otherwise a non-floating
-   *   #GVariant tuple with return values. Free with [GLib.Variant.unref].
+   *   #GVariant tuple with return values. Free with [GLib.VariantG.unref].
    */
-  Variant callSync(string busName, string objectPath, string interfaceName, string methodName, Variant parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable)
+  VariantG callSync(string busName, string objectPath, string interfaceName, string methodName, VariantG parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _busName = busName.toCString(false);
     const(char)* _objectPath = objectPath.toCString(false);
     const(char)* _interfaceName = interfaceName.toCString(false);
     const(char)* _methodName = methodName.toCString(false);
     GError *_err;
-    _cretval = g_dbus_connection_call_sync(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    _cretval = g_dbus_connection_call_sync(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -519,7 +519,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    *     satisfied or %NULL if you don't * care about the result of the
    *     method invocation
    */
-  void callWithUnixFdList(string busName, string objectPath, string interfaceName, string methodName, Variant parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, Cancellable cancellable, AsyncReadyCallback callback)
+  void callWithUnixFdList(string busName, string objectPath, string interfaceName, string methodName, VariantG parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {
@@ -534,14 +534,14 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
     const(char)* _interfaceName = interfaceName.toCString(false);
     const(char)* _methodName = methodName.toCString(false);
     auto _callback = freezeDelegate(cast(void*)&callback);
-    g_dbus_connection_call_with_unix_fd_list(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+    g_dbus_connection_call_with_unix_fd_list(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**
    * Finishes an operation started with [Gio.DBusConnection.callWithUnixFdList].
    * The file descriptors normally correspond to %G_VARIANT_TYPE_HANDLE
    * values in the body of the message. For example,
-   * if [GLib.Variant.getHandle] returns 5, that is intended to be a reference
+   * if [GLib.VariantG.getHandle] returns 5, that is intended to be a reference
    * to the file descriptor that can be accessed by
    * `g_unix_fd_list_get $(LPAREN)*out_fd_list, 5, ...$(RPAREN)`.
    * When designing D-Bus APIs that are intended to be interoperable,
@@ -553,17 +553,17 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    *   res = a #GAsyncResult obtained from the #GAsyncReadyCallback passed to
    *     [Gio.DBusConnection.callWithUnixFdList]
    * Returns: %NULL if error is set. Otherwise a non-floating
-   *   #GVariant tuple with return values. Free with [GLib.Variant.unref].
+   *   #GVariant tuple with return values. Free with [GLib.VariantG.unref].
    */
-  Variant callWithUnixFdListFinish(out UnixFDList outFdList, AsyncResult res)
+  VariantG callWithUnixFdListFinish(out UnixFDList outFdList, AsyncResult res)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     GUnixFDList* _outFdList;
     GError *_err;
     _cretval = g_dbus_connection_call_with_unix_fd_list_finish(cast(GDBusConnection*)cPtr, &_outFdList, res ? cast(GAsyncResult*)(cast(ObjectG)res).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     outFdList = new UnixFDList(cast(void*)_outFdList, true);
     return _retval;
   }
@@ -589,21 +589,21 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    *   outFdList = return location for a #GUnixFDList or %NULL
    *   cancellable = a #GCancellable or %NULL
    * Returns: %NULL if error is set. Otherwise a non-floating
-   *   #GVariant tuple with return values. Free with [GLib.Variant.unref].
+   *   #GVariant tuple with return values. Free with [GLib.VariantG.unref].
    */
-  Variant callWithUnixFdListSync(string busName, string objectPath, string interfaceName, string methodName, Variant parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, out UnixFDList outFdList, Cancellable cancellable)
+  VariantG callWithUnixFdListSync(string busName, string objectPath, string interfaceName, string methodName, VariantG parameters, VariantType replyType, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, out UnixFDList outFdList, Cancellable cancellable)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _busName = busName.toCString(false);
     const(char)* _objectPath = objectPath.toCString(false);
     const(char)* _interfaceName = interfaceName.toCString(false);
     const(char)* _methodName = methodName.toCString(false);
     GUnixFDList* _outFdList;
     GError *_err;
-    _cretval = g_dbus_connection_call_with_unix_fd_list_sync(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, &_outFdList, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    _cretval = g_dbus_connection_call_with_unix_fd_list_sync(cast(GDBusConnection*)cPtr, _busName, _objectPath, _interfaceName, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, replyType ? cast(GVariantType*)replyType.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, &_outFdList, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     outFdList = new UnixFDList(cast(void*)_outFdList, true);
     return _retval;
   }
@@ -700,7 +700,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    *     or %NULL if not passing parameters
    * Returns: %TRUE unless error is set
    */
-  bool emitSignal(string destinationBusName, string objectPath, string interfaceName, string signalName, Variant parameters)
+  bool emitSignal(string destinationBusName, string objectPath, string interfaceName, string signalName, VariantG parameters)
   {
     bool _retval;
     const(char)* _destinationBusName = destinationBusName.toCString(false);
@@ -708,7 +708,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
     const(char)* _interfaceName = interfaceName.toCString(false);
     const(char)* _signalName = signalName.toCString(false);
     GError *_err;
-    _retval = g_dbus_connection_emit_signal(cast(GDBusConnection*)cPtr, _destinationBusName, _objectPath, _interfaceName, _signalName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, &_err);
+    _retval = g_dbus_connection_emit_signal(cast(GDBusConnection*)cPtr, _destinationBusName, _objectPath, _interfaceName, _signalName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
     return _retval;
@@ -1310,7 +1310,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
    */
   uint signalSubscribe(string sender, string interfaceName, string member, string objectPath, string arg0, DBusSignalFlags flags, DBusSignalCallback callback)
   {
-    extern(C) void _callbackCallback(GDBusConnection* connection, const(char)* senderName, const(char)* objectPath, const(char)* interfaceName, const(char)* signalName, GVariant* parameters, void* userData)
+    extern(C) void _callbackCallback(GDBusConnection* connection, const(char)* senderName, const(char)* objectPath, const(char)* interfaceName, const(char)* signalName, VariantC* parameters, void* userData)
     {
       auto _dlg = cast(DBusSignalCallback*)userData;
       string _senderName = senderName.fromCString(false);
@@ -1318,7 +1318,7 @@ class DBusConnection : ObjectG, AsyncInitable, Initable
       string _interfaceName = interfaceName.fromCString(false);
       string _signalName = signalName.fromCString(false);
 
-      (*_dlg)(connection ? ObjectG.getDObject!DBusConnection(cast(void*)connection, false) : null, _senderName, _objectPath, _interfaceName, _signalName, parameters ? new Variant(cast(void*)parameters, false) : null);
+      (*_dlg)(connection ? ObjectG.getDObject!DBusConnection(cast(void*)connection, false) : null, _senderName, _objectPath, _interfaceName, _signalName, parameters ? new VariantG(cast(void*)parameters, false) : null);
     }
 
     uint _retval;

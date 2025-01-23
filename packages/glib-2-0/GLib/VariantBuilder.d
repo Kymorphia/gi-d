@@ -2,7 +2,7 @@ module GLib.VariantBuilder;
 
 import GLib.Boxed;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GLib.c.functions;
 import GLib.c.types;
@@ -64,14 +64,14 @@ class VariantBuilder : Boxed
    * putting different types of items into an array, putting the wrong
    * types or number of items in a tuple, putting more than one value into
    * a variant, etc.
-   * If value is a floating reference $(LPAREN)see [GLib.Variant.refSink]$(RPAREN),
+   * If value is a floating reference $(LPAREN)see [GLib.VariantG.refSink]$(RPAREN),
    * the builder instance takes ownership of value.
    * Params:
    *   value = a #GVariant
    */
-  void addValue(Variant value)
+  void addValue(VariantG value)
   {
-    g_variant_builder_add_value(cast(GVariantBuilder*)cPtr, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_variant_builder_add_value(cast(GVariantBuilder*)cPtr, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**
@@ -104,11 +104,11 @@ class VariantBuilder : Boxed
    * the empty array.
    * Returns: a new, floating, #GVariant
    */
-  Variant end()
+  VariantG end()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_builder_end(cast(GVariantBuilder*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 

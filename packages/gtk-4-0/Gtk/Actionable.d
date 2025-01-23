@@ -1,7 +1,7 @@
 module Gtk.Actionable;
 
 public import Gtk.ActionableIfaceProxy;
-import GLib.Variant;
+import GLib.VariantG;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;
@@ -38,7 +38,7 @@ interface Actionable
    * Gets the current target value of actionable.
    * Returns: the current target value
    */
-  Variant getActionTargetValue();
+  VariantG getActionTargetValue();
 
   /**
    * Specifies the name of the action with which this widget should be
@@ -73,9 +73,9 @@ interface Actionable
    * be rendered as active $(LPAREN)and the other buttons, with different targets,
    * rendered inactive$(RPAREN).
    * Params:
-   *   targetValue = a [GLib.Variant] to set as the target value
+   *   targetValue = a [GLib.VariantG] to set as the target value
    */
-  void setActionTargetValue(Variant targetValue);
+  void setActionTargetValue(VariantG targetValue);
 
   /**
    * Sets the action-name and associated string target value of an

@@ -1,7 +1,7 @@
 module Gio.DBusProxy;
 
 import GLib.ErrorG;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -288,7 +288,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    * compatible with the D-Bus protocol, the operation fails with
    * %G_IO_ERROR_INVALID_ARGUMENT.
    * If the parameters #GVariant is floating, it is consumed. This allows
-   * convenient 'inline' use of [GLib.Variant.new_], e.g.:
+   * convenient 'inline' use of [GLib.VariantG.new_], e.g.:
    * |[<!-- language\="C" -->
    * g_dbus_proxy_call $(LPAREN)proxy,
    * "TwoStrings",
@@ -323,7 +323,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   callback = A #GAsyncReadyCallback to call when the request is satisfied or %NULL if you don't
    *     care about the result of the method invocation.
    */
-  void call(string methodName, Variant parameters, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable, AsyncReadyCallback callback)
+  void call(string methodName, VariantG parameters, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {
@@ -335,7 +335,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
 
     const(char)* _methodName = methodName.toCString(false);
     auto _callback = freezeDelegate(cast(void*)&callback);
-    g_dbus_proxy_call(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+    g_dbus_proxy_call(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**
@@ -343,16 +343,16 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    * Params:
    *   res = A #GAsyncResult obtained from the #GAsyncReadyCallback passed to [Gio.DBusProxy.call].
    * Returns: %NULL if error is set. Otherwise a #GVariant tuple with
-   *   return values. Free with [GLib.Variant.unref].
+   *   return values. Free with [GLib.VariantG.unref].
    */
-  Variant callFinish(AsyncResult res)
+  VariantG callFinish(AsyncResult res)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     GError *_err;
     _cretval = g_dbus_proxy_call_finish(cast(GDBusProxy*)cPtr, res ? cast(GAsyncResult*)(cast(ObjectG)res).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -368,7 +368,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    * compatible with the D-Bus protocol, the operation fails with
    * %G_IO_ERROR_INVALID_ARGUMENT.
    * If the parameters #GVariant is floating, it is consumed. This allows
-   * convenient 'inline' use of [GLib.Variant.new_], e.g.:
+   * convenient 'inline' use of [GLib.VariantG.new_], e.g.:
    * |[<!-- language\="C" -->
    * g_dbus_proxy_call_sync $(LPAREN)proxy,
    * "TwoStrings",
@@ -395,17 +395,17 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *     "infinite"$(RPAREN) or -1 to use the proxy default timeout.
    *   cancellable = A #GCancellable or %NULL.
    * Returns: %NULL if error is set. Otherwise a #GVariant tuple with
-   *   return values. Free with [GLib.Variant.unref].
+   *   return values. Free with [GLib.VariantG.unref].
    */
-  Variant callSync(string methodName, Variant parameters, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable)
+  VariantG callSync(string methodName, VariantG parameters, DBusCallFlags flags, int timeoutMsec, Cancellable cancellable)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _methodName = methodName.toCString(false);
     GError *_err;
-    _cretval = g_dbus_proxy_call_sync(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    _cretval = g_dbus_proxy_call_sync(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, flags, timeoutMsec, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -423,7 +423,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   callback = A #GAsyncReadyCallback to call when the request is satisfied or %NULL if you don't
    *     care about the result of the method invocation.
    */
-  void callWithUnixFdList(string methodName, Variant parameters, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, Cancellable cancellable, AsyncReadyCallback callback)
+  void callWithUnixFdList(string methodName, VariantG parameters, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {
@@ -435,7 +435,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
 
     const(char)* _methodName = methodName.toCString(false);
     auto _callback = freezeDelegate(cast(void*)&callback);
-    g_dbus_proxy_call_with_unix_fd_list(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+    g_dbus_proxy_call_with_unix_fd_list(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**
@@ -444,17 +444,17 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   outFdList = Return location for a #GUnixFDList or %NULL.
    *   res = A #GAsyncResult obtained from the #GAsyncReadyCallback passed to [Gio.DBusProxy.callWithUnixFdList].
    * Returns: %NULL if error is set. Otherwise a #GVariant tuple with
-   *   return values. Free with [GLib.Variant.unref].
+   *   return values. Free with [GLib.VariantG.unref].
    */
-  Variant callWithUnixFdListFinish(out UnixFDList outFdList, AsyncResult res)
+  VariantG callWithUnixFdListFinish(out UnixFDList outFdList, AsyncResult res)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     GUnixFDList* _outFdList;
     GError *_err;
     _cretval = g_dbus_proxy_call_with_unix_fd_list_finish(cast(GDBusProxy*)cPtr, &_outFdList, res ? cast(GAsyncResult*)(cast(ObjectG)res).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     outFdList = new UnixFDList(cast(void*)_outFdList, true);
     return _retval;
   }
@@ -473,18 +473,18 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   outFdList = Return location for a #GUnixFDList or %NULL.
    *   cancellable = A #GCancellable or %NULL.
    * Returns: %NULL if error is set. Otherwise a #GVariant tuple with
-   *   return values. Free with [GLib.Variant.unref].
+   *   return values. Free with [GLib.VariantG.unref].
    */
-  Variant callWithUnixFdListSync(string methodName, Variant parameters, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, out UnixFDList outFdList, Cancellable cancellable)
+  VariantG callWithUnixFdListSync(string methodName, VariantG parameters, DBusCallFlags flags, int timeoutMsec, UnixFDList fdList, out UnixFDList outFdList, Cancellable cancellable)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _methodName = methodName.toCString(false);
     GUnixFDList* _outFdList;
     GError *_err;
-    _cretval = g_dbus_proxy_call_with_unix_fd_list_sync(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(GVariant*)parameters.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, &_outFdList, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    _cretval = g_dbus_proxy_call_with_unix_fd_list_sync(cast(GDBusProxy*)cPtr, _methodName, parameters ? cast(VariantC*)parameters.cPtr(false) : null, flags, timeoutMsec, fdList ? cast(GUnixFDList*)fdList.cPtr(false) : null, &_outFdList, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     outFdList = new UnixFDList(cast(void*)_outFdList, true);
     return _retval;
   }
@@ -499,14 +499,14 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   propertyName = Property name.
    * Returns: A reference to the #GVariant instance
    *   that holds the value for property_name or %NULL if the value is not in
-   *   the cache. The returned reference must be freed with [GLib.Variant.unref].
+   *   the cache. The returned reference must be freed with [GLib.VariantG.unref].
    */
-  Variant getCachedProperty(string propertyName)
+  VariantG getCachedProperty(string propertyName)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _propertyName = propertyName.toCString(false);
     _cretval = g_dbus_proxy_get_cached_property(cast(GDBusProxy*)cPtr, _propertyName);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -652,7 +652,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    * #GDBusProxy:g-interface-info$(RPAREN) and property_name is referenced by
    * it, then value is checked against the type of the property.
    * If the value #GVariant is floating, it is consumed. This allows
-   * convenient 'inline' use of [GLib.Variant.new_], e.g.
+   * convenient 'inline' use of [GLib.VariantG.new_], e.g.
    * |[<!-- language\="C" -->
    * g_dbus_proxy_set_cached_property $(LPAREN)proxy,
    * "SomeProperty",
@@ -676,10 +676,10 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   propertyName = Property name.
    *   value = Value for the property or %NULL to remove it from the cache.
    */
-  void setCachedProperty(string propertyName, Variant value)
+  void setCachedProperty(string propertyName, VariantG value)
   {
     const(char)* _propertyName = propertyName.toCString(false);
-    g_dbus_proxy_set_cached_property(cast(GDBusProxy*)cPtr, _propertyName, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_dbus_proxy_set_cached_property(cast(GDBusProxy*)cPtr, _propertyName, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**
@@ -724,7 +724,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   invalidatedProperties = A %NULL terminated array of properties that was invalidated
    *   dBusProxy = the instance the signal is connected to
    */
-  alias GPropertiesChangedCallback = void delegate(Variant changedProperties, string[] invalidatedProperties, DBusProxy dBusProxy);
+  alias GPropertiesChangedCallback = void delegate(VariantG changedProperties, string[] invalidatedProperties, DBusProxy dBusProxy);
 
   /**
    * Connect to GPropertiesChanged signal.
@@ -740,7 +740,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
       assert(_nParams == 3, "Unexpected number of signal parameters");
       auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;
       auto dBusProxy = getVal!DBusProxy(_paramVals);
-      auto changedProperties = getVal!Variant(&_paramVals[1]);
+      auto changedProperties = getVal!VariantG(&_paramVals[1]);
       auto invalidatedProperties = getVal!(char**)(&_paramVals[2]);
       string[] _invalidatedProperties;
       uint _leninvalidatedProperties;
@@ -767,7 +767,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
    *   parameters = A #GVariant tuple with parameters for the signal.
    *   dBusProxy = the instance the signal is connected to
    */
-  alias GSignalCallback = void delegate(string senderName, string signalName, Variant parameters, DBusProxy dBusProxy);
+  alias GSignalCallback = void delegate(string senderName, string signalName, VariantG parameters, DBusProxy dBusProxy);
 
   /**
    * Connect to GSignal signal.
@@ -786,7 +786,7 @@ class DBusProxy : ObjectG, AsyncInitable, DBusInterface, Initable
       auto dBusProxy = getVal!DBusProxy(_paramVals);
       auto senderName = getVal!string(&_paramVals[1]);
       auto signalName = getVal!string(&_paramVals[2]);
-      auto parameters = getVal!Variant(&_paramVals[3]);
+      auto parameters = getVal!VariantG(&_paramVals[3]);
       _dgClosure.dlg(senderName, signalName, parameters, dBusProxy);
     }
 

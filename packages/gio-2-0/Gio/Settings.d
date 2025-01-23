@@ -1,7 +1,7 @@
 module Gio.Settings;
 
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -50,7 +50,7 @@ import Gio.c.types;
  * they often did in GConf.
  * Unlike other configuration systems $(LPAREN)like GConf$(RPAREN), GSettings does not
  * restrict keys to basic types like strings and numbers. GSettings stores
- * values as [GLib.Variant], and allows any [GLib.VariantType] for
+ * values as [GLib.VariantG], and allows any [GLib.VariantType] for
  * keys. Key names are restricted to lowercase characters, numbers and `-`.
  * Furthermore, the names must begin with a lowercase character, must not end
  * with a `-`, and must not contain consecutive dashes.
@@ -79,7 +79,7 @@ import Gio.c.types;
  * <default l10n\='messages' context\='Banned words'>['bad', 'words']</default>
  * ```
  * Translations of default values must remain syntactically valid serialized
- * [GLib.Variant]s (e.g. retaining any surrounding quotation marks) or
+ * [GLib.VariantG]s (e.g. retaining any surrounding quotation marks) or
  * runtime errors will occur.
  * GSettings uses schemas in a compact binary form that is created
  * by the [`glib-compile-schemas`](glib-compile-schemas.html)
@@ -96,7 +96,7 @@ import Gio.c.types;
  * and schema ID should match. For schemas which deal with settings not
  * associated with one named application, the ID should not use
  * StudlyCaps, e.g. `org.gnome.font-rendering`.
- * In addition to [GLib.Variant] types, keys can have types that have
+ * In addition to [GLib.VariantG] types, keys can have types that have
  * enumerated types. These can be described by a `<choice>`,
  * `<enum>` or `<flags>` element, as seen in the
  * second example below. The underlying type of such a key
@@ -172,7 +172,7 @@ import Gio.c.types;
  * override’ files. These are keyfiles in the same directory as the XML
  * schema sources which can override default values. The schema ID serves
  * as the group name in the key file, and the values are expected in
- * serialized [GLib.Variant] form, as in the following example:
+ * serialized [GLib.VariantG] form, as in the following example:
  * ```
  * [org.gtk.Example]
  * key1\='string'
@@ -185,7 +185,7 @@ import Gio.c.types;
  * properties directly to settings, using [Gio.Settings.bind]. Once a
  * [GObject.ObjectG] property has been bound to a setting, changes on
  * either side are automatically propagated to the other side. GSettings handles
- * details like mapping between [GObject.ObjectG] and [GLib.Variant]
+ * details like mapping between [GObject.ObjectG] and [GLib.VariantG]
  * types, and preventing infinite cycles.
  * This makes it very easy to hook up a preferences dialog to the
  * underlying settings. To make this even more convenient, GSettings
@@ -657,12 +657,12 @@ class Settings : ObjectG
    *   key = the key to get the default value for
    * Returns: the default value
    */
-  Variant getDefaultValue(string key)
+  VariantG getDefaultValue(string key)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _key = key.toCString(false);
     _cretval = g_settings_get_default_value(cast(GSettings*)cPtr, _key);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -804,11 +804,11 @@ class Settings : ObjectG
    */
   void* getMapped(string key, SettingsGetMapping mapping)
   {
-    extern(C) bool _mappingCallback(GVariant* value, void** result, void* userData)
+    extern(C) bool _mappingCallback(VariantC* value, void** result, void* userData)
     {
       auto _dlg = cast(SettingsGetMapping*)userData;
 
-      bool _retval = (*_dlg)(value ? new Variant(cast(void*)value, false) : null, *result);
+      bool _retval = (*_dlg)(value ? new VariantG(cast(void*)value, false) : null, *result);
       return _retval;
     }
 
@@ -827,12 +827,12 @@ class Settings : ObjectG
 
    * Deprecated: Use [Gio.SettingsSchemaKey.getRange] instead.
    */
-  Variant getRange(string key)
+  VariantG getRange(string key)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _key = key.toCString(false);
     _cretval = g_settings_get_range(cast(GSettings*)cPtr, _key);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -937,12 +937,12 @@ class Settings : ObjectG
    *   key = the key to get the user value for
    * Returns: the user's value, if set
    */
-  Variant getUserValue(string key)
+  VariantG getUserValue(string key)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _key = key.toCString(false);
     _cretval = g_settings_get_user_value(cast(GSettings*)cPtr, _key);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -954,12 +954,12 @@ class Settings : ObjectG
    *   key = the key to get the value for
    * Returns: a new #GVariant
    */
-  Variant getValue(string key)
+  VariantG getValue(string key)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _key = key.toCString(false);
     _cretval = g_settings_get_value(cast(GSettings*)cPtr, _key);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -1047,11 +1047,11 @@ class Settings : ObjectG
 
    * Deprecated: Use [Gio.SettingsSchemaKey.rangeCheck] instead.
    */
-  bool rangeCheck(string key, Variant value)
+  bool rangeCheck(string key, VariantG value)
   {
     bool _retval;
     const(char)* _key = key.toCString(false);
-    _retval = g_settings_range_check(cast(GSettings*)cPtr, _key, value ? cast(GVariant*)value.cPtr(false) : null);
+    _retval = g_settings_range_check(cast(GSettings*)cPtr, _key, value ? cast(VariantC*)value.cPtr(false) : null);
     return _retval;
   }
 
@@ -1299,11 +1299,11 @@ class Settings : ObjectG
    * Returns: %TRUE if setting the key succeeded,
    *   %FALSE if the key was not writable
    */
-  bool setValue(string key, Variant value)
+  bool setValue(string key, VariantG value)
   {
     bool _retval;
     const(char)* _key = key.toCString(false);
-    _retval = g_settings_set_value(cast(GSettings*)cPtr, _key, value ? cast(GVariant*)value.cPtr(false) : null);
+    _retval = g_settings_set_value(cast(GSettings*)cPtr, _key, value ? cast(VariantC*)value.cPtr(false) : null);
     return _retval;
   }
 

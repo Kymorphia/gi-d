@@ -34,14 +34,14 @@ class DBusObjectManagerClientClass
     return new ObjectClass(cast(GObjectClass*)&(cast(GDBusObjectManagerClientClass*)cPtr).parentClass);
   }
 
-  alias InterfaceProxySignalFuncType = extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, const(char)* senderName, const(char)* signalName, GVariant* parameters);
+  alias InterfaceProxySignalFuncType = extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, const(char)* senderName, const(char)* signalName, VariantC* parameters);
 
   @property InterfaceProxySignalFuncType interfaceProxySignal()
   {
     return (cast(GDBusObjectManagerClientClass*)cPtr).interfaceProxySignal;
   }
 
-  alias InterfaceProxyPropertiesChangedFuncType = extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, GVariant* changedProperties, const(char*)* invalidatedProperties);
+  alias InterfaceProxyPropertiesChangedFuncType = extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, VariantC* changedProperties, const(char*)* invalidatedProperties);
 
   @property InterfaceProxyPropertiesChangedFuncType interfaceProxyPropertiesChanged()
   {

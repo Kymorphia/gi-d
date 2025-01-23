@@ -2,7 +2,7 @@ module Gtk.PageSetup;
 
 import GLib.ErrorG;
 import GLib.KeyFile;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.PaperSize;
@@ -101,10 +101,10 @@ class PageSetup : ObjectG
    *   variant = an a{sv} `GVariant`
    * Returns: a new `GtkPageSetup` object
    */
-  static PageSetup newFromGvariant(Variant variant)
+  static PageSetup newFromGvariant(VariantG variant)
   {
     GtkPageSetup* _cretval;
-    _cretval = gtk_page_setup_new_from_gvariant(variant ? cast(GVariant*)variant.cPtr(false) : null);
+    _cretval = gtk_page_setup_new_from_gvariant(variant ? cast(VariantC*)variant.cPtr(false) : null);
     auto _retval = _cretval ? ObjectG.getDObject!PageSetup(cast(GtkPageSetup*)_cretval, true) : null;
     return _retval;
   }
@@ -420,11 +420,11 @@ class PageSetup : ObjectG
    * Serialize page setup to an a{sv} variant.
    * Returns: a new, floating, `GVariant`
    */
-  Variant toGvariant()
+  VariantG toGvariant()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = gtk_page_setup_to_gvariant(cast(GtkPageSetup*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 

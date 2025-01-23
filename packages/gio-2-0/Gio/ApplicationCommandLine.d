@@ -1,7 +1,7 @@
 module Gio.ApplicationCommandLine;
 
-import GLib.Variant;
 import GLib.VariantDict;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.File;
@@ -334,11 +334,11 @@ class ApplicationCommandLine : ObjectG
    * For local invocation, it will be %NULL.
    * Returns: the platform data, or %NULL
    */
-  Variant getPlatformData()
+  VariantG getPlatformData()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_application_command_line_get_platform_data(cast(GApplicationCommandLine*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

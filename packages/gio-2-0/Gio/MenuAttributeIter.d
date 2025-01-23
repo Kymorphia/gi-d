@@ -1,6 +1,6 @@
 module Gio.MenuAttributeIter;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Types;
@@ -59,21 +59,21 @@ class MenuAttributeIter : ObjectG
    * return the same values again.
    * The value returned in name remains valid for as long as the iterator
    * remains at the current position.  The value returned in value must
-   * be unreffed using [GLib.Variant.unref] when it is no longer in use.
+   * be unreffed using [GLib.VariantG.unref] when it is no longer in use.
    * Params:
    *   outName = the type of the attribute
    *   value = the attribute value
    * Returns: %TRUE on success, or %FALSE if there is no additional
    *   attribute
    */
-  bool getNext(out string outName, out Variant value)
+  bool getNext(out string outName, out VariantG value)
   {
     bool _retval;
     char* _outName;
-    GVariant* _value;
+    VariantC* _value;
     _retval = g_menu_attribute_iter_get_next(cast(GMenuAttributeIter*)cPtr, &_outName, &_value);
     outName = _outName.fromCString(false);
-    value = new Variant(cast(void*)_value, true);
+    value = new VariantG(cast(void*)_value, true);
     return _retval;
   }
 
@@ -82,11 +82,11 @@ class MenuAttributeIter : ObjectG
    * The iterator is not advanced.
    * Returns: the value of the current attribute
    */
-  Variant getValue()
+  VariantG getValue()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_menu_attribute_iter_get_value(cast(GMenuAttributeIter*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

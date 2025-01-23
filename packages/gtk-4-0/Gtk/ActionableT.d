@@ -1,7 +1,7 @@
 module Gtk.ActionableT;
 
 public import Gtk.ActionableIfaceProxy;
-public import GLib.Variant;
+public import GLib.VariantG;
 public import Gid.gid;
 public import Gtk.Types;
 public import Gtk.c.functions;
@@ -39,11 +39,11 @@ template ActionableT()
    * Gets the current target value of actionable.
    * Returns: the current target value
    */
-  override Variant getActionTargetValue()
+  override VariantG getActionTargetValue()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = gtk_actionable_get_action_target_value(cast(GtkActionable*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -84,11 +84,11 @@ template ActionableT()
    * be rendered as active $(LPAREN)and the other buttons, with different targets,
    * rendered inactive$(RPAREN).
    * Params:
-   *   targetValue = a [GLib.Variant] to set as the target value
+   *   targetValue = a [GLib.VariantG] to set as the target value
    */
-  override void setActionTargetValue(Variant targetValue)
+  override void setActionTargetValue(VariantG targetValue)
   {
-    gtk_actionable_set_action_target_value(cast(GtkActionable*)cPtr, targetValue ? cast(GVariant*)targetValue.cPtr(false) : null);
+    gtk_actionable_set_action_target_value(cast(GtkActionable*)cPtr, targetValue ? cast(VariantC*)targetValue.cPtr(false) : null);
   }
 
   /**

@@ -1,7 +1,7 @@
 module Gio.DBusMessage;
 
 import GLib.ErrorG;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Types;
@@ -188,11 +188,11 @@ class DBusMessage : ObjectG
    * Returns: A #GVariant or %NULL if the body is
    *   empty. Do not free, it is owned by message.
    */
-  Variant getBody()
+  VariantG getBody()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_dbus_message_get_body(cast(GDBusMessage*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -253,11 +253,11 @@ class DBusMessage : ObjectG
    * Returns: A #GVariant with the value if the header was found, %NULL
    *   otherwise. Do not free, it is owned by message.
    */
-  Variant getHeader(DBusMessageHeaderField headerField)
+  VariantG getHeader(DBusMessageHeaderField headerField)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_dbus_message_get_header(cast(GDBusMessage*)cPtr, headerField);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -407,7 +407,7 @@ class DBusMessage : ObjectG
    * This method is only available on UNIX.
    * The file descriptors normally correspond to %G_VARIANT_TYPE_HANDLE
    * values in the body of the message. For example,
-   * if [GLib.Variant.getHandle] returns 5, that is intended to be a reference
+   * if [GLib.VariantG.getHandle] returns 5, that is intended to be a reference
    * to the file descriptor that can be accessed by
    * `g_unix_fd_list_get $(LPAREN)list, 5, ...$(RPAREN)`.
    * Returns: A #GUnixFDList or %NULL if no file descriptors are
@@ -510,9 +510,9 @@ class DBusMessage : ObjectG
    * Params:
    *   body_ = Either %NULL or a #GVariant that is a tuple.
    */
-  void setBody(Variant body_)
+  void setBody(VariantG body_)
   {
-    g_dbus_message_set_body(cast(GDBusMessage*)cPtr, body_ ? cast(GVariant*)body_.cPtr(false) : null);
+    g_dbus_message_set_body(cast(GDBusMessage*)cPtr, body_ ? cast(VariantC*)body_.cPtr(false) : null);
   }
 
   /**
@@ -565,9 +565,9 @@ class DBusMessage : ObjectG
    *   headerField = A 8-bit unsigned integer $(LPAREN)typically a value from the #GDBusMessageHeaderField enumeration$(RPAREN)
    *   value = A #GVariant to set the header field or %NULL to clear the header field.
    */
-  void setHeader(DBusMessageHeaderField headerField, Variant value)
+  void setHeader(DBusMessageHeaderField headerField, VariantG value)
   {
-    g_dbus_message_set_header(cast(GDBusMessage*)cPtr, headerField, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_dbus_message_set_header(cast(GDBusMessage*)cPtr, headerField, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**

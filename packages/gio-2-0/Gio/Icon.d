@@ -2,7 +2,7 @@ module Gio.Icon;
 
 public import Gio.IconIfaceProxy;
 import GLib.ErrorG;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Types;
@@ -49,10 +49,10 @@ interface Icon
    *   value = a #GVariant created with [Gio.Icon.serialize]
    * Returns: a #GIcon, or %NULL when deserialization fails.
    */
-  static Icon deserialize(Variant value)
+  static Icon deserialize(VariantG value)
   {
     GIcon* _cretval;
-    _cretval = g_icon_deserialize(value ? cast(GVariant*)value.cPtr(false) : null);
+    _cretval = g_icon_deserialize(value ? cast(VariantC*)value.cPtr(false) : null);
     auto _retval = _cretval ? ObjectG.getDObject!Icon(cast(GIcon*)_cretval, true) : null;
     return _retval;
   }
@@ -103,7 +103,7 @@ interface Icon
    * $(LPAREN)as opposed to over the network$(RPAREN), and within the same file system namespace.
    * Returns: a #GVariant, or %NULL when serialization fails. The #GVariant will not be floating.
    */
-  Variant serialize();
+  VariantG serialize();
 
   /**
    * Generates a textual representation of icon that can be used for

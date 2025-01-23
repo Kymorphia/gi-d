@@ -1,7 +1,7 @@
 module Gio.AppLaunchContext;
 
 import GLib.List;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -209,7 +209,7 @@ class AppLaunchContext : ObjectG
    *   platformData = additional platform-specific data for this launch
    *   appLaunchContext = the instance the signal is connected to
    */
-  alias LaunchStartedCallback = void delegate(AppInfo info, Variant platformData, AppLaunchContext appLaunchContext);
+  alias LaunchStartedCallback = void delegate(AppInfo info, VariantG platformData, AppLaunchContext appLaunchContext);
 
   /**
    * Connect to LaunchStarted signal.
@@ -226,7 +226,7 @@ class AppLaunchContext : ObjectG
       auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;
       auto appLaunchContext = getVal!AppLaunchContext(_paramVals);
       auto info = getVal!AppInfo(&_paramVals[1]);
-      auto platformData = getVal!Variant(&_paramVals[2]);
+      auto platformData = getVal!VariantG(&_paramVals[2]);
       _dgClosure.dlg(info, platformData, appLaunchContext);
     }
 
@@ -256,7 +256,7 @@ class AppLaunchContext : ObjectG
    *   platformData = additional platform-specific data for this launch
    *   appLaunchContext = the instance the signal is connected to
    */
-  alias LaunchedCallback = void delegate(AppInfo info, Variant platformData, AppLaunchContext appLaunchContext);
+  alias LaunchedCallback = void delegate(AppInfo info, VariantG platformData, AppLaunchContext appLaunchContext);
 
   /**
    * Connect to Launched signal.
@@ -273,7 +273,7 @@ class AppLaunchContext : ObjectG
       auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;
       auto appLaunchContext = getVal!AppLaunchContext(_paramVals);
       auto info = getVal!AppInfo(&_paramVals[1]);
-      auto platformData = getVal!Variant(&_paramVals[2]);
+      auto platformData = getVal!VariantG(&_paramVals[2]);
       _dgClosure.dlg(info, platformData, appLaunchContext);
     }
 

@@ -107,10 +107,10 @@ __gshared extern(C)
   // Actionable
   GType function() c_gtk_actionable_get_type;
   const(char)* function(GtkActionable* actionable) c_gtk_actionable_get_action_name;
-  GVariant* function(GtkActionable* actionable) c_gtk_actionable_get_action_target_value;
+  VariantC* function(GtkActionable* actionable) c_gtk_actionable_get_action_target_value;
   void function(GtkActionable* actionable, const(char)* actionName) c_gtk_actionable_set_action_name;
   void function(GtkActionable* actionable, const(char)* formatString,  ...) c_gtk_actionable_set_action_target;
-  void function(GtkActionable* actionable, GVariant* targetValue) c_gtk_actionable_set_action_target_value;
+  void function(GtkActionable* actionable, VariantC* targetValue) c_gtk_actionable_set_action_target_value;
   void function(GtkActionable* actionable, const(char)* detailedActionName) c_gtk_actionable_set_detailed_action_name;
 
   // ActivateAction
@@ -1403,7 +1403,7 @@ __gshared extern(C)
   // FileFilter
   GType function() c_gtk_file_filter_get_type;
   GtkFileFilter* function() c_gtk_file_filter_new;
-  GtkFileFilter* function(GVariant* variant) c_gtk_file_filter_new_from_gvariant;
+  GtkFileFilter* function(VariantC* variant) c_gtk_file_filter_new_from_gvariant;
   void function(GtkFileFilter* filter, const(char)* mimeType) c_gtk_file_filter_add_mime_type;
   void function(GtkFileFilter* filter, const(char)* pattern) c_gtk_file_filter_add_pattern;
   void function(GtkFileFilter* filter) c_gtk_file_filter_add_pixbuf_formats;
@@ -1411,7 +1411,7 @@ __gshared extern(C)
   const(char*)* function(GtkFileFilter* filter) c_gtk_file_filter_get_attributes;
   const(char)* function(GtkFileFilter* filter) c_gtk_file_filter_get_name;
   void function(GtkFileFilter* filter, const(char)* name) c_gtk_file_filter_set_name;
-  GVariant* function(GtkFileFilter* filter) c_gtk_file_filter_to_gvariant;
+  VariantC* function(GtkFileFilter* filter) c_gtk_file_filter_to_gvariant;
 
   // FileLauncher
   GType function() c_gtk_file_launcher_get_type;
@@ -2585,7 +2585,7 @@ __gshared extern(C)
   GType function() c_gtk_page_setup_get_type;
   GtkPageSetup* function() c_gtk_page_setup_new;
   GtkPageSetup* function(const(char)* fileName, GError** _err) c_gtk_page_setup_new_from_file;
-  GtkPageSetup* function(GVariant* variant) c_gtk_page_setup_new_from_gvariant;
+  GtkPageSetup* function(VariantC* variant) c_gtk_page_setup_new_from_gvariant;
   GtkPageSetup* function(GKeyFile* keyFile, const(char)* groupName, GError** _err) c_gtk_page_setup_new_from_key_file;
   GtkPageSetup* function(GtkPageSetup* other) c_gtk_page_setup_copy;
   double function(GtkPageSetup* setup, GtkUnit unit) c_gtk_page_setup_get_bottom_margin;
@@ -2608,7 +2608,7 @@ __gshared extern(C)
   void function(GtkPageSetup* setup, double margin, GtkUnit unit) c_gtk_page_setup_set_right_margin;
   void function(GtkPageSetup* setup, double margin, GtkUnit unit) c_gtk_page_setup_set_top_margin;
   bool function(GtkPageSetup* setup, const(char)* fileName, GError** _err) c_gtk_page_setup_to_file;
-  GVariant* function(GtkPageSetup* setup) c_gtk_page_setup_to_gvariant;
+  VariantC* function(GtkPageSetup* setup) c_gtk_page_setup_to_gvariant;
   void function(GtkPageSetup* setup, GKeyFile* keyFile, const(char)* groupName) c_gtk_page_setup_to_key_file;
 
   // PageSetupUnixDialog
@@ -2643,7 +2643,7 @@ __gshared extern(C)
   GType function() c_gtk_paper_size_get_type;
   GtkPaperSize* function(const(char)* name) c_gtk_paper_size_new;
   GtkPaperSize* function(const(char)* name, const(char)* displayName, double width, double height, GtkUnit unit) c_gtk_paper_size_new_custom;
-  GtkPaperSize* function(GVariant* variant) c_gtk_paper_size_new_from_gvariant;
+  GtkPaperSize* function(VariantC* variant) c_gtk_paper_size_new_from_gvariant;
   GtkPaperSize* function(const(char)* ippName, double width, double height) c_gtk_paper_size_new_from_ipp;
   GtkPaperSize* function(GKeyFile* keyFile, const(char)* groupName, GError** _err) c_gtk_paper_size_new_from_key_file;
   GtkPaperSize* function(const(char)* ppdName, const(char)* ppdDisplayName, double width, double height) c_gtk_paper_size_new_from_ppd;
@@ -2662,7 +2662,7 @@ __gshared extern(C)
   bool function(GtkPaperSize* size1, GtkPaperSize* size2) c_gtk_paper_size_is_equal;
   bool function(GtkPaperSize* size) c_gtk_paper_size_is_ipp;
   void function(GtkPaperSize* size, double width, double height, GtkUnit unit) c_gtk_paper_size_set_size;
-  GVariant* function(GtkPaperSize* paperSize) c_gtk_paper_size_to_gvariant;
+  VariantC* function(GtkPaperSize* paperSize) c_gtk_paper_size_to_gvariant;
   void function(GtkPaperSize* size, GKeyFile* keyFile, const(char)* groupName) c_gtk_paper_size_to_key_file;
   const(char)* function() c_gtk_paper_size_get_default;
   GList* function(bool includeCustom) c_gtk_paper_size_get_paper_sizes;
@@ -2860,7 +2860,7 @@ __gshared extern(C)
   GType function() c_gtk_print_settings_get_type;
   GtkPrintSettings* function() c_gtk_print_settings_new;
   GtkPrintSettings* function(const(char)* fileName, GError** _err) c_gtk_print_settings_new_from_file;
-  GtkPrintSettings* function(GVariant* variant) c_gtk_print_settings_new_from_gvariant;
+  GtkPrintSettings* function(VariantC* variant) c_gtk_print_settings_new_from_gvariant;
   GtkPrintSettings* function(GKeyFile* keyFile, const(char)* groupName, GError** _err) c_gtk_print_settings_new_from_key_file;
   GtkPrintSettings* function(GtkPrintSettings* other) c_gtk_print_settings_copy;
   void function(GtkPrintSettings* settings, GtkPrintSettingsFunc func, void* userData) c_gtk_print_settings_foreach;
@@ -2931,7 +2931,7 @@ __gshared extern(C)
   void function(GtkPrintSettings* settings, double scale) c_gtk_print_settings_set_scale;
   void function(GtkPrintSettings* settings, bool useColor) c_gtk_print_settings_set_use_color;
   bool function(GtkPrintSettings* settings, const(char)* fileName, GError** _err) c_gtk_print_settings_to_file;
-  GVariant* function(GtkPrintSettings* settings) c_gtk_print_settings_to_gvariant;
+  VariantC* function(GtkPrintSettings* settings) c_gtk_print_settings_to_gvariant;
   void function(GtkPrintSettings* settings, GKeyFile* keyFile, const(char)* groupName) c_gtk_print_settings_to_key_file;
   void function(GtkPrintSettings* settings, const(char)* key) c_gtk_print_settings_unset;
 
@@ -3266,16 +3266,16 @@ __gshared extern(C)
   GtkShortcut* function(GtkShortcutTrigger* trigger, GtkShortcutAction* action) c_gtk_shortcut_new;
   GtkShortcut* function(GtkShortcutTrigger* trigger, GtkShortcutAction* action, const(char)* formatString,  ...) c_gtk_shortcut_new_with_arguments;
   GtkShortcutAction* function(GtkShortcut* self) c_gtk_shortcut_get_action;
-  GVariant* function(GtkShortcut* self) c_gtk_shortcut_get_arguments;
+  VariantC* function(GtkShortcut* self) c_gtk_shortcut_get_arguments;
   GtkShortcutTrigger* function(GtkShortcut* self) c_gtk_shortcut_get_trigger;
   void function(GtkShortcut* self, GtkShortcutAction* action) c_gtk_shortcut_set_action;
-  void function(GtkShortcut* self, GVariant* args) c_gtk_shortcut_set_arguments;
+  void function(GtkShortcut* self, VariantC* args) c_gtk_shortcut_set_arguments;
   void function(GtkShortcut* self, GtkShortcutTrigger* trigger) c_gtk_shortcut_set_trigger;
 
   // ShortcutAction
   GType function() c_gtk_shortcut_action_get_type;
   GtkShortcutAction* function(const(char)* string_) c_gtk_shortcut_action_parse_string;
-  bool function(GtkShortcutAction* self, GtkShortcutActionFlags flags, GtkWidget* widget, GVariant* args) c_gtk_shortcut_action_activate;
+  bool function(GtkShortcutAction* self, GtkShortcutActionFlags flags, GtkWidget* widget, VariantC* args) c_gtk_shortcut_action_activate;
   void function(GtkShortcutAction* self, GString* string_) c_gtk_shortcut_action_print;
   char* function(GtkShortcutAction* self) c_gtk_shortcut_action_to_string;
 
@@ -4364,7 +4364,7 @@ __gshared extern(C)
   void function(GtkWidget* widget, const(char)* actionName, bool enabled) c_gtk_widget_action_set_enabled;
   bool function(GtkWidget* widget) c_gtk_widget_activate;
   bool function(GtkWidget* widget, const(char)* name, const(char)* formatString,  ...) c_gtk_widget_activate_action;
-  bool function(GtkWidget* widget, const(char)* name, GVariant* args) c_gtk_widget_activate_action_variant;
+  bool function(GtkWidget* widget, const(char)* name, VariantC* args) c_gtk_widget_activate_action_variant;
   void function(GtkWidget* widget) c_gtk_widget_activate_default;
   void function(GtkWidget* widget, GtkEventController* controller) c_gtk_widget_add_controller;
   void function(GtkWidget* widget, const(char)* cssClass) c_gtk_widget_add_css_class;

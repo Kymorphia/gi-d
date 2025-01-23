@@ -4,7 +4,7 @@ import GLib.Boxed;
 import GLib.ErrorG;
 import GLib.KeyFile;
 import GLib.List;
-import GLib.Variant;
+import GLib.VariantG;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;
@@ -93,10 +93,10 @@ class PaperSize : Boxed
    *   variant = an a{sv} `GVariant`
    * Returns: a new `GtkPaperSize` object
    */
-  static PaperSize newFromGvariant(Variant variant)
+  static PaperSize newFromGvariant(VariantG variant)
   {
     GtkPaperSize* _cretval;
-    _cretval = gtk_paper_size_new_from_gvariant(variant ? cast(GVariant*)variant.cPtr(false) : null);
+    _cretval = gtk_paper_size_new_from_gvariant(variant ? cast(VariantC*)variant.cPtr(false) : null);
     auto _retval = _cretval ? new PaperSize(cast(void*)_cretval, true) : null;
     return _retval;
   }
@@ -349,11 +349,11 @@ class PaperSize : Boxed
    * Serialize a paper size to an `a{sv}` variant.
    * Returns: a new, floating, `GVariant`
    */
-  Variant toGvariant()
+  VariantG toGvariant()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = gtk_paper_size_to_gvariant(cast(GtkPaperSize*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 

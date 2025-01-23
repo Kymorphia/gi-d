@@ -48,7 +48,7 @@ class DBusInterfaceSkeletonClass
     return (cast(GDBusInterfaceSkeletonClass*)cPtr).getVtable;
   }
 
-  alias GetPropertiesFuncType = extern(C) GVariant* function(GDBusInterfaceSkeleton* interface_);
+  alias GetPropertiesFuncType = extern(C) VariantC* function(GDBusInterfaceSkeleton* interface_);
 
   @property GetPropertiesFuncType getProperties()
   {

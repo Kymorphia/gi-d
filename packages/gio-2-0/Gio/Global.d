@@ -5,7 +5,7 @@ import GLib.ErrorG;
 import GLib.List;
 import GLib.Source;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.Closure;
 import GObject.ObjectG;
@@ -777,13 +777,13 @@ string dbusGenerateGuid()
  *   type = A #GVariantType
  * Returns: A #GVariant $(LPAREN)never floating$(RPAREN) of
  *   #GVariantType type holding the data from gvalue or an empty #GVariant
- *   in case of failure. Free with [GLib.Variant.unref].
+ *   in case of failure. Free with [GLib.VariantG.unref].
  */
-Variant dbusGvalueToGvariant(Value gvalue, VariantType type)
+VariantG dbusGvalueToGvariant(Value gvalue, VariantType type)
 {
-  GVariant* _cretval;
+  VariantC* _cretval;
   _cretval = g_dbus_gvalue_to_gvariant(gvalue ? cast(GValue*)gvalue.cPtr(false) : null, type ? cast(GVariantType*)type.cPtr(false) : null);
-  auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+  auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
   return _retval;
 }
 
@@ -801,10 +801,10 @@ Variant dbusGvalueToGvariant(Value gvalue, VariantType type)
  *   value = A #GVariant.
  *   outGvalue = Return location pointing to a zero-filled $(LPAREN)uninitialized$(RPAREN) #GValue.
  */
-void dbusGvariantToGvalue(Variant value, out Value outGvalue)
+void dbusGvariantToGvalue(VariantG value, out Value outGvalue)
 {
   GValue _outGvalue;
-  g_dbus_gvariant_to_gvalue(value ? cast(GVariant*)value.cPtr(false) : null, &_outGvalue);
+  g_dbus_gvariant_to_gvalue(value ? cast(VariantC*)value.cPtr(false) : null, &_outGvalue);
   outGvalue = new Value(cast(void*)&_outGvalue, false);
 }
 

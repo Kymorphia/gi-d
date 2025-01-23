@@ -1,7 +1,7 @@
 module Gio.RemoteActionGroupT;
 
 public import Gio.RemoteActionGroupIfaceProxy;
-public import GLib.Variant;
+public import GLib.VariantG;
 public import Gid.gid;
 public import Gio.Types;
 public import Gio.c.functions;
@@ -16,7 +16,7 @@ public import Gio.c.types;
  * methods on [Gio.ActionGroup] used to activate actions:
  * [Gio.ActionGroup.activateAction] and
  * [Gio.ActionGroup.changeActionState]. These variants allow a
- * ‘platform data’ [GLib.Variant] to be specified: a dictionary providing
+ * ‘platform data’ [GLib.VariantG] to be specified: a dictionary providing
  * context for the action invocation $(LPAREN)for example: timestamps, startup
  * notification IDs, etc$(RPAREN).
  * [Gio.DBusActionGroup] implements `GRemoteActionGroup`.  This provides a
@@ -43,10 +43,10 @@ template RemoteActionGroupT()
    *   parameter = the optional parameter to the activation
    *   platformData = the platform data to send
    */
-  override void activateActionFull(string actionName, Variant parameter, Variant platformData)
+  override void activateActionFull(string actionName, VariantG parameter, VariantG platformData)
   {
     const(char)* _actionName = actionName.toCString(false);
-    g_remote_action_group_activate_action_full(cast(GRemoteActionGroup*)cPtr, _actionName, parameter ? cast(GVariant*)parameter.cPtr(false) : null, platformData ? cast(GVariant*)platformData.cPtr(false) : null);
+    g_remote_action_group_activate_action_full(cast(GRemoteActionGroup*)cPtr, _actionName, parameter ? cast(VariantC*)parameter.cPtr(false) : null, platformData ? cast(VariantC*)platformData.cPtr(false) : null);
   }
 
   /**
@@ -62,9 +62,9 @@ template RemoteActionGroupT()
    *   value = the new requested value for the state
    *   platformData = the platform data to send
    */
-  override void changeActionStateFull(string actionName, Variant value, Variant platformData)
+  override void changeActionStateFull(string actionName, VariantG value, VariantG platformData)
   {
     const(char)* _actionName = actionName.toCString(false);
-    g_remote_action_group_change_action_state_full(cast(GRemoteActionGroup*)cPtr, _actionName, value ? cast(GVariant*)value.cPtr(false) : null, platformData ? cast(GVariant*)platformData.cPtr(false) : null);
+    g_remote_action_group_change_action_state_full(cast(GRemoteActionGroup*)cPtr, _actionName, value ? cast(VariantC*)value.cPtr(false) : null, platformData ? cast(VariantC*)platformData.cPtr(false) : null);
   }
 }

@@ -1,7 +1,7 @@
 module Gio.SettingsSchemaKey;
 
 import GLib.Boxed;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import Gid.gid;
 import Gio.Types;
@@ -41,11 +41,11 @@ class SettingsSchemaKey : Boxed
    * administrator defaults and lockdown are not visible via this API.
    * Returns: the default value for the key
    */
-  Variant getDefaultValue()
+  VariantG getDefaultValue()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_settings_schema_key_get_default_value(cast(GSettingsSchemaKey*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -110,15 +110,15 @@ class SettingsSchemaKey : Boxed
    * should already know what is permitted by their own schema.  The
    * format may change in any way in the future -- but particularly, new
    * forms may be added to the possibilities described above.
-   * You should free the returned value with [GLib.Variant.unref] when it is
+   * You should free the returned value with [GLib.VariantG.unref] when it is
    * no longer needed.
    * Returns: a #GVariant describing the range
    */
-  Variant getRange()
+  VariantG getRange()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_settings_schema_key_get_range(cast(GSettingsSchemaKey*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -164,10 +164,10 @@ class SettingsSchemaKey : Boxed
    *   value = the value to check
    * Returns: %TRUE if value is valid for key
    */
-  bool rangeCheck(Variant value)
+  bool rangeCheck(VariantG value)
   {
     bool _retval;
-    _retval = g_settings_schema_key_range_check(cast(GSettingsSchemaKey*)cPtr, value ? cast(GVariant*)value.cPtr(false) : null);
+    _retval = g_settings_schema_key_range_check(cast(GSettingsSchemaKey*)cPtr, value ? cast(VariantC*)value.cPtr(false) : null);
     return _retval;
   }
 }

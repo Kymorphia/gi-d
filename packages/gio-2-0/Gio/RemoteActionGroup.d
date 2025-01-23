@@ -1,7 +1,7 @@
 module Gio.RemoteActionGroup;
 
 public import Gio.RemoteActionGroupIfaceProxy;
-import GLib.Variant;
+import GLib.VariantG;
 import Gid.gid;
 import Gio.Types;
 import Gio.c.functions;
@@ -16,7 +16,7 @@ import Gio.c.types;
  * methods on [Gio.ActionGroup] used to activate actions:
  * [Gio.ActionGroup.activateAction] and
  * [Gio.ActionGroup.changeActionState]. These variants allow a
- * ‘platform data’ [GLib.Variant] to be specified: a dictionary providing
+ * ‘platform data’ [GLib.VariantG] to be specified: a dictionary providing
  * context for the action invocation $(LPAREN)for example: timestamps, startup
  * notification IDs, etc$(RPAREN).
  * [Gio.DBusActionGroup] implements `GRemoteActionGroup`.  This provides a
@@ -48,7 +48,7 @@ interface RemoteActionGroup
    *   parameter = the optional parameter to the activation
    *   platformData = the platform data to send
    */
-  void activateActionFull(string actionName, Variant parameter, Variant platformData);
+  void activateActionFull(string actionName, VariantG parameter, VariantG platformData);
 
   /**
    * Changes the state of a remote action.
@@ -63,5 +63,5 @@ interface RemoteActionGroup
    *   value = the new requested value for the state
    *   platformData = the platform data to send
    */
-  void changeActionStateFull(string actionName, Variant value, Variant platformData);
+  void changeActionStateFull(string actionName, VariantG value, VariantG platformData);
 }

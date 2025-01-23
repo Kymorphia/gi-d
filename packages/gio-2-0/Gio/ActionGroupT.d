@@ -1,7 +1,7 @@
 module Gio.ActionGroupT;
 
 public import Gio.ActionGroupIfaceProxy;
-public import GLib.Variant;
+public import GLib.VariantG;
 public import GLib.VariantType;
 public import GObject.DClosure;
 public import Gid.gid;
@@ -94,10 +94,10 @@ template ActionGroupT()
    *   actionName = the name of an action in the group
    *   state = the new state of the named action
    */
-  override void actionStateChanged(string actionName, Variant state)
+  override void actionStateChanged(string actionName, VariantG state)
   {
     const(char)* _actionName = actionName.toCString(false);
-    g_action_group_action_state_changed(cast(GActionGroup*)cPtr, _actionName, state ? cast(GVariant*)state.cPtr(false) : null);
+    g_action_group_action_state_changed(cast(GActionGroup*)cPtr, _actionName, state ? cast(VariantC*)state.cPtr(false) : null);
   }
 
   /**
@@ -131,10 +131,10 @@ template ActionGroupT()
    *   actionName = the name of the action to activate
    *   parameter = parameters to the activation
    */
-  override void activateAction(string actionName, Variant parameter)
+  override void activateAction(string actionName, VariantG parameter)
   {
     const(char)* _actionName = actionName.toCString(false);
-    g_action_group_activate_action(cast(GActionGroup*)cPtr, _actionName, parameter ? cast(GVariant*)parameter.cPtr(false) : null);
+    g_action_group_activate_action(cast(GActionGroup*)cPtr, _actionName, parameter ? cast(VariantC*)parameter.cPtr(false) : null);
   }
 
   /**
@@ -150,10 +150,10 @@ template ActionGroupT()
    *   actionName = the name of the action to request the change on
    *   value = the new state
    */
-  override void changeActionState(string actionName, Variant value)
+  override void changeActionState(string actionName, VariantG value)
   {
     const(char)* _actionName = actionName.toCString(false);
-    g_action_group_change_action_state(cast(GActionGroup*)cPtr, _actionName, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_action_group_change_action_state(cast(GActionGroup*)cPtr, _actionName, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**
@@ -202,17 +202,17 @@ template ActionGroupT()
    * action is stateful then the type of the return value is the type
    * given by [Gio.ActionGroup.getActionStateType].
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Params:
    *   actionName = the name of the action to query
    * Returns: the current state of the action
    */
-  override Variant getActionState(string actionName)
+  override VariantG getActionState(string actionName)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _actionName = actionName.toCString(false);
     _cretval = g_action_group_get_action_state(cast(GActionGroup*)cPtr, _actionName);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -230,17 +230,17 @@ template ActionGroupT()
    * have a state value outside of the hinted range and setting a value
    * within the range may fail.
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Params:
    *   actionName = the name of the action to query
    * Returns: the state range hint
    */
-  override Variant getActionStateHint(string actionName)
+  override VariantG getActionStateHint(string actionName)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _actionName = actionName.toCString(false);
     _cretval = g_action_group_get_action_state_hint(cast(GActionGroup*)cPtr, _actionName);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -342,19 +342,19 @@ template ActionGroupT()
    *   state = the current state, or %NULL if stateless
    * Returns: %TRUE if the action exists, else %FALSE
    */
-  override bool queryAction(string actionName, out bool enabled, out VariantType parameterType, out VariantType stateType, out Variant stateHint, out Variant state)
+  override bool queryAction(string actionName, out bool enabled, out VariantType parameterType, out VariantType stateType, out VariantG stateHint, out VariantG state)
   {
     bool _retval;
     const(char)* _actionName = actionName.toCString(false);
     const(GVariantType)* _parameterType;
     const(GVariantType)* _stateType;
-    GVariant* _stateHint;
-    GVariant* _state;
+    VariantC* _stateHint;
+    VariantC* _state;
     _retval = g_action_group_query_action(cast(GActionGroup*)cPtr, _actionName, cast(bool*)&enabled, &_parameterType, &_stateType, &_stateHint, &_state);
     parameterType = new VariantType(cast(void*)_parameterType, false);
     stateType = new VariantType(cast(void*)_stateType, false);
-    stateHint = new Variant(cast(void*)_stateHint, true);
-    state = new Variant(cast(void*)_state, true);
+    stateHint = new VariantG(cast(void*)_stateHint, true);
+    state = new VariantG(cast(void*)_state, true);
     return _retval;
   }
 
@@ -464,7 +464,7 @@ template ActionGroupT()
    *   value = the new value of the state
    *   actionGroup = the instance the signal is connected to
    */
-  alias ActionStateChangedCallback = void delegate(string actionName, Variant value, ActionGroup actionGroup);
+  alias ActionStateChangedCallback = void delegate(string actionName, VariantG value, ActionGroup actionGroup);
 
   /**
    * Connect to ActionStateChanged signal.
@@ -482,7 +482,7 @@ template ActionGroupT()
       auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;
       auto actionGroup = getVal!ActionGroup(_paramVals);
       auto actionName = getVal!string(&_paramVals[1]);
-      auto value = getVal!Variant(&_paramVals[2]);
+      auto value = getVal!VariantG(&_paramVals[2]);
       _dgClosure.dlg(actionName, value, actionGroup);
     }
 

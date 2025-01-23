@@ -98,7 +98,7 @@ import Gio.c.types;
  * Regardless of which of these entry points is used to start the
  * application, `GApplication` passes some ‘platform data’ from the
  * launching instance to the primary instance, in the form of a
- * [GLib.Variant] dictionary mapping strings to variants. To use platform
+ * [GLib.VariantG] dictionary mapping strings to variants. To use platform
  * data, override the vfunc@Gio.Application.before_emit or
  * vfunc@Gio.Application.after_emit virtual functions
  * in your `GApplication` subclass. When dealing with

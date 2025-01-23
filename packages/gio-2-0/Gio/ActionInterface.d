@@ -55,7 +55,7 @@ class ActionInterface
     return (cast(GActionInterface*)cPtr).getStateType;
   }
 
-  alias GetStateHintFuncType = extern(C) GVariant* function(GAction* action);
+  alias GetStateHintFuncType = extern(C) VariantC* function(GAction* action);
 
   @property GetStateHintFuncType getStateHint()
   {
@@ -69,21 +69,21 @@ class ActionInterface
     return (cast(GActionInterface*)cPtr).getEnabled;
   }
 
-  alias GetStateFuncType = extern(C) GVariant* function(GAction* action);
+  alias GetStateFuncType = extern(C) VariantC* function(GAction* action);
 
   @property GetStateFuncType getState()
   {
     return (cast(GActionInterface*)cPtr).getState;
   }
 
-  alias ChangeStateFuncType = extern(C) void function(GAction* action, GVariant* value);
+  alias ChangeStateFuncType = extern(C) void function(GAction* action, VariantC* value);
 
   @property ChangeStateFuncType changeState()
   {
     return (cast(GActionInterface*)cPtr).changeState;
   }
 
-  alias ActivateFuncType = extern(C) void function(GAction* action, GVariant* parameter);
+  alias ActivateFuncType = extern(C) void function(GAction* action, VariantC* parameter);
 
   @property ActivateFuncType activate()
   {

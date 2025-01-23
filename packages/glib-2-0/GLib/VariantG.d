@@ -1,4 +1,4 @@
-module GLib.Variant;
+module GLib.VariantG;
 
 import GLib.Bytes;
 import GLib.ErrorG;
@@ -7,6 +7,15 @@ import GLib.VariantType;
 import GLib.c.functions;
 import GLib.c.types;
 import Gid.gid;
+
+
+import GLib.VariantBuilder;
+import GLib.VariantType;
+
+import std.conv : to;
+import std.traits : isSomeString;
+import std.typecons : isTuple, Tuple;
+import std.variant : Variant;
 
 /**
  * `GVariant` is a variant datatype; it can contain one or more values
@@ -35,9 +44,9 @@ import Gid.gid;
  * at construction time$(RPAREN).  The type and value of a `GVariant` instance
  * can never change other than by the `GVariant` itself being
  * destroyed.  A `GVariant` cannot contain a pointer.
- * `GVariant` is reference counted using [GLib.Variant.ref_] and
- * [GLib.Variant.unref].  `GVariant` also has floating reference counts —
- * see [GLib.Variant.refSink].
+ * `GVariant` is reference counted using [GLib.VariantG.ref_] and
+ * [GLib.VariantG.unref].  `GVariant` also has floating reference counts —
+ * see [GLib.VariantG.refSink].
  * `GVariant` is completely threadsafe.  A `GVariant` instance can be
  * concurrently accessed in any way from any number of threads without
  * problems.
@@ -62,7 +71,7 @@ import Gid.gid;
  * A `GVariant`’s size is limited mainly by any lower level operating
  * system constraints, such as the number of bits in `gsize`.  For
  * example, it is reasonable to have a 2GB file mapped into memory
- * with [GLib.MappedFile], and call [GLib.Variant.newFromData] on
+ * with [GLib.MappedFile], and call [GLib.VariantG.newFromData] on
  * it.
  * For convenience to C programmers, `GVariant` features powerful
  * varargs-based value construction and destruction.  This feature is
@@ -187,7 +196,7 @@ import Gid.gid;
  * dictionary.
  * If calls are made to start accessing the other values then
  * `GVariant` instances will exist for those values only for as long
- * as they are in use $(LPAREN)ie: until you call [GLib.Variant.unref]$(RPAREN).  The
+ * as they are in use $(LPAREN)ie: until you call [GLib.VariantG.unref]$(RPAREN).  The
  * type information is shared.  The serialized data and the buffer
  * management structure for that serialized data is shared by the
  * child.
@@ -197,23 +206,23 @@ import Gid.gid;
  * using 91 bytes of memory for type information, 29 bytes of memory
  * for the serialized data, 16 bytes for buffer management and 24
  * bytes for the `GVariant` instance, or a total of 160 bytes, plus
- * allocation overhead.  If we were to use [GLib.Variant.getChildValue]
+ * allocation overhead.  If we were to use [GLib.VariantG.getChildValue]
  * to access the two dictionary entries, we would use an additional 48
  * bytes.  If we were to have other dictionaries of the same type, we
  * would use more memory for the serialized data and buffer
  * management for those dictionaries, but the type information would
  * be shared.
  */
-class Variant
+class VariantG
 {
-  GVariant* cInstancePtr;
+  VariantC* cInstancePtr;
 
   this(void* ptr, bool ownedRef = false)
   {
     if (!ptr)
-      throw new GidConstructException("Null instance pointer for GLib.Variant");
+      throw new GidConstructException("Null instance pointer for GLib.VariantG");
 
-    cInstancePtr = cast(GVariant*)ptr;
+    cInstancePtr = cast(VariantC*)ptr;
 
     if (!ownedRef)
       g_variant_ref(cInstancePtr);
@@ -233,6 +242,220 @@ class Variant
     return cInstancePtr;
   }
 
+  override bool opEquals(Object other)
+  {
+    if (auto otherVariant = cast(VariantG)other)
+      return equal(otherVariant);
+    else
+      return super.opEquals(other);
+  }
+
+  override int opCmp(Object other)
+  {
+    if (auto otherVariant = cast(VariantG)other)
+      return compare(otherVariant);
+    else
+      return super.opCmp(other);
+  }
+
+  override string toString()
+  {
+    return print(true);
+  }
+
+  /**
+   * Template to create a new VariantG from a single D value.
+   * Params:
+   *   T = The D type to create the variant from
+   *   val = The value to assign
+   */
+  static VariantG create(T)(T val)
+  {
+    static if (is(T == bool))
+      return newBoolean(val);
+    else static if (is(T == byte) || is(T == ubyte))
+      return newByte(val);
+    else static if (is(T == short))
+      return newInt16(val);
+    else static if (is(T == ushort))
+      return newUint16(val);
+    else static if (is(T == int))
+      return newInt32(val);
+    else static if (is(T == uint))
+      return newUint32(val);
+    else static if (is(T == long))
+      return newInt64(val);
+    else static if (is(T == ulong))
+      return newUint64(val);
+    else static if (is(T == float) || is(T == double))
+      return newDouble(val);
+    else static if (isSomeString!T)
+      return newString(val.to!string);
+    else static if (is(T : E[], E))
+    {
+      VariantBuilder builder = new VariantBuilder(VariantType.create!T);
+
+      foreach (item; val)
+        builder.addValue(create(item));
+
+      return builder.end;
+    }
+    else static if (is(T : V[K], V, K)) // Dictionary
+    {
+      VariantBuilder builder = new VariantBuilder(VariantType.create!T);
+
+      foreach (k, v; val)
+        builder.addValue(newDictEntry(create(k), create(v)));
+
+      return builder.end;
+    }
+    else static if (is(T == VariantG)) // A variant (copy it)
+      return VariantG.newVariant(val);
+    else static if (is(T == Variant)) // std.variant.Variant (only basic types supported currently)
+    {
+      if (val.type is typeid(bool))
+        return create(val.get!bool);
+      else if (val.type is typeid(byte) || val.type is typeid(ubyte))
+        return create(val.coerce!byte);
+      else if (val.type is typeid(short))
+        return create(val.get!short);
+      else if (val.type is typeid(ushort))
+        return create(val.get!ushort);
+      else if (val.type is typeid(int))
+        return create(val.get!int);
+      else if (val.type is typeid(uint))
+        return create(val.get!uint);
+      else if (val.type is typeid(long))
+        return create(val.get!long);
+      else if (val.type is typeid(ulong))
+        return create(val.get!ulong);
+      else if (val.type is typeid(float) || val.type is typeid(double))
+        return create(val.coerce!double);
+      else if (val.type is typeid(string) || val.type is typeid(wstring) || val.type is typeid(dstring))
+        return create(val.coerce!string);
+      else
+        assert(false, "VariantG.create does not support D Variant type " ~ val.type.to!string);
+    }
+    else static if (isTuple!T)
+      return create(val.expand);
+    else
+      static assert(false, "Unsupported type for VariantG.create: " ~ T.stringof);
+  }
+
+  /**
+   * Template to create a new VariantG from multiple D values. The variant is constructed as a Variant tuple container.
+   * Params:
+   *   T = The D types to create the variant from
+   *   vals = The value to assign
+   */
+  static VariantG create(T...)(T vals)
+  if (vals.length > 1)
+  {
+    VariantBuilder builder = new VariantBuilder(new VariantType("r")); // Build a tuple container variant
+
+    foreach (v; vals)
+      builder.addValue(create(v));
+
+    return builder.end;
+  }
+
+  /**
+   * Template to get a single value from a VariantG
+   */
+  T get(T)()
+  {
+    static if (is(T == bool))
+      return getBoolean;
+    else static if (is(T == byte) || is(T == ubyte))
+      return cast(T)getByte;
+    else static if (is(T == short))
+      return getInt16;
+    else static if (is(T == ushort))
+      return getUint16;
+    else static if (is(T == int))
+      return getInt32;
+    else static if (is(T == uint))
+      return getUint32;
+    else static if (is(T == long))
+      return getInt64;
+    else static if (is(T == ulong))
+      return getUint64;
+    else static if (is(T == float) || is(T == double))
+      return cast(T)getDouble;
+    else static if (isSomeString!T)
+      return getString.to!T;
+    else static if (is(T : E[], E))
+    {
+      T valArray;
+      valArray.length = nChildren;
+
+      foreach (i; 0 .. valArray.length)
+        valArray[i] = getChildValue(i).get!E;
+
+      return valArray;
+    }
+    else static if (is(T : V[K], V, K)) // Dictionary
+    {
+      T dict;
+
+      foreach (i; 0 .. nChildren)
+        dict[getChildValue(i).getChildValue(0).get!K] = getChildValue(i).getChildValue(1).get!V; // VariantG dict entries hold 2 values (key, value)
+
+      return dict;
+    }
+    else static if (is(T == VariantG)) // A variant (unwrap it)
+      return getVariant;
+    else static if (is(T == Variant)) // std.variant.Variant (only basic types supported currently)
+    {
+      if (getType.isBasic)
+      {
+        switch (getTypeStr[0])
+        {
+          case 'b':
+          return Variant(get!bool);
+          case 'y':
+          return Variant(get!byte);
+          case 'n':
+          return Variant(get!short);
+          case 'q':
+          return Variant(get!ushort);
+          case 'i':
+          return Variant(get!int);
+          case 'u':
+          return Variant(get!uint);
+          case 'x':
+          return Variant(get!long);
+          case 't':
+          return Variant(get!ulong);
+          case 'd':
+          return Variant(get!double);
+          case 's':
+          return Variant(coerce!string);
+          default:
+          assert(false, "VariantG.create does not support D Variant type " ~ val.type.to!string);
+        }
+      }
+    }
+    else static if (isTuple!T)
+      return create(val.expand);
+    else
+      static assert(false, "Unsupported type for VariantG.get: " ~ T.stringof);
+  }
+
+  /**
+   * Template to get multiple values from a VariantG
+   */
+  auto get(T...)()
+  if (T.length > 1)
+  {
+    Tuple!T vals;
+
+    foreach (i, E; T)
+      vals[i] = getChildValue(i).get!E;
+
+    return vals;
+  }
+
   /**
    * Creates a new #GVariant array from children.
    * child_type must be non-%NULL if n_children is zero.  Otherwise, the
@@ -243,27 +466,27 @@ class Variant
    * in the children array may be %NULL.
    * All items in the array must have the same type, which must be the
    * same as child_type, if given.
-   * If the children are floating references $(LPAREN)see [GLib.Variant.refSink]$(RPAREN), the
-   * new instance takes ownership of them as if via [GLib.Variant.refSink].
+   * If the children are floating references $(LPAREN)see [GLib.VariantG.refSink]$(RPAREN), the
+   * new instance takes ownership of them as if via [GLib.VariantG.refSink].
    * Params:
    *   childType = the element type of the new array
    *   children = an array of
    *     #GVariant pointers, the children
    * Returns: a floating reference to a new #GVariant array
    */
-  static Variant newArray(VariantType childType, Variant[] children)
+  static VariantG newArray(VariantType childType, VariantG[] children)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     size_t _nChildren;
     if (children)
       _nChildren = cast(size_t)children.length;
 
-    GVariant*[] _tmpchildren;
+    VariantC*[] _tmpchildren;
     foreach (obj; children)
-      _tmpchildren ~= obj ? cast(GVariant*)obj.cPtr : null;
-    const(GVariant*)* _children = cast(const(GVariant*)*)_tmpchildren.ptr;
+      _tmpchildren ~= obj ? cast(VariantC*)obj.cPtr : null;
+    const(VariantC*)* _children = cast(const(VariantC*)*)_tmpchildren.ptr;
     _cretval = g_variant_new_array(childType ? cast(GVariantType*)childType.cPtr(false) : null, _children, _nChildren);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -273,11 +496,11 @@ class Variant
    *   value = a #gboolean value
    * Returns: a floating reference to a new boolean #GVariant instance
    */
-  static Variant newBoolean(bool value)
+  static VariantG newBoolean(bool value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_boolean(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -287,17 +510,17 @@ class Variant
    *   value = a #guint8 value
    * Returns: a floating reference to a new byte #GVariant instance
    */
-  static Variant newByte(ubyte value)
+  static VariantG newByte(ubyte value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_byte(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
   /**
    * Creates an array-of-bytes #GVariant with the contents of string.
-   * This function is just like [GLib.Variant.newString] except that the
+   * This function is just like [GLib.VariantG.newString] except that the
    * string need not be valid UTF-8.
    * The nul terminator character at the end of the string is stored in
    * the array.
@@ -306,12 +529,12 @@ class Variant
    *     nul-terminated string in no particular encoding
    * Returns: a floating reference to a new bytestring #GVariant instance
    */
-  static Variant newBytestring(string string_)
+  static VariantG newBytestring(string string_)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _string_ = string_.toCString(false);
     _cretval = g_variant_new_bytestring(_string_);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -323,9 +546,9 @@ class Variant
    *   strv = an array of strings
    * Returns: a new floating #GVariant instance
    */
-  static Variant newBytestringArray(string[] strv)
+  static VariantG newBytestringArray(string[] strv)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     ptrdiff_t _length;
     if (strv)
       _length = cast(ptrdiff_t)strv.length;
@@ -335,25 +558,25 @@ class Variant
       _tmpstrv ~= s.toCString(false);
     const(char*)* _strv = _tmpstrv.ptr;
     _cretval = g_variant_new_bytestring_array(_strv, _length);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
   /**
    * Creates a new dictionary entry #GVariant. key and value must be
    * non-%NULL. key must be a value of a basic type $(LPAREN)ie: not a container$(RPAREN).
-   * If the key or value are floating references $(LPAREN)see [GLib.Variant.refSink]$(RPAREN),
-   * the new instance takes ownership of them as if via [GLib.Variant.refSink].
+   * If the key or value are floating references $(LPAREN)see [GLib.VariantG.refSink]$(RPAREN),
+   * the new instance takes ownership of them as if via [GLib.VariantG.refSink].
    * Params:
    *   key = a basic #GVariant, the key
    *   value = a #GVariant, the value
    * Returns: a floating reference to a new dictionary entry #GVariant
    */
-  static Variant newDictEntry(Variant key, Variant value)
+  static VariantG newDictEntry(VariantG key, VariantG value)
   {
-    GVariant* _cretval;
-    _cretval = g_variant_new_dict_entry(key ? cast(GVariant*)key.cPtr(false) : null, value ? cast(GVariant*)value.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_new_dict_entry(key ? cast(VariantC*)key.cPtr(false) : null, value ? cast(VariantC*)value.cPtr(false) : null);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -363,11 +586,11 @@ class Variant
    *   value = a #gdouble floating point value
    * Returns: a floating reference to a new double #GVariant instance
    */
-  static Variant newDouble(double value)
+  static VariantG newDouble(double value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_double(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -389,11 +612,11 @@ class Variant
    *   elementSize = the size of each element
    * Returns: a floating reference to a new array #GVariant instance
    */
-  static Variant newFixedArray(VariantType elementType, const(void)* elements, size_t nElements, size_t elementSize)
+  static VariantG newFixedArray(VariantType elementType, const(void)* elements, size_t nElements, size_t elementSize)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_fixed_array(elementType ? cast(GVariantType*)elementType.cPtr(false) : null, elements, nElements, elementSize);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -411,11 +634,11 @@ class Variant
    *   trusted = if the contents of bytes are trusted
    * Returns: a new #GVariant with a floating reference
    */
-  static Variant newFromBytes(VariantType type, Bytes bytes, bool trusted)
+  static VariantG newFromBytes(VariantType type, Bytes bytes, bool trusted)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_from_bytes(type ? cast(GVariantType*)type.cPtr(false) : null, bytes ? cast(GBytes*)bytes.cPtr(false) : null, trusted);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -428,11 +651,11 @@ class Variant
    *   value = a #gint32 value
    * Returns: a floating reference to a new handle #GVariant instance
    */
-  static Variant newHandle(int value)
+  static VariantG newHandle(int value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_handle(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -442,11 +665,11 @@ class Variant
    *   value = a #gint16 value
    * Returns: a floating reference to a new int16 #GVariant instance
    */
-  static Variant newInt16(short value)
+  static VariantG newInt16(short value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_int16(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -456,11 +679,11 @@ class Variant
    *   value = a #gint32 value
    * Returns: a floating reference to a new int32 #GVariant instance
    */
-  static Variant newInt32(int value)
+  static VariantG newInt32(int value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_int32(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -470,11 +693,11 @@ class Variant
    *   value = a #gint64 value
    * Returns: a floating reference to a new int64 #GVariant instance
    */
-  static Variant newInt64(long value)
+  static VariantG newInt64(long value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_int64(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -485,35 +708,35 @@ class Variant
    * If child_type is non-%NULL then it must be a definite type.
    * If they are both non-%NULL then child_type must be the type
    * of child.
-   * If child is a floating reference $(LPAREN)see [GLib.Variant.refSink]$(RPAREN), the new
+   * If child is a floating reference $(LPAREN)see [GLib.VariantG.refSink]$(RPAREN), the new
    * instance takes ownership of child.
    * Params:
    *   childType = the #GVariantType of the child, or %NULL
    *   child = the child value, or %NULL
    * Returns: a floating reference to a new #GVariant maybe instance
    */
-  static Variant newMaybe(VariantType childType, Variant child)
+  static VariantG newMaybe(VariantType childType, VariantG child)
   {
-    GVariant* _cretval;
-    _cretval = g_variant_new_maybe(childType ? cast(GVariantType*)childType.cPtr(false) : null, child ? cast(GVariant*)child.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_new_maybe(childType ? cast(GVariantType*)childType.cPtr(false) : null, child ? cast(VariantC*)child.cPtr(false) : null);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
   /**
    * Creates a D-Bus object path #GVariant with the contents of object_path.
    * object_path must be a valid D-Bus object path.  Use
-   * [GLib.Variant.isObjectPath] if you're not sure.
+   * [GLib.VariantG.isObjectPath] if you're not sure.
    * Params:
    *   objectPath = a normal C nul-terminated string
    * Returns: a floating reference to a new object path #GVariant instance
    */
-  static Variant newObjectPath(string objectPath)
+  static VariantG newObjectPath(string objectPath)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _objectPath = objectPath.toCString(false);
     _cretval = g_variant_new_object_path(_objectPath);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -521,15 +744,15 @@ class Variant
    * Constructs an array of object paths #GVariant from the given array of
    * strings.
    * Each string must be a valid #GVariant object path; see
-   * [GLib.Variant.isObjectPath].
+   * [GLib.VariantG.isObjectPath].
    * If length is -1 then strv is %NULL-terminated.
    * Params:
    *   strv = an array of strings
    * Returns: a new floating #GVariant instance
    */
-  static Variant newObjv(string[] strv)
+  static VariantG newObjv(string[] strv)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     ptrdiff_t _length;
     if (strv)
       _length = cast(ptrdiff_t)strv.length;
@@ -539,42 +762,42 @@ class Variant
       _tmpstrv ~= s.toCString(false);
     const(char*)* _strv = _tmpstrv.ptr;
     _cretval = g_variant_new_objv(_strv, _length);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
   /**
    * Creates a D-Bus type signature #GVariant with the contents of
    * string.  string must be a valid D-Bus type signature.  Use
-   * [GLib.Variant.isSignature] if you're not sure.
+   * [GLib.VariantG.isSignature] if you're not sure.
    * Params:
    *   signature = a normal C nul-terminated string
    * Returns: a floating reference to a new signature #GVariant instance
    */
-  static Variant newSignature(string signature)
+  static VariantG newSignature(string signature)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _signature = signature.toCString(false);
     _cretval = g_variant_new_signature(_signature);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
   /**
    * Creates a string #GVariant with the contents of string.
    * string must be valid UTF-8, and must not be %NULL. To encode
-   * potentially-%NULL strings, use [GLib.Variant.new_] with `ms` as the
+   * potentially-%NULL strings, use [GLib.VariantG.new_] with `ms` as the
    * [format string][gvariant-format-strings-maybe-types].
    * Params:
    *   string_ = a normal UTF-8 nul-terminated string
    * Returns: a floating reference to a new string #GVariant instance
    */
-  static Variant newString(string string_)
+  static VariantG newString(string string_)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _string_ = string_.toCString(false);
     _cretval = g_variant_new_string(_string_);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -586,9 +809,9 @@ class Variant
    *   strv = an array of strings
    * Returns: a new floating #GVariant instance
    */
-  static Variant newStrv(string[] strv)
+  static VariantG newStrv(string[] strv)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     ptrdiff_t _length;
     if (strv)
       _length = cast(ptrdiff_t)strv.length;
@@ -598,7 +821,7 @@ class Variant
       _tmpstrv ~= s.toCString(false);
     const(char*)* _strv = _tmpstrv.ptr;
     _cretval = g_variant_new_strv(_strv, _length);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -607,25 +830,25 @@ class Variant
    * type is determined from the types of children.  No entry in the
    * children array may be %NULL.
    * If n_children is 0 then the unit tuple is constructed.
-   * If the children are floating references $(LPAREN)see [GLib.Variant.refSink]$(RPAREN), the
-   * new instance takes ownership of them as if via [GLib.Variant.refSink].
+   * If the children are floating references $(LPAREN)see [GLib.VariantG.refSink]$(RPAREN), the
+   * new instance takes ownership of them as if via [GLib.VariantG.refSink].
    * Params:
    *   children = the items to make the tuple out of
    * Returns: a floating reference to a new #GVariant tuple
    */
-  static Variant newTuple(Variant[] children)
+  static VariantG newTuple(VariantG[] children)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     size_t _nChildren;
     if (children)
       _nChildren = cast(size_t)children.length;
 
-    GVariant*[] _tmpchildren;
+    VariantC*[] _tmpchildren;
     foreach (obj; children)
-      _tmpchildren ~= obj ? cast(GVariant*)obj.cPtr : null;
-    const(GVariant*)* _children = cast(const(GVariant*)*)_tmpchildren.ptr;
+      _tmpchildren ~= obj ? cast(VariantC*)obj.cPtr : null;
+    const(VariantC*)* _children = cast(const(VariantC*)*)_tmpchildren.ptr;
     _cretval = g_variant_new_tuple(_children, _nChildren);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -635,11 +858,11 @@ class Variant
    *   value = a #guint16 value
    * Returns: a floating reference to a new uint16 #GVariant instance
    */
-  static Variant newUint16(ushort value)
+  static VariantG newUint16(ushort value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_uint16(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -649,11 +872,11 @@ class Variant
    *   value = a #guint32 value
    * Returns: a floating reference to a new uint32 #GVariant instance
    */
-  static Variant newUint32(uint value)
+  static VariantG newUint32(uint value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_uint32(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -663,28 +886,28 @@ class Variant
    *   value = a #guint64 value
    * Returns: a floating reference to a new uint64 #GVariant instance
    */
-  static Variant newUint64(ulong value)
+  static VariantG newUint64(ulong value)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_variant_new_uint64(value);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
   /**
    * Boxes value.  The result is a #GVariant instance representing a
    * variant containing the original value.
-   * If child is a floating reference $(LPAREN)see [GLib.Variant.refSink]$(RPAREN), the new
+   * If child is a floating reference $(LPAREN)see [GLib.VariantG.refSink]$(RPAREN), the new
    * instance takes ownership of child.
    * Params:
    *   value = a #GVariant instance
    * Returns: a floating reference to a new variant #GVariant instance
    */
-  static Variant newVariant(Variant value)
+  static VariantG newVariant(VariantG value)
   {
-    GVariant* _cretval;
-    _cretval = g_variant_new_variant(value ? cast(GVariant*)value.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_new_variant(value ? cast(VariantC*)value.cPtr(false) : null);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -699,33 +922,33 @@ class Variant
    * bytes and containers containing only these things $(LPAREN)recursively$(RPAREN).
    * While this function can safely handle untrusted, non-normal data, it is
    * recommended to check whether the input is in normal form beforehand, using
-   * [GLib.Variant.isNormalForm], and to reject non-normal inputs if your
+   * [GLib.VariantG.isNormalForm], and to reject non-normal inputs if your
    * application can be strict about what inputs it rejects.
    * The returned value is always in normal form and is marked as trusted.
    * A full, not floating, reference is returned.
    * Returns: the byteswapped form of value
    */
-  Variant byteswap()
+  VariantG byteswap()
   {
-    GVariant* _cretval;
-    _cretval = g_variant_byteswap(cast(GVariant*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_byteswap(cast(VariantC*)cPtr);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
   /**
-   * Checks if calling [GLib.Variant.get] with format_string on value would
+   * Checks if calling [GLib.VariantG.get] with format_string on value would
    * be valid from a type-compatibility standpoint.  format_string is
    * assumed to be a valid format string $(LPAREN)from a syntactic standpoint$(RPAREN).
    * If copy_only is %TRUE then this function additionally checks that it
-   * would be safe to call [GLib.Variant.unref] on value immediately after
-   * the call to [GLib.Variant.get] without invalidating the result.  This is
+   * would be safe to call [GLib.VariantG.unref] on value immediately after
+   * the call to [GLib.VariantG.get] without invalidating the result.  This is
    * only possible if deep copies are made $(LPAREN)ie: there are no pointers to
    * the data inside of the soon-to-be-freed #GVariant instance$(RPAREN).  If this
    * check fails then a g_critical$(LPAREN)$(RPAREN) is printed and %FALSE is returned.
    * This function is meant to be used by functions that wish to provide
    * varargs accessors to #GVariant values of uncertain values $(LPAREN)eg:
-   * [GLib.Variant.lookup] or [Gio.MenuModel.getItemAttribute]$(RPAREN).
+   * [GLib.VariantG.lookup] or [Gio.MenuModel.getItemAttribute]$(RPAREN).
    * Params:
    *   formatString = a valid #GVariant format string
    *   copyOnly = %TRUE to ensure the format string makes deep copies
@@ -735,7 +958,7 @@ class Variant
   {
     bool _retval;
     const(char)* _formatString = formatString.toCString(false);
-    _retval = g_variant_check_format_string(cast(GVariant*)cPtr, _formatString, copyOnly);
+    _retval = g_variant_check_format_string(cast(VariantC*)cPtr, _formatString, copyOnly);
     return _retval;
   }
 
@@ -746,7 +969,7 @@ class Variant
   VariantClass classify()
   {
     GVariantClass _cretval;
-    _cretval = g_variant_classify(cast(GVariant*)cPtr);
+    _cretval = g_variant_classify(cast(VariantC*)cPtr);
     VariantClass _retval = cast(VariantClass)_cretval;
     return _retval;
   }
@@ -765,7 +988,7 @@ class Variant
    * integer.  Also note that this function is not particularly
    * well-behaved when it comes to comparison of doubles; in particular,
    * the handling of incomparable values $(LPAREN)ie: NaN$(RPAREN) is undefined.
-   * If you only require an equality comparison, [GLib.Variant.equal] is more
+   * If you only require an equality comparison, [GLib.VariantG.equal] is more
    * general.
    * Params:
    *   two = a #GVariant instance of the same type
@@ -773,15 +996,15 @@ class Variant
    *   zero if a \= b;
    *   positive value if a > b.
    */
-  int compare(Variant two)
+  int compare(VariantG two)
   {
     int _retval;
-    _retval = g_variant_compare(cast(GVariant*)cPtr, two ? cast(GVariant*)two.cPtr(false) : null);
+    _retval = g_variant_compare(cast(VariantC*)cPtr, two ? cast(VariantC*)two.cPtr(false) : null);
     return _retval;
   }
 
   /**
-   * Similar to [GLib.Variant.getBytestring] except that instead of
+   * Similar to [GLib.VariantG.getBytestring] except that instead of
    * returning a constant string, the string is duplicated.
    * The return value must be freed using [GLib.Global.gfree].
    * Returns: a newly allocated string
@@ -790,7 +1013,7 @@ class Variant
   {
     ubyte* _cretval;
     size_t _cretlength;
-    _cretval = g_variant_dup_bytestring(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_dup_bytestring(cast(VariantC*)cPtr, &_cretlength);
     ubyte[] _retval;
 
     if (_cretval)
@@ -815,7 +1038,7 @@ class Variant
   {
     char** _cretval;
     size_t _cretlength;
-    _cretval = g_variant_dup_bytestring_array(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_dup_bytestring_array(cast(VariantC*)cPtr, &_cretlength);
     string[] _retval;
 
     if (_cretval)
@@ -842,7 +1065,7 @@ class Variant
   {
     char** _cretval;
     size_t _cretlength;
-    _cretval = g_variant_dup_objv(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_dup_objv(cast(VariantC*)cPtr, &_cretlength);
     string[] _retval;
 
     if (_cretval)
@@ -855,7 +1078,7 @@ class Variant
   }
 
   /**
-   * Similar to [GLib.Variant.getString] except that instead of returning
+   * Similar to [GLib.VariantG.getString] except that instead of returning
    * a constant string, the string is duplicated.
    * The string will always be UTF-8 encoded.
    * The return value must be freed using [GLib.Global.gfree].
@@ -866,7 +1089,7 @@ class Variant
   string dupString(out size_t length)
   {
     char* _cretval;
-    _cretval = g_variant_dup_string(cast(GVariant*)cPtr, cast(size_t*)&length);
+    _cretval = g_variant_dup_string(cast(VariantC*)cPtr, cast(size_t*)&length);
     string _retval = _cretval.fromCString(true);
     return _retval;
   }
@@ -886,7 +1109,7 @@ class Variant
   {
     char** _cretval;
     size_t _cretlength;
-    _cretval = g_variant_dup_strv(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_dup_strv(cast(VariantC*)cPtr, &_cretlength);
     string[] _retval;
 
     if (_cretval)
@@ -906,10 +1129,10 @@ class Variant
    *   two = a #GVariant instance
    * Returns: %TRUE if one and two are equal
    */
-  bool equal(Variant two)
+  bool equal(VariantG two)
   {
     bool _retval;
-    _retval = g_variant_equal(cast(GVariant*)cPtr, two ? cast(GVariant*)two.cPtr(false) : null);
+    _retval = g_variant_equal(cast(VariantC*)cPtr, two ? cast(VariantC*)two.cPtr(false) : null);
     return _retval;
   }
 
@@ -922,7 +1145,7 @@ class Variant
   bool getBoolean()
   {
     bool _retval;
-    _retval = g_variant_get_boolean(cast(GVariant*)cPtr);
+    _retval = g_variant_get_boolean(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -935,7 +1158,7 @@ class Variant
   ubyte getByte()
   {
     ubyte _retval;
-    _retval = g_variant_get_byte(cast(GVariant*)cPtr);
+    _retval = g_variant_get_byte(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -948,7 +1171,7 @@ class Variant
    * If the array contains a nul terminator character somewhere other than
    * the last byte then the returned string is the string, up to the first
    * such nul character.
-   * [GLib.Variant.getFixedArray] should be used instead if the array contains
+   * [GLib.VariantG.getFixedArray] should be used instead if the array contains
    * arbitrary data that could not be nul-terminated or could contain nul bytes.
    * It is an error to call this function with a value that is not an
    * array of bytes.
@@ -958,7 +1181,7 @@ class Variant
   string getBytestring()
   {
     const(char)* _cretval;
-    _cretval = g_variant_get_bytestring(cast(GVariant*)cPtr);
+    _cretval = g_variant_get_bytestring(cast(VariantC*)cPtr);
     string _retval = _cretval.fromCString(false);
     return _retval;
   }
@@ -978,7 +1201,7 @@ class Variant
   {
     const(char*)* _cretval;
     size_t _cretlength;
-    _cretval = g_variant_get_bytestring_array(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_get_bytestring_array(cast(VariantC*)cPtr, &_cretlength);
     string[] _retval;
 
     if (_cretval)
@@ -996,14 +1219,14 @@ class Variant
    * entries.  It is an error to call this function on any other type of
    * #GVariant.
    * It is an error if index_ is greater than the number of child items
-   * in the container.  See [GLib.Variant.nChildren].
+   * in the container.  See [GLib.VariantG.nChildren].
    * The returned value is never floating.  You should free it with
-   * [GLib.Variant.unref] when you're done with it.
+   * [GLib.VariantG.unref] when you're done with it.
    * Note that values borrowed from the returned child are not guaranteed to
    * still be valid after the child is freed even if you still hold a reference
    * to value, if value has not been serialized at the time this function is
    * called. To avoid this, you can serialize value by calling
-   * [GLib.Variant.getData] and optionally ignoring the return value.
+   * [GLib.VariantG.getData] and optionally ignoring the return value.
    * There may be implementation specific restrictions on deeply nested values,
    * which would result in the unit tuple being returned as the child value,
    * instead of further nested children. #GVariant is guaranteed to handle
@@ -1013,11 +1236,11 @@ class Variant
    *   index = the index of the child to fetch
    * Returns: the child at the specified index
    */
-  Variant getChildValue(size_t index)
+  VariantG getChildValue(size_t index)
   {
-    GVariant* _cretval;
-    _cretval = g_variant_get_child_value(cast(GVariant*)cPtr, index);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_get_child_value(cast(VariantC*)cPtr, index);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -1049,21 +1272,21 @@ class Variant
   const(void)* getData()
   {
     const(void)* _retval;
-    _retval = g_variant_get_data(cast(GVariant*)cPtr);
+    _retval = g_variant_get_data(cast(VariantC*)cPtr);
     return _retval;
   }
 
   /**
    * Returns a pointer to the serialized form of a #GVariant instance.
    * The semantics of this function are exactly the same as
-   * [GLib.Variant.getData], except that the returned #GBytes holds
+   * [GLib.VariantG.getData], except that the returned #GBytes holds
    * a reference to the variant data.
    * Returns: A new #GBytes representing the variant data
    */
   Bytes getDataAsBytes()
   {
     GBytes* _cretval;
-    _cretval = g_variant_get_data_as_bytes(cast(GVariant*)cPtr);
+    _cretval = g_variant_get_data_as_bytes(cast(VariantC*)cPtr);
     auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
@@ -1077,7 +1300,7 @@ class Variant
   double getDouble()
   {
     double _retval;
-    _retval = g_variant_get_double(cast(GVariant*)cPtr);
+    _retval = g_variant_get_double(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1093,7 +1316,7 @@ class Variant
   int getHandle()
   {
     int _retval;
-    _retval = g_variant_get_handle(cast(GVariant*)cPtr);
+    _retval = g_variant_get_handle(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1106,7 +1329,7 @@ class Variant
   short getInt16()
   {
     short _retval;
-    _retval = g_variant_get_int16(cast(GVariant*)cPtr);
+    _retval = g_variant_get_int16(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1119,7 +1342,7 @@ class Variant
   int getInt32()
   {
     int _retval;
-    _retval = g_variant_get_int32(cast(GVariant*)cPtr);
+    _retval = g_variant_get_int32(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1132,7 +1355,7 @@ class Variant
   long getInt64()
   {
     long _retval;
-    _retval = g_variant_get_int64(cast(GVariant*)cPtr);
+    _retval = g_variant_get_int64(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1141,11 +1364,11 @@ class Variant
    * value is Nothing, then this function returns %NULL.
    * Returns: the contents of value, or %NULL
    */
-  Variant getMaybe()
+  VariantG getMaybe()
   {
-    GVariant* _cretval;
-    _cretval = g_variant_get_maybe(cast(GVariant*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_get_maybe(cast(VariantC*)cPtr);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -1167,16 +1390,16 @@ class Variant
    * If value is already in normal form, a new reference will be returned
    * $(LPAREN)which will be floating if value is floating$(RPAREN). If it is not in normal form,
    * the newly created #GVariant will be returned with a single non-floating
-   * reference. Typically, [GLib.Variant.takeRef] should be called on the return
+   * reference. Typically, [GLib.VariantG.takeRef] should be called on the return
    * value from this function to guarantee ownership of a single non-floating
    * reference to it.
    * Returns: a trusted #GVariant
    */
-  Variant getNormalForm()
+  VariantG getNormalForm()
   {
-    GVariant* _cretval;
-    _cretval = g_variant_get_normal_form(cast(GVariant*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_get_normal_form(cast(VariantC*)cPtr);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -1195,7 +1418,7 @@ class Variant
   {
     const(char*)* _cretval;
     size_t _cretlength;
-    _cretval = g_variant_get_objv(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_get_objv(cast(VariantC*)cPtr, &_cretlength);
     string[] _retval;
 
     if (_cretval)
@@ -1209,7 +1432,7 @@ class Variant
 
   /**
    * Determines the number of bytes that would be required to store value
-   * with [GLib.Variant.store].
+   * with [GLib.VariantG.store].
    * If value has a fixed-sized type then this function always returned
    * that fixed size.
    * In the case that value is already in serialized form or the size has
@@ -1222,7 +1445,7 @@ class Variant
   size_t getSize()
   {
     size_t _retval;
-    _retval = g_variant_get_size(cast(GVariant*)cPtr);
+    _retval = g_variant_get_size(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1247,7 +1470,7 @@ class Variant
   {
     char* _cretval;
     size_t _cretlength;
-    _cretval = g_variant_get_string(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_get_string(cast(VariantC*)cPtr, &_cretlength);
     string _retval;
 
     if (_cretval)
@@ -1272,7 +1495,7 @@ class Variant
   {
     const(char*)* _cretval;
     size_t _cretlength;
-    _cretval = g_variant_get_strv(cast(GVariant*)cPtr, &_cretlength);
+    _cretval = g_variant_get_strv(cast(VariantC*)cPtr, &_cretlength);
     string[] _retval;
 
     if (_cretval)
@@ -1293,7 +1516,7 @@ class Variant
   VariantType getType()
   {
     const(GVariantType)* _cretval;
-    _cretval = g_variant_get_type(cast(GVariant*)cPtr);
+    _cretval = g_variant_get_type(cast(VariantC*)cPtr);
     auto _retval = _cretval ? new VariantType(cast(void*)_cretval, false) : null;
     return _retval;
   }
@@ -1307,7 +1530,7 @@ class Variant
   string getTypeString()
   {
     const(char)* _cretval;
-    _cretval = g_variant_get_type_string(cast(GVariant*)cPtr);
+    _cretval = g_variant_get_type_string(cast(VariantC*)cPtr);
     string _retval = _cretval.fromCString(false);
     return _retval;
   }
@@ -1321,7 +1544,7 @@ class Variant
   ushort getUint16()
   {
     ushort _retval;
-    _retval = g_variant_get_uint16(cast(GVariant*)cPtr);
+    _retval = g_variant_get_uint16(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1334,7 +1557,7 @@ class Variant
   uint getUint32()
   {
     uint _retval;
-    _retval = g_variant_get_uint32(cast(GVariant*)cPtr);
+    _retval = g_variant_get_uint32(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1347,7 +1570,7 @@ class Variant
   ulong getUint64()
   {
     ulong _retval;
-    _retval = g_variant_get_uint64(cast(GVariant*)cPtr);
+    _retval = g_variant_get_uint64(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1356,11 +1579,11 @@ class Variant
    * contained in value.
    * Returns: the item contained in the variant
    */
-  Variant getVariant()
+  VariantG getVariant()
   {
-    GVariant* _cretval;
-    _cretval = g_variant_get_variant(cast(GVariant*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_get_variant(cast(VariantC*)cPtr);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -1377,7 +1600,7 @@ class Variant
   uint hash()
   {
     uint _retval;
-    _retval = g_variant_hash(cast(GVariant*)cPtr);
+    _retval = g_variant_hash(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1388,7 +1611,7 @@ class Variant
   bool isContainer()
   {
     bool _retval;
-    _retval = g_variant_is_container(cast(GVariant*)cPtr);
+    _retval = g_variant_is_container(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1396,16 +1619,16 @@ class Variant
    * Checks whether value has a floating reference count.
    * This function should only ever be used to assert that a given variant
    * is or is not floating, or for debug purposes. To acquire a reference
-   * to a variant that might be floating, always use [GLib.Variant.refSink]
-   * or [GLib.Variant.takeRef].
-   * See [GLib.Variant.refSink] for more information about floating reference
+   * to a variant that might be floating, always use [GLib.VariantG.refSink]
+   * or [GLib.VariantG.takeRef].
+   * See [GLib.VariantG.refSink] for more information about floating reference
    * counts.
    * Returns: whether value is floating
    */
   bool isFloating()
   {
     bool _retval;
-    _retval = g_variant_is_floating(cast(GVariant*)cPtr);
+    _retval = g_variant_is_floating(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1413,7 +1636,7 @@ class Variant
    * Checks if value is in normal form.
    * The main reason to do this is to detect if a given chunk of
    * serialized data is in normal form: load the data into a #GVariant
-   * using [GLib.Variant.newFromData] and then use this function to
+   * using [GLib.VariantG.newFromData] and then use this function to
    * check.
    * If value is found to be in normal form then it will be marked as
    * being trusted.  If the value was already marked as being trusted then
@@ -1425,7 +1648,7 @@ class Variant
   bool isNormalForm()
   {
     bool _retval;
-    _retval = g_variant_is_normal_form(cast(GVariant*)cPtr);
+    _retval = g_variant_is_normal_form(cast(VariantC*)cPtr);
     return _retval;
   }
 
@@ -1438,7 +1661,7 @@ class Variant
   bool isOfType(VariantType type)
   {
     bool _retval;
-    _retval = g_variant_is_of_type(cast(GVariant*)cPtr, type ? cast(GVariantType*)type.cPtr(false) : null);
+    _retval = g_variant_is_of_type(cast(VariantC*)cPtr, type ? cast(GVariantType*)type.cPtr(false) : null);
     return _retval;
   }
 
@@ -1464,12 +1687,12 @@ class Variant
    *   expectedType = a #GVariantType, or %NULL
    * Returns: the value of the dictionary key, or %NULL
    */
-  Variant lookupValue(string key, VariantType expectedType)
+  VariantG lookupValue(string key, VariantType expectedType)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _key = key.toCString(false);
-    _cretval = g_variant_lookup_value(cast(GVariant*)cPtr, _key, expectedType ? cast(GVariantType*)expectedType.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    _cretval = g_variant_lookup_value(cast(VariantC*)cPtr, _key, expectedType ? cast(GVariantType*)expectedType.cPtr(false) : null);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -1488,12 +1711,12 @@ class Variant
   size_t nChildren()
   {
     size_t _retval;
-    _retval = g_variant_n_children(cast(GVariant*)cPtr);
+    _retval = g_variant_n_children(cast(VariantC*)cPtr);
     return _retval;
   }
 
   /**
-   * Pretty-prints value in the format understood by [GLib.Variant.parse].
+   * Pretty-prints value in the format understood by [GLib.VariantG.parse].
    * The format is described [here][gvariant-text].
    * If type_annotate is %TRUE, then type information is included in
    * the output.
@@ -1505,7 +1728,7 @@ class Variant
   string print(bool typeAnnotate)
   {
     char* _cretval;
-    _cretval = g_variant_print(cast(GVariant*)cPtr, typeAnnotate);
+    _cretval = g_variant_print(cast(VariantC*)cPtr, typeAnnotate);
     string _retval = _cretval.fromCString(true);
     return _retval;
   }
@@ -1514,16 +1737,16 @@ class Variant
    * #GVariant uses a floating reference count system.  All functions with
    * names starting with `g_variant_new_` return floating
    * references.
-   * Calling [GLib.Variant.refSink] on a #GVariant with a floating reference
+   * Calling [GLib.VariantG.refSink] on a #GVariant with a floating reference
    * will convert the floating reference into a full reference.  Calling
-   * [GLib.Variant.refSink] on a non-floating #GVariant results in an
+   * [GLib.VariantG.refSink] on a non-floating #GVariant results in an
    * additional normal reference being added.
    * In other words, if the value is floating, then this call "assumes
    * ownership" of the floating reference, converting it to a normal
    * reference.  If the value is not floating, then this call adds a
    * new normal reference increasing the reference count by one.
    * All calls that result in a #GVariant instance being inserted into a
-   * container will call [GLib.Variant.refSink] on the instance.  This means
+   * container will call [GLib.VariantG.refSink] on the instance.  This means
    * that if the value was just created $(LPAREN)and has only its floating
    * reference$(RPAREN) then the container will assume sole ownership of the value
    * at that point and the caller will not need to unreference it.  This
@@ -1532,21 +1755,21 @@ class Variant
    * are not floating.
    * Returns: the same value
    */
-  Variant refSink()
+  VariantG refSink()
   {
-    GVariant* _cretval;
-    _cretval = g_variant_ref_sink(cast(GVariant*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_ref_sink(cast(VariantC*)cPtr);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
   /**
    * Stores the serialized form of value at data.  data should be
-   * large enough.  See [GLib.Variant.getSize].
+   * large enough.  See [GLib.VariantG.getSize].
    * The stored data is in machine native byte order but may not be in
    * fully-normalised form if read from an untrusted source.  See
-   * [GLib.Variant.getNormalForm] for a solution.
-   * As with [GLib.Variant.getData], to be able to deserialize the
+   * [GLib.VariantG.getNormalForm] for a solution.
+   * As with [GLib.VariantG.getData], to be able to deserialize the
    * serialized variant successfully, its type and $(LPAREN)if the destination
    * machine might be different$(RPAREN) its endianness must also be available.
    * This function is approximately O$(LPAREN)n$(RPAREN) in the size of data.
@@ -1555,12 +1778,12 @@ class Variant
    */
   void store(void* data)
   {
-    g_variant_store(cast(GVariant*)cPtr, data);
+    g_variant_store(cast(VariantC*)cPtr, data);
   }
 
   /**
    * If value is floating, sink it.  Otherwise, do nothing.
-   * Typically you want to use [GLib.Variant.refSink] in order to
+   * Typically you want to use [GLib.VariantG.refSink] in order to
    * automatically do the correct thing with respect to floating or
    * non-floating references, but there is one specific scenario where
    * this function is helpful.
@@ -1579,27 +1802,27 @@ class Variant
    * the one that was returned in the first place, or a floating reference
    * that has been converted to a full reference.
    * This function has an odd interaction when combined with
-   * [GLib.Variant.refSink] running at the same time in another thread on
-   * the same #GVariant instance.  If [GLib.Variant.refSink] runs first then
+   * [GLib.VariantG.refSink] running at the same time in another thread on
+   * the same #GVariant instance.  If [GLib.VariantG.refSink] runs first then
    * the result will be that the floating reference is converted to a hard
-   * reference.  If [GLib.Variant.takeRef] runs first then the result will
+   * reference.  If [GLib.VariantG.takeRef] runs first then the result will
    * be that the floating reference is converted to a hard reference and
    * an additional reference on top of that one is added.  It is best to
    * avoid this situation.
    * Returns: the same value
    */
-  Variant takeRef()
+  VariantG takeRef()
   {
-    GVariant* _cretval;
-    _cretval = g_variant_take_ref(cast(GVariant*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    VariantC* _cretval;
+    _cretval = g_variant_take_ref(cast(VariantC*)cPtr);
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
   /**
    * Determines if a given string is a valid D-Bus object path.  You
    * should ensure that a string is a valid D-Bus object path before
-   * passing it to [GLib.Variant.newObjectPath].
+   * passing it to [GLib.VariantG.newObjectPath].
    * A valid object path starts with `/` followed by zero or more
    * sequences of characters separated by `/` characters.  Each sequence
    * must contain only the characters `[A-Z][a-z][0-9]_`.  No sequence
@@ -1619,7 +1842,7 @@ class Variant
   /**
    * Determines if a given string is a valid D-Bus type signature.  You
    * should ensure that a string is a valid D-Bus type signature before
-   * passing it to [GLib.Variant.newSignature].
+   * passing it to [GLib.VariantG.newSignature].
    * D-Bus type signatures consist of zero or more definite #GVariantType
    * strings in sequence.
    * Params:
@@ -1652,10 +1875,10 @@ class Variant
    * ^        ^^^^^
    * ]|
    * The format of the message may change in a future version.
-   * error must have come from a failed attempt to [GLib.Variant.parse] and
+   * error must have come from a failed attempt to [GLib.VariantG.parse] and
    * source_str must be exactly the same string that caused the error.
    * If source_str was not nul-terminated when you passed it to
-   * [GLib.Variant.parse] then you must add nul termination before using this
+   * [GLib.VariantG.parse] then you must add nul termination before using this
    * function.
    * Params:
    *   error = a #GError from the #GVariantParseError domain
@@ -1688,7 +1911,7 @@ class VariantParseException : ErrorG
 
   this(Code code, string msg)
   {
-    super(Variant.parseErrorQuark, cast(int)code, msg);
+    super(VariantG.parseErrorQuark, cast(int)code, msg);
   }
 
   alias Code = GVariantParseError;

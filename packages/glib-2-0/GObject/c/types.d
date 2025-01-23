@@ -1592,8 +1592,8 @@ struct GParamSpecValueArray
 /**
  * A #GParamSpec derived structure that contains the meta data for #GVariant properties.
  * When comparing values with [GObject.Global.paramValuesCmp], scalar values with the same
- * type will be compared with [GLib.Variant.compare]. Other non-%NULL variants will
- * be checked for equality with [GLib.Variant.equal], and their sort order is
+ * type will be compared with [GLib.VariantG.compare]. Other non-%NULL variants will
+ * be checked for equality with [GLib.VariantG.equal], and their sort order is
  * otherwise undefined. %NULL is ordered before non-%NULL variants. Two %NULL
  * values compare equal.
  */
@@ -1612,7 +1612,7 @@ struct GParamSpecVariant
   /**
    * a #GVariant, or %NULL
    */
-  GVariant* defaultValue;
+  VariantC* defaultValue;
 
   void*[4] padding;
 }

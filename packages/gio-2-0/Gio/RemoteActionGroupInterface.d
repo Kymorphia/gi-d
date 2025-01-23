@@ -34,14 +34,14 @@ class RemoteActionGroupInterface
     return new TypeInterface(cast(GTypeInterface*)&(cast(GRemoteActionGroupInterface*)cPtr).gIface);
   }
 
-  alias ActivateActionFullFuncType = extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, GVariant* parameter, GVariant* platformData);
+  alias ActivateActionFullFuncType = extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, VariantC* parameter, VariantC* platformData);
 
   @property ActivateActionFullFuncType activateActionFull()
   {
     return (cast(GRemoteActionGroupInterface*)cPtr).activateActionFull;
   }
 
-  alias ChangeActionStateFullFuncType = extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, GVariant* value, GVariant* platformData);
+  alias ChangeActionStateFullFuncType = extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, VariantC* value, VariantC* platformData);
 
   @property ChangeActionStateFullFuncType changeActionStateFull()
   {

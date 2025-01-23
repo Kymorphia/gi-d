@@ -63,14 +63,14 @@ class ApplicationClass
     return (cast(GApplicationClass*)cPtr).localCommandLine;
   }
 
-  alias BeforeEmitFuncType = extern(C) void function(GApplication* application, GVariant* platformData);
+  alias BeforeEmitFuncType = extern(C) void function(GApplication* application, VariantC* platformData);
 
   @property BeforeEmitFuncType beforeEmit()
   {
     return (cast(GApplicationClass*)cPtr).beforeEmit;
   }
 
-  alias AfterEmitFuncType = extern(C) void function(GApplication* application, GVariant* platformData);
+  alias AfterEmitFuncType = extern(C) void function(GApplication* application, VariantC* platformData);
 
   @property AfterEmitFuncType afterEmit()
   {

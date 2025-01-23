@@ -2,7 +2,7 @@ module Gio.Action;
 
 public import Gio.ActionIfaceProxy;
 import GLib.ErrorG;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import Gid.gid;
 import Gio.Types;
@@ -75,7 +75,7 @@ interface Action
    * The third format is used to represent an action with any type of
    * target value, including strings.  The target value follows the action
    * name, surrounded in parens.  For example: `app.action$(LPAREN)42$(RPAREN)`.  The
-   * target value is parsed using [GLib.Variant.parse].  If a tuple-typed
+   * target value is parsed using [GLib.VariantG.parse].  If a tuple-typed
    * value is desired, it must be specified in the same way, resulting in
    * two sets of parens, for example: `app.action$(LPAREN)$(LPAREN)1,2,3$(RPAREN)$(RPAREN)`.  A string
    * target can be specified this way as well: `app.action$(LPAREN)'target'$(RPAREN)`.
@@ -92,18 +92,18 @@ interface Action
    *     or %NULL for no target
    * Returns: %TRUE if successful, else %FALSE with error set
    */
-  static bool parseDetailedName(string detailedName, out string actionName, out Variant targetValue)
+  static bool parseDetailedName(string detailedName, out string actionName, out VariantG targetValue)
   {
     bool _retval;
     const(char)* _detailedName = detailedName.toCString(false);
     char* _actionName;
-    GVariant* _targetValue;
+    VariantC* _targetValue;
     GError *_err;
     _retval = g_action_parse_detailed_name(_detailedName, &_actionName, &_targetValue, &_err);
     if (_err)
       throw new ErrorG(_err);
     actionName = _actionName.fromCString(true);
-    targetValue = new Variant(cast(void*)_targetValue, true);
+    targetValue = new VariantG(cast(void*)_targetValue, true);
     return _retval;
   }
 
@@ -120,11 +120,11 @@ interface Action
    *   targetValue = a #GVariant target value, or %NULL
    * Returns: a detailed format string
    */
-  static string printDetailedName(string actionName, Variant targetValue)
+  static string printDetailedName(string actionName, VariantG targetValue)
   {
     char* _cretval;
     const(char)* _actionName = actionName.toCString(false);
-    _cretval = g_action_print_detailed_name(_actionName, targetValue ? cast(GVariant*)targetValue.cPtr(false) : null);
+    _cretval = g_action_print_detailed_name(_actionName, targetValue ? cast(VariantC*)targetValue.cPtr(false) : null);
     string _retval = _cretval.fromCString(true);
     return _retval;
   }
@@ -138,7 +138,7 @@ interface Action
    * Params:
    *   parameter = the parameter to the activation
    */
-  void activate(Variant parameter);
+  void activate(VariantG parameter);
 
   /**
    * Request for the state of action to be changed to value.
@@ -151,7 +151,7 @@ interface Action
    * Params:
    *   value = the new state
    */
-  void changeState(Variant value);
+  void changeState(VariantG value);
 
   /**
    * Checks if action is currently enabled.
@@ -184,10 +184,10 @@ interface Action
    * action is stateful then the type of the return value is the type
    * given by [Gio.Action.getStateType].
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Returns: the current state of the action
    */
-  Variant getState();
+  VariantG getState();
 
   /**
    * Requests a hint about the valid range of values for the state of
@@ -203,10 +203,10 @@ interface Action
    * have a state value outside of the hinted range and setting a value
    * within the range may fail.
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Returns: the state range hint
    */
-  Variant getStateHint();
+  VariantG getStateHint();
 
   /**
    * Queries the type of the state of action.

@@ -144,7 +144,7 @@ __gshared extern(C)
   GParamSpec* function(const(char)* name, const(char)* nick, const(char)* blurb, ulong minimum, ulong maximum, ulong defaultValue, GParamFlags flags) c_g_param_spec_ulong;
   GParamSpec* function(const(char)* name, const(char)* nick, const(char)* blurb, dchar defaultValue, GParamFlags flags) c_g_param_spec_unichar;
   GParamSpec* function(const(char)* name, const(char)* nick, const(char)* blurb, GParamSpec* elementSpec, GParamFlags flags) c_g_param_spec_value_array;
-  GParamSpec* function(const(char)* name, const(char)* nick, const(char)* blurb, const(GVariantType)* type, GVariant* defaultValue, GParamFlags flags) c_g_param_spec_variant;
+  GParamSpec* function(const(char)* name, const(char)* nick, const(char)* blurb, const(GVariantType)* type, VariantC* defaultValue, GParamFlags flags) c_g_param_spec_variant;
   GType function(const(char)* name, const(GParamSpecTypeInfo)* pspecInfo) c_g_param_type_register_static;
   bool function(GParamSpec* pspec, const(GValue)* srcValue, GValue* destValue, bool strictValidation) c_g_param_value_convert;
   bool function(GParamSpec* pspec, const(GValue)* value) c_g_param_value_defaults;
@@ -401,7 +401,7 @@ __gshared extern(C)
   ObjectC* function(const(GValue)* value) c_g_value_dup_object;
   GParamSpec* function(const(GValue)* value) c_g_value_dup_param;
   char* function(const(GValue)* value) c_g_value_dup_string;
-  GVariant* function(const(GValue)* value) c_g_value_dup_variant;
+  VariantC* function(const(GValue)* value) c_g_value_dup_variant;
   bool function(const(GValue)* value) c_g_value_fits_pointer;
   bool function(const(GValue)* value) c_g_value_get_boolean;
   void* function(const(GValue)* value) c_g_value_get_boxed;
@@ -423,7 +423,7 @@ __gshared extern(C)
   uint function(const(GValue)* value) c_g_value_get_uint;
   ulong function(const(GValue)* value) c_g_value_get_uint64;
   ulong function(const(GValue)* value) c_g_value_get_ulong;
-  GVariant* function(const(GValue)* value) c_g_value_get_variant;
+  VariantC* function(const(GValue)* value) c_g_value_get_variant;
   GValue* function(GValue* value, GType gType) c_g_value_init;
   void function(GValue* value, GTypeInstance* instance) c_g_value_init_from_instance;
   void* function(const(GValue)* value) c_g_value_peek_pointer;
@@ -456,13 +456,13 @@ __gshared extern(C)
   void function(GValue* value, uint vUint) c_g_value_set_uint;
   void function(GValue* value, ulong vUint64) c_g_value_set_uint64;
   void function(GValue* value, ulong vUlong) c_g_value_set_ulong;
-  void function(GValue* value, GVariant* variant) c_g_value_set_variant;
+  void function(GValue* value, VariantC* variant) c_g_value_set_variant;
   char* function(GValue* value) c_g_value_steal_string;
   void function(GValue* value, const(void)* vBoxed) c_g_value_take_boxed;
   void function(GValue* value, void* vObject) c_g_value_take_object;
   void function(GValue* value, GParamSpec* param) c_g_value_take_param;
   void function(GValue* value, char* vString) c_g_value_take_string;
-  void function(GValue* value, GVariant* variant) c_g_value_take_variant;
+  void function(GValue* value, VariantC* variant) c_g_value_take_variant;
   bool function(const(GValue)* srcValue, GValue* destValue) c_g_value_transform;
   void function(GValue* value) c_g_value_unset;
   void function(GType srcType, GType destType, GValueTransform transformFunc) c_g_value_register_transform_func;

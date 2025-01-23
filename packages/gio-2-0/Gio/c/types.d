@@ -3110,7 +3110,7 @@ struct GActionEntry
    * to the state type$(RPAREN) this will be a function that
    * just calls @change_state $(LPAREN)which you should provide$(RPAREN).
    */
-  extern(C) void function(GSimpleAction* action, GVariant* parameter, void* userData) activate;
+  extern(C) void function(GSimpleAction* action, VariantC* parameter, void* userData) activate;
 
   /**
    * the type of the parameter that must be passed to the
@@ -3133,7 +3133,7 @@ struct GActionEntry
    * of the action.  All stateful actions should provide a
    * handler here; stateless actions should not.
    */
-  extern(C) void function(GSimpleAction* action, GVariant* value, void* userData) changeState;
+  extern(C) void function(GSimpleAction* action, VariantC* value, void* userData) changeState;
 
   size_t[3] padding;
 }
@@ -3213,22 +3213,22 @@ struct GActionGroupInterface
   /**
    * the virtual function pointer for [Gio.ActionGroup.getActionStateHint]
    */
-  extern(C) GVariant* function(GActionGroup* actionGroup, const(char)* actionName) getActionStateHint;
+  extern(C) VariantC* function(GActionGroup* actionGroup, const(char)* actionName) getActionStateHint;
 
   /**
    * the virtual function pointer for [Gio.ActionGroup.getActionState]
    */
-  extern(C) GVariant* function(GActionGroup* actionGroup, const(char)* actionName) getActionState;
+  extern(C) VariantC* function(GActionGroup* actionGroup, const(char)* actionName) getActionState;
 
   /**
    * the virtual function pointer for [Gio.ActionGroup.changeActionState]
    */
-  extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* value) changeActionState;
+  extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* value) changeActionState;
 
   /**
    * the virtual function pointer for [Gio.ActionGroup.activateAction]
    */
-  extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* parameter) activateAction;
+  extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* parameter) activateAction;
 
   /**
    * the class closure for the #GActionGroup::action-added signal
@@ -3248,12 +3248,12 @@ struct GActionGroupInterface
   /**
    * the class closure for the #GActionGroup::action-enabled-changed signal
    */
-  extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, GVariant* state) actionStateChanged;
+  extern(C) void function(GActionGroup* actionGroup, const(char)* actionName, VariantC* state) actionStateChanged;
 
   /**
    * the virtual function pointer for [Gio.ActionGroup.queryAction]
    */
-  extern(C) bool function(GActionGroup* actionGroup, const(char)* actionName, bool* enabled, const(GVariantType*)* parameterType, const(GVariantType*)* stateType, GVariant** stateHint, GVariant** state) queryAction;
+  extern(C) bool function(GActionGroup* actionGroup, const(char)* actionName, bool* enabled, const(GVariantType*)* parameterType, const(GVariantType*)* stateType, VariantC** stateHint, VariantC** state) queryAction;
 }
 
 /**
@@ -3281,7 +3281,7 @@ struct GActionInterface
   /**
    * the virtual function pointer for [Gio.Action.getStateHint]
    */
-  extern(C) GVariant* function(GAction* action) getStateHint;
+  extern(C) VariantC* function(GAction* action) getStateHint;
 
   /**
    * the virtual function pointer for [Gio.Action.getEnabled]
@@ -3291,18 +3291,18 @@ struct GActionInterface
   /**
    * the virtual function pointer for [Gio.Action.getState]
    */
-  extern(C) GVariant* function(GAction* action) getState;
+  extern(C) VariantC* function(GAction* action) getState;
 
   /**
    * the virtual function pointer for [Gio.Action.changeState]
    */
-  extern(C) void function(GAction* action, GVariant* value) changeState;
+  extern(C) void function(GAction* action, VariantC* value) changeState;
 
   /**
    * the virtual function pointer for [Gio.Action.activate].  Note that #GAction does not have an
    * 'activate' signal but that implementations of it may have one.
    */
-  extern(C) void function(GAction* action, GVariant* parameter) activate;
+  extern(C) void function(GAction* action, VariantC* parameter) activate;
 }
 
 /**
@@ -3584,9 +3584,9 @@ struct GAppLaunchContextClass
 
   extern(C) void function(GAppLaunchContext* context, const(char)* startupNotifyId) launchFailed;
 
-  extern(C) void function(GAppLaunchContext* context, GAppInfo* info, GVariant* platformData) launched;
+  extern(C) void function(GAppLaunchContext* context, GAppInfo* info, VariantC* platformData) launched;
 
-  extern(C) void function(GAppLaunchContext* context, GAppInfo* info, GVariant* platformData) launchStarted;
+  extern(C) void function(GAppLaunchContext* context, GAppInfo* info, VariantC* platformData) launchStarted;
 
   extern(C) void function() GReserved1;
 
@@ -3674,7 +3674,7 @@ struct GAppLaunchContextPrivate;
  * Regardless of which of these entry points is used to start the
  * application, `GApplication` passes some ‘platform data’ from the
  * launching instance to the primary instance, in the form of a
- * [GLib.Variant] dictionary mapping strings to variants. To use platform
+ * [GLib.VariantG] dictionary mapping strings to variants. To use platform
  * data, override the vfunc@Gio.Application.before_emit or
  * vfunc@Gio.Application.after_emit virtual functions
  * in your `GApplication` subclass. When dealing with
@@ -3751,14 +3751,14 @@ struct GApplicationClass
    * 'command-line' or any action invocation, gets the 'platform data' from
    * the calling instance
    */
-  extern(C) void function(GApplication* application, GVariant* platformData) beforeEmit;
+  extern(C) void function(GApplication* application, VariantC* platformData) beforeEmit;
 
   /**
    * invoked on the primary instance after 'activate', 'open',
    * 'command-line' or any action invocation, gets the 'platform data' from
    * the calling instance
    */
-  extern(C) void function(GApplication* application, GVariant* platformData) afterEmit;
+  extern(C) void function(GApplication* application, VariantC* platformData) afterEmit;
 
   /**
    * invoked $(LPAREN)locally$(RPAREN) to add 'platform data' to be sent to
@@ -4725,7 +4725,7 @@ struct GDBusInterfaceSkeletonClass
   /**
    * Returns a #GVariant with all properties. See [Gio.DBusInterfaceSkeleton.getProperties].
    */
-  extern(C) GVariant* function(GDBusInterfaceSkeleton* interface_) getProperties;
+  extern(C) VariantC* function(GDBusInterfaceSkeleton* interface_) getProperties;
 
   /**
    * Emits outstanding changes, if any. See [Gio.DBusInterfaceSkeleton.flush].
@@ -5035,12 +5035,12 @@ struct GDBusObjectManagerClientClass
   /**
    * Signal class handler for the #GDBusObjectManagerClient::interface-proxy-signal signal.
    */
-  extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, const(char)* senderName, const(char)* signalName, GVariant* parameters) interfaceProxySignal;
+  extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, const(char)* senderName, const(char)* signalName, VariantC* parameters) interfaceProxySignal;
 
   /**
    * Signal class handler for the #GDBusObjectManagerClient::interface-proxy-properties-changed signal.
    */
-  extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, GVariant* changedProperties, const(char*)* invalidatedProperties) interfaceProxyPropertiesChanged;
+  extern(C) void function(GDBusObjectManagerClient* manager, GDBusObjectProxy* objectProxy, GDBusProxy* interfaceProxy, VariantC* changedProperties, const(char*)* invalidatedProperties) interfaceProxyPropertiesChanged;
 
   void*[8] padding;
 }
@@ -5291,12 +5291,12 @@ struct GDBusProxyClass
   /**
    * Signal class handler for the #GDBusProxy::g-properties-changed signal.
    */
-  extern(C) void function(GDBusProxy* proxy, GVariant* changedProperties, const(char*)* invalidatedProperties) gPropertiesChanged;
+  extern(C) void function(GDBusProxy* proxy, VariantC* changedProperties, const(char*)* invalidatedProperties) gPropertiesChanged;
 
   /**
    * Signal class handler for the #GDBusProxy::g-signal signal.
    */
-  extern(C) void function(GDBusProxy* proxy, const(char)* senderName, const(char)* signalName, GVariant* parameters) gSignal;
+  extern(C) void function(GDBusProxy* proxy, const(char)* senderName, const(char)* signalName, VariantC* parameters) gSignal;
 
   void*[32] padding;
 }
@@ -7339,7 +7339,7 @@ struct GIconIface
   /**
    * Serializes a #GIcon into a #GVariant. Since: 2.38
    */
-  extern(C) GVariant* function(GIcon* icon) serialize;
+  extern(C) VariantC* function(GIcon* icon) serialize;
 }
 
 /**
@@ -7862,7 +7862,7 @@ struct GMenuAttributeIterClass
 {
   GObjectClass parentClass;
 
-  extern(C) bool function(GMenuAttributeIter* iter, const(char*)* outName, GVariant** value) getNext;
+  extern(C) bool function(GMenuAttributeIter* iter, const(char*)* outName, VariantC** value) getNext;
 }
 
 struct GMenuAttributeIterPrivate;
@@ -8005,7 +8005,7 @@ struct GMenuModelClass
 
   extern(C) GMenuAttributeIter* function(GMenuModel* model, int itemIndex) iterateItemAttributes;
 
-  extern(C) GVariant* function(GMenuModel* model, int itemIndex, const(char)* attribute, const(GVariantType)* expectedType) getItemAttributeValue;
+  extern(C) VariantC* function(GMenuModel* model, int itemIndex, const(char)* attribute, const(GVariantType)* expectedType) getItemAttributeValue;
 
   extern(C) void function(GMenuModel* model, int itemIndex, GHashTable** links) getItemLinks;
 
@@ -8750,7 +8750,7 @@ struct GPowerProfileMonitorInterface
  * Flags types are not currently supported.
  * Properties of object types, boxed types and pointer types are not
  * supported and probably never will be.
- * Properties of [GLib.Variant] types are not currently supported.
+ * Properties of [GLib.VariantG] types are not currently supported.
  * If the property is boolean-valued then the action will have a `NULL`
  * parameter type, and activating the action $(LPAREN)with no parameter$(RPAREN) will
  * toggle the value of the property.
@@ -8936,7 +8936,7 @@ struct GProxyResolverInterface
  * methods on [Gio.ActionGroup] used to activate actions:
  * [Gio.ActionGroup.activateAction] and
  * [Gio.ActionGroup.changeActionState]. These variants allow a
- * ‘platform data’ [GLib.Variant] to be specified: a dictionary providing
+ * ‘platform data’ [GLib.VariantG] to be specified: a dictionary providing
  * context for the action invocation $(LPAREN)for example: timestamps, startup
  * notification IDs, etc$(RPAREN).
  * [Gio.DBusActionGroup] implements `GRemoteActionGroup`.  This provides a
@@ -8959,12 +8959,12 @@ struct GRemoteActionGroupInterface
   /**
    * the virtual function pointer for [Gio.RemoteActionGroup.activateActionFull]
    */
-  extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, GVariant* parameter, GVariant* platformData) activateActionFull;
+  extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, VariantC* parameter, VariantC* platformData) activateActionFull;
 
   /**
    * the virtual function pointer for [Gio.RemoteActionGroup.changeActionStateFull]
    */
-  extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, GVariant* value, GVariant* platformData) changeActionStateFull;
+  extern(C) void function(GRemoteActionGroup* remote, const(char)* actionName, VariantC* value, VariantC* platformData) changeActionStateFull;
 }
 
 /**
@@ -9260,7 +9260,7 @@ struct GSeekableIface
  * they often did in GConf.
  * Unlike other configuration systems $(LPAREN)like GConf$(RPAREN), GSettings does not
  * restrict keys to basic types like strings and numbers. GSettings stores
- * values as [GLib.Variant], and allows any [GLib.VariantType] for
+ * values as [GLib.VariantG], and allows any [GLib.VariantType] for
  * keys. Key names are restricted to lowercase characters, numbers and `-`.
  * Furthermore, the names must begin with a lowercase character, must not end
  * with a `-`, and must not contain consecutive dashes.
@@ -9289,7 +9289,7 @@ struct GSeekableIface
  * <default l10n\='messages' context\='Banned words'>['bad', 'words']</default>
  * ```
  * Translations of default values must remain syntactically valid serialized
- * [GLib.Variant]s (e.g. retaining any surrounding quotation marks) or
+ * [GLib.VariantG]s (e.g. retaining any surrounding quotation marks) or
  * runtime errors will occur.
  * GSettings uses schemas in a compact binary form that is created
  * by the [`glib-compile-schemas`](glib-compile-schemas.html)
@@ -9306,7 +9306,7 @@ struct GSeekableIface
  * and schema ID should match. For schemas which deal with settings not
  * associated with one named application, the ID should not use
  * StudlyCaps, e.g. `org.gnome.font-rendering`.
- * In addition to [GLib.Variant] types, keys can have types that have
+ * In addition to [GLib.VariantG] types, keys can have types that have
  * enumerated types. These can be described by a `<choice>`,
  * `<enum>` or `<flags>` element, as seen in the
  * second example below. The underlying type of such a key
@@ -9382,7 +9382,7 @@ struct GSeekableIface
  * override’ files. These are keyfiles in the same directory as the XML
  * schema sources which can override default values. The schema ID serves
  * as the group name in the key file, and the values are expected in
- * serialized [GLib.Variant] form, as in the following example:
+ * serialized [GLib.VariantG] form, as in the following example:
  * ```
  * [org.gtk.Example]
  * key1\='string'
@@ -9395,7 +9395,7 @@ struct GSeekableIface
  * properties directly to settings, using [Gio.Settings.bind]. Once a
  * [GObject.ObjectG] property has been bound to a setting, changes on
  * either side are automatically propagated to the other side. GSettings handles
- * details like mapping between [GObject.ObjectG] and [GLib.Variant]
+ * details like mapping between [GObject.ObjectG] and [GLib.VariantG]
  * types, and preventing infinite cycles.
  * This makes it very easy to hook up a preferences dialog to the
  * underlying settings. To make this even more convenient, GSettings
@@ -9490,7 +9490,7 @@ struct GSettings
  * callers that are documented on each of the interface methods.
  * Some of the `GSettingsBackend` functions accept or return a
  * [GLib.Tree]. These trees always have strings as keys and
- * [GLib.Variant] as values.
+ * [GLib.VariantG] as values.
  * The `GSettingsBackend` API is exported to allow third-party
  * implementations, but does not carry the same stability guarantees
  * as the public GIO API. For this reason, you have to define the
@@ -9514,7 +9514,7 @@ struct GSettingsBackendClass
   /**
    * virtual method to read a key's value
    */
-  extern(C) GVariant* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType, bool defaultValue) read;
+  extern(C) VariantC* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType, bool defaultValue) read;
 
   /**
    * virtual method to get if a key is writable
@@ -9524,7 +9524,7 @@ struct GSettingsBackendClass
   /**
    * virtual method to change key's value
    */
-  extern(C) bool function(GSettingsBackend* backend, const(char)* key, GVariant* value, void* originTag) write;
+  extern(C) bool function(GSettingsBackend* backend, const(char)* key, VariantC* value, void* originTag) write;
 
   /**
    * virtual method to change a tree of keys
@@ -9559,7 +9559,7 @@ struct GSettingsBackendClass
   /**
    * virtual method to read user's key value
    */
-  extern(C) GVariant* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType) readUserValue;
+  extern(C) VariantC* function(GSettingsBackend* backend, const(char)* key, const(GVariantType)* expectedType) readUserValue;
 
   void*[23] padding;
 }
@@ -11853,7 +11853,7 @@ struct GVfsClass
 
   extern(C) void function(GVfs* vfs, const(char)* source, const(char)* dest) localFileMoved;
 
-  extern(C) GIcon* function(GVfs* vfs, GVariant* value) deserializeIcon;
+  extern(C) GIcon* function(GVfs* vfs, VariantC* value) deserializeIcon;
 
   extern(C) void function() GReserved1;
 
@@ -12138,17 +12138,17 @@ alias extern(C) void function(GDBusConnection* connection, const(char)* name, vo
 
 alias extern(C) bool function(GCancellable* cancellable, void* data) GCancellableSourceFunc;
 
-alias extern(C) GVariant* function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* propertyName, GError** error, void* userData) GDBusInterfaceGetPropertyFunc;
+alias extern(C) VariantC* function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* propertyName, GError** error, void* userData) GDBusInterfaceGetPropertyFunc;
 
-alias extern(C) void function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, GVariant* parameters, GDBusMethodInvocation* invocation, void* userData) GDBusInterfaceMethodCallFunc;
+alias extern(C) void function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* methodName, VariantC* parameters, GDBusMethodInvocation* invocation, void* userData) GDBusInterfaceMethodCallFunc;
 
-alias extern(C) bool function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* propertyName, GVariant* value, GError** error, void* userData) GDBusInterfaceSetPropertyFunc;
+alias extern(C) bool function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* propertyName, VariantC* value, GError** error, void* userData) GDBusInterfaceSetPropertyFunc;
 
 alias extern(C) GDBusMessage* function(GDBusConnection* connection, GDBusMessage* message, bool incoming, void* userData) GDBusMessageFilterFunction;
 
 alias extern(C) GType function(GDBusObjectManagerClient* manager, const(char)* objectPath, const(char)* interfaceName, void* data) GDBusProxyTypeFunc;
 
-alias extern(C) void function(GDBusConnection* connection, const(char)* senderName, const(char)* objectPath, const(char)* interfaceName, const(char)* signalName, GVariant* parameters, void* userData) GDBusSignalCallback;
+alias extern(C) void function(GDBusConnection* connection, const(char)* senderName, const(char)* objectPath, const(char)* interfaceName, const(char)* signalName, VariantC* parameters, void* userData) GDBusSignalCallback;
 
 alias extern(C) const(GDBusInterfaceVTable)* function(GDBusConnection* connection, const(char)* sender, const(char)* objectPath, const(char)* interfaceName, const(char)* node, void** outUserData, void* userData) GDBusSubtreeDispatchFunc;
 
@@ -12172,11 +12172,11 @@ alias extern(C) bool function(ObjectC* pollableStream, void* data) GPollableSour
 
 alias extern(C) void* function(void* data, size_t size) GReallocFunc;
 
-alias extern(C) bool function(GValue* value, GVariant* variant, void* userData) GSettingsBindGetMapping;
+alias extern(C) bool function(GValue* value, VariantC* variant, void* userData) GSettingsBindGetMapping;
 
-alias extern(C) GVariant* function(const(GValue)* value, const(GVariantType)* expectedType, void* userData) GSettingsBindSetMapping;
+alias extern(C) VariantC* function(const(GValue)* value, const(GVariantType)* expectedType, void* userData) GSettingsBindSetMapping;
 
-alias extern(C) bool function(GVariant* value, void** result, void* userData) GSettingsGetMapping;
+alias extern(C) bool function(VariantC* value, void** result, void* userData) GSettingsGetMapping;
 
 alias extern(C) void function(GSimpleAsyncResult* res, ObjectC* object, GCancellable* cancellable) GSimpleAsyncThreadFunc;
 

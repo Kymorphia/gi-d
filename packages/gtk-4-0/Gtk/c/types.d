@@ -5152,12 +5152,12 @@ struct GtkActionableInterface
   /**
    * virtual function for [Gtk.Actionable.getActionTargetValue]
    */
-  extern(C) GVariant* function(GtkActionable* actionable) getActionTargetValue;
+  extern(C) VariantC* function(GtkActionable* actionable) getActionTargetValue;
 
   /**
    * virtual function for [Gtk.Actionable.setActionTargetValue]
    */
-  extern(C) void function(GtkActionable* actionable, GVariant* targetValue) setActionTargetValue;
+  extern(C) void function(GtkActionable* actionable, VariantC* targetValue) setActionTargetValue;
 }
 
 /**
@@ -5946,7 +5946,7 @@ struct GtkBuildableParser
  * “GTK_INPUT_HINT_EMOJI|GTK_INPUT_HINT_LOWERCASE”, or “emoji|lowercase”$(RPAREN)
  * - colors $(LPAREN)in a format understood by [Gdk.RGBA.parse]$(RPAREN)
  * - `GVariant` $(LPAREN)can be specified in the format understood by
- * [GLib.Variant.parse]$(RPAREN)
+ * [GLib.VariantG.parse]$(RPAREN)
  * - pixbufs $(LPAREN)can be specified as a filename of an image file to load$(RPAREN)
  * Objects can be referred to by their name and by default refer to
  * objects declared in the local XML fragment and objects exposed via
@@ -17196,7 +17196,7 @@ alias extern(C) bool function(GtkPrinter* printer, void* data) GtkPrinterFunc;
 
 alias extern(C) char* function(GtkScale* scale, double value, void* userData) GtkScaleFormatValueFunc;
 
-alias extern(C) bool function(GtkWidget* widget, GVariant* args, void* userData) GtkShortcutFunc;
+alias extern(C) bool function(GtkWidget* widget, VariantC* args, void* userData) GtkShortcutFunc;
 
 alias extern(C) bool function(dchar ch, void* userData) GtkTextCharPredicate;
 
@@ -17228,5 +17228,5 @@ alias extern(C) bool function(GtkTreeModel* model, GtkTreeIter* iter, void* data
 
 alias extern(C) bool function(GtkTreeModel* model, int column, const(char)* key, GtkTreeIter* iter, void* searchData) GtkTreeViewSearchEqualFunc;
 
-alias extern(C) void function(GtkWidget* widget, const(char)* actionName, GVariant* parameter) GtkWidgetActionActivateFunc;
+alias extern(C) void function(GtkWidget* widget, const(char)* actionName, VariantC* parameter) GtkWidgetActionActivateFunc;
 

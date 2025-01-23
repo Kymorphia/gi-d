@@ -129,7 +129,7 @@ import Gtk.c.types;
  * “GTK_INPUT_HINT_EMOJI|GTK_INPUT_HINT_LOWERCASE”, or “emoji|lowercase”$(RPAREN)
  * - colors $(LPAREN)in a format understood by [Gdk.RGBA.parse]$(RPAREN)
  * - `GVariant` $(LPAREN)can be specified in the format understood by
- * [GLib.Variant.parse]$(RPAREN)
+ * [GLib.VariantG.parse]$(RPAREN)
  * - pixbufs $(LPAREN)can be specified as a filename of an image file to load$(RPAREN)
  * Objects can be referred to by their name and by default refer to
  * objects declared in the local XML fragment and objects exposed via

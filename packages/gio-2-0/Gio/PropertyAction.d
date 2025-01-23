@@ -23,7 +23,7 @@ import Gio.c.types;
  * Flags types are not currently supported.
  * Properties of object types, boxed types and pointer types are not
  * supported and probably never will be.
- * Properties of [GLib.Variant] types are not currently supported.
+ * Properties of [GLib.VariantG] types are not currently supported.
  * If the property is boolean-valued then the action will have a `NULL`
  * parameter type, and activating the action $(LPAREN)with no parameter$(RPAREN) will
  * toggle the value of the property.

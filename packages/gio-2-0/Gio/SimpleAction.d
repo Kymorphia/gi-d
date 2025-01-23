@@ -1,6 +1,6 @@
 module Gio.SimpleAction;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -70,11 +70,11 @@ class SimpleAction : ObjectG, Action
    *   state = the initial state of the action
    * Returns: a new #GSimpleAction
    */
-  static SimpleAction newStateful(string name, VariantType parameterType, Variant state)
+  static SimpleAction newStateful(string name, VariantType parameterType, VariantG state)
   {
     GSimpleAction* _cretval;
     const(char)* _name = name.toCString(false);
-    _cretval = g_simple_action_new_stateful(_name, parameterType ? cast(GVariantType*)parameterType.cPtr(false) : null, state ? cast(GVariant*)state.cPtr(false) : null);
+    _cretval = g_simple_action_new_stateful(_name, parameterType ? cast(GVariantType*)parameterType.cPtr(false) : null, state ? cast(VariantC*)state.cPtr(false) : null);
     auto _retval = _cretval ? ObjectG.getDObject!SimpleAction(cast(GSimpleAction*)_cretval, true) : null;
     return _retval;
   }
@@ -104,9 +104,9 @@ class SimpleAction : ObjectG, Action
    * Params:
    *   value = the new #GVariant for the state
    */
-  void setState(Variant value)
+  void setState(VariantG value)
   {
-    g_simple_action_set_state(cast(GSimpleAction*)cPtr, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_simple_action_set_state(cast(GSimpleAction*)cPtr, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**
@@ -116,9 +116,9 @@ class SimpleAction : ObjectG, Action
    * Params:
    *   stateHint = a #GVariant representing the state hint
    */
-  void setStateHint(Variant stateHint)
+  void setStateHint(VariantG stateHint)
   {
-    g_simple_action_set_state_hint(cast(GSimpleAction*)cPtr, stateHint ? cast(GVariant*)stateHint.cPtr(false) : null);
+    g_simple_action_set_state_hint(cast(GSimpleAction*)cPtr, stateHint ? cast(VariantC*)stateHint.cPtr(false) : null);
   }
 
   /**
@@ -138,7 +138,7 @@ class SimpleAction : ObjectG, Action
    *     no parameter
    *   simpleAction = the instance the signal is connected to
    */
-  alias ActivateCallback = void delegate(Variant parameter, SimpleAction simpleAction);
+  alias ActivateCallback = void delegate(VariantG parameter, SimpleAction simpleAction);
 
   /**
    * Connect to Activate signal.
@@ -154,7 +154,7 @@ class SimpleAction : ObjectG, Action
       assert(_nParams == 2, "Unexpected number of signal parameters");
       auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;
       auto simpleAction = getVal!SimpleAction(_paramVals);
-      auto parameter = getVal!Variant(&_paramVals[1]);
+      auto parameter = getVal!VariantG(&_paramVals[1]);
       _dgClosure.dlg(parameter, simpleAction);
     }
 
@@ -194,7 +194,7 @@ class SimpleAction : ObjectG, Action
    *   value = the requested value for the state
    *   simpleAction = the instance the signal is connected to
    */
-  alias ChangeStateCallback = void delegate(Variant value, SimpleAction simpleAction);
+  alias ChangeStateCallback = void delegate(VariantG value, SimpleAction simpleAction);
 
   /**
    * Connect to ChangeState signal.
@@ -210,7 +210,7 @@ class SimpleAction : ObjectG, Action
       assert(_nParams == 2, "Unexpected number of signal parameters");
       auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;
       auto simpleAction = getVal!SimpleAction(_paramVals);
-      auto value = getVal!Variant(&_paramVals[1]);
+      auto value = getVal!VariantG(&_paramVals[1]);
       _dgClosure.dlg(value, simpleAction);
     }
 

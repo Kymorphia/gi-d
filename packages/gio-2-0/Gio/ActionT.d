@@ -2,7 +2,7 @@ module Gio.ActionT;
 
 public import Gio.ActionIfaceProxy;
 public import GLib.ErrorG;
-public import GLib.Variant;
+public import GLib.VariantG;
 public import GLib.VariantType;
 public import Gid.gid;
 public import Gio.Types;
@@ -49,9 +49,9 @@ template ActionT()
    * Params:
    *   parameter = the parameter to the activation
    */
-  override void activate(Variant parameter)
+  override void activate(VariantG parameter)
   {
-    g_action_activate(cast(GAction*)cPtr, parameter ? cast(GVariant*)parameter.cPtr(false) : null);
+    g_action_activate(cast(GAction*)cPtr, parameter ? cast(VariantC*)parameter.cPtr(false) : null);
   }
 
   /**
@@ -65,9 +65,9 @@ template ActionT()
    * Params:
    *   value = the new state
    */
-  override void changeState(Variant value)
+  override void changeState(VariantG value)
   {
-    g_action_change_state(cast(GAction*)cPtr, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_action_change_state(cast(GAction*)cPtr, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**
@@ -118,14 +118,14 @@ template ActionT()
    * action is stateful then the type of the return value is the type
    * given by [Gio.Action.getStateType].
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Returns: the current state of the action
    */
-  override Variant getState()
+  override VariantG getState()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_action_get_state(cast(GAction*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -143,14 +143,14 @@ template ActionT()
    * have a state value outside of the hinted range and setting a value
    * within the range may fail.
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Returns: the state range hint
    */
-  override Variant getStateHint()
+  override VariantG getStateHint()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_action_get_state_hint(cast(GAction*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 

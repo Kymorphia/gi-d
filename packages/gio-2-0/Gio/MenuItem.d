@@ -1,6 +1,6 @@
 module Gio.MenuItem;
 
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.ObjectG;
 import Gid.gid;
@@ -173,12 +173,12 @@ class MenuItem : ObjectG
    *   expectedType = the expected type of the attribute
    * Returns: the attribute value, or %NULL
    */
-  Variant getAttributeValue(string attribute, VariantType expectedType)
+  VariantG getAttributeValue(string attribute, VariantType expectedType)
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     const(char)* _attribute = attribute.toCString(false);
     _cretval = g_menu_item_get_attribute_value(cast(GMenuItem*)cPtr, _attribute, expectedType ? cast(GVariantType*)expectedType.cPtr(false) : null);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -230,10 +230,10 @@ class MenuItem : ObjectG
    *   action = the name of the action for this item
    *   targetValue = a #GVariant to use as the action target
    */
-  void setActionAndTargetValue(string action, Variant targetValue)
+  void setActionAndTargetValue(string action, VariantG targetValue)
   {
     const(char)* _action = action.toCString(false);
-    g_menu_item_set_action_and_target_value(cast(GMenuItem*)cPtr, _action, targetValue ? cast(GVariant*)targetValue.cPtr(false) : null);
+    g_menu_item_set_action_and_target_value(cast(GMenuItem*)cPtr, _action, targetValue ? cast(VariantC*)targetValue.cPtr(false) : null);
   }
 
   /**
@@ -256,10 +256,10 @@ class MenuItem : ObjectG
    *   attribute = the attribute to set
    *   value = a #GVariant to use as the value, or %NULL
    */
-  void setAttributeValue(string attribute, Variant value)
+  void setAttributeValue(string attribute, VariantG value)
   {
     const(char)* _attribute = attribute.toCString(false);
-    g_menu_item_set_attribute_value(cast(GMenuItem*)cPtr, _attribute, value ? cast(GVariant*)value.cPtr(false) : null);
+    g_menu_item_set_attribute_value(cast(GMenuItem*)cPtr, _attribute, value ? cast(VariantC*)value.cPtr(false) : null);
   }
 
   /**

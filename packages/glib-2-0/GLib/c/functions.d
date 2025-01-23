@@ -556,7 +556,7 @@ __gshared extern(C)
   void function(const(char)* logDomain, GLogLevelFlags logLevel,  ...) c_g_log_structured;
   void function(GLogLevelFlags logLevel, const(GLogField)* fields, size_t nFields) c_g_log_structured_array;
   void function(const(char)* logDomain, GLogLevelFlags logLevel, const(char)* file, const(char)* line, const(char)* func, const(char)* messageFormat,  ...) c_g_log_structured_standard;
-  void function(const(char)* logDomain, GLogLevelFlags logLevel, GVariant* fields) c_g_log_variant;
+  void function(const(char)* logDomain, GLogLevelFlags logLevel, VariantC* fields) c_g_log_variant;
   GLogWriterOutput function(GLogLevelFlags logLevel, const(GLogField)* fields, size_t nFields, void* userData) c_g_log_writer_default;
   void function(const(char*)* domains) c_g_log_writer_default_set_debug_domains;
   void function(bool useStderr) c_g_log_writer_default_set_use_stderr;
@@ -1857,109 +1857,15 @@ __gshared extern(C)
   void function(GUriParamsIter* iter, const(char)* params, ptrdiff_t length, const(char)* separators, GUriParamsFlags flags) c_g_uri_params_iter_init;
   bool function(GUriParamsIter* iter, char** attribute, char** value, GError** _err) c_g_uri_params_iter_next;
 
-  // Variant
-  GType function() c_intern;
-  GVariant* function(const(char)* formatString,  ...) c_g_variant_new;
-  GVariant* function(const(GVariantType)* childType, const(GVariant*)* children, size_t nChildren) c_g_variant_new_array;
-  GVariant* function(bool value) c_g_variant_new_boolean;
-  GVariant* function(ubyte value) c_g_variant_new_byte;
-  GVariant* function(const(char)* string_) c_g_variant_new_bytestring;
-  GVariant* function(const(char*)* strv, ptrdiff_t length) c_g_variant_new_bytestring_array;
-  GVariant* function(GVariant* key, GVariant* value) c_g_variant_new_dict_entry;
-  GVariant* function(double value) c_g_variant_new_double;
-  GVariant* function(const(GVariantType)* elementType, const(void)* elements, size_t nElements, size_t elementSize) c_g_variant_new_fixed_array;
-  GVariant* function(const(GVariantType)* type, GBytes* bytes, bool trusted) c_g_variant_new_from_bytes;
-  GVariant* function(const(GVariantType)* type, const(void)* data, size_t size, bool trusted, GDestroyNotify notify, void* userData) c_g_variant_new_from_data;
-  GVariant* function(int value) c_g_variant_new_handle;
-  GVariant* function(short value) c_g_variant_new_int16;
-  GVariant* function(int value) c_g_variant_new_int32;
-  GVariant* function(long value) c_g_variant_new_int64;
-  GVariant* function(const(GVariantType)* childType, GVariant* child) c_g_variant_new_maybe;
-  GVariant* function(const(char)* objectPath) c_g_variant_new_object_path;
-  GVariant* function(const(char*)* strv, ptrdiff_t length) c_g_variant_new_objv;
-  GVariant* function(const(char)* format,  ...) c_g_variant_new_parsed;
-  GVariant* function(const(char)* format, void** app) c_g_variant_new_parsed_va;
-  GVariant* function(const(char)* formatString,  ...) c_g_variant_new_printf;
-  GVariant* function(const(char)* signature) c_g_variant_new_signature;
-  GVariant* function(const(char)* string_) c_g_variant_new_string;
-  GVariant* function(const(char*)* strv, ptrdiff_t length) c_g_variant_new_strv;
-  GVariant* function(char* string_) c_g_variant_new_take_string;
-  GVariant* function(const(GVariant*)* children, size_t nChildren) c_g_variant_new_tuple;
-  GVariant* function(ushort value) c_g_variant_new_uint16;
-  GVariant* function(uint value) c_g_variant_new_uint32;
-  GVariant* function(ulong value) c_g_variant_new_uint64;
-  GVariant* function(const(char)* formatString, const(char*)* endptr, void** app) c_g_variant_new_va;
-  GVariant* function(GVariant* value) c_g_variant_new_variant;
-  GVariant* function(GVariant* value) c_g_variant_byteswap;
-  bool function(GVariant* value, const(char)* formatString, bool copyOnly) c_g_variant_check_format_string;
-  GVariantClass function(GVariant* value) c_g_variant_classify;
-  int function(GVariant* one, GVariant* two) c_g_variant_compare;
-  ubyte* function(GVariant* value, size_t* length) c_g_variant_dup_bytestring;
-  char** function(GVariant* value, size_t* length) c_g_variant_dup_bytestring_array;
-  char** function(GVariant* value, size_t* length) c_g_variant_dup_objv;
-  char* function(GVariant* value, size_t* length) c_g_variant_dup_string;
-  char** function(GVariant* value, size_t* length) c_g_variant_dup_strv;
-  bool function(GVariant* one, GVariant* two) c_g_variant_equal;
-  void function(GVariant* value, const(char)* formatString,  ...) c_g_variant_get;
-  bool function(GVariant* value) c_g_variant_get_boolean;
-  ubyte function(GVariant* value) c_g_variant_get_byte;
-  const(char)* function(GVariant* value) c_g_variant_get_bytestring;
-  const(char*)* function(GVariant* value, size_t* length) c_g_variant_get_bytestring_array;
-  void function(GVariant* value, size_t index, const(char)* formatString,  ...) c_g_variant_get_child;
-  GVariant* function(GVariant* value, size_t index) c_g_variant_get_child_value;
-  const(void)* function(GVariant* value) c_g_variant_get_data;
-  GBytes* function(GVariant* value) c_g_variant_get_data_as_bytes;
-  double function(GVariant* value) c_g_variant_get_double;
-  const(void)* function(GVariant* value, size_t* nElements, size_t elementSize) c_g_variant_get_fixed_array;
-  int function(GVariant* value) c_g_variant_get_handle;
-  short function(GVariant* value) c_g_variant_get_int16;
-  int function(GVariant* value) c_g_variant_get_int32;
-  long function(GVariant* value) c_g_variant_get_int64;
-  GVariant* function(GVariant* value) c_g_variant_get_maybe;
-  GVariant* function(GVariant* value) c_g_variant_get_normal_form;
-  const(char*)* function(GVariant* value, size_t* length) c_g_variant_get_objv;
-  size_t function(GVariant* value) c_g_variant_get_size;
-  char* function(GVariant* value, size_t* length) c_g_variant_get_string;
-  const(char*)* function(GVariant* value, size_t* length) c_g_variant_get_strv;
-  const(GVariantType)* function(GVariant* value) c_g_variant_get_type;
-  const(char)* function(GVariant* value) c_g_variant_get_type_string;
-  ushort function(GVariant* value) c_g_variant_get_uint16;
-  uint function(GVariant* value) c_g_variant_get_uint32;
-  ulong function(GVariant* value) c_g_variant_get_uint64;
-  void function(GVariant* value, const(char)* formatString, const(char*)* endptr, void** app) c_g_variant_get_va;
-  GVariant* function(GVariant* value) c_g_variant_get_variant;
-  uint function(GVariant* value) c_g_variant_hash;
-  bool function(GVariant* value) c_g_variant_is_container;
-  bool function(GVariant* value) c_g_variant_is_floating;
-  bool function(GVariant* value) c_g_variant_is_normal_form;
-  bool function(GVariant* value, const(GVariantType)* type) c_g_variant_is_of_type;
-  GVariantIter* function(GVariant* value) c_g_variant_iter_new;
-  bool function(GVariant* dictionary, const(char)* key, const(char)* formatString,  ...) c_g_variant_lookup;
-  GVariant* function(GVariant* dictionary, const(char)* key, const(GVariantType)* expectedType) c_g_variant_lookup_value;
-  size_t function(GVariant* value) c_g_variant_n_children;
-  char* function(GVariant* value, bool typeAnnotate) c_g_variant_print;
-  GString* function(GVariant* value, GString* string_, bool typeAnnotate) c_g_variant_print_string;
-  GVariant* function(GVariant* value) c_g_variant_ref;
-  GVariant* function(GVariant* value) c_g_variant_ref_sink;
-  void function(GVariant* value, void* data) c_g_variant_store;
-  GVariant* function(GVariant* value) c_g_variant_take_ref;
-  void function(GVariant* value) c_g_variant_unref;
-  bool function(const(char)* string_) c_g_variant_is_object_path;
-  bool function(const(char)* string_) c_g_variant_is_signature;
-  GVariant* function(const(GVariantType)* type, const(char)* text, const(char)* limit, const(char*)* endptr, GError** _err) c_g_variant_parse;
-  char* function(GError* error, const(char)* sourceStr) c_g_variant_parse_error_print_context;
-  GQuark function() c_g_variant_parse_error_quark;
-  GQuark function() c_g_variant_parser_get_error_quark;
-
   // VariantBuilder
   GType function() c_g_variant_builder_get_type;
   GVariantBuilder* function(const(GVariantType)* type) c_g_variant_builder_new;
   void function(GVariantBuilder* builder, const(char)* formatString,  ...) c_g_variant_builder_add;
   void function(GVariantBuilder* builder, const(char)* format,  ...) c_g_variant_builder_add_parsed;
-  void function(GVariantBuilder* builder, GVariant* value) c_g_variant_builder_add_value;
+  void function(GVariantBuilder* builder, VariantC* value) c_g_variant_builder_add_value;
   void function(GVariantBuilder* builder) c_g_variant_builder_clear;
   void function(GVariantBuilder* builder) c_g_variant_builder_close;
-  GVariant* function(GVariantBuilder* builder) c_g_variant_builder_end;
+  VariantC* function(GVariantBuilder* builder) c_g_variant_builder_end;
   void function(GVariantBuilder* builder, const(GVariantType)* type) c_g_variant_builder_init;
   void function(GVariantBuilder* builder, const(GVariantType)* type) c_g_variant_builder_open;
   GVariantBuilder* function(GVariantBuilder* builder) c_g_variant_builder_ref;
@@ -1967,27 +1873,121 @@ __gshared extern(C)
 
   // VariantDict
   GType function() c_g_variant_dict_get_type;
-  GVariantDict* function(GVariant* fromAsv) c_g_variant_dict_new;
+  GVariantDict* function(VariantC* fromAsv) c_g_variant_dict_new;
   void function(GVariantDict* dict) c_g_variant_dict_clear;
   bool function(GVariantDict* dict, const(char)* key) c_g_variant_dict_contains;
-  GVariant* function(GVariantDict* dict) c_g_variant_dict_end;
-  void function(GVariantDict* dict, GVariant* fromAsv) c_g_variant_dict_init;
+  VariantC* function(GVariantDict* dict) c_g_variant_dict_end;
+  void function(GVariantDict* dict, VariantC* fromAsv) c_g_variant_dict_init;
   void function(GVariantDict* dict, const(char)* key, const(char)* formatString,  ...) c_g_variant_dict_insert;
-  void function(GVariantDict* dict, const(char)* key, GVariant* value) c_g_variant_dict_insert_value;
+  void function(GVariantDict* dict, const(char)* key, VariantC* value) c_g_variant_dict_insert_value;
   bool function(GVariantDict* dict, const(char)* key, const(char)* formatString,  ...) c_g_variant_dict_lookup;
-  GVariant* function(GVariantDict* dict, const(char)* key, const(GVariantType)* expectedType) c_g_variant_dict_lookup_value;
+  VariantC* function(GVariantDict* dict, const(char)* key, const(GVariantType)* expectedType) c_g_variant_dict_lookup_value;
   GVariantDict* function(GVariantDict* dict) c_g_variant_dict_ref;
   bool function(GVariantDict* dict, const(char)* key) c_g_variant_dict_remove;
   void function(GVariantDict* dict) c_g_variant_dict_unref;
 
+  // VariantG
+  GType function() c_intern;
+  VariantC* function(const(char)* formatString,  ...) c_g_variant_new;
+  VariantC* function(const(GVariantType)* childType, const(VariantC*)* children, size_t nChildren) c_g_variant_new_array;
+  VariantC* function(bool value) c_g_variant_new_boolean;
+  VariantC* function(ubyte value) c_g_variant_new_byte;
+  VariantC* function(const(char)* string_) c_g_variant_new_bytestring;
+  VariantC* function(const(char*)* strv, ptrdiff_t length) c_g_variant_new_bytestring_array;
+  VariantC* function(VariantC* key, VariantC* value) c_g_variant_new_dict_entry;
+  VariantC* function(double value) c_g_variant_new_double;
+  VariantC* function(const(GVariantType)* elementType, const(void)* elements, size_t nElements, size_t elementSize) c_g_variant_new_fixed_array;
+  VariantC* function(const(GVariantType)* type, GBytes* bytes, bool trusted) c_g_variant_new_from_bytes;
+  VariantC* function(const(GVariantType)* type, const(void)* data, size_t size, bool trusted, GDestroyNotify notify, void* userData) c_g_variant_new_from_data;
+  VariantC* function(int value) c_g_variant_new_handle;
+  VariantC* function(short value) c_g_variant_new_int16;
+  VariantC* function(int value) c_g_variant_new_int32;
+  VariantC* function(long value) c_g_variant_new_int64;
+  VariantC* function(const(GVariantType)* childType, VariantC* child) c_g_variant_new_maybe;
+  VariantC* function(const(char)* objectPath) c_g_variant_new_object_path;
+  VariantC* function(const(char*)* strv, ptrdiff_t length) c_g_variant_new_objv;
+  VariantC* function(const(char)* format,  ...) c_g_variant_new_parsed;
+  VariantC* function(const(char)* format, void** app) c_g_variant_new_parsed_va;
+  VariantC* function(const(char)* formatString,  ...) c_g_variant_new_printf;
+  VariantC* function(const(char)* signature) c_g_variant_new_signature;
+  VariantC* function(const(char)* string_) c_g_variant_new_string;
+  VariantC* function(const(char*)* strv, ptrdiff_t length) c_g_variant_new_strv;
+  VariantC* function(char* string_) c_g_variant_new_take_string;
+  VariantC* function(const(VariantC*)* children, size_t nChildren) c_g_variant_new_tuple;
+  VariantC* function(ushort value) c_g_variant_new_uint16;
+  VariantC* function(uint value) c_g_variant_new_uint32;
+  VariantC* function(ulong value) c_g_variant_new_uint64;
+  VariantC* function(const(char)* formatString, const(char*)* endptr, void** app) c_g_variant_new_va;
+  VariantC* function(VariantC* value) c_g_variant_new_variant;
+  VariantC* function(VariantC* value) c_g_variant_byteswap;
+  bool function(VariantC* value, const(char)* formatString, bool copyOnly) c_g_variant_check_format_string;
+  GVariantClass function(VariantC* value) c_g_variant_classify;
+  int function(VariantC* one, VariantC* two) c_g_variant_compare;
+  ubyte* function(VariantC* value, size_t* length) c_g_variant_dup_bytestring;
+  char** function(VariantC* value, size_t* length) c_g_variant_dup_bytestring_array;
+  char** function(VariantC* value, size_t* length) c_g_variant_dup_objv;
+  char* function(VariantC* value, size_t* length) c_g_variant_dup_string;
+  char** function(VariantC* value, size_t* length) c_g_variant_dup_strv;
+  bool function(VariantC* one, VariantC* two) c_g_variant_equal;
+  void function(VariantC* value, const(char)* formatString,  ...) c_g_variant_get;
+  bool function(VariantC* value) c_g_variant_get_boolean;
+  ubyte function(VariantC* value) c_g_variant_get_byte;
+  const(char)* function(VariantC* value) c_g_variant_get_bytestring;
+  const(char*)* function(VariantC* value, size_t* length) c_g_variant_get_bytestring_array;
+  void function(VariantC* value, size_t index, const(char)* formatString,  ...) c_g_variant_get_child;
+  VariantC* function(VariantC* value, size_t index) c_g_variant_get_child_value;
+  const(void)* function(VariantC* value) c_g_variant_get_data;
+  GBytes* function(VariantC* value) c_g_variant_get_data_as_bytes;
+  double function(VariantC* value) c_g_variant_get_double;
+  const(void)* function(VariantC* value, size_t* nElements, size_t elementSize) c_g_variant_get_fixed_array;
+  int function(VariantC* value) c_g_variant_get_handle;
+  short function(VariantC* value) c_g_variant_get_int16;
+  int function(VariantC* value) c_g_variant_get_int32;
+  long function(VariantC* value) c_g_variant_get_int64;
+  VariantC* function(VariantC* value) c_g_variant_get_maybe;
+  VariantC* function(VariantC* value) c_g_variant_get_normal_form;
+  const(char*)* function(VariantC* value, size_t* length) c_g_variant_get_objv;
+  size_t function(VariantC* value) c_g_variant_get_size;
+  char* function(VariantC* value, size_t* length) c_g_variant_get_string;
+  const(char*)* function(VariantC* value, size_t* length) c_g_variant_get_strv;
+  const(GVariantType)* function(VariantC* value) c_g_variant_get_type;
+  const(char)* function(VariantC* value) c_g_variant_get_type_string;
+  ushort function(VariantC* value) c_g_variant_get_uint16;
+  uint function(VariantC* value) c_g_variant_get_uint32;
+  ulong function(VariantC* value) c_g_variant_get_uint64;
+  void function(VariantC* value, const(char)* formatString, const(char*)* endptr, void** app) c_g_variant_get_va;
+  VariantC* function(VariantC* value) c_g_variant_get_variant;
+  uint function(VariantC* value) c_g_variant_hash;
+  bool function(VariantC* value) c_g_variant_is_container;
+  bool function(VariantC* value) c_g_variant_is_floating;
+  bool function(VariantC* value) c_g_variant_is_normal_form;
+  bool function(VariantC* value, const(GVariantType)* type) c_g_variant_is_of_type;
+  GVariantIter* function(VariantC* value) c_g_variant_iter_new;
+  bool function(VariantC* dictionary, const(char)* key, const(char)* formatString,  ...) c_g_variant_lookup;
+  VariantC* function(VariantC* dictionary, const(char)* key, const(GVariantType)* expectedType) c_g_variant_lookup_value;
+  size_t function(VariantC* value) c_g_variant_n_children;
+  char* function(VariantC* value, bool typeAnnotate) c_g_variant_print;
+  GString* function(VariantC* value, GString* string_, bool typeAnnotate) c_g_variant_print_string;
+  VariantC* function(VariantC* value) c_g_variant_ref;
+  VariantC* function(VariantC* value) c_g_variant_ref_sink;
+  void function(VariantC* value, void* data) c_g_variant_store;
+  VariantC* function(VariantC* value) c_g_variant_take_ref;
+  void function(VariantC* value) c_g_variant_unref;
+  bool function(const(char)* string_) c_g_variant_is_object_path;
+  bool function(const(char)* string_) c_g_variant_is_signature;
+  VariantC* function(const(GVariantType)* type, const(char)* text, const(char)* limit, const(char*)* endptr, GError** _err) c_g_variant_parse;
+  char* function(GError* error, const(char)* sourceStr) c_g_variant_parse_error_print_context;
+  GQuark function() c_g_variant_parse_error_quark;
+  GQuark function() c_g_variant_parser_get_error_quark;
+
   // VariantIter
   GVariantIter* function(GVariantIter* iter) c_g_variant_iter_copy;
   void function(GVariantIter* iter) c_g_variant_iter_free;
-  size_t function(GVariantIter* iter, GVariant* value) c_g_variant_iter_init;
+  size_t function(GVariantIter* iter, VariantC* value) c_g_variant_iter_init;
   bool function(GVariantIter* iter, const(char)* formatString,  ...) c_g_variant_iter_loop;
   size_t function(GVariantIter* iter) c_g_variant_iter_n_children;
   bool function(GVariantIter* iter, const(char)* formatString,  ...) c_g_variant_iter_next;
-  GVariant* function(GVariantIter* iter) c_g_variant_iter_next_value;
+  VariantC* function(GVariantIter* iter) c_g_variant_iter_next_value;
 
   // VariantType
   GType function() c_g_variant_type_get_gtype;
@@ -3869,7 +3869,36 @@ alias g_uri_unescape_string = c_g_uri_unescape_string;
 alias g_uri_params_iter_init = c_g_uri_params_iter_init;
 alias g_uri_params_iter_next = c_g_uri_params_iter_next;
 
-// Variant
+// VariantBuilder
+alias g_variant_builder_get_type = c_g_variant_builder_get_type;
+alias g_variant_builder_new = c_g_variant_builder_new;
+alias g_variant_builder_add = c_g_variant_builder_add;
+alias g_variant_builder_add_parsed = c_g_variant_builder_add_parsed;
+alias g_variant_builder_add_value = c_g_variant_builder_add_value;
+alias g_variant_builder_clear = c_g_variant_builder_clear;
+alias g_variant_builder_close = c_g_variant_builder_close;
+alias g_variant_builder_end = c_g_variant_builder_end;
+alias g_variant_builder_init = c_g_variant_builder_init;
+alias g_variant_builder_open = c_g_variant_builder_open;
+alias g_variant_builder_ref = c_g_variant_builder_ref;
+alias g_variant_builder_unref = c_g_variant_builder_unref;
+
+// VariantDict
+alias g_variant_dict_get_type = c_g_variant_dict_get_type;
+alias g_variant_dict_new = c_g_variant_dict_new;
+alias g_variant_dict_clear = c_g_variant_dict_clear;
+alias g_variant_dict_contains = c_g_variant_dict_contains;
+alias g_variant_dict_end = c_g_variant_dict_end;
+alias g_variant_dict_init = c_g_variant_dict_init;
+alias g_variant_dict_insert = c_g_variant_dict_insert;
+alias g_variant_dict_insert_value = c_g_variant_dict_insert_value;
+alias g_variant_dict_lookup = c_g_variant_dict_lookup;
+alias g_variant_dict_lookup_value = c_g_variant_dict_lookup_value;
+alias g_variant_dict_ref = c_g_variant_dict_ref;
+alias g_variant_dict_remove = c_g_variant_dict_remove;
+alias g_variant_dict_unref = c_g_variant_dict_unref;
+
+// VariantG
 alias intern = c_intern;
 alias g_variant_new = c_g_variant_new;
 alias g_variant_new_array = c_g_variant_new_array;
@@ -3962,35 +3991,6 @@ alias g_variant_parse = c_g_variant_parse;
 alias g_variant_parse_error_print_context = c_g_variant_parse_error_print_context;
 alias g_variant_parse_error_quark = c_g_variant_parse_error_quark;
 alias g_variant_parser_get_error_quark = c_g_variant_parser_get_error_quark;
-
-// VariantBuilder
-alias g_variant_builder_get_type = c_g_variant_builder_get_type;
-alias g_variant_builder_new = c_g_variant_builder_new;
-alias g_variant_builder_add = c_g_variant_builder_add;
-alias g_variant_builder_add_parsed = c_g_variant_builder_add_parsed;
-alias g_variant_builder_add_value = c_g_variant_builder_add_value;
-alias g_variant_builder_clear = c_g_variant_builder_clear;
-alias g_variant_builder_close = c_g_variant_builder_close;
-alias g_variant_builder_end = c_g_variant_builder_end;
-alias g_variant_builder_init = c_g_variant_builder_init;
-alias g_variant_builder_open = c_g_variant_builder_open;
-alias g_variant_builder_ref = c_g_variant_builder_ref;
-alias g_variant_builder_unref = c_g_variant_builder_unref;
-
-// VariantDict
-alias g_variant_dict_get_type = c_g_variant_dict_get_type;
-alias g_variant_dict_new = c_g_variant_dict_new;
-alias g_variant_dict_clear = c_g_variant_dict_clear;
-alias g_variant_dict_contains = c_g_variant_dict_contains;
-alias g_variant_dict_end = c_g_variant_dict_end;
-alias g_variant_dict_init = c_g_variant_dict_init;
-alias g_variant_dict_insert = c_g_variant_dict_insert;
-alias g_variant_dict_insert_value = c_g_variant_dict_insert_value;
-alias g_variant_dict_lookup = c_g_variant_dict_lookup;
-alias g_variant_dict_lookup_value = c_g_variant_dict_lookup_value;
-alias g_variant_dict_ref = c_g_variant_dict_ref;
-alias g_variant_dict_remove = c_g_variant_dict_remove;
-alias g_variant_dict_unref = c_g_variant_dict_unref;
 
 // VariantIter
 alias g_variant_iter_copy = c_g_variant_iter_copy;
@@ -5882,7 +5882,36 @@ shared static this()
   link(g_uri_params_iter_init, "g_uri_params_iter_init");
   link(g_uri_params_iter_next, "g_uri_params_iter_next");
 
-  // Variant
+  // VariantBuilder
+  link(g_variant_builder_get_type, "g_variant_builder_get_type");
+  link(g_variant_builder_new, "g_variant_builder_new");
+  link(g_variant_builder_add, "g_variant_builder_add");
+  link(g_variant_builder_add_parsed, "g_variant_builder_add_parsed");
+  link(g_variant_builder_add_value, "g_variant_builder_add_value");
+  link(g_variant_builder_clear, "g_variant_builder_clear");
+  link(g_variant_builder_close, "g_variant_builder_close");
+  link(g_variant_builder_end, "g_variant_builder_end");
+  link(g_variant_builder_init, "g_variant_builder_init");
+  link(g_variant_builder_open, "g_variant_builder_open");
+  link(g_variant_builder_ref, "g_variant_builder_ref");
+  link(g_variant_builder_unref, "g_variant_builder_unref");
+
+  // VariantDict
+  link(g_variant_dict_get_type, "g_variant_dict_get_type");
+  link(g_variant_dict_new, "g_variant_dict_new");
+  link(g_variant_dict_clear, "g_variant_dict_clear");
+  link(g_variant_dict_contains, "g_variant_dict_contains");
+  link(g_variant_dict_end, "g_variant_dict_end");
+  link(g_variant_dict_init, "g_variant_dict_init");
+  link(g_variant_dict_insert, "g_variant_dict_insert");
+  link(g_variant_dict_insert_value, "g_variant_dict_insert_value");
+  link(g_variant_dict_lookup, "g_variant_dict_lookup");
+  link(g_variant_dict_lookup_value, "g_variant_dict_lookup_value");
+  link(g_variant_dict_ref, "g_variant_dict_ref");
+  link(g_variant_dict_remove, "g_variant_dict_remove");
+  link(g_variant_dict_unref, "g_variant_dict_unref");
+
+  // VariantG
   link(intern, "intern");
   link(g_variant_new, "g_variant_new");
   link(g_variant_new_array, "g_variant_new_array");
@@ -5975,35 +6004,6 @@ shared static this()
   link(g_variant_parse_error_print_context, "g_variant_parse_error_print_context");
   link(g_variant_parse_error_quark, "g_variant_parse_error_quark");
   link(g_variant_parser_get_error_quark, "g_variant_parser_get_error_quark");
-
-  // VariantBuilder
-  link(g_variant_builder_get_type, "g_variant_builder_get_type");
-  link(g_variant_builder_new, "g_variant_builder_new");
-  link(g_variant_builder_add, "g_variant_builder_add");
-  link(g_variant_builder_add_parsed, "g_variant_builder_add_parsed");
-  link(g_variant_builder_add_value, "g_variant_builder_add_value");
-  link(g_variant_builder_clear, "g_variant_builder_clear");
-  link(g_variant_builder_close, "g_variant_builder_close");
-  link(g_variant_builder_end, "g_variant_builder_end");
-  link(g_variant_builder_init, "g_variant_builder_init");
-  link(g_variant_builder_open, "g_variant_builder_open");
-  link(g_variant_builder_ref, "g_variant_builder_ref");
-  link(g_variant_builder_unref, "g_variant_builder_unref");
-
-  // VariantDict
-  link(g_variant_dict_get_type, "g_variant_dict_get_type");
-  link(g_variant_dict_new, "g_variant_dict_new");
-  link(g_variant_dict_clear, "g_variant_dict_clear");
-  link(g_variant_dict_contains, "g_variant_dict_contains");
-  link(g_variant_dict_end, "g_variant_dict_end");
-  link(g_variant_dict_init, "g_variant_dict_init");
-  link(g_variant_dict_insert, "g_variant_dict_insert");
-  link(g_variant_dict_insert_value, "g_variant_dict_insert_value");
-  link(g_variant_dict_lookup, "g_variant_dict_lookup");
-  link(g_variant_dict_lookup_value, "g_variant_dict_lookup_value");
-  link(g_variant_dict_ref, "g_variant_dict_ref");
-  link(g_variant_dict_remove, "g_variant_dict_remove");
-  link(g_variant_dict_unref, "g_variant_dict_unref");
 
   // VariantIter
   link(g_variant_iter_copy, "g_variant_iter_copy");

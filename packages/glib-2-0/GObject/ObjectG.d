@@ -108,7 +108,11 @@ class ObjectG
   { // D object is being garbage collected. Only happens when there is only the toggle reference on GObject and there are no more pointers to the D proxy object.
     if (cInstancePtr) // Might be null if an exception occurred during construction
     {
-      debug objectDebugLog("dtor");
+      import core.memory : GC;
+
+      if (!GC.inFinalizer)
+        debug objectDebugLog("dtor");
+
       g_object_remove_toggle_ref(cInstancePtr, &_cObjToggleNotify, cast(void*)this); // Remove the toggle reference, which will likely lead to the destruction of the GObject
     }
   }
@@ -302,9 +306,7 @@ class ObjectG
   {
     void objectDebugLog(string action)
     {
-      import core.memory : GC;
-
-      if (gidObjectDebug && !GC.inFinalizer)
+      if (gidObjectDebug)
       {
         import std.stdio : writeln;
         import std.conv : to;

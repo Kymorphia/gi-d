@@ -1,7 +1,7 @@
 module GObject.Value;
 
 import GLib.Boxed;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import GObject.ParamSpec;
 import GObject.TypeInstance;
@@ -97,7 +97,7 @@ class Value : Boxed
    */
   void set(T)(T val)
   {
-    return setVal!T(cast(GValue*)cPtr, val);
+    setVal!T(cast(GValue*)cPtr, val);
   }
 
   /**
@@ -141,13 +141,13 @@ class Value : Boxed
    * Get the contents of a variant #GValue, increasing its refcount. The returned
    * #GVariant is never floating.
    * Returns: variant contents of value $(LPAREN)may be %NULL$(RPAREN);
-   *   should be unreffed using [GLib.Variant.unref] when no longer needed
+   *   should be unreffed using [GLib.VariantG.unref] when no longer needed
    */
-  Variant dupVariant()
+  VariantG dupVariant()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_value_dup_variant(cast(GValue*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, true) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, true) : null;
     return _retval;
   }
 
@@ -394,11 +394,11 @@ class Value : Boxed
    * Get the contents of a variant #GValue.
    * Returns: variant contents of value $(LPAREN)may be %NULL$(RPAREN)
    */
-  Variant getVariant()
+  VariantG getVariant()
   {
-    GVariant* _cretval;
+    VariantC* _cretval;
     _cretval = g_value_get_variant(cast(GValue*)cPtr);
-    auto _retval = _cretval ? new Variant(cast(GVariant*)_cretval, false) : null;
+    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
 
@@ -750,9 +750,9 @@ class Value : Boxed
    * Params:
    *   variant = a #GVariant, or %NULL
    */
-  void setVariant(Variant variant)
+  void setVariant(VariantG variant)
   {
-    g_value_set_variant(cast(GValue*)cPtr, variant ? cast(GVariant*)variant.cPtr(false) : null);
+    g_value_set_variant(cast(GValue*)cPtr, variant ? cast(VariantC*)variant.cPtr(false) : null);
   }
 
   /**
@@ -810,9 +810,9 @@ class Value : Boxed
    * Params:
    *   variant = a #GVariant, or %NULL
    */
-  void takeVariant(Variant variant)
+  void takeVariant(VariantG variant)
   {
-    g_value_take_variant(cast(GValue*)cPtr, variant ? cast(GVariant*)variant.cPtr(true) : null);
+    g_value_take_variant(cast(GValue*)cPtr, variant ? cast(VariantC*)variant.cPtr(true) : null);
   }
 
   /**
@@ -903,18 +903,19 @@ void initVal(T)(GValue* gval)
     g_value_init(gval, GTypeEnum.Enum);
   else static if (is(T == string))
     g_value_init(gval, GTypeEnum.String);
-  else static if (is(T == Variant))
+  else static if (is(T == VariantG))
     g_value_init(gval, GTypeEnum.Variant);
   else static if (is(T : ParamSpec))
     g_value_init(gval, GTypeEnum.Param);
   else static if (is(T : Boxed))
-    g_value_init(gval, GTypeEnum.Boxed);
+  { // Cannot initialize a plain boxed type, it is done in setVal()
+  }
   else static if (is(T : ObjectG) || is(T == interface))
     g_value_init(gval, GTypeEnum.Object);
   else static if (is(T : Object) || isPointer!T)
     g_value_init(gval, GTypeEnum.Pointer);
   else
-    assert(0);
+    assert(0, "Unsupported type " ~ T.stringof ~ " in Value.initVal");
 }
 
 /// Template to get a value from a GValue of a given D type (must contain the correct type)
@@ -942,10 +943,10 @@ T getVal(T)(const(GValue)* gval)
     return g_type_is_a(gval.gType, GTypeEnum.Flags) ? cast(T)g_value_get_flags(gval) : cast(T)g_value_get_enum(gval);
   else static if (is(T == string))
     return g_value_get_string(gval).fromCString(false);
-  else static if (is(T == Variant))
+  else static if (is(T == VariantG))
   {
     auto v = g_value_get_variant(gval);
-    return v ? new Variant(v, false) : null;
+    return v ? new VariantG(v, false) : null;
   }
   else static if (is(T : ParamSpec))
   {
@@ -965,7 +966,7 @@ T getVal(T)(const(GValue)* gval)
   else static if (is(T : Object) || isPointer!T)
     return cast(T)g_value_get_pointer(gval);
   else
-    assert(0);
+    assert(0, "Unsupported type " ~ T.stringof ~ " in Value.getVal");
 }
 
 /// Template to set a GValue to a given D type (must have been initialized to the proper type)
@@ -998,16 +999,26 @@ void setVal(T)(GValue* gval, T v)
   }
   else static if (is(T == string))
     g_value_take_string(gval, v.toCString(true));
-  else static if (is(T == Variant))
-    g_value_set_variant(gval, v.cPtr!GVariant);
+  else static if (is(T == VariantG))
+    g_value_set_variant(gval, cast(VariantC*)v.cPtr);
   else static if (is(T : ParamSpec))
-    g_value_set_param(gval, v.cPtr!GParamSpec);
+    g_value_set_param(gval, cast(GParamSpec*)v.cPtr);
   else static if (is(T : Boxed))
+  {
+    g_value_init(gval, v.gType); // Have to initialize the specific boxed type here rather than in initVal
     g_value_set_boxed(gval, v.cInstancePtr);
-  else static if (is(T : ObjectG) || is(T == interface))
+  }
+  else static if (is(T : ObjectG))
     g_value_set_object(gval, cast(ObjectC*)v.cPtr(false));
+  else static if (is(T == interface))
+  {
+    if (auto objG = cast(ObjectG)v)
+      g_value_set_object(gval, cast(ObjectC*)objG.cPtr(false));
+    else
+      assert(0, "Object type " ~ typeid(v).toString ~ " is not an ObjectG in Value.setVal");
+  }
   else static if (is(T : Object) || isPointer!T)
     g_value_set_pointer(gval, cast(void*)v);
   else
-    assert(0);
+    assert(0, "Unsupported type " ~ T.stringof ~ " in Value.setVal");
 }

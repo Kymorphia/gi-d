@@ -1,7 +1,7 @@
 module Gio.SettingsBackend;
 
 import GLib.Tree;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Types;
@@ -22,7 +22,7 @@ import Gio.c.types;
  * callers that are documented on each of the interface methods.
  * Some of the `GSettingsBackend` functions accept or return a
  * [GLib.Tree]. These trees always have strings as keys and
- * [GLib.Variant] as values.
+ * [GLib.VariantG] as values.
  * The `GSettingsBackend` API is exported to allow third-party
  * implementations, but does not carry the same stability guarantees
  * as the public GIO API. For this reason, you have to define the
@@ -65,11 +65,11 @@ class SettingsBackend : ObjectG
    *     location to save the relative keys
    *   values = the location to save the values, or %NULL
    */
-  static void flattenTree(Tree tree, out string path, out string[] keys, out Variant[] values)
+  static void flattenTree(Tree tree, out string path, out string[] keys, out VariantG[] values)
   {
     char* _path;
     const(char*)* _keys;
-    GVariant** _values;
+    VariantC** _values;
     g_settings_backend_flatten_tree(tree ? cast(GTree*)tree.cPtr(false) : null, &_path, &_keys, &_values);
     path = _path.fromCString(true);
     uint _lenkeys;
@@ -92,7 +92,7 @@ class SettingsBackend : ObjectG
     }
     values.length = _lenvalues;
     foreach (i; 0 .. _lenvalues)
-      values[i] = new Variant(cast(void*)_values[i], false);
+      values[i] = new VariantG(cast(void*)_values[i], false);
     safeFree(cast(void*)_values);
   }
 

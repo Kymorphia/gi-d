@@ -3,6 +3,10 @@
 //# Change Array to ArrayG
 //!subtype Array ArrayG
 
+//# Change Variant to VariantG so as not to conflict with std.variant
+//!subdtype Variant VariantG
+//!subctype GVariant VariantC
+
 //!set function[malloc][name] gmalloc
 //!set function[free][name] gfree
 

@@ -28,14 +28,14 @@ class DBusProxyClass
     return cast(void*)&cInstance;
   }
 
-  alias GPropertiesChangedFuncType = extern(C) void function(GDBusProxy* proxy, GVariant* changedProperties, const(char*)* invalidatedProperties);
+  alias GPropertiesChangedFuncType = extern(C) void function(GDBusProxy* proxy, VariantC* changedProperties, const(char*)* invalidatedProperties);
 
   @property GPropertiesChangedFuncType gPropertiesChanged()
   {
     return (cast(GDBusProxyClass*)cPtr).gPropertiesChanged;
   }
 
-  alias GSignalFuncType = extern(C) void function(GDBusProxy* proxy, const(char)* senderName, const(char)* signalName, GVariant* parameters);
+  alias GSignalFuncType = extern(C) void function(GDBusProxy* proxy, const(char)* senderName, const(char)* signalName, VariantC* parameters);
 
   @property GSignalFuncType gSignal()
   {

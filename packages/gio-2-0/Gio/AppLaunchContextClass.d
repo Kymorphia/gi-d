@@ -52,14 +52,14 @@ class AppLaunchContextClass
     return (cast(GAppLaunchContextClass*)cPtr).launchFailed;
   }
 
-  alias LaunchedFuncType = extern(C) void function(GAppLaunchContext* context, GAppInfo* info, GVariant* platformData);
+  alias LaunchedFuncType = extern(C) void function(GAppLaunchContext* context, GAppInfo* info, VariantC* platformData);
 
   @property LaunchedFuncType launched()
   {
     return (cast(GAppLaunchContextClass*)cPtr).launched;
   }
 
-  alias LaunchStartedFuncType = extern(C) void function(GAppLaunchContext* context, GAppInfo* info, GVariant* platformData);
+  alias LaunchStartedFuncType = extern(C) void function(GAppLaunchContext* context, GAppInfo* info, VariantC* platformData);
 
   @property LaunchStartedFuncType launchStarted()
   {

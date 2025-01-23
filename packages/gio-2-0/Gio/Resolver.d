@@ -2,7 +2,7 @@ module Gio.Resolver;
 
 import GLib.ErrorG;
 import GLib.List;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -327,9 +327,9 @@ class Resolver : ObjectG
    * Returns: a non-empty #GList of
    *   #GVariant, or %NULL on error. You must free each of the records and the list
    *   when you are done with it. $(LPAREN)You can use [GLib.List.freeFull] with
-   *   [GLib.Variant.unref] to do this.$(RPAREN)
+   *   [GLib.VariantG.unref] to do this.$(RPAREN)
    */
-  List!(Variant) lookupRecords(string rrname, ResolverRecordType recordType, Cancellable cancellable)
+  List!(VariantG) lookupRecords(string rrname, ResolverRecordType recordType, Cancellable cancellable)
   {
     GList* _cretval;
     const(char)* _rrname = rrname.toCString(false);
@@ -337,7 +337,7 @@ class Resolver : ObjectG
     _cretval = g_resolver_lookup_records(cast(GResolver*)cPtr, _rrname, recordType, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(Variant) _retval = new List!(Variant)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(VariantG) _retval = new List!(VariantG)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 
@@ -380,16 +380,16 @@ class Resolver : ObjectG
    * Returns: a non-empty #GList of
    *   #GVariant, or %NULL on error. You must free each of the records and the list
    *   when you are done with it. $(LPAREN)You can use [GLib.List.freeFull] with
-   *   [GLib.Variant.unref] to do this.$(RPAREN)
+   *   [GLib.VariantG.unref] to do this.$(RPAREN)
    */
-  List!(Variant) lookupRecordsFinish(AsyncResult result)
+  List!(VariantG) lookupRecordsFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_resolver_lookup_records_finish(cast(GResolver*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(Variant) _retval = new List!(Variant)(cast(GList*)_cretval, GidOwnership.Full);
+    List!(VariantG) _retval = new List!(VariantG)(cast(GList*)_cretval, GidOwnership.Full);
     return _retval;
   }
 

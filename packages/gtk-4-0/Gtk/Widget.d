@@ -1,7 +1,7 @@
 module Gtk.Widget;
 
 import GLib.List;
-import GLib.Variant;
+import GLib.VariantG;
 import GObject.DClosure;
 import GObject.InitiallyUnowned;
 import GObject.ObjectG;
@@ -474,11 +474,11 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    * Returns: %TRUE if the action was activated, %FALSE if the
    *   action does not exist.
    */
-  bool activateAction(string name, Variant args)
+  bool activateAction(string name, VariantG args)
   {
     bool _retval;
     const(char)* _name = name.toCString(false);
-    _retval = gtk_widget_activate_action_variant(cast(GtkWidget*)cPtr, _name, args ? cast(GVariant*)args.cPtr(false) : null);
+    _retval = gtk_widget_activate_action_variant(cast(GtkWidget*)cPtr, _name, args ? cast(VariantC*)args.cPtr(false) : null);
     return _retval;
   }
 

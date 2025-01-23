@@ -6,46 +6,50 @@ import GLib.c.functions;
 import GLib.c.types;
 import Gid.gid;
 
+
+import std.traits : isSomeString;
+import std.typecons : isTuple;
+
 /**
- * A type in the [GLib.Variant] type system.
- * This section introduces the [GLib.Variant] type system. It is based, in
+ * A type in the [GLib.VariantG] type system.
+ * This section introduces the [GLib.VariantG] type system. It is based, in
  * large part, on the D-Bus type system, with two major changes and
  * some minor lifting of restrictions. The
  * [D-Bus specification](http://dbus.freedesktop.org/doc/dbus-specification.html),
  * therefore, provides a significant amount of
- * information that is useful when working with [GLib.Variant].
+ * information that is useful when working with [GLib.VariantG].
  * The first major change with respect to the D-Bus type system is the
- * introduction of maybe $(LPAREN)or ‘nullable’$(RPAREN) types.  Any type in [GLib.Variant]
+ * introduction of maybe $(LPAREN)or ‘nullable’$(RPAREN) types.  Any type in [GLib.VariantG]
  * can be converted to a maybe type, in which case, `nothing` $(LPAREN)or `null`$(RPAREN)
  * becomes a valid value.  Maybe types have been added by introducing the
  * character `m` to type strings.
- * The second major change is that the [GLib.Variant] type system supports
+ * The second major change is that the [GLib.VariantG] type system supports
  * the concept of ‘indefinite types’ — types that are less specific than
  * the normal types found in D-Bus.  For example, it is possible to speak
- * of ‘an array of any type’ in [GLib.Variant], where the D-Bus type system
+ * of ‘an array of any type’ in [GLib.VariantG], where the D-Bus type system
  * would require you to speak of ‘an array of integers’ or ‘an array of
  * strings’.  Indefinite types have been added by introducing the
  * characters `*`, `?` and `r` to type strings.
  * Finally, all arbitrary restrictions relating to the complexity of
  * types are lifted along with the restriction that dictionary entries
  * may only appear nested inside of arrays.
- * Just as in D-Bus, [GLib.Variant] types are described with strings $(LPAREN)‘type
+ * Just as in D-Bus, [GLib.VariantG] types are described with strings $(LPAREN)‘type
  * strings’$(RPAREN).  Subject to the differences mentioned above, these strings
  * are of the same form as those found in D-Bus.  Note, however: D-Bus
  * always works in terms of messages and therefore individual type
  * strings appear nowhere in its interface.  Instead, ‘signatures’
  * are a concatenation of the strings of the type of each argument in a
- * message.  [GLib.Variant] deals with single values directly so
- * [GLib.Variant] type strings always describe the type of exactly one
+ * message.  [GLib.VariantG] deals with single values directly so
+ * [GLib.VariantG] type strings always describe the type of exactly one
  * value.  This means that a D-Bus signature string is generally not a valid
- * [GLib.Variant] type string — except in the case that it is the signature
+ * [GLib.VariantG] type string — except in the case that it is the signature
  * of a message containing exactly one argument.
  * An indefinite type is similar in spirit to what may be called an
  * abstract type in other type systems.  No value can exist that has an
  * indefinite type as its type, but values can exist that have types
  * that are subtypes of indefinite types.  That is to say,
- * [GLib.Variant.getType] will never return an indefinite type, but
- * calling [GLib.Variant.isOfType] with an indefinite type may return
+ * [GLib.VariantG.getType] will never return an indefinite type, but
+ * calling [GLib.VariantG.isOfType] with an indefinite type may return
  * true.  For example, you cannot have a value that represents ‘an
  * array of no particular type’, but you can have an ‘array of integers’
  * which certainly matches the type of ‘an array of no particular type’,
@@ -62,7 +66,7 @@ import Gid.gid;
  * or [GLib.VariantType.isSubtypeOf]  May be copied using
  * [GLib.VariantType.copy] and freed using [GLib.VariantType.free].
  * ## GVariant Type Strings
- * A [GLib.Variant] type string can be any of the following:
+ * A [GLib.VariantG] type string can be any of the following:
  * - any basic type string $(LPAREN)listed below$(RPAREN)
  * - `v`, `r` or `*`
  * - one of the characters `a` or `m`, followed by another type string
@@ -77,7 +81,7 @@ import Gid.gid;
  * The above definition is recursive to arbitrary depth. `aaaaai` and
  * `$(LPAREN)ui$(LPAREN)nq$(LPAREN)$(LPAREN)y$(RPAREN)$(RPAREN)$(RPAREN)s$(RPAREN)` are both valid type strings, as is
  * `a$(LPAREN)aa$(LPAREN)ui$(RPAREN)$(LPAREN)qna{ya$(LPAREN)yd$(RPAREN)}$(RPAREN)$(RPAREN)`. In order to not hit memory limits,
- * [GLib.Variant] imposes a limit on recursion depth of 65 nested
+ * [GLib.VariantG] imposes a limit on recursion depth of 65 nested
  * containers. This is the limit in the D-Bus specification $(LPAREN)64$(RPAREN) plus one to
  * allow a [`GDBusMessage`](../gio/class.DBusMessage.html) to be nested in
  * a top-level tuple.
@@ -162,6 +166,60 @@ class VariantType : Boxed
   override @property GType gType()
   {
     return getType();
+  }
+
+  /**
+   * Template for creating a new VariantType from one or more D types
+   * Returns: New variant type
+   */
+  static VariantType create(T...)()
+  {
+    return new VariantType(getStr!T);
+  }
+
+  /**
+   * Template to get a variant type string from one or more D types (type strings are concatenated)
+   * Returns: Variant type string which can be used with VariantType
+   */
+  static string getStr(T...)()
+  {
+    char[] typeStr;
+
+    foreach (Arg; T)
+    {
+      static if (is(Arg == bool))
+        typeStr ~= "b";
+      else static if (is(Arg == byte) || is(Arg == ubyte))
+        typeStr ~= "y";
+      else static if (is(Arg == short))
+        typeStr ~= "n";
+      else static if (is(Arg == ushort))
+        typeStr ~= "q";
+      else static if (is(Arg == int))
+        typeStr ~= "i";
+      else static if (is(Arg == uint))
+        typeStr ~= "u";
+      else static if (is(Arg == long))
+        typeStr ~= "x";
+      else static if (is(Arg == ulong))
+        typeStr ~= "t";
+      else static if (is(Arg == float) || is(Arg == double))
+        typeStr ~= "d";
+      else static if (isSomeString!Arg)
+        typeStr ~= "s";
+      else static if (is(Arg : E[], E))
+        typeStr ~= "a" ~ getStr!E;
+      else static if (is(Arg : V[K], V, K))
+        typeStr ~= "a{" ~ getStr!K ~ getStr!V ~ "}";
+      else static if (Arg == Variant)
+        typeStr ~= "v";
+      else static if (isTuple!Arg)
+        typeStr ~= "r";
+      else
+        static assert(false, "Unsupported type for Variant creation: " ~ Arg.stringof);
+    }
+
+    return cast(string)typeStr;
   }
 
   /**
@@ -430,7 +488,7 @@ class VariantType : Boxed
    * A type is definite if its type string does not contain any indefinite
    * type characters $(LPAREN)'*', '?', or 'r'$(RPAREN).
    * A #GVariant instance may not have an indefinite type, so calling
-   * this function on the result of [GLib.Variant.getType] will always
+   * this function on the result of [GLib.VariantG.getType] will always
    * result in %TRUE being returned.  Calling this function on an
    * indefinite type like %G_VARIANT_TYPE_ARRAY, however, will result in
    * %FALSE being returned.

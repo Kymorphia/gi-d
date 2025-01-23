@@ -7205,6 +7205,109 @@ struct GUriParamsIter
 }
 
 /**
+ * A utility type for constructing container-type #GVariant instances.
+ * This is an opaque structure and may only be accessed using the
+ * following functions.
+ * #GVariantBuilder is not threadsafe in any way.  Do not attempt to
+ * access it from more than one thread.
+ */
+struct GVariantBuilder
+{
+  union UType
+  {
+    struct SType
+    {
+      size_t partialMagic;
+
+      const(GVariantType)* type;
+
+      size_t[14] y;
+    }
+
+    SType s;
+
+    size_t[16] x;
+  }
+
+  UType u;
+}
+
+/**
+ * #GVariantDict is a mutable interface to #GVariant dictionaries.
+ * It can be used for doing a sequence of dictionary lookups in an
+ * efficient way on an existing #GVariant dictionary or it can be used
+ * to construct new dictionaries with a hashtable-like interface.  It
+ * can also be used for taking existing dictionaries and modifying them
+ * in order to create new ones.
+ * #GVariantDict can only be used with %G_VARIANT_TYPE_VARDICT
+ * dictionaries.
+ * It is possible to use #GVariantDict allocated on the stack or on the
+ * heap.  When using a stack-allocated #GVariantDict, you begin with a
+ * call to [GLib.VariantDict.init_] and free the resources with a call to
+ * [GLib.VariantDict.clear].
+ * Heap-allocated #GVariantDict follows normal refcounting rules: you
+ * allocate it with [GLib.VariantDict.new_] and use [GLib.VariantDict.ref_]
+ * and [GLib.VariantDict.unref].
+ * [GLib.VariantDict.end] is used to convert the #GVariantDict back into a
+ * dictionary-type #GVariant.  When used with stack-allocated instances,
+ * this also implicitly frees all associated memory, but for
+ * heap-allocated instances, you must still call [GLib.VariantDict.unref]
+ * afterwards.
+ * You will typically want to use a heap-allocated #GVariantDict when
+ * you expose it as part of an API.  For most other uses, the
+ * stack-allocated form will be more convenient.
+ * Consider the following two examples that do the same thing in each
+ * style: take an existing dictionary and look up the "count" uint32
+ * key, adding 1 to it if it is found, or returning an error if the
+ * key is not found.  Each returns the new dictionary as a floating
+ * #GVariant.
+ * ## Using a stack-allocated GVariantDict
+ * |[<!-- language\="C" -->
+ * GVariant *
+ * add_to_count $(LPAREN)GVariant  *orig,
+ * GError   **error$(RPAREN)
+ * {
+ * GVariantDict dict;
+ * guint32 count;
+ * g_variant_dict_init $(LPAREN)&dict, orig$(RPAREN);
+ * if $(LPAREN)!g_variant_dict_lookup $(LPAREN)&dict, "count", "u", &count$(RPAREN)$(RPAREN)
+ * {
+ * g_set_error $(LPAREN)...$(RPAREN);
+ * g_variant_dict_clear $(LPAREN)&dict$(RPAREN);
+ * return NULL;
+ * }
+ * g_variant_dict_insert $(LPAREN)&dict, "count", "u", count + 1$(RPAREN);
+ * return g_variant_dict_end $(LPAREN)&dict$(RPAREN);
+ * }
+ * ]|
+ * ## Using heap-allocated GVariantDict
+ * |[<!-- language\="C" -->
+ * GVariant *
+ * add_to_count $(LPAREN)GVariant  *orig,
+ * GError   **error$(RPAREN)
+ * {
+ * GVariantDict *dict;
+ * GVariant *result;
+ * guint32 count;
+ * dict \= g_variant_dict_new $(LPAREN)orig$(RPAREN);
+ * if $(LPAREN)g_variant_dict_lookup $(LPAREN)dict, "count", "u", &count$(RPAREN)$(RPAREN)
+ * {
+ * g_variant_dict_insert $(LPAREN)dict, "count", "u", count + 1$(RPAREN);
+ * result \= g_variant_dict_end $(LPAREN)dict$(RPAREN);
+ * }
+ * else
+ * {
+ * g_set_error $(LPAREN)...$(RPAREN);
+ * result \= NULL;
+ * }
+ * g_variant_dict_unref $(LPAREN)dict$(RPAREN);
+ * return result;
+ * }
+ * ]|
+ */
+struct GVariantDict;
+
+/**
  * `GVariant` is a variant datatype; it can contain one or more values
  * along with information about the type of the values.
  * A `GVariant` may contain simple types, like an integer, or a boolean value;
@@ -7231,9 +7334,9 @@ struct GUriParamsIter
  * at construction time$(RPAREN).  The type and value of a `GVariant` instance
  * can never change other than by the `GVariant` itself being
  * destroyed.  A `GVariant` cannot contain a pointer.
- * `GVariant` is reference counted using [GLib.Variant.ref_] and
- * [GLib.Variant.unref].  `GVariant` also has floating reference counts —
- * see [GLib.Variant.refSink].
+ * `GVariant` is reference counted using [GLib.VariantG.ref_] and
+ * [GLib.VariantG.unref].  `GVariant` also has floating reference counts —
+ * see [GLib.VariantG.refSink].
  * `GVariant` is completely threadsafe.  A `GVariant` instance can be
  * concurrently accessed in any way from any number of threads without
  * problems.
@@ -7258,7 +7361,7 @@ struct GUriParamsIter
  * A `GVariant`’s size is limited mainly by any lower level operating
  * system constraints, such as the number of bits in `gsize`.  For
  * example, it is reasonable to have a 2GB file mapped into memory
- * with [GLib.MappedFile], and call [GLib.Variant.newFromData] on
+ * with [GLib.MappedFile], and call [GLib.VariantG.newFromData] on
  * it.
  * For convenience to C programmers, `GVariant` features powerful
  * varargs-based value construction and destruction.  This feature is
@@ -7383,7 +7486,7 @@ struct GUriParamsIter
  * dictionary.
  * If calls are made to start accessing the other values then
  * `GVariant` instances will exist for those values only for as long
- * as they are in use $(LPAREN)ie: until you call [GLib.Variant.unref]$(RPAREN).  The
+ * as they are in use $(LPAREN)ie: until you call [GLib.VariantG.unref]$(RPAREN).  The
  * type information is shared.  The serialized data and the buffer
  * management structure for that serialized data is shared by the
  * child.
@@ -7393,117 +7496,14 @@ struct GUriParamsIter
  * using 91 bytes of memory for type information, 29 bytes of memory
  * for the serialized data, 16 bytes for buffer management and 24
  * bytes for the `GVariant` instance, or a total of 160 bytes, plus
- * allocation overhead.  If we were to use [GLib.Variant.getChildValue]
+ * allocation overhead.  If we were to use [GLib.VariantG.getChildValue]
  * to access the two dictionary entries, we would use an additional 48
  * bytes.  If we were to have other dictionaries of the same type, we
  * would use more memory for the serialized data and buffer
  * management for those dictionaries, but the type information would
  * be shared.
  */
-struct GVariant;
-
-/**
- * A utility type for constructing container-type #GVariant instances.
- * This is an opaque structure and may only be accessed using the
- * following functions.
- * #GVariantBuilder is not threadsafe in any way.  Do not attempt to
- * access it from more than one thread.
- */
-struct GVariantBuilder
-{
-  union UType
-  {
-    struct SType
-    {
-      size_t partialMagic;
-
-      const(GVariantType)* type;
-
-      size_t[14] y;
-    }
-
-    SType s;
-
-    size_t[16] x;
-  }
-
-  UType u;
-}
-
-/**
- * #GVariantDict is a mutable interface to #GVariant dictionaries.
- * It can be used for doing a sequence of dictionary lookups in an
- * efficient way on an existing #GVariant dictionary or it can be used
- * to construct new dictionaries with a hashtable-like interface.  It
- * can also be used for taking existing dictionaries and modifying them
- * in order to create new ones.
- * #GVariantDict can only be used with %G_VARIANT_TYPE_VARDICT
- * dictionaries.
- * It is possible to use #GVariantDict allocated on the stack or on the
- * heap.  When using a stack-allocated #GVariantDict, you begin with a
- * call to [GLib.VariantDict.init_] and free the resources with a call to
- * [GLib.VariantDict.clear].
- * Heap-allocated #GVariantDict follows normal refcounting rules: you
- * allocate it with [GLib.VariantDict.new_] and use [GLib.VariantDict.ref_]
- * and [GLib.VariantDict.unref].
- * [GLib.VariantDict.end] is used to convert the #GVariantDict back into a
- * dictionary-type #GVariant.  When used with stack-allocated instances,
- * this also implicitly frees all associated memory, but for
- * heap-allocated instances, you must still call [GLib.VariantDict.unref]
- * afterwards.
- * You will typically want to use a heap-allocated #GVariantDict when
- * you expose it as part of an API.  For most other uses, the
- * stack-allocated form will be more convenient.
- * Consider the following two examples that do the same thing in each
- * style: take an existing dictionary and look up the "count" uint32
- * key, adding 1 to it if it is found, or returning an error if the
- * key is not found.  Each returns the new dictionary as a floating
- * #GVariant.
- * ## Using a stack-allocated GVariantDict
- * |[<!-- language\="C" -->
- * GVariant *
- * add_to_count $(LPAREN)GVariant  *orig,
- * GError   **error$(RPAREN)
- * {
- * GVariantDict dict;
- * guint32 count;
- * g_variant_dict_init $(LPAREN)&dict, orig$(RPAREN);
- * if $(LPAREN)!g_variant_dict_lookup $(LPAREN)&dict, "count", "u", &count$(RPAREN)$(RPAREN)
- * {
- * g_set_error $(LPAREN)...$(RPAREN);
- * g_variant_dict_clear $(LPAREN)&dict$(RPAREN);
- * return NULL;
- * }
- * g_variant_dict_insert $(LPAREN)&dict, "count", "u", count + 1$(RPAREN);
- * return g_variant_dict_end $(LPAREN)&dict$(RPAREN);
- * }
- * ]|
- * ## Using heap-allocated GVariantDict
- * |[<!-- language\="C" -->
- * GVariant *
- * add_to_count $(LPAREN)GVariant  *orig,
- * GError   **error$(RPAREN)
- * {
- * GVariantDict *dict;
- * GVariant *result;
- * guint32 count;
- * dict \= g_variant_dict_new $(LPAREN)orig$(RPAREN);
- * if $(LPAREN)g_variant_dict_lookup $(LPAREN)dict, "count", "u", &count$(RPAREN)$(RPAREN)
- * {
- * g_variant_dict_insert $(LPAREN)dict, "count", "u", count + 1$(RPAREN);
- * result \= g_variant_dict_end $(LPAREN)dict$(RPAREN);
- * }
- * else
- * {
- * g_set_error $(LPAREN)...$(RPAREN);
- * result \= NULL;
- * }
- * g_variant_dict_unref $(LPAREN)dict$(RPAREN);
- * return result;
- * }
- * ]|
- */
-struct GVariantDict;
+struct VariantC;
 
 /**
  * #GVariantIter is an opaque data structure and can only be accessed
@@ -7515,45 +7515,45 @@ struct GVariantIter
 }
 
 /**
- * A type in the [GLib.Variant] type system.
- * This section introduces the [GLib.Variant] type system. It is based, in
+ * A type in the [GLib.VariantG] type system.
+ * This section introduces the [GLib.VariantG] type system. It is based, in
  * large part, on the D-Bus type system, with two major changes and
  * some minor lifting of restrictions. The
  * [D-Bus specification](http://dbus.freedesktop.org/doc/dbus-specification.html),
  * therefore, provides a significant amount of
- * information that is useful when working with [GLib.Variant].
+ * information that is useful when working with [GLib.VariantG].
  * The first major change with respect to the D-Bus type system is the
- * introduction of maybe $(LPAREN)or ‘nullable’$(RPAREN) types.  Any type in [GLib.Variant]
+ * introduction of maybe $(LPAREN)or ‘nullable’$(RPAREN) types.  Any type in [GLib.VariantG]
  * can be converted to a maybe type, in which case, `nothing` $(LPAREN)or `null`$(RPAREN)
  * becomes a valid value.  Maybe types have been added by introducing the
  * character `m` to type strings.
- * The second major change is that the [GLib.Variant] type system supports
+ * The second major change is that the [GLib.VariantG] type system supports
  * the concept of ‘indefinite types’ — types that are less specific than
  * the normal types found in D-Bus.  For example, it is possible to speak
- * of ‘an array of any type’ in [GLib.Variant], where the D-Bus type system
+ * of ‘an array of any type’ in [GLib.VariantG], where the D-Bus type system
  * would require you to speak of ‘an array of integers’ or ‘an array of
  * strings’.  Indefinite types have been added by introducing the
  * characters `*`, `?` and `r` to type strings.
  * Finally, all arbitrary restrictions relating to the complexity of
  * types are lifted along with the restriction that dictionary entries
  * may only appear nested inside of arrays.
- * Just as in D-Bus, [GLib.Variant] types are described with strings $(LPAREN)‘type
+ * Just as in D-Bus, [GLib.VariantG] types are described with strings $(LPAREN)‘type
  * strings’$(RPAREN).  Subject to the differences mentioned above, these strings
  * are of the same form as those found in D-Bus.  Note, however: D-Bus
  * always works in terms of messages and therefore individual type
  * strings appear nowhere in its interface.  Instead, ‘signatures’
  * are a concatenation of the strings of the type of each argument in a
- * message.  [GLib.Variant] deals with single values directly so
- * [GLib.Variant] type strings always describe the type of exactly one
+ * message.  [GLib.VariantG] deals with single values directly so
+ * [GLib.VariantG] type strings always describe the type of exactly one
  * value.  This means that a D-Bus signature string is generally not a valid
- * [GLib.Variant] type string — except in the case that it is the signature
+ * [GLib.VariantG] type string — except in the case that it is the signature
  * of a message containing exactly one argument.
  * An indefinite type is similar in spirit to what may be called an
  * abstract type in other type systems.  No value can exist that has an
  * indefinite type as its type, but values can exist that have types
  * that are subtypes of indefinite types.  That is to say,
- * [GLib.Variant.getType] will never return an indefinite type, but
- * calling [GLib.Variant.isOfType] with an indefinite type may return
+ * [GLib.VariantG.getType] will never return an indefinite type, but
+ * calling [GLib.VariantG.isOfType] with an indefinite type may return
  * true.  For example, you cannot have a value that represents ‘an
  * array of no particular type’, but you can have an ‘array of integers’
  * which certainly matches the type of ‘an array of no particular type’,
@@ -7570,7 +7570,7 @@ struct GVariantIter
  * or [GLib.VariantType.isSubtypeOf]  May be copied using
  * [GLib.VariantType.copy] and freed using [GLib.VariantType.free].
  * ## GVariant Type Strings
- * A [GLib.Variant] type string can be any of the following:
+ * A [GLib.VariantG] type string can be any of the following:
  * - any basic type string $(LPAREN)listed below$(RPAREN)
  * - `v`, `r` or `*`
  * - one of the characters `a` or `m`, followed by another type string
@@ -7585,7 +7585,7 @@ struct GVariantIter
  * The above definition is recursive to arbitrary depth. `aaaaai` and
  * `$(LPAREN)ui$(LPAREN)nq$(LPAREN)$(LPAREN)y$(RPAREN)$(RPAREN)$(RPAREN)s$(RPAREN)` are both valid type strings, as is
  * `a$(LPAREN)aa$(LPAREN)ui$(RPAREN)$(LPAREN)qna{ya$(LPAREN)yd$(RPAREN)}$(RPAREN)$(RPAREN)`. In order to not hit memory limits,
- * [GLib.Variant] imposes a limit on recursion depth of 65 nested
+ * [GLib.VariantG] imposes a limit on recursion depth of 65 nested
  * containers. This is the limit in the D-Bus specification $(LPAREN)64$(RPAREN) plus one to
  * allow a [`GDBusMessage`](../gio/class.DBusMessage.html) to be nested in
  * a top-level tuple.

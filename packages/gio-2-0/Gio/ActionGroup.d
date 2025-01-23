@@ -1,7 +1,7 @@
 module Gio.ActionGroup;
 
 public import Gio.ActionGroupIfaceProxy;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.DClosure;
 import Gid.gid;
@@ -87,7 +87,7 @@ interface ActionGroup
    *   actionName = the name of an action in the group
    *   state = the new state of the named action
    */
-  void actionStateChanged(string actionName, Variant state);
+  void actionStateChanged(string actionName, VariantG state);
 
   /**
    * Activate the named action within action_group.
@@ -120,7 +120,7 @@ interface ActionGroup
    *   actionName = the name of the action to activate
    *   parameter = parameters to the activation
    */
-  void activateAction(string actionName, Variant parameter);
+  void activateAction(string actionName, VariantG parameter);
 
   /**
    * Request for the state of the named action within action_group to be
@@ -135,7 +135,7 @@ interface ActionGroup
    *   actionName = the name of the action to request the change on
    *   value = the new state
    */
-  void changeActionState(string actionName, Variant value);
+  void changeActionState(string actionName, VariantG value);
 
   /**
    * Checks if the named action within action_group is currently enabled.
@@ -170,12 +170,12 @@ interface ActionGroup
    * action is stateful then the type of the return value is the type
    * given by [Gio.ActionGroup.getActionStateType].
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Params:
    *   actionName = the name of the action to query
    * Returns: the current state of the action
    */
-  Variant getActionState(string actionName);
+  VariantG getActionState(string actionName);
 
   /**
    * Requests a hint about the valid range of values for the state of the
@@ -191,12 +191,12 @@ interface ActionGroup
    * have a state value outside of the hinted range and setting a value
    * within the range may fail.
    * The return value $(LPAREN)if non-%NULL$(RPAREN) should be freed with
-   * [GLib.Variant.unref] when it is no longer required.
+   * [GLib.VariantG.unref] when it is no longer required.
    * Params:
    *   actionName = the name of the action to query
    * Returns: the state range hint
    */
-  Variant getActionStateHint(string actionName);
+  VariantG getActionStateHint(string actionName);
 
   /**
    * Queries the type of the state of the named action within
@@ -267,7 +267,7 @@ interface ActionGroup
    *   state = the current state, or %NULL if stateless
    * Returns: %TRUE if the action exists, else %FALSE
    */
-  bool queryAction(string actionName, out bool enabled, out VariantType parameterType, out VariantType stateType, out Variant stateHint, out Variant state);
+  bool queryAction(string actionName, out bool enabled, out VariantType parameterType, out VariantType stateType, out VariantG stateHint, out VariantG state);
 
   /**
    * Signals that a new action was just added to the group.
@@ -335,7 +335,7 @@ interface ActionGroup
    *   value = the new value of the state
    *   actionGroup = the instance the signal is connected to
    */
-  alias ActionStateChangedCallback = void delegate(string actionName, Variant value, ActionGroup actionGroup);
+  alias ActionStateChangedCallback = void delegate(string actionName, VariantG value, ActionGroup actionGroup);
 
   /**
    * Connect to ActionStateChanged signal.

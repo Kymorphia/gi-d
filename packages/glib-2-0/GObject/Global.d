@@ -2,7 +2,7 @@ module GObject.Global;
 
 import GLib.Source;
 import GLib.Types;
-import GLib.Variant;
+import GLib.VariantG;
 import GLib.VariantType;
 import GObject.Closure;
 import GObject.EnumClass;
@@ -830,13 +830,13 @@ ParamSpec paramSpecUnichar(string name, string nick, string blurb, dchar default
  *   flags = flags for the property specified
  * Returns: the newly created #GParamSpec
  */
-ParamSpec paramSpecVariant(string name, string nick, string blurb, VariantType type, Variant defaultValue, ParamFlags flags)
+ParamSpec paramSpecVariant(string name, string nick, string blurb, VariantType type, VariantG defaultValue, ParamFlags flags)
 {
   GParamSpec* _cretval;
   const(char)* _name = name.toCString(false);
   const(char)* _nick = nick.toCString(false);
   const(char)* _blurb = blurb.toCString(false);
-  _cretval = g_param_spec_variant(_name, _nick, _blurb, type ? cast(GVariantType*)type.cPtr(false) : null, defaultValue ? cast(GVariant*)defaultValue.cPtr(true) : null, flags);
+  _cretval = g_param_spec_variant(_name, _nick, _blurb, type ? cast(GVariantType*)type.cPtr(false) : null, defaultValue ? cast(VariantC*)defaultValue.cPtr(true) : null, flags);
   auto _retval = _cretval ? new ParamSpec(cast(GParamSpec*)_cretval, true) : null;
   return _retval;
 }
