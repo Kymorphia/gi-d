@@ -1,6 +1,5 @@
 module GLib.Completion;
 
-import GLib.List;
 import GLib.Types;
 import GLib.c.functions;
 import GLib.c.types;
@@ -109,13 +108,13 @@ class Completion
 
    * Deprecated: Rarely used API
    */
-  List!(string) completeUtf8(string prefix, out string newPrefix)
+  string[] completeUtf8(string prefix, out string newPrefix)
   {
     GList* _cretval;
     const(char)* _prefix = prefix.toCString(false);
     char* _newPrefix;
     _cretval = g_completion_complete_utf8(cast(GCompletion*)cPtr, _prefix, &_newPrefix);
-    List!(string) _retval = new List!(string)(cast(GList*)_cretval, GidOwnership.None);
+    auto _retval = gListToD!(string, GidOwnership.None)(cast(GList*)_cretval);
     newPrefix = _newPrefix.fromCString(true);
     return _retval;
   }

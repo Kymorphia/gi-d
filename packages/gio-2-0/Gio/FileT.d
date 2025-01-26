@@ -1,7 +1,6 @@
 module Gio.FileT;
 
 public import Gio.FileIfaceProxy;
-public import GLib.Bytes;
 public import GLib.ErrorG;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -1158,34 +1157,6 @@ template FileT()
   }
 
   /**
-   * Loads the contents of file and returns it as #GBytes.
-   * If file is a resource:// based URI, the resulting bytes will reference the
-   * embedded resource instead of a copy. Otherwise, this is equivalent to calling
-   * [Gio.File.loadContents] and [GLib.Bytes.newTake].
-   * For resources, etag_out will be set to %NULL.
-   * The data contained in the resulting #GBytes is always zero-terminated, but
-   * this is not included in the #GBytes length. The resulting #GBytes should be
-   * freed with [GLib.Bytes.unref] when no longer in use.
-   * Params:
-   *   cancellable = a #GCancellable or %NULL
-   *   etagOut = a location to place the current
-   *     entity tag for the file, or %NULL if the entity tag is not needed
-   * Returns: a #GBytes or %NULL and error is set
-   */
-  override Bytes loadBytes(Cancellable cancellable, out string etagOut)
-  {
-    GBytes* _cretval;
-    char* _etagOut;
-    GError *_err;
-    _cretval = g_file_load_bytes(cast(GFile*)cPtr, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_etagOut, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    etagOut = _etagOut.fromCString(true);
-    return _retval;
-  }
-
-  /**
    * Asynchronously loads the contents of file as #GBytes.
    * If file is a resource:// based URI, the resulting bytes will reference the
    * embedded resource instead of a copy. Otherwise, this is equivalent to calling
@@ -1210,32 +1181,6 @@ template FileT()
 
     auto _callback = freezeDelegate(cast(void*)&callback);
     g_file_load_bytes_async(cast(GFile*)cPtr, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
-  }
-
-  /**
-   * Completes an asynchronous request to [Gio.File.loadBytesAsync].
-   * For resources, etag_out will be set to %NULL.
-   * The data contained in the resulting #GBytes is always zero-terminated, but
-   * this is not included in the #GBytes length. The resulting #GBytes should be
-   * freed with [GLib.Bytes.unref] when no longer in use.
-   * See [Gio.File.loadBytes] for more information.
-   * Params:
-   *   result = a #GAsyncResult provided to the callback
-   *   etagOut = a location to place the current
-   *     entity tag for the file, or %NULL if the entity tag is not needed
-   * Returns: a #GBytes or %NULL and error is set
-   */
-  override Bytes loadBytesFinish(AsyncResult result, out string etagOut)
-  {
-    GBytes* _cretval;
-    char* _etagOut;
-    GError *_err;
-    _cretval = g_file_load_bytes_finish(cast(GFile*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_etagOut, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    etagOut = _etagOut.fromCString(true);
-    return _retval;
   }
 
   /**
@@ -2606,37 +2551,6 @@ template FileT()
     const(char)* _etag = etag.toCString(false);
     auto _callback = freezeDelegate(cast(void*)&callback);
     g_file_replace_contents_async(cast(GFile*)cPtr, _contents, _length, _etag, makeBackup, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
-  }
-
-  /**
-   * Same as [Gio.File.replaceContentsAsync] but takes a #GBytes input instead.
-   * This function will keep a ref on contents until the operation is done.
-   * Unlike [Gio.File.replaceContentsAsync] this allows forgetting about the
-   * content without waiting for the callback.
-   * When this operation has completed, callback will be called with
-   * user_user data, and the operation can be finalized with
-   * [Gio.File.replaceContentsFinish].
-   * Params:
-   *   contents = a #GBytes
-   *   etag = a new [entity tag](#entity-tags) for the file, or %NULL
-   *   makeBackup = %TRUE if a backup should be created
-   *   flags = a set of #GFileCreateFlags
-   *   cancellable = optional #GCancellable object, %NULL to ignore
-   *   callback = a #GAsyncReadyCallback to call when the request is satisfied
-   */
-  override void replaceContentsBytesAsync(Bytes contents, string etag, bool makeBackup, FileCreateFlags flags, Cancellable cancellable, AsyncReadyCallback callback)
-  {
-    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
-    {
-      ptrThawGC(data);
-      auto _dlg = cast(AsyncReadyCallback*)data;
-
-      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
-    }
-
-    const(char)* _etag = etag.toCString(false);
-    auto _callback = freezeDelegate(cast(void*)&callback);
-    g_file_replace_contents_bytes_async(cast(GFile*)cPtr, contents ? cast(GBytes*)contents.cPtr(false) : null, _etag, makeBackup, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**

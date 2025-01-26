@@ -1,6 +1,5 @@
 module Gio.MemoryOutputStream;
 
-import GLib.Bytes;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.OutputStream;
@@ -101,19 +100,6 @@ class MemoryOutputStream : OutputStream, PollableOutputStream, Seekable
   {
     size_t _retval;
     _retval = g_memory_output_stream_get_size(cast(GMemoryOutputStream*)cPtr);
-    return _retval;
-  }
-
-  /**
-   * Returns data from the ostream as a #GBytes. ostream must be
-   * closed before calling this function.
-   * Returns: the stream's data
-   */
-  Bytes stealAsBytes()
-  {
-    GBytes* _cretval;
-    _cretval = g_memory_output_stream_steal_as_bytes(cast(GMemoryOutputStream*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

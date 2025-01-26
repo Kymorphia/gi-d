@@ -1,6 +1,5 @@
 module Gio.EmblemedIcon;
 
-import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.Emblem;
@@ -78,11 +77,11 @@ class EmblemedIcon : ObjectG, Icon
    * Returns: a #GList of
    *   #GEmblems that is owned by emblemed
    */
-  List!(Emblem) getEmblems()
+  Emblem[] getEmblems()
   {
     GList* _cretval;
     _cretval = g_emblemed_icon_get_emblems(cast(GEmblemedIcon*)cPtr);
-    List!(Emblem) _retval = new List!(Emblem)(cast(GList*)_cretval, GidOwnership.None);
+    auto _retval = gListToD!(Emblem, GidOwnership.None)(cast(GList*)_cretval);
     return _retval;
   }
 

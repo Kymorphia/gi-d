@@ -1,6 +1,5 @@
 module Gdk.ContentProvider;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -45,23 +44,6 @@ class ContentProvider : ObjectG
   override @property GType gType()
   {
     return getType();
-  }
-
-  /**
-   * Create a content provider that provides the given bytes as data for
-   * the given mime_type.
-   * Params:
-   *   mimeType = the mime type
-   *   bytes = a `GBytes` with the data for mime_type
-   * Returns: a new `GdkContentProvider`
-   */
-  static ContentProvider newForBytes(string mimeType, Bytes bytes)
-  {
-    GdkContentProvider* _cretval;
-    const(char)* _mimeType = mimeType.toCString(false);
-    _cretval = gdk_content_provider_new_for_bytes(_mimeType, bytes ? cast(GBytes*)bytes.cPtr(false) : null);
-    auto _retval = _cretval ? ObjectG.getDObject!ContentProvider(cast(GdkContentProvider*)_cretval, true) : null;
-    return _retval;
   }
 
   /**

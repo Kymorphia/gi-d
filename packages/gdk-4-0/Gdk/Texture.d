@@ -1,6 +1,5 @@
 module Gdk.Texture;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gdk.Paintable;
@@ -69,29 +68,6 @@ class Texture : ObjectG, Paintable, Icon, LoadableIcon
   {
     GdkTexture* _cretval;
     _cretval = gdk_texture_new_for_pixbuf(pixbuf ? cast(PixbufC*)pixbuf.cPtr(false) : null);
-    auto _retval = _cretval ? ObjectG.getDObject!Texture(cast(GdkTexture*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
-   * Creates a new texture by loading an image from memory,
-   * The file format is detected automatically. The supported formats
-   * are PNG, JPEG and TIFF, though more formats might be available.
-   * If %NULL is returned, then error will be set.
-   * This function is threadsafe, so that you can e.g. use GTask
-   * and [Gio.Task.runInThread] to avoid blocking the main thread
-   * while loading a big image.
-   * Params:
-   *   bytes = a `GBytes` containing the data to load
-   * Returns: A newly-created `GdkTexture`
-   */
-  static Texture newFromBytes(Bytes bytes)
-  {
-    GdkTexture* _cretval;
-    GError *_err;
-    _cretval = gdk_texture_new_from_bytes(bytes ? cast(GBytes*)bytes.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
     auto _retval = _cretval ? ObjectG.getDObject!Texture(cast(GdkTexture*)_cretval, true) : null;
     return _retval;
   }
@@ -227,27 +203,6 @@ class Texture : ObjectG, Paintable, Icon, LoadableIcon
   }
 
   /**
-   * Store the given texture in memory as a PNG file.
-   * Use [Gdk.Texture.newFromBytes] to read it back.
-   * If you want to serialize a texture, this is a convenient and
-   * portable way to do that.
-   * If you need more control over the generated image, such as
-   * attaching metadata, you should look into an image handling
-   * library such as the gdk-pixbuf library.
-   * If you are dealing with high dynamic range float data, you
-   * might also want to consider [Gdk.Texture.saveToTiffBytes]
-   * instead.
-   * Returns: a newly allocated `GBytes` containing PNG data
-   */
-  Bytes saveToPngBytes()
-  {
-    GBytes* _cretval;
-    _cretval = gdk_texture_save_to_png_bytes(cast(GdkTexture*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
    * Store the given texture to the filename as a TIFF file.
    * GTK will attempt to store data without loss.
    * Params:
@@ -259,26 +214,6 @@ class Texture : ObjectG, Paintable, Icon, LoadableIcon
     bool _retval;
     const(char)* _filename = filename.toCString(false);
     _retval = gdk_texture_save_to_tiff(cast(GdkTexture*)cPtr, _filename);
-    return _retval;
-  }
-
-  /**
-   * Store the given texture in memory as a TIFF file.
-   * Use [Gdk.Texture.newFromBytes] to read it back.
-   * This function is intended to store a representation of the
-   * texture's data that is as accurate as possible. This is
-   * particularly relevant when working with high dynamic range
-   * images and floating-point texture data.
-   * If that is not your concern and you are interested in a
-   * smaller size and a more portable format, you might want to
-   * use [Gdk.Texture.saveToPngBytes].
-   * Returns: a newly allocated `GBytes` containing TIFF data
-   */
-  Bytes saveToTiffBytes()
-  {
-    GBytes* _cretval;
-    _cretval = gdk_texture_save_to_tiff_bytes(cast(GdkTexture*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 }

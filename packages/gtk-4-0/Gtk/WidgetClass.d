@@ -1,6 +1,5 @@
 module Gtk.WidgetClass;
 
-import GLib.Bytes;
 import GLib.VariantType;
 import GObject.InitiallyUnownedClass;
 import GObject.ObjectG;
@@ -445,21 +444,6 @@ class WidgetClass
   void setLayoutManagerType(GType type)
   {
     gtk_widget_class_set_layout_manager_type(cast(GtkWidgetClass*)cPtr, type);
-  }
-
-  /**
-   * This should be called at class initialization time to specify
-   * the `GtkBuilder` XML to be used to extend a widget.
-   * For convenience, [Gtk.WidgetClass.setTemplateFromResource]
-   * is also provided.
-   * Note that any class that installs templates must call
-   * [Gtk.Widget.initTemplate] in the widget’s instance initializer.
-   * Params:
-   *   templateBytes = A `GBytes` holding the `GtkBuilder` XML
-   */
-  void setTemplate(Bytes templateBytes)
-  {
-    gtk_widget_class_set_template(cast(GtkWidgetClass*)cPtr, templateBytes ? cast(GBytes*)templateBytes.cPtr(false) : null);
   }
 
   /**

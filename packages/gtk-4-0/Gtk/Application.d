@@ -1,6 +1,5 @@
 module Gtk.Application;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -277,11 +276,11 @@ class Application : DGioApplication
    * Returns: a `GList` of `GtkWindow`
    *   instances
    */
-  List!(Window) getWindows()
+  Window[] getWindows()
   {
     GList* _cretval;
     _cretval = gtk_application_get_windows(cast(GtkApplication*)cPtr);
-    List!(Window) _retval = new List!(Window)(cast(GList*)_cretval, GidOwnership.None);
+    auto _retval = gListToD!(Window, GidOwnership.None)(cast(GList*)_cretval);
     return _retval;
   }
 

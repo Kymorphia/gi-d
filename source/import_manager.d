@@ -168,9 +168,6 @@ final class ImportManager
   {
     if (typeNode.containerType != ContainerType.None)
     {
-      if (auto mod = typeNode.containerType.getModule(typeNode.repo.defs))
-        resolveDType(mod);
-
       foreach (elem; typeNode.elemTypes) // Add imports for each of the container types
         resolveDType(elem);
 

@@ -1,6 +1,5 @@
 module Gtk.Window;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gdk.Display;
@@ -152,11 +151,11 @@ class Window : Widget, Native, Root, ShortcutManager
    * Returns: list of
    *   toplevel widgets
    */
-  static List!(Widget) listToplevels()
+  static Widget[] listToplevels()
   {
     GList* _cretval;
     _cretval = gtk_window_list_toplevels();
-    List!(Widget) _retval = new List!(Widget)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(Widget, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

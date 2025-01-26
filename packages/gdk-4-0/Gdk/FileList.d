@@ -1,7 +1,6 @@
 module Gdk.FileList;
 
 import GLib.Boxed;
-import GLib.SList;
 import GObject.ObjectG;
 import Gdk.Types;
 import Gdk.c.functions;
@@ -67,10 +66,12 @@ class FileList : Boxed
    *   files = a list of files
    * Returns: the newly created files list
    */
-  static FileList newFromList(SList!(File) files)
+  static FileList newFromList(File[] files)
   {
     GdkFileList* _cretval;
-    _cretval = gdk_file_list_new_from_list(files.cPtr);
+    auto _files = gSListFromD!(File)(files);
+    scope(exit) containerFree!(GSList*, File, GidOwnership.None)(_files);
+    _cretval = gdk_file_list_new_from_list(_files);
     auto _retval = _cretval ? new FileList(cast(void*)_cretval, true) : null;
     return _retval;
   }
@@ -80,11 +81,11 @@ class FileList : Boxed
    * This function is meant for language bindings.
    * Returns: the files inside the list
    */
-  SList!(File) getFiles()
+  File[] getFiles()
   {
     GSList* _cretval;
     _cretval = gdk_file_list_get_files(cast(GdkFileList*)cPtr);
-    SList!(File) _retval = new SList!(File)(cast(GSList*)_cretval, GidOwnership.Container);
+    auto _retval = gSListToD!(File, GidOwnership.Container)(cast(GSList*)_cretval);
     return _retval;
   }
 }

@@ -1,6 +1,5 @@
 module Gtk.BuildableParseContext;
 
-import GLib.PtrArray;
 import Gid.gid;
 import Gtk.Types;
 import Gtk.c.functions;
@@ -56,11 +55,11 @@ class BuildableParseContext
    * processed.
    * Returns: the element stack, which must not be modified
    */
-  PtrArray!(string) getElementStack()
+  string[] getElementStack()
   {
     GPtrArray* _cretval;
     _cretval = gtk_buildable_parse_context_get_element_stack(cast(GtkBuildableParseContext*)cPtr);
-    PtrArray!(string) _retval = new PtrArray!(string)(cast(GPtrArray*)_cretval, GidOwnership.None);
+    auto _retval = gPtrArrayToD!(string, GidOwnership.None)(cast(GPtrArray*)_cretval);
     return _retval;
   }
 

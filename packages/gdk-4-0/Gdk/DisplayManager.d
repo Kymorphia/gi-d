@@ -1,6 +1,5 @@
 module Gdk.DisplayManager;
 
-import GLib.SList;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gdk.Display;
@@ -104,11 +103,11 @@ class DisplayManager : ObjectG
    * Returns: a newly
    *   allocated `GSList` of `GdkDisplay` objects
    */
-  SList!(Display) listDisplays()
+  Display[] listDisplays()
   {
     GSList* _cretval;
     _cretval = gdk_display_manager_list_displays(cast(GdkDisplayManager*)cPtr);
-    SList!(Display) _retval = new SList!(Display)(cast(GSList*)_cretval, GidOwnership.Container);
+    auto _retval = gSListToD!(Display, GidOwnership.Container)(cast(GSList*)_cretval);
     return _retval;
   }
 

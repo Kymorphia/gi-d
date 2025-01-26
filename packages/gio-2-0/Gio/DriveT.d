@@ -2,7 +2,6 @@ module Gio.DriveT;
 
 public import Gio.DriveIfaceProxy;
 public import GLib.ErrorG;
-public import GLib.List;
 public import GObject.DClosure;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -302,11 +301,11 @@ template DriveT()
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: #GList containing any #GVolume objects on the given drive.
    */
-  override List!(Volume) getVolumes()
+  override Volume[] getVolumes()
   {
     GList* _cretval;
     _cretval = g_drive_get_volumes(cast(GDrive*)cPtr);
-    List!(Volume) _retval = new List!(Volume)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(Volume, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

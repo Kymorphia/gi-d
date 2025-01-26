@@ -1,10 +1,7 @@
 module Gio.TlsCertificate;
 
-import GLib.Bytes;
 import GLib.DateTime;
 import GLib.ErrorG;
-import GLib.List;
-import GLib.PtrArray;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.InetAddress;
@@ -242,7 +239,7 @@ class TlsCertificate : ObjectG
    *   #GList containing #GTlsCertificate objects. You must free the list
    *   and its contents when you are done with it.
    */
-  static List!(TlsCertificate) listNewFromFile(string file)
+  static TlsCertificate[] listNewFromFile(string file)
   {
     GList* _cretval;
     const(char)* _file = file.toCString(false);
@@ -250,20 +247,7 @@ class TlsCertificate : ObjectG
     _cretval = g_tls_certificate_list_new_from_file(_file, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(TlsCertificate) _retval = new List!(TlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
-    return _retval;
-  }
-
-  /**
-   * Gets the value of #GTlsCertificate:dns-names.
-   * Returns: A #GPtrArray of
-   *   #GBytes elements, or %NULL if it's not available.
-   */
-  PtrArray!(Bytes) getDnsNames()
-  {
-    GPtrArray* _cretval;
-    _cretval = g_tls_certificate_get_dns_names(cast(GTlsCertificate*)cPtr);
-    PtrArray!(Bytes) _retval = new PtrArray!(Bytes)(cast(GPtrArray*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(TlsCertificate, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -272,11 +256,11 @@ class TlsCertificate : ObjectG
    * Returns: A #GPtrArray
    *   of #GInetAddress elements, or %NULL if it's not available.
    */
-  PtrArray!(InetAddress) getIpAddresses()
+  InetAddress[] getIpAddresses()
   {
     GPtrArray* _cretval;
     _cretval = g_tls_certificate_get_ip_addresses(cast(GTlsCertificate*)cPtr);
-    PtrArray!(InetAddress) _retval = new PtrArray!(InetAddress)(cast(GPtrArray*)_cretval, GidOwnership.Container);
+    auto _retval = gPtrArrayToD!(InetAddress, GidOwnership.Container)(cast(GPtrArray*)_cretval);
     return _retval;
   }
 

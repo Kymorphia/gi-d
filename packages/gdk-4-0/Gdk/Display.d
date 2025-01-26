@@ -1,7 +1,6 @@
 module Gdk.Display;
 
 import GLib.ErrorG;
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import GObject.Value;
@@ -352,11 +351,11 @@ class Display : ObjectG
    * Returns: the
    *   list of seats known to the `GdkDisplay`
    */
-  List!(Seat) listSeats()
+  Seat[] listSeats()
   {
     GList* _cretval;
     _cretval = gdk_display_list_seats(cast(GdkDisplay*)cPtr);
-    List!(Seat) _retval = new List!(Seat)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(Seat, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

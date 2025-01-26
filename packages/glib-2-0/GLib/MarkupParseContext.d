@@ -2,7 +2,6 @@ module GLib.MarkupParseContext;
 
 import GLib.Boxed;
 import GLib.ErrorG;
-import GLib.SList;
 import GLib.Types;
 import GLib.c.functions;
 import GLib.c.types;
@@ -90,11 +89,11 @@ class MarkupParseContext : Boxed
    * processed.
    * Returns: the element stack, which must not be modified
    */
-  SList!(string) getElementStack()
+  string[] getElementStack()
   {
     const(GSList)* _cretval;
     _cretval = g_markup_parse_context_get_element_stack(cast(GMarkupParseContext*)cPtr);
-    SList!(string) _retval = new SList!(string)(cast(GSList*)_cretval, GidOwnership.None);
+    auto _retval = gSListToD!(string, GidOwnership.None)(cast(GSList*)_cretval);
     return _retval;
   }
 

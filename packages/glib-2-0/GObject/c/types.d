@@ -2139,7 +2139,7 @@ struct GValue
  * It is possible to create a `GArray` that behaves like a `GValueArray`
  * by using the size of `GValue` as the element size, and by setting
  * [GObject.Value.unset] as the clear function using
- * [GLib.ArrayG.setClearFunc], for instance, the following code:
+ * [GLib.Array.setClearFunc], for instance, the following code:
  * ```c
  * GValueArray *array \= g_value_array_new $(LPAREN)10$(RPAREN);
  * ```

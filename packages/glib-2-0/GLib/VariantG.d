@@ -1,6 +1,5 @@
 module GLib.VariantG;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GLib.Types;
 import GLib.VariantType;
@@ -616,28 +615,6 @@ class VariantG
   {
     VariantC* _cretval;
     _cretval = g_variant_new_fixed_array(elementType ? cast(GVariantType*)elementType.cPtr(false) : null, elements, nElements, elementSize);
-    auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
-    return _retval;
-  }
-
-  /**
-   * Constructs a new serialized-mode #GVariant instance.  This is the
-   * inner interface for creation of new serialized values that gets
-   * called from various functions in gvariant.c.
-   * A reference is taken on bytes.
-   * The data in bytes must be aligned appropriately for the type being loaded.
-   * Otherwise this function will internally create a copy of the memory $(LPAREN)since
-   * GLib 2.60$(RPAREN) or $(LPAREN)in older versions$(RPAREN) fail and exit the process.
-   * Params:
-   *   type = a #GVariantType
-   *   bytes = a #GBytes
-   *   trusted = if the contents of bytes are trusted
-   * Returns: a new #GVariant with a floating reference
-   */
-  static VariantG newFromBytes(VariantType type, Bytes bytes, bool trusted)
-  {
-    VariantC* _cretval;
-    _cretval = g_variant_new_from_bytes(type ? cast(GVariantType*)type.cPtr(false) : null, bytes ? cast(GBytes*)bytes.cPtr(false) : null, trusted);
     auto _retval = _cretval ? new VariantG(cast(VariantC*)_cretval, false) : null;
     return _retval;
   }
@@ -1273,21 +1250,6 @@ class VariantG
   {
     const(void)* _retval;
     _retval = g_variant_get_data(cast(VariantC*)cPtr);
-    return _retval;
-  }
-
-  /**
-   * Returns a pointer to the serialized form of a #GVariant instance.
-   * The semantics of this function are exactly the same as
-   * [GLib.VariantG.getData], except that the returned #GBytes holds
-   * a reference to the variant data.
-   * Returns: A new #GBytes representing the variant data
-   */
-  Bytes getDataAsBytes()
-  {
-    GBytes* _cretval;
-    _cretval = g_variant_get_data_as_bytes(cast(VariantC*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

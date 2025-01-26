@@ -1,6 +1,5 @@
 module GObject.ParamSpecPool;
 
-import GLib.List;
 import GObject.ParamSpec;
 import GObject.Types;
 import GObject.c.functions;
@@ -78,11 +77,11 @@ class ParamSpecPool
    *   #GList of all #GParamSpecs owned by owner_type in
    *   the pool#GParamSpecs.
    */
-  List!(ParamSpec) listOwned(GType ownerType)
+  ParamSpec[] listOwned(GType ownerType)
   {
     GList* _cretval;
     _cretval = g_param_spec_pool_list_owned(cast(GParamSpecPool*)cPtr, ownerType);
-    List!(ParamSpec) _retval = new List!(ParamSpec)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(ParamSpec, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

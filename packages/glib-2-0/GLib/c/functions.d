@@ -16,7 +16,7 @@ __gshared extern(C)
   void function(GAllocator* allocator) c_g_allocator_free;
   GAllocator* function(const(char)* name, uint nPreallocs) c_g_allocator_new;
 
-  // ArrayG
+  // Array
   GType function() c_g_array_get_type;
   GArray* function(GArray* array, const(void)* data, uint len) c_g_array_append_vals;
   bool function(GArray* array, const(void)* target, GCompareFunc compareFunc, uint* outMatchIndex) c_g_array_binary_search;
@@ -147,12 +147,12 @@ __gshared extern(C)
   GBytes* function(const(void)* data, size_t size) c_g_bytes_new_static;
   GBytes* function(void* data, size_t size) c_g_bytes_new_take;
   GBytes* function(const(void)* data, size_t size, GDestroyNotify freeFunc, void* userData) c_g_bytes_new_with_free_func;
-  int function(GBytes* bytes1, GBytes* bytes2) c_g_bytes_compare;
-  bool function(GBytes* bytes1, GBytes* bytes2) c_g_bytes_equal;
+  int function(const(void)* bytes1, const(void)* bytes2) c_g_bytes_compare;
+  bool function(const(void)* bytes1, const(void)* bytes2) c_g_bytes_equal;
   const(void)* function(GBytes* bytes, size_t* size) c_g_bytes_get_data;
   const(void)* function(GBytes* bytes, size_t elementSize, size_t offset, size_t nElements) c_g_bytes_get_region;
   size_t function(GBytes* bytes) c_g_bytes_get_size;
-  uint function(GBytes* bytes) c_g_bytes_hash;
+  uint function(const(void)* bytes) c_g_bytes_hash;
   GBytes* function(GBytes* bytes, size_t offset, size_t length) c_g_bytes_new_from_bytes;
   GBytes* function(GBytes* bytes) c_g_bytes_ref;
   void function(GBytes* bytes) c_g_bytes_unref;
@@ -2028,7 +2028,7 @@ __gshared extern(C)
 alias g_allocator_free = c_g_allocator_free;
 alias g_allocator_new = c_g_allocator_new;
 
-// ArrayG
+// Array
 alias g_array_get_type = c_g_array_get_type;
 alias g_array_append_vals = c_g_array_append_vals;
 alias g_array_binary_search = c_g_array_binary_search;
@@ -4041,7 +4041,7 @@ shared static this()
   link(g_allocator_free, "g_allocator_free");
   link(g_allocator_new, "g_allocator_new");
 
-  // ArrayG
+  // Array
   link(g_array_get_type, "g_array_get_type");
   link(g_array_append_vals, "g_array_append_vals");
   link(g_array_binary_search, "g_array_binary_search");

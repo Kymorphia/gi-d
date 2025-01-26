@@ -1,7 +1,6 @@
 module GLib.String;
 
 import GLib.Boxed;
-import GLib.Bytes;
 import GLib.Types;
 import GLib.c.functions;
 import GLib.c.types;
@@ -337,24 +336,6 @@ class String : Boxed
     char* _cretval;
     _cretval = g_string_free_and_steal(cast(GString*)cPtr);
     string _retval = _cretval.fromCString(true);
-    return _retval;
-  }
-
-  /**
-   * Transfers ownership of the contents of string to a newly allocated
-   * #GBytes.  The #GString structure itself is deallocated, and it is
-   * therefore invalid to use string after invoking this function.
-   * Note that while #GString ensures that its buffer always has a
-   * trailing nul character $(LPAREN)not reflected in its "len"$(RPAREN), the returned
-   * #GBytes does not include this extra nul; i.e. it has length exactly
-   * equal to the "len" member.
-   * Returns: A newly allocated #GBytes containing contents of string; string itself is freed
-   */
-  Bytes freeToBytes()
-  {
-    GBytes* _cretval;
-    _cretval = g_string_free_to_bytes(cast(GString*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

@@ -1,7 +1,6 @@
 module Gio.DBusObjectManagerT;
 
 public import Gio.DBusObjectManagerIfaceProxy;
-public import GLib.List;
 public import GObject.DClosure;
 public import GObject.ObjectG;
 public import Gid.gid;
@@ -78,11 +77,11 @@ template DBusObjectManagerT()
    *   [GLib.List.free] after each element has been freed with
    *   [GObject.ObjectG.unref].
    */
-  override List!(DBusObject) getObjects()
+  override DBusObject[] getObjects()
   {
     GList* _cretval;
     _cretval = g_dbus_object_manager_get_objects(cast(GDBusObjectManager*)cPtr);
-    List!(DBusObject) _retval = new List!(DBusObject)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(DBusObject, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

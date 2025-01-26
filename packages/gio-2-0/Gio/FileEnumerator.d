@@ -1,7 +1,6 @@
 module Gio.FileEnumerator;
 
 import GLib.ErrorG;
-import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.AsyncResult;
@@ -352,14 +351,14 @@ class FileEnumerator : ObjectG
    *   [GLib.List.free] and unref the infos with [GObject.ObjectG.unref] when you're
    *   done with them.
    */
-  List!(FileInfo) nextFilesFinish(AsyncResult result)
+  FileInfo[] nextFilesFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_file_enumerator_next_files_finish(cast(GFileEnumerator*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(FileInfo) _retval = new List!(FileInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(FileInfo, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

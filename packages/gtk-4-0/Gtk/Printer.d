@@ -1,6 +1,5 @@
 module Gtk.Printer;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -330,11 +329,11 @@ class Printer : ObjectG
    * Returns: a newly
    *   allocated list of newly allocated `GtkPageSetup`s.
    */
-  List!(PageSetup) listPapers()
+  PageSetup[] listPapers()
   {
     GList* _cretval;
     _cretval = gtk_printer_list_papers(cast(GtkPrinter*)cPtr);
-    List!(PageSetup) _retval = new List!(PageSetup)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(PageSetup, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

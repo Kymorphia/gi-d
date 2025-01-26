@@ -3,7 +3,6 @@ module Gtk.PaperSize;
 import GLib.Boxed;
 import GLib.ErrorG;
 import GLib.KeyFile;
-import GLib.List;
 import GLib.VariantG;
 import Gid.gid;
 import Gtk.Types;
@@ -391,11 +390,11 @@ class PaperSize : Boxed
    * Returns: a newly allocated list of newly
    *   allocated `GtkPaperSize` objects
    */
-  static List!(PaperSize) getPaperSizes(bool includeCustom)
+  static PaperSize[] getPaperSizes(bool includeCustom)
   {
     GList* _cretval;
     _cretval = gtk_paper_size_get_paper_sizes(includeCustom);
-    List!(PaperSize) _retval = new List!(PaperSize)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(PaperSize, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 }

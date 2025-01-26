@@ -1,7 +1,6 @@
 module Gdk.Toplevel;
 
 public import Gdk.ToplevelIfaceProxy;
-import GLib.List;
 import Gdk.Device;
 import Gdk.Event;
 import Gdk.Surface;
@@ -158,7 +157,7 @@ interface Toplevel
    * Params:
    *   surfaces = A list of textures to use as icon, of different sizes
    */
-  void setIconList(List!(Texture) surfaces);
+  void setIconList(Texture[] surfaces);
 
   /**
    * Sets the toplevel to be modal.

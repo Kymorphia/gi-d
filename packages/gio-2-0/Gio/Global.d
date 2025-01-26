@@ -1,8 +1,6 @@
 module Gio.Global;
 
-import GLib.Bytes;
 import GLib.ErrorG;
-import GLib.List;
 import GLib.Source;
 import GLib.Types;
 import GLib.VariantG;
@@ -552,11 +550,11 @@ void contentTypeSetMimeDirs(string[] dirs)
  * Returns: list of the registered
  *   content types
  */
-List!(string) contentTypesGetRegistered()
+string[] contentTypesGetRegistered()
 {
   GList* _cretval;
   _cretval = g_content_types_get_registered();
-  List!(string) _retval = new List!(string)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(string, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 
@@ -1033,12 +1031,12 @@ Quark ioErrorQuark()
  *   [GObject.TypeModule.unuse] on all the modules. Free the list
  *   with [GLib.List.free].
  */
-List!(IOModule) ioModulesLoadAllInDirectory(string dirname)
+IOModule[] ioModulesLoadAllInDirectory(string dirname)
 {
   GList* _cretval;
   const(char)* _dirname = dirname.toCString(false);
   _cretval = g_io_modules_load_all_in_directory(_dirname);
-  List!(IOModule) _retval = new List!(IOModule)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(IOModule, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 
@@ -1058,12 +1056,12 @@ List!(IOModule) ioModulesLoadAllInDirectory(string dirname)
  *   [GObject.TypeModule.unuse] on all the modules. Free the list
  *   with [GLib.List.free].
  */
-List!(IOModule) ioModulesLoadAllInDirectoryWithScope(string dirname, IOModuleScope scope_)
+IOModule[] ioModulesLoadAllInDirectoryWithScope(string dirname, IOModuleScope scope_)
 {
   GList* _cretval;
   const(char)* _dirname = dirname.toCString(false);
   _cretval = g_io_modules_load_all_in_directory_with_scope(_dirname, scope_ ? cast(GIOModuleScope*)scope_.cPtr : null);
-  List!(IOModule) _retval = new List!(IOModule)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(IOModule, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 
@@ -1447,36 +1445,6 @@ bool resourcesGetInfo(string path, ResourceLookupFlags lookupFlags, out size_t s
   _retval = g_resources_get_info(_path, lookupFlags, cast(size_t*)&size, cast(uint*)&flags, &_err);
   if (_err)
     throw new ErrorG(_err);
-  return _retval;
-}
-
-/**
- * Looks for a file at the specified path in the set of
- * globally registered resources and returns a #GBytes that
- * lets you directly access the data in memory.
- * The data is always followed by a zero byte, so you
- * can safely use the data as a C string. However, that byte
- * is not included in the size of the GBytes.
- * For uncompressed resource files this is a pointer directly into
- * the resource bundle, which is typically in some readonly data section
- * in the program binary. For compressed files we allocate memory on
- * the heap and automatically uncompress the data.
- * lookup_flags controls the behaviour of the lookup.
- * Params:
- *   path = A pathname inside the resource
- *   lookupFlags = A #GResourceLookupFlags
- * Returns: #GBytes or %NULL on error.
- *   Free the returned object with [GLib.Bytes.unref]
- */
-Bytes resourcesLookupData(string path, ResourceLookupFlags lookupFlags)
-{
-  GBytes* _cretval;
-  const(char)* _path = path.toCString(false);
-  GError *_err;
-  _cretval = g_resources_lookup_data(_path, lookupFlags, &_err);
-  if (_err)
-    throw new ErrorG(_err);
-  auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
   return _retval;
 }
 
@@ -1889,11 +1857,11 @@ bool unixMountPointsChangedSince(ulong time)
  *   timeRead = guint64 to contain a timestamp.
  * Returns: a #GList of the UNIX mountpoints.
  */
-List!(UnixMountPoint) unixMountPointsGet(out ulong timeRead)
+UnixMountPoint[] unixMountPointsGet(out ulong timeRead)
 {
   GList* _cretval;
   _cretval = g_unix_mount_points_get(cast(ulong*)&timeRead);
-  List!(UnixMountPoint) _retval = new List!(UnixMountPoint)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(UnixMountPoint, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 
@@ -1919,10 +1887,10 @@ bool unixMountsChangedSince(ulong time)
  *   timeRead = guint64 to contain a timestamp, or %NULL
  * Returns: a #GList of the UNIX mounts.
  */
-List!(UnixMountEntry) unixMountsGet(out ulong timeRead)
+UnixMountEntry[] unixMountsGet(out ulong timeRead)
 {
   GList* _cretval;
   _cretval = g_unix_mounts_get(cast(ulong*)&timeRead);
-  List!(UnixMountEntry) _retval = new List!(UnixMountEntry)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(UnixMountEntry, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }

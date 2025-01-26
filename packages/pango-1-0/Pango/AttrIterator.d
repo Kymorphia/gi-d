@@ -1,7 +1,6 @@
 module Pango.AttrIterator;
 
 import GLib.Boxed;
-import GLib.SList;
 import Gid.gid;
 import Pango.Attribute;
 import Pango.FontDescription;
@@ -90,11 +89,11 @@ class AttrIterator : Boxed
    *   this value, call [Pango.Attribute.destroy] on each
    *   value and [GLib.SList.free] on the list.
    */
-  SList!(Attribute) getAttrs()
+  Attribute[] getAttrs()
   {
     GSList* _cretval;
     _cretval = pango_attr_iterator_get_attrs(cast(PangoAttrIterator*)cPtr);
-    SList!(Attribute) _retval = new SList!(Attribute)(cast(GSList*)_cretval, GidOwnership.Full);
+    auto _retval = gSListToD!(Attribute, GidOwnership.Full)(cast(GSList*)_cretval);
     return _retval;
   }
 
@@ -117,13 +116,13 @@ class AttrIterator : Boxed
    *     order to free this value, you must call
    *     [Pango.Attribute.destroy] on each member.
    */
-  void getFont(FontDescription desc, out PgLanguage language, out SList!(Attribute) extraAttrs)
+  void getFont(FontDescription desc, out PgLanguage language, out Attribute[] extraAttrs)
   {
     PangoLanguage* _language;
     GSList* _extraAttrs;
     pango_attr_iterator_get_font(cast(PangoAttrIterator*)cPtr, desc ? cast(PangoFontDescription*)desc.cPtr(false) : null, &_language, &_extraAttrs);
     language = new PgLanguage(cast(void*)_language, true);
-    extraAttrs = new SList!(Attribute)(_extraAttrs, GidOwnership.Full);
+    extraAttrs = gSListToD!(Attribute, GidOwnership.Full)(_extraAttrs);
   }
 
   /**

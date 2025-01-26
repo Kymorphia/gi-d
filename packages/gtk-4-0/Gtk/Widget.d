@@ -1,6 +1,5 @@
 module Gtk.Widget;
 
-import GLib.List;
 import GLib.VariantG;
 import GObject.DClosure;
 import GObject.InitiallyUnowned;
@@ -2092,11 +2091,11 @@ class Widget : InitiallyUnowned, Accessible, Buildable, ConstraintTarget
    *   of mnemonic labels; free this list with [GLib.List.free] when you
    *   are done with it.
    */
-  List!(Widget) listMnemonicLabels()
+  Widget[] listMnemonicLabels()
   {
     GList* _cretval;
     _cretval = gtk_widget_list_mnemonic_labels(cast(GtkWidget*)cPtr);
-    List!(Widget) _retval = new List!(Widget)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(Widget, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

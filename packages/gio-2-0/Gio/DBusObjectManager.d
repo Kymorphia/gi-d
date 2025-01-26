@@ -1,7 +1,6 @@
 module Gio.DBusObjectManager;
 
 public import Gio.DBusObjectManagerIfaceProxy;
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -62,7 +61,7 @@ interface DBusObjectManager
    *   [GLib.List.free] after each element has been freed with
    *   [GObject.ObjectG.unref].
    */
-  List!(DBusObject) getObjects();
+  DBusObject[] getObjects();
 
   /**
    * Emitted when interface is added to object.

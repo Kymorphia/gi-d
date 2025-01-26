@@ -1,7 +1,6 @@
 module Pango.AttrList;
 
 import GLib.Boxed;
-import GLib.SList;
 import Gid.gid;
 import Pango.AttrIterator;
 import Pango.Attribute;
@@ -143,11 +142,11 @@ class AttrList : Boxed
    *   call [Pango.Attribute.destroy] on each value and
    *   [GLib.SList.free] on the list.
    */
-  SList!(Attribute) getAttributes()
+  Attribute[] getAttributes()
   {
     GSList* _cretval;
     _cretval = pango_attr_list_get_attributes(cast(PangoAttrList*)cPtr);
-    SList!(Attribute) _retval = new SList!(Attribute)(cast(GSList*)_cretval, GidOwnership.Full);
+    auto _retval = gSListToD!(Attribute, GidOwnership.Full)(cast(GSList*)_cretval);
     return _retval;
   }
 

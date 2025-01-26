@@ -18,7 +18,7 @@ import Gid.gid;
  * It is possible to create a `GArray` that behaves like a `GValueArray`
  * by using the size of `GValue` as the element size, and by setting
  * [GObject.Value.unset] as the clear function using
- * [GLib.ArrayG.setClearFunc], for instance, the following code:
+ * [GLib.Array.setClearFunc], for instance, the following code:
  * ```c
  * GValueArray *array \= g_value_array_new $(LPAREN)10$(RPAREN);
  * ```
@@ -77,7 +77,7 @@ class ValueArray : Boxed
    *   nPrealloced = number of values to preallocate space for
    * Returns: a newly allocated #GValueArray with 0 values
 
-   * Deprecated: Use #GArray and [GLib.ArrayG.sizedNew] instead.
+   * Deprecated: Use #GArray and [GLib.Array.sizedNew] instead.
    */
   this(uint nPrealloced)
   {
@@ -108,7 +108,7 @@ class ValueArray : Boxed
    * contents.
    * Returns: Newly allocated copy of #GValueArray
 
-   * Deprecated: Use #GArray and [GLib.ArrayG.ref_] instead.
+   * Deprecated: Use #GArray and [GLib.Array.ref_] instead.
    */
   ValueArray copy()
   {
@@ -176,7 +176,7 @@ class ValueArray : Boxed
    *     value_array->n_values
    * Returns: the #GValueArray passed in as value_array
 
-   * Deprecated: Use #GArray and [GLib.ArrayG.removeIndex] instead.
+   * Deprecated: Use #GArray and [GLib.Array.removeIndex] instead.
    */
   ValueArray remove(uint index)
   {
@@ -195,7 +195,7 @@ class ValueArray : Boxed
    *   compareFunc = function to compare elements
    * Returns: the #GValueArray passed in as value_array
 
-   * Deprecated: Use #GArray and [GLib.ArrayG.sortWithData].
+   * Deprecated: Use #GArray and [GLib.Array.sortWithData].
    */
   ValueArray sort(CompareDataFunc compareFunc)
   {

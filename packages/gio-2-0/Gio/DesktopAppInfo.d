@@ -1,7 +1,6 @@
 module Gio.DesktopAppInfo;
 
 import GLib.KeyFile;
-import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.AppInfo;
@@ -105,12 +104,12 @@ class DesktopAppInfo : ObjectG, AppInfo
    * Returns: a list of #GDesktopAppInfo
    *   objects.
    */
-  static List!(DesktopAppInfo) getImplementations(string interface_)
+  static DesktopAppInfo[] getImplementations(string interface_)
   {
     GList* _cretval;
     const(char)* _interface_ = interface_.toCString(false);
     _cretval = g_desktop_app_info_get_implementations(_interface_);
-    List!(DesktopAppInfo) _retval = new List!(DesktopAppInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(DesktopAppInfo, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

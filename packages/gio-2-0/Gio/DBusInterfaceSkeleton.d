@@ -1,7 +1,6 @@
 module Gio.DBusInterfaceSkeleton;
 
 import GLib.ErrorG;
-import GLib.List;
 import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -99,11 +98,11 @@ class DBusInterfaceSkeleton : ObjectG, DBusInterface
    *   list should be freed with [GLib.List.free] after each element has
    *   been freed with [GObject.ObjectG.unref].
    */
-  List!(DBusConnection) getConnections()
+  DBusConnection[] getConnections()
   {
     GList* _cretval;
     _cretval = g_dbus_interface_skeleton_get_connections(cast(GDBusInterfaceSkeleton*)cPtr);
-    List!(DBusConnection) _retval = new List!(DBusConnection)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(DBusConnection, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

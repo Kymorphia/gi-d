@@ -1,7 +1,6 @@
 module Pango.Global;
 
 import GLib.ErrorG;
-import GLib.List;
 import GLib.MarkupParseContext;
 import GLib.String;
 import GObject.Types;
@@ -764,12 +763,12 @@ bool isZeroWidth(dchar ch)
  *   [Pango.Item] structures. The items should be freed using
  *   [Pango.Item.free] in combination with [GLib.List.freeFull].
  */
-List!(Item) itemize(Context context, string text, int startIndex, int length, AttrList attrs, AttrIterator cachedIter)
+Item[] itemize(Context context, string text, int startIndex, int length, AttrList attrs, AttrIterator cachedIter)
 {
   GList* _cretval;
   const(char)* _text = text.toCString(false);
   _cretval = pango_itemize(context ? cast(PangoContext*)context.cPtr(false) : null, _text, startIndex, length, attrs ? cast(PangoAttrList*)attrs.cPtr(false) : null, cachedIter ? cast(PangoAttrIterator*)cachedIter.cPtr(false) : null);
-  List!(Item) _retval = new List!(Item)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(Item, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 
@@ -792,12 +791,12 @@ List!(Item) itemize(Context context, string text, int startIndex, int length, At
  *   [Pango.Item] structures. The items should be freed using
  *   [Pango.Item.free] probably in combination with [GLib.List.freeFull].
  */
-List!(Item) itemizeWithBaseDir(Context context, Direction baseDir, string text, int startIndex, int length, AttrList attrs, AttrIterator cachedIter)
+Item[] itemizeWithBaseDir(Context context, Direction baseDir, string text, int startIndex, int length, AttrList attrs, AttrIterator cachedIter)
 {
   GList* _cretval;
   const(char)* _text = text.toCString(false);
   _cretval = pango_itemize_with_base_dir(context ? cast(PangoContext*)context.cPtr(false) : null, baseDir, _text, startIndex, length, attrs ? cast(PangoAttrList*)attrs.cPtr(false) : null, cachedIter ? cast(PangoAttrIterator*)cachedIter.cPtr(false) : null);
-  List!(Item) _retval = new List!(Item)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _retval = gListToD!(Item, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 
@@ -1055,11 +1054,13 @@ int readLine(void* stream, String str)
  * Returns: a `GList`
  *   of `PangoItem` structures in visual order.
  */
-List!(Item) reorderItems(List!(Item) items)
+Item[] reorderItems(Item[] items)
 {
   GList* _cretval;
-  _cretval = pango_reorder_items(items.cPtr);
-  List!(Item) _retval = new List!(Item)(cast(GList*)_cretval, GidOwnership.Full);
+  auto _items = gListFromD!(Item)(items);
+  scope(exit) containerFree!(GList*, Item, GidOwnership.None)(_items);
+  _cretval = pango_reorder_items(_items);
+  auto _retval = gListToD!(Item, GidOwnership.Full)(cast(GList*)_cretval);
   return _retval;
 }
 

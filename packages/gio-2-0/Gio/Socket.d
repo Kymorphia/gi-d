@@ -1,6 +1,5 @@
 module Gio.Socket;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GLib.Types;
 import GObject.ObjectG;
@@ -857,66 +856,6 @@ class Socket : ObjectG, DatagramBased, Initable
     _retval = g_socket_receive(cast(GSocket*)cPtr, buffer.ptr, _size, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    return _retval;
-  }
-
-  /**
-   * Receives data $(LPAREN)up to size bytes$(RPAREN) from a socket.
-   * This function is a variant of [Gio.Socket.receive] which returns a
-   * [GLib.Bytes] rather than a plain buffer.
-   * Pass `-1` to timeout_us to block indefinitely until data is received $(LPAREN)or
-   * the connection is closed, or there is an error$(RPAREN). Pass `0` to use the default
-   * timeout from [Gio.Socket.timeout], or pass a positive number to wait
-   * for that many microseconds for data before returning `G_IO_ERROR_TIMED_OUT`.
-   * Params:
-   *   size = the number of bytes you want to read from the socket
-   *   timeoutUs = the timeout to wait for, in microseconds, or `-1` to block
-   *     indefinitely
-   *   cancellable = a %GCancellable, or `NULL`
-   * Returns: a bytes buffer containing the
-   *   received bytes, or `NULL` on error
-   */
-  Bytes receiveBytes(size_t size, long timeoutUs, Cancellable cancellable)
-  {
-    GBytes* _cretval;
-    GError *_err;
-    _cretval = g_socket_receive_bytes(cast(GSocket*)cPtr, size, timeoutUs, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
-   * Receive data $(LPAREN)up to size bytes$(RPAREN) from a socket.
-   * This function is a variant of [Gio.Socket.receiveFrom] which returns
-   * a [GLib.Bytes] rather than a plain buffer.
-   * If address is non-%NULL then address will be set equal to the
-   * source address of the received packet.
-   * The address is owned by the caller.
-   * Pass `-1` to timeout_us to block indefinitely until data is received $(LPAREN)or
-   * the connection is closed, or there is an error$(RPAREN). Pass `0` to use the default
-   * timeout from [Gio.Socket.timeout], or pass a positive number to wait
-   * for that many microseconds for data before returning `G_IO_ERROR_TIMED_OUT`.
-   * Params:
-   *   address = return location for a #GSocketAddress
-   *   size = the number of bytes you want to read from the socket
-   *   timeoutUs = the timeout to wait for, in microseconds, or `-1` to block
-   *     indefinitely
-   *   cancellable = a #GCancellable, or `NULL`
-   * Returns: a bytes buffer containing the
-   *   received bytes, or `NULL` on error
-   */
-  Bytes receiveBytesFrom(out SocketAddress address, size_t size, long timeoutUs, Cancellable cancellable)
-  {
-    GBytes* _cretval;
-    GSocketAddress* _address;
-    GError *_err;
-    _cretval = g_socket_receive_bytes_from(cast(GSocket*)cPtr, &_address, size, timeoutUs, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    address = new SocketAddress(cast(void*)_address, true);
     return _retval;
   }
 

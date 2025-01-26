@@ -1,7 +1,6 @@
 module Gio.DBusObject;
 
 public import Gio.DBusObjectIfaceProxy;
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -41,7 +40,7 @@ interface DBusObject
    *   The returned list must be freed by [GLib.List.free] after each element has been freed
    *   with [GObject.ObjectG.unref].
    */
-  List!(DBusInterface) getInterfaces();
+  DBusInterface[] getInterfaces();
 
   /**
    * Gets the object path for object.

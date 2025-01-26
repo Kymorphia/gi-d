@@ -1,12 +1,10 @@
 module Gsk.ShaderArgsBuilder;
 
 import GLib.Boxed;
-import GLib.Bytes;
 import Gid.gid;
 import Graphene.Vec2;
 import Graphene.Vec3;
 import Graphene.Vec4;
-import Gsk.GLShader;
 import Gsk.Types;
 import Gsk.c.functions;
 import Gsk.c.types;
@@ -35,22 +33,6 @@ class ShaderArgsBuilder : Boxed
   override @property GType gType()
   {
     return getType();
-  }
-
-  /**
-   * Allocates a builder that can be used to construct a new uniform data
-   * chunk.
-   * Params:
-   *   shader = a `GskGLShader`
-   *   initialValues = optional `GBytes` with initial values
-   * Returns: The newly allocated builder, free with
-   *   [Gsk.ShaderArgsBuilder.unref]
-   */
-  this(GLShader shader, Bytes initialValues)
-  {
-    GskShaderArgsBuilder* _cretval;
-    _cretval = gsk_shader_args_builder_new(shader ? cast(GskGLShader*)shader.cPtr(false) : null, initialValues ? cast(GBytes*)initialValues.cPtr(false) : null);
-    this(_cretval, true);
   }
 
   /**
@@ -135,25 +117,5 @@ class ShaderArgsBuilder : Boxed
   void setVec4(int idx, Vec4 value)
   {
     gsk_shader_args_builder_set_vec4(cast(GskShaderArgsBuilder*)cPtr, idx, value ? cast(graphene_vec4_t*)value.cPtr(false) : null);
-  }
-
-  /**
-   * Creates a new `GBytes` args from the current state of the
-   * given builder.
-   * Any uniforms of the shader that have not been explicitly set on
-   * the builder are zero-initialized.
-   * The given `GskShaderArgsBuilder` is reset once this function returns;
-   * you cannot call this function multiple times on the same builder instance.
-   * This function is intended primarily for bindings. C code should use
-   * [Gsk.ShaderArgsBuilder.freeToArgs].
-   * Returns: the newly allocated buffer with
-   *   all the args added to builder
-   */
-  Bytes toArgs()
-  {
-    GBytes* _cretval;
-    _cretval = gsk_shader_args_builder_to_args(cast(GskShaderArgsBuilder*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    return _retval;
   }
 }

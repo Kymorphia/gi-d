@@ -1,6 +1,5 @@
 module Gsk.RenderNode;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import Gid.gid;
 import Graphene.Rect;
@@ -51,30 +50,6 @@ class RenderNode
   }
 
   /**
-   * Loads data previously created via [Gsk.RenderNode.serialize].
-   * For a discussion of the supported format, see that function.
-   * Params:
-   *   bytes = the bytes containing the data
-   *   errorFunc = Callback on parsing errors
-   * Returns: a new `GskRenderNode`
-   */
-  static RenderNode deserialize(Bytes bytes, ParseErrorFunc errorFunc)
-  {
-    extern(C) void _errorFuncCallback(const(GskParseLocation)* start, const(GskParseLocation)* end, const(GError)* error, void* userData)
-    {
-      auto _dlg = cast(ParseErrorFunc*)userData;
-
-      (*_dlg)(*start, *end, error ? new ErrorG(cast(void*)error, false) : null);
-    }
-
-    GskRenderNode* _cretval;
-    auto _errorFunc = cast(void*)&errorFunc;
-    _cretval = gsk_render_node_deserialize(bytes ? cast(GBytes*)bytes.cPtr(false) : null, &_errorFuncCallback, _errorFunc);
-    auto _retval = _cretval ? new RenderNode(cast(GskRenderNode*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
    * Draw the contents of node to the given cairo context.
    * Typically, you'll use this function to implement fallback rendering
    * of `GskRenderNode`s on an intermediate Cairo context, instead of using
@@ -111,25 +86,6 @@ class RenderNode
     GskRenderNodeType _cretval;
     _cretval = gsk_render_node_get_node_type(cast(GskRenderNode*)cPtr);
     RenderNodeType _retval = cast(RenderNodeType)_cretval;
-    return _retval;
-  }
-
-  /**
-   * Serializes the node for later deserialization via
-   * [Gsk.RenderNode.deserialize]. No guarantees are made about the format
-   * used other than that the same version of GTK will be able to deserialize
-   * the result of a call to [Gsk.RenderNode.serialize] and
-   * [Gsk.RenderNode.deserialize] will correctly reject files it cannot open
-   * that were created with previous versions of GTK.
-   * The intended use of this functions is testing, benchmarking and debugging.
-   * The format is not meant as a permanent storage format.
-   * Returns: a `GBytes` representing the node.
-   */
-  Bytes serialize()
-  {
-    GBytes* _cretval;
-    _cretval = gsk_render_node_serialize(cast(GskRenderNode*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

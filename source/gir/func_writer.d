@@ -243,10 +243,7 @@ class FuncWriter
         case Enum, Flags:
           postCall ~= "_retval[i] = cast(" ~ elemType.dType ~ ")(_cretval[i]);\n";
           break;
-        case Simple:
-          postCall ~= "_retval[i] = _cretval[i];\n";
-          break;
-        case Pointer:
+        case Simple, Pointer:
           postCall ~= "_retval[i] = _cretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed:
@@ -271,24 +268,22 @@ class FuncWriter
   private void processReturnContainer()
   {
     auto retVal = func.returnVal;
+    dstring templateArgs;
 
     if (retVal.containerType == ContainerType.HashTable)
+      templateArgs = "!(" ~ retVal.elemTypes[0].dType ~ ", " ~ retVal.elemTypes[1].dType ~ ", "
+        ~ "GidOwnership." ~ retVal.ownership.to!dstring ~ ")";
+    else
     {
-      auto mapType = retVal.elemTypes[1].dType ~ "[" ~ retVal.elemTypes[0].dType ~ "]";
-      decl ~= mapType ~ " ";
-      preCall ~= "GHashTable* _cretval;\n";
-      call ~= "_cretval = ";
-
-      postCall ~= mapType ~ " _retval = _cretval ? hashTableToMap!(" ~ retVal.elemTypes[0].dType ~ ", "
-        ~ retVal.elemTypes[1].dType ~ ", " ~ retVal.fullOwnerStr ~ ")(_cretval) : null;\n";
-      return;
+      templateArgs = retVal.containerType != ContainerType.ByteArray ? ("!(" ~ retVal.elemTypes[0].dType
+        ~ ", " ~ "GidOwnership." ~ retVal.ownership.to!dstring ~ ")") : "";
     }
 
     decl ~= retVal.dType ~ " ";
     preCall ~= retVal.cType ~ " _cretval;\n";
     call ~= "_cretval = ";
-    postCall ~= retVal.dType ~ " _retval = new " ~ retVal.dType ~ "(cast(" ~ retVal.cType.stripConst
-      ~ ")_cretval, GidOwnership." ~ retVal.ownership.to!dstring ~ ");\n";
+    postCall ~= "auto _retval = g" ~ retVal.containerType.to!dstring ~ "ToD" ~ templateArgs ~ "(cast("
+      ~ retVal.cType.stripConst ~ ")_cretval);\n";
   }
 
   /// Process parameter
@@ -335,7 +330,13 @@ class FuncWriter
     }
     else if (param.containerType != ContainerType.None) // Other type of container?
     {
-      processContainerParam(param);
+      if (param.direction == ParamDirection.In)
+        processContainerInParam(param);
+      else if (param.direction == ParamDirection.Out)
+        processContainerOutParam(param);
+      else
+        assert(0, "InOut container parameter not supported for " ~ param.fullName.to!string);
+
       return;
     }
     else if (param.isClosure) // Closure data?
@@ -675,66 +676,68 @@ class FuncWriter
     }
   }
 
-  // Process a container parameter (except array)
-  private void processContainerParam(Param param)
+  // Process a container "in" parameter (except array)
+  private void processContainerInParam(Param param)
   {
-    if (param.containerType == ContainerType.ByteArray)
+    dstring templateParams;
+
+    switch (param.containerType) with(ContainerType)
     {
-      auto byteArraySym = func.repo.defs.resolveSymbol("GLib.ByteArray");
-      addDeclParam(param.directionStr ~ byteArraySym ~ " " ~ param.dName);
-
-      if (param.direction == ParamDirection.In || param.direction == ParamDirection.InOut)
-      {
-        assert(param.ownership == Ownership.None, "Unsupported parameter container " ~ param.dType.to!string
-          ~ " direction " ~ param.direction.to!string);
-        addCallParam(param.dName ~ ".cPtr");
-      }
-      else if (param.direction == ParamDirection.Out) // Only use of out ByteArray found seems to actually be InOut (passed in to populate data), corrected in fixup()
-      {
-        preCall ~= byteArraySym ~ "* _" ~ param.dName ~ ";\n";
-        addCallParam("&_" ~ param.dName);
-
-        postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? new " ~ byteArraySym ~ "(_" ~ param.dName
-          ~ ", GidOwnership." ~ param.ownership.to!dstring ~ ") : null;\n";
-      }
-
-      return;
-    }
-    else if (param.containerType == ContainerType.HashTable) // Hash tables are converted into dlang associative arrays
-    {
-      addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
-
-      if (param.direction != ParamDirection.Out)
-        assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
-          ~ param.direction.to!string);
-
-      preCall ~= "GHashTable* _" ~ param.dName ~ ";\n";
-      addCallParam("&_" ~ param.dName);
-
-      postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? hashTableToMap!(" ~ param.elemTypes[0].dType ~ ", "
-        ~ param.elemTypes[1].dType ~ ", " ~ param.fullOwnerStr ~ ")(_" ~ param.dName ~ ") : null;\n";
-
-      return;
+      case ByteArray, Bytes:
+        break;
+      case Array, PtrArray:
+        templateParams = "!(" ~ param.elemTypes[0].dType  ~ ", " ~ param.zeroTerminated.to!dstring ~ ")";
+        break;
+      case List, SList:
+        templateParams = "!(" ~ param.elemTypes[0].dType ~ ")";
+        break;
+      case HashTable:
+        templateParams = "!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType ~ ")";
+        break;
+      default:
+        assert(0, "Unsupported 'in' container type '" ~ param.containerType.to!string ~ "' for "
+          ~ param.fullName.to!string);
     }
 
     addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
 
-    if (param.direction == ParamDirection.In)
+    preCall ~= "auto _" ~ param.dName ~ " = g" ~ param.containerType.to!dstring ~ "FromD" ~ templateParams ~ "("
+      ~ param.dName ~ ");\n";
+
+    if (param.ownership != Ownership.Full)
+      preCall ~= "scope(exit) containerFree!(" ~ param.cType ~ ", " ~ param.elemTypes[0].dType ~ ", " ~ "GidOwnership."
+        ~ param.ownership.to!dstring ~ ")(_" ~ param.dName ~ ");\n";
+
+    addCallParam("_" ~ param.dName);
+  }
+
+  // Process a container "out" parameter (except array)
+  private void processContainerOutParam(Param param)
+  {
+    dstring templateParams;
+
+    switch (param.containerType) with(ContainerType)
     {
-      assert(param.ownership == Ownership.None, "Unsupported parameter container " ~ param.dType.to!string
-        ~ " direction " ~ param.direction.to!string);
-      addCallParam(param.dName ~ ".cPtr");
+      case ByteArray, Bytes:
+        templateParams = "GidOwnership." ~ param.ownership.to!dstring;
+        break;
+      case Array, PtrArray, List, SList:
+        templateParams = param.elemTypes[0].dType  ~ ", " ~ "GidOwnership." ~ param.ownership.to!dstring;
+        break;
+      case HashTable:
+        templateParams = "!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType ~ ", "
+          ~ "GidOwnership." ~ param.ownership.to!dstring;
+        break;
+      default:
+        assert(0, "Unsupported 'out' container type '" ~ param.containerType.to!string ~ "' for "
+          ~ param.fullName.to!string);
     }
-    else if (param.direction == ParamDirection.Out)
-    {
-      preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
-      addCallParam("&_" ~ param.dName);
-      postCall ~= param.dName ~ " = new " ~ param.dType ~ "(_" ~ param.dName ~ ", GidOwnership."
-        ~ param.ownership.to!dstring ~ ");\n";
-    }
-    else
-      assert(0, "Unsupported parameter container " ~ param.dType.to!string ~ " direction "
-        ~ param.direction.to!string);
+
+    addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
+    preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
+    addCallParam("&_" ~ param.dName);
+    postCall ~= param.dName ~ " = g" ~ param.containerType.to!dstring ~ "ToD!(" ~ templateParams ~ ")(_"
+      ~ param.dName ~ ");\n";
   }
 
   /**

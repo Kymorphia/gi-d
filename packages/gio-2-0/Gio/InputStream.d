@@ -1,6 +1,5 @@
 module Gio.InputStream;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -315,43 +314,6 @@ class InputStream : ObjectG
   }
 
   /**
-   * Like [Gio.InputStream.read], this tries to read count bytes from
-   * the stream in a blocking fashion. However, rather than reading into
-   * a user-supplied buffer, this will create a new #GBytes containing
-   * the data that was read. This may be easier to use from language
-   * bindings.
-   * If count is zero, returns a zero-length #GBytes and does nothing. A
-   * value of count larger than %G_MAXSSIZE will cause a
-   * %G_IO_ERROR_INVALID_ARGUMENT error.
-   * On success, a new #GBytes is returned. It is not an error if the
-   * size of this object is not the same as the requested size, as it
-   * can happen e.g. near the end of a file. A zero-length #GBytes is
-   * returned on end of file $(LPAREN)or if count is zero$(RPAREN), but never
-   * otherwise.
-   * If cancellable is not %NULL, then the operation can be cancelled by
-   * triggering the cancellable object from another thread. If the operation
-   * was cancelled, the error %G_IO_ERROR_CANCELLED will be returned. If an
-   * operation was partially finished when the operation was cancelled the
-   * partial result will be returned, without an error.
-   * On error %NULL is returned and error is set accordingly.
-   * Params:
-   *   count = maximum number of bytes that will be read from the stream. Common
-   *     values include 4096 and 8192.
-   *   cancellable = optional #GCancellable object, %NULL to ignore.
-   * Returns: a new #GBytes, or %NULL on error
-   */
-  Bytes readBytes(size_t count, Cancellable cancellable)
-  {
-    GBytes* _cretval;
-    GError *_err;
-    _cretval = g_input_stream_read_bytes(cast(GInputStream*)cPtr, count, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
    * Request an asynchronous read of count bytes from the stream into a
    * new #GBytes. When the operation is finished callback will be
    * called. You can then call [Gio.InputStream.readBytesFinish] to get the
@@ -387,23 +349,6 @@ class InputStream : ObjectG
 
     auto _callback = freezeDelegate(cast(void*)&callback);
     g_input_stream_read_bytes_async(cast(GInputStream*)cPtr, count, ioPriority, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
-  }
-
-  /**
-   * Finishes an asynchronous stream read-into-#GBytes operation.
-   * Params:
-   *   result = a #GAsyncResult.
-   * Returns: the newly-allocated #GBytes, or %NULL on error
-   */
-  Bytes readBytesFinish(AsyncResult result)
-  {
-    GBytes* _cretval;
-    GError *_err;
-    _cretval = g_input_stream_read_bytes_finish(cast(GInputStream*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    return _retval;
   }
 
   /**

@@ -1,6 +1,5 @@
 module Gtk.CellArea;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.InitiallyUnowned;
 import GObject.ObjectG;
@@ -708,11 +707,11 @@ class CellArea : InitiallyUnowned, Buildable, CellLayout
    * Returns: A `GList` of `GtkCellRenderer`s.
    *   The returned list is internal and should not be freed.
    */
-  List!(CellRenderer) getFocusSiblings(CellRenderer renderer)
+  CellRenderer[] getFocusSiblings(CellRenderer renderer)
   {
     const(GList)* _cretval;
     _cretval = gtk_cell_area_get_focus_siblings(cast(GtkCellArea*)cPtr, renderer ? cast(GtkCellRenderer*)renderer.cPtr(false) : null);
-    List!(CellRenderer) _retval = new List!(CellRenderer)(cast(GList*)_cretval, GidOwnership.None);
+    auto _retval = gListToD!(CellRenderer, GidOwnership.None)(cast(GList*)_cretval);
     return _retval;
   }
 

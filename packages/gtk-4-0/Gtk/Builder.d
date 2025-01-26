@@ -1,7 +1,6 @@
 module Gtk.Builder;
 
 import GLib.ErrorG;
-import GLib.SList;
 import GObject.Closure;
 import GObject.ObjectG;
 import GObject.ParamSpec;
@@ -670,11 +669,11 @@ class Builder : ObjectG
    *   constructed by the `GtkBuilder instance`. It should be
    *   freed by [GLib.SList.free]
    */
-  SList!(ObjectG) getObjects()
+  ObjectG[] getObjects()
   {
     GSList* _cretval;
     _cretval = gtk_builder_get_objects(cast(GtkBuilder*)cPtr);
-    SList!(ObjectG) _retval = new SList!(ObjectG)(cast(GSList*)_cretval, GidOwnership.Container);
+    auto _retval = gSListToD!(ObjectG, GidOwnership.Container)(cast(GSList*)_cretval);
     return _retval;
   }
 

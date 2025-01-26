@@ -1,7 +1,6 @@
 module Gdk.ToplevelT;
 
 public import Gdk.ToplevelIfaceProxy;
-public import GLib.List;
 public import Gdk.Device;
 public import Gdk.Event;
 public import Gdk.Surface;
@@ -193,9 +192,11 @@ template ToplevelT()
    * Params:
    *   surfaces = A list of textures to use as icon, of different sizes
    */
-  override void setIconList(List!(Texture) surfaces)
+  override void setIconList(Texture[] surfaces)
   {
-    gdk_toplevel_set_icon_list(cast(GdkToplevel*)cPtr, surfaces.cPtr);
+    auto _surfaces = gListFromD!(Texture)(surfaces);
+    scope(exit) containerFree!(GList*, Texture, GidOwnership.None)(_surfaces);
+    gdk_toplevel_set_icon_list(cast(GdkToplevel*)cPtr, _surfaces);
   }
 
   /**

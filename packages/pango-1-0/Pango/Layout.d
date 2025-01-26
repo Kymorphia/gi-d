@@ -1,8 +1,6 @@
 module Pango.Layout;
 
-import GLib.Bytes;
 import GLib.ErrorG;
-import GLib.SList;
 import GObject.ObjectG;
 import Gid.gid;
 import Pango.AttrList;
@@ -81,29 +79,6 @@ class Layout : ObjectG
     PangoLayout* _cretval;
     _cretval = pango_layout_new(context ? cast(PangoContext*)context.cPtr(false) : null);
     this(_cretval, true);
-  }
-
-  /**
-   * Loads data previously created via [Pango.Layout.serialize].
-   * For a discussion of the supported format, see that function.
-   * Note: to verify that the returned layout is identical to
-   * the one that was serialized, you can compare bytes to the
-   * result of serializing the layout again.
-   * Params:
-   *   context = a `PangoContext`
-   *   bytes = the bytes containing the data
-   *   flags = `PangoLayoutDeserializeFlags`
-   * Returns: a new `PangoLayout`
-   */
-  static Layout deserialize(Context context, Bytes bytes, LayoutDeserializeFlags flags)
-  {
-    PangoLayout* _cretval;
-    GError *_err;
-    _cretval = pango_layout_deserialize(context ? cast(PangoContext*)context.cPtr(false) : null, bytes ? cast(GBytes*)bytes.cPtr(false) : null, flags, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? ObjectG.getDObject!Layout(cast(PangoLayout*)_cretval, true) : null;
-    return _retval;
   }
 
   /**
@@ -455,11 +430,11 @@ class Layout : ObjectG
    *   `PangoLayout` and must be used with care. It will become invalid on any
    *   change to the layout's text or properties.
    */
-  SList!(LayoutLine) getLines()
+  LayoutLine[] getLines()
   {
     GSList* _cretval;
     _cretval = pango_layout_get_lines(cast(PangoLayout*)cPtr);
-    SList!(LayoutLine) _retval = new SList!(LayoutLine)(cast(GSList*)_cretval, GidOwnership.None);
+    auto _retval = gSListToD!(LayoutLine, GidOwnership.None)(cast(GSList*)_cretval);
     return _retval;
   }
 
@@ -474,11 +449,11 @@ class Layout : ObjectG
    *   change to the layout's text or properties. No changes should be made to
    *   the lines.
    */
-  SList!(LayoutLine) getLinesReadonly()
+  LayoutLine[] getLinesReadonly()
   {
     GSList* _cretval;
     _cretval = pango_layout_get_lines_readonly(cast(PangoLayout*)cPtr);
-    SList!(LayoutLine) _retval = new SList!(LayoutLine)(cast(GSList*)_cretval, GidOwnership.None);
+    auto _retval = gSListToD!(LayoutLine, GidOwnership.None)(cast(GSList*)_cretval);
     return _retval;
   }
 
@@ -787,25 +762,6 @@ class Layout : ObjectG
   void moveCursorVisually(bool strong, int oldIndex, int oldTrailing, int direction, out int newIndex, out int newTrailing)
   {
     pango_layout_move_cursor_visually(cast(PangoLayout*)cPtr, strong, oldIndex, oldTrailing, direction, cast(int*)&newIndex, cast(int*)&newTrailing);
-  }
-
-  /**
-   * Serializes the layout for later deserialization via [Pango.Layout.deserialize].
-   * There are no guarantees about the format of the output across different
-   * versions of Pango and [Pango.Layout.deserialize] will reject data
-   * that it cannot parse.
-   * The intended use of this function is testing, benchmarking and debugging.
-   * The format is not meant as a permanent storage format.
-   * Params:
-   *   flags = `PangoLayoutSerializeFlags`
-   * Returns: a `GBytes` containing the serialized form of layout
-   */
-  Bytes serialize(LayoutSerializeFlags flags)
-  {
-    GBytes* _cretval;
-    _cretval = pango_layout_serialize(cast(PangoLayout*)cPtr, flags);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
-    return _retval;
   }
 
   /**

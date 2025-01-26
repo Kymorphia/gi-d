@@ -1,12 +1,8 @@
 module Gsk.GLShader;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
-import Graphene.Vec2;
-import Graphene.Vec3;
-import Graphene.Vec4;
 import Gsk.Renderer;
 import Gsk.Types;
 import Gsk.c.functions;
@@ -130,20 +126,6 @@ class GLShader : ObjectG
   /**
    * Creates a `GskGLShader` that will render pixels using the specified code.
    * Params:
-   *   sourcecode = GLSL sourcecode for the shader, as a `GBytes`
-   * Returns: A new `GskGLShader`
-   */
-  static GLShader newFromBytes(Bytes sourcecode)
-  {
-    GskGLShader* _cretval;
-    _cretval = gsk_gl_shader_new_from_bytes(sourcecode ? cast(GBytes*)sourcecode.cPtr(false) : null);
-    auto _retval = _cretval ? ObjectG.getDObject!GLShader(cast(GskGLShader*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
-   * Creates a `GskGLShader` that will render pixels using the specified code.
-   * Params:
    *   resourcePath = path to a resource that contains the GLSL sourcecode for
    *     the shader
    * Returns: A new `GskGLShader`
@@ -198,105 +180,6 @@ class GLShader : ObjectG
   }
 
   /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of bool type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   * Returns: The value
-   */
-  bool getArgBool(Bytes args, int idx)
-  {
-    bool _retval;
-    _retval = gsk_gl_shader_get_arg_bool(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx);
-    return _retval;
-  }
-
-  /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of float type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   * Returns: The value
-   */
-  float getArgFloat(Bytes args, int idx)
-  {
-    float _retval;
-    _retval = gsk_gl_shader_get_arg_float(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx);
-    return _retval;
-  }
-
-  /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of int type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   * Returns: The value
-   */
-  int getArgInt(Bytes args, int idx)
-  {
-    int _retval;
-    _retval = gsk_gl_shader_get_arg_int(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx);
-    return _retval;
-  }
-
-  /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of uint type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   * Returns: The value
-   */
-  uint getArgUint(Bytes args, int idx)
-  {
-    uint _retval;
-    _retval = gsk_gl_shader_get_arg_uint(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx);
-    return _retval;
-  }
-
-  /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of vec2 type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   *   outValue = location to store the uniform value in
-   */
-  void getArgVec2(Bytes args, int idx, Vec2 outValue)
-  {
-    gsk_gl_shader_get_arg_vec2(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx, outValue ? cast(graphene_vec2_t*)outValue.cPtr(false) : null);
-  }
-
-  /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of vec3 type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   *   outValue = location to store the uniform value in
-   */
-  void getArgVec3(Bytes args, int idx, Vec3 outValue)
-  {
-    gsk_gl_shader_get_arg_vec3(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx, outValue ? cast(graphene_vec3_t*)outValue.cPtr(false) : null);
-  }
-
-  /**
-   * Gets the value of the uniform idx in the args block.
-   * The uniform must be of vec4 type.
-   * Params:
-   *   args = uniform arguments
-   *   idx = index of the uniform
-   *   outValue = location to store set the uniform value in
-   */
-  void getArgVec4(Bytes args, int idx, Vec4 outValue)
-  {
-    gsk_gl_shader_get_arg_vec4(cast(GskGLShader*)cPtr, args ? cast(GBytes*)args.cPtr(false) : null, idx, outValue ? cast(graphene_vec4_t*)outValue.cPtr(false) : null);
-  }
-
-  /**
    * Get the size of the data block used to specify arguments for this shader.
    * Returns: The size of the data block
    */
@@ -342,18 +225,6 @@ class GLShader : ObjectG
     const(char)* _cretval;
     _cretval = gsk_gl_shader_get_resource(cast(GskGLShader*)cPtr);
     string _retval = _cretval.fromCString(false);
-    return _retval;
-  }
-
-  /**
-   * Gets the GLSL sourcecode being used to render this shader.
-   * Returns: The source code for the shader
-   */
-  Bytes getSource()
-  {
-    GBytes* _cretval;
-    _cretval = gsk_gl_shader_get_source(cast(GskGLShader*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, false) : null;
     return _retval;
   }
 

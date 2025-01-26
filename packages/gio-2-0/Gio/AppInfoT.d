@@ -2,7 +2,6 @@ module Gio.AppInfoT;
 
 public import Gio.AppInfoIfaceProxy;
 public import GLib.ErrorG;
-public import GLib.List;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gio.AppLaunchContext;
@@ -318,11 +317,13 @@ template AppInfoT()
    *   context = a #GAppLaunchContext or %NULL
    * Returns: %TRUE on successful launch, %FALSE otherwise.
    */
-  override bool launch(List!(File) files, AppLaunchContext context)
+  override bool launch(File[] files, AppLaunchContext context)
   {
     bool _retval;
+    auto _files = gListFromD!(File)(files);
+    scope(exit) containerFree!(GList*, File, GidOwnership.None)(_files);
     GError *_err;
-    _retval = g_app_info_launch(cast(GAppInfo*)cPtr, files.cPtr, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, &_err);
+    _retval = g_app_info_launch(cast(GAppInfo*)cPtr, _files, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
     return _retval;
@@ -344,11 +345,13 @@ template AppInfoT()
    *   context = a #GAppLaunchContext or %NULL
    * Returns: %TRUE on successful launch, %FALSE otherwise.
    */
-  override bool launchUris(List!(string) uris, AppLaunchContext context)
+  override bool launchUris(string[] uris, AppLaunchContext context)
   {
     bool _retval;
+    auto _uris = gListFromD!(string)(uris);
+    scope(exit) containerFree!(GList*, string, GidOwnership.None)(_uris);
     GError *_err;
-    _retval = g_app_info_launch_uris(cast(GAppInfo*)cPtr, uris.cPtr, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, &_err);
+    _retval = g_app_info_launch_uris(cast(GAppInfo*)cPtr, _uris, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
     return _retval;
@@ -366,7 +369,7 @@ template AppInfoT()
    *   cancellable = a #GCancellable
    *   callback = a #GAsyncReadyCallback to call when the request is done
    */
-  override void launchUrisAsync(List!(string) uris, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback)
+  override void launchUrisAsync(string[] uris, AppLaunchContext context, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {
@@ -376,8 +379,10 @@ template AppInfoT()
       (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
     }
 
+    auto _uris = gListFromD!(string)(uris);
+    scope(exit) containerFree!(GList*, string, GidOwnership.None)(_uris);
     auto _callback = freezeDelegate(cast(void*)&callback);
-    g_app_info_launch_uris_async(cast(GAppInfo*)cPtr, uris.cPtr, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+    g_app_info_launch_uris_async(cast(GAppInfo*)cPtr, _uris, context ? cast(GAppLaunchContext*)context.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**

@@ -1,6 +1,5 @@
 module GdkPixbuf.PixbufLoader;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -253,23 +252,6 @@ class PixbufLoader : ObjectG
     auto _buf = cast(const(ubyte)*)buf.ptr;
     GError *_err;
     _retval = gdk_pixbuf_loader_write(cast(GdkPixbufLoader*)cPtr, _buf, _count, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    return _retval;
-  }
-
-  /**
-   * Parses the next contents of the given image buffer.
-   * Params:
-   *   buffer = The image data as a `GBytes` buffer.
-   * Returns: `TRUE` if the write was successful, or `FALSE` if
-   *   the loader cannot parse the buffer
-   */
-  bool writeBytes(Bytes buffer)
-  {
-    bool _retval;
-    GError *_err;
-    _retval = gdk_pixbuf_loader_write_bytes(cast(GdkPixbufLoader*)cPtr, buffer ? cast(GBytes*)buffer.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
     return _retval;

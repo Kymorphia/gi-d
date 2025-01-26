@@ -1,7 +1,6 @@
 module Gio.Resolver;
 
 import GLib.ErrorG;
-import GLib.List;
 import GLib.VariantG;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -177,7 +176,7 @@ class Resolver : ObjectG
    *   must unref each of the addresses and free the list when you are
    *   done with it. $(LPAREN)You can use [Gio.Resolver.freeAddresses] to do this.$(RPAREN)
    */
-  List!(InetAddress) lookupByName(string hostname, Cancellable cancellable)
+  InetAddress[] lookupByName(string hostname, Cancellable cancellable)
   {
     GList* _cretval;
     const(char)* _hostname = hostname.toCString(false);
@@ -185,7 +184,7 @@ class Resolver : ObjectG
     _cretval = g_resolver_lookup_by_name(cast(GResolver*)cPtr, _hostname, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(InetAddress) _retval = new List!(InetAddress)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(InetAddress, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -226,14 +225,14 @@ class Resolver : ObjectG
    *   of #GInetAddress, or %NULL on error. See [Gio.Resolver.lookupByName]
    *   for more details.
    */
-  List!(InetAddress) lookupByNameFinish(AsyncResult result)
+  InetAddress[] lookupByNameFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_resolver_lookup_by_name_finish(cast(GResolver*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(InetAddress) _retval = new List!(InetAddress)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(InetAddress, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -250,7 +249,7 @@ class Resolver : ObjectG
    *   must unref each of the addresses and free the list when you are
    *   done with it. $(LPAREN)You can use [Gio.Resolver.freeAddresses] to do this.$(RPAREN)
    */
-  List!(InetAddress) lookupByNameWithFlags(string hostname, ResolverNameLookupFlags flags, Cancellable cancellable)
+  InetAddress[] lookupByNameWithFlags(string hostname, ResolverNameLookupFlags flags, Cancellable cancellable)
   {
     GList* _cretval;
     const(char)* _hostname = hostname.toCString(false);
@@ -258,7 +257,7 @@ class Resolver : ObjectG
     _cretval = g_resolver_lookup_by_name_with_flags(cast(GResolver*)cPtr, _hostname, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(InetAddress) _retval = new List!(InetAddress)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(InetAddress, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -300,14 +299,14 @@ class Resolver : ObjectG
    *   of #GInetAddress, or %NULL on error. See [Gio.Resolver.lookupByName]
    *   for more details.
    */
-  List!(InetAddress) lookupByNameWithFlagsFinish(AsyncResult result)
+  InetAddress[] lookupByNameWithFlagsFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_resolver_lookup_by_name_with_flags_finish(cast(GResolver*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(InetAddress) _retval = new List!(InetAddress)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(InetAddress, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -329,7 +328,7 @@ class Resolver : ObjectG
    *   when you are done with it. $(LPAREN)You can use [GLib.List.freeFull] with
    *   [GLib.VariantG.unref] to do this.$(RPAREN)
    */
-  List!(VariantG) lookupRecords(string rrname, ResolverRecordType recordType, Cancellable cancellable)
+  VariantG[] lookupRecords(string rrname, ResolverRecordType recordType, Cancellable cancellable)
   {
     GList* _cretval;
     const(char)* _rrname = rrname.toCString(false);
@@ -337,7 +336,7 @@ class Resolver : ObjectG
     _cretval = g_resolver_lookup_records(cast(GResolver*)cPtr, _rrname, recordType, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(VariantG) _retval = new List!(VariantG)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(VariantG, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -382,14 +381,14 @@ class Resolver : ObjectG
    *   when you are done with it. $(LPAREN)You can use [GLib.List.freeFull] with
    *   [GLib.VariantG.unref] to do this.$(RPAREN)
    */
-  List!(VariantG) lookupRecordsFinish(AsyncResult result)
+  VariantG[] lookupRecordsFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_resolver_lookup_records_finish(cast(GResolver*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(VariantG) _retval = new List!(VariantG)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(VariantG, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -421,7 +420,7 @@ class Resolver : ObjectG
    *   list when you are done with it. $(LPAREN)You can use [Gio.Resolver.freeTargets] to do
    *   this.$(RPAREN)
    */
-  List!(SrvTarget) lookupService(string service, string protocol, string domain, Cancellable cancellable)
+  SrvTarget[] lookupService(string service, string protocol, string domain, Cancellable cancellable)
   {
     GList* _cretval;
     const(char)* _service = service.toCString(false);
@@ -431,7 +430,7 @@ class Resolver : ObjectG
     _cretval = g_resolver_lookup_service(cast(GResolver*)cPtr, _service, _protocol, _domain, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(SrvTarget) _retval = new List!(SrvTarget)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(SrvTarget, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -477,14 +476,14 @@ class Resolver : ObjectG
    *   #GSrvTarget, or %NULL on error. See [Gio.Resolver.lookupService] for more
    *   details.
    */
-  List!(SrvTarget) lookupServiceFinish(AsyncResult result)
+  SrvTarget[] lookupServiceFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_resolver_lookup_service_finish(cast(GResolver*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(SrvTarget) _retval = new List!(SrvTarget)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(SrvTarget, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

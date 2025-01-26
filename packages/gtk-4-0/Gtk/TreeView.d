@@ -1,6 +1,5 @@
 module Gtk.TreeView;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gdk.ContentFormats;
@@ -472,11 +471,11 @@ class TreeView : Widget, Scrollable
 
    * Deprecated: Use [Gtk.ListView] or [Gtk.ColumnView] instead
    */
-  List!(TreeViewColumn) getColumns()
+  TreeViewColumn[] getColumns()
   {
     GList* _cretval;
     _cretval = gtk_tree_view_get_columns(cast(GtkTreeView*)cPtr);
-    List!(TreeViewColumn) _retval = new List!(TreeViewColumn)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(TreeViewColumn, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

@@ -1,8 +1,6 @@
 module GdkPixbuf.Pixbuf;
 
-import GLib.Bytes;
 import GLib.ErrorG;
-import GLib.SList;
 import GObject.ObjectG;
 import GdkPixbuf.PixbufFormat;
 import GdkPixbuf.Types;
@@ -170,29 +168,6 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
     PixbufC* _cretval;
     _cretval = gdk_pixbuf_new(colorspace, hasAlpha, bitsPerSample, width, height);
     this(_cretval, true);
-  }
-
-  /**
-   * Creates a new #GdkPixbuf out of in-memory readonly image data.
-   * Currently only RGB images with 8 bits per sample are supported.
-   * This is the `GBytes` variant of [GdkPixbuf.Pixbuf.newFromData], useful
-   * for language bindings.
-   * Params:
-   *   data = Image data in 8-bit/sample packed format inside a #GBytes
-   *   colorspace = Colorspace for the image data
-   *   hasAlpha = Whether the data has an opacity channel
-   *   bitsPerSample = Number of bits per sample
-   *   width = Width of the image in pixels, must be > 0
-   *   height = Height of the image in pixels, must be > 0
-   *   rowstride = Distance in bytes between row starts
-   * Returns: A newly-created pixbuf
-   */
-  static Pixbuf newFromBytes(Bytes data, Colorspace colorspace, bool hasAlpha, int bitsPerSample, int width, int height, int rowstride)
-  {
-    PixbufC* _cretval;
-    _cretval = gdk_pixbuf_new_from_bytes(data ? cast(GBytes*)data.cPtr(false) : null, colorspace, hasAlpha, bitsPerSample, width, height, rowstride);
-    auto _retval = _cretval ? ObjectG.getDObject!Pixbuf(cast(PixbufC*)_cretval, true) : null;
-    return _retval;
   }
 
   /**
@@ -585,11 +560,11 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
    * Returns: A list of
    *   support image formats.
    */
-  static SList!(PixbufFormat) getFormats()
+  static PixbufFormat[] getFormats()
   {
     GSList* _cretval;
     _cretval = gdk_pixbuf_get_formats();
-    SList!(PixbufFormat) _retval = new SList!(PixbufFormat)(cast(GSList*)_cretval, GidOwnership.Container);
+    auto _retval = gSListToD!(PixbufFormat, GidOwnership.Container)(cast(GSList*)_cretval);
     return _retval;
   }
 
@@ -1008,7 +983,7 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
   {
     GHashTable* _cretval;
     _cretval = gdk_pixbuf_get_options(cast(PixbufC*)cPtr);
-    string[string] _retval = _cretval ? hashTableToMap!(string, string, false)(_cretval) : null;
+    auto _retval = gHashTableToD!(string, string, GidOwnership.Container)(cast(GHashTable*)_cretval);
     return _retval;
   }
 
@@ -1078,24 +1053,6 @@ class Pixbuf : ObjectG, Icon, LoadableIcon
     PixbufC* _cretval;
     _cretval = gdk_pixbuf_new_subpixbuf(cast(PixbufC*)cPtr, srcX, srcY, width, height);
     auto _retval = _cretval ? ObjectG.getDObject!Pixbuf(cast(PixbufC*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
-   * Provides a #GBytes buffer containing the raw pixel data; the data
-   * must not be modified.
-   * This function allows skipping the implicit copy that must be made
-   * if [GdkPixbuf.Pixbuf.getPixels] is called on a read-only pixbuf.
-   * Returns: A new reference to a read-only copy of
-   *   the pixel data.  Note that for mutable pixbufs, this function will
-   *   incur a one-time copy of the pixel data for conversion into the
-   *   returned #GBytes.
-   */
-  Bytes readPixelBytes()
-  {
-    GBytes* _cretval;
-    _cretval = gdk_pixbuf_read_pixel_bytes(cast(PixbufC*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

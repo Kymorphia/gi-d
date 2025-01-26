@@ -1,7 +1,6 @@
 module Gtk.CellLayout;
 
 public import Gtk.CellLayoutIfaceProxy;
-import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.CellArea;
@@ -158,7 +157,7 @@ interface CellLayout
    *   been newly allocated and should be freed with [GLib.List.free]
    *   when no longer needed.
    */
-  List!(CellRenderer) getCells();
+  CellRenderer[] getCells();
 
   /**
    * Adds the cell to the end of cell_layout. If expand is %FALSE, then the

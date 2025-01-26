@@ -1,7 +1,6 @@
 module Gio.File;
 
 public import Gio.FileIfaceProxy;
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -1052,23 +1051,6 @@ interface File
   bool isNative();
 
   /**
-   * Loads the contents of file and returns it as #GBytes.
-   * If file is a resource:// based URI, the resulting bytes will reference the
-   * embedded resource instead of a copy. Otherwise, this is equivalent to calling
-   * [Gio.File.loadContents] and [GLib.Bytes.newTake].
-   * For resources, etag_out will be set to %NULL.
-   * The data contained in the resulting #GBytes is always zero-terminated, but
-   * this is not included in the #GBytes length. The resulting #GBytes should be
-   * freed with [GLib.Bytes.unref] when no longer in use.
-   * Params:
-   *   cancellable = a #GCancellable or %NULL
-   *   etagOut = a location to place the current
-   *     entity tag for the file, or %NULL if the entity tag is not needed
-   * Returns: a #GBytes or %NULL and error is set
-   */
-  Bytes loadBytes(Cancellable cancellable, out string etagOut);
-
-  /**
    * Asynchronously loads the contents of file as #GBytes.
    * If file is a resource:// based URI, the resulting bytes will reference the
    * embedded resource instead of a copy. Otherwise, this is equivalent to calling
@@ -1082,21 +1064,6 @@ interface File
    *     to call when the request is satisfied
    */
   void loadBytesAsync(Cancellable cancellable, AsyncReadyCallback callback);
-
-  /**
-   * Completes an asynchronous request to [Gio.File.loadBytesAsync].
-   * For resources, etag_out will be set to %NULL.
-   * The data contained in the resulting #GBytes is always zero-terminated, but
-   * this is not included in the #GBytes length. The resulting #GBytes should be
-   * freed with [GLib.Bytes.unref] when no longer in use.
-   * See [Gio.File.loadBytes] for more information.
-   * Params:
-   *   result = a #GAsyncResult provided to the callback
-   *   etagOut = a location to place the current
-   *     entity tag for the file, or %NULL if the entity tag is not needed
-   * Returns: a #GBytes or %NULL and error is set
-   */
-  Bytes loadBytesFinish(AsyncResult result, out string etagOut);
 
   /**
    * Loads the content of the file into memory. The data is always
@@ -1962,24 +1929,6 @@ interface File
    *   callback = a #GAsyncReadyCallback to call when the request is satisfied
    */
   void replaceContentsAsync(ubyte[] contents, string etag, bool makeBackup, FileCreateFlags flags, Cancellable cancellable, AsyncReadyCallback callback);
-
-  /**
-   * Same as [Gio.File.replaceContentsAsync] but takes a #GBytes input instead.
-   * This function will keep a ref on contents until the operation is done.
-   * Unlike [Gio.File.replaceContentsAsync] this allows forgetting about the
-   * content without waiting for the callback.
-   * When this operation has completed, callback will be called with
-   * user_user data, and the operation can be finalized with
-   * [Gio.File.replaceContentsFinish].
-   * Params:
-   *   contents = a #GBytes
-   *   etag = a new [entity tag](#entity-tags) for the file, or %NULL
-   *   makeBackup = %TRUE if a backup should be created
-   *   flags = a set of #GFileCreateFlags
-   *   cancellable = optional #GCancellable object, %NULL to ignore
-   *   callback = a #GAsyncReadyCallback to call when the request is satisfied
-   */
-  void replaceContentsBytesAsync(Bytes contents, string etag, bool makeBackup, FileCreateFlags flags, Cancellable cancellable, AsyncReadyCallback callback);
 
   /**
    * Finishes an asynchronous replace of the given file. See

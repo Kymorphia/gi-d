@@ -1,7 +1,6 @@
 module Gtk.RecentManager;
 
 import GLib.ErrorG;
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -166,11 +165,11 @@ class RecentManager : ObjectG
    *   [Gtk.RecentInfo.unref] on each item inside the list, and then
    *   free the list itself using [GLib.List.free].
    */
-  List!(RecentInfo) getItems()
+  RecentInfo[] getItems()
   {
     GList* _cretval;
     _cretval = gtk_recent_manager_get_items(cast(GtkRecentManager*)cPtr);
-    List!(RecentInfo) _retval = new List!(RecentInfo)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(RecentInfo, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

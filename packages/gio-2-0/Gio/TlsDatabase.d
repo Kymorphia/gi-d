@@ -1,8 +1,6 @@
 module Gio.TlsDatabase;
 
-import GLib.ByteArray;
 import GLib.ErrorG;
-import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;
 import Gio.AsyncResult;
@@ -237,14 +235,16 @@ class TlsDatabase : ObjectG
    * Returns: a newly allocated list of #GTlsCertificate
    *   objects. Use [GObject.ObjectG.unref] on each certificate, and [GLib.List.free] on the release the list.
    */
-  List!(TlsCertificate) lookupCertificatesIssuedBy(ByteArray issuerRawDn, TlsInteraction interaction, TlsDatabaseLookupFlags flags, Cancellable cancellable)
+  TlsCertificate[] lookupCertificatesIssuedBy(ubyte[] issuerRawDn, TlsInteraction interaction, TlsDatabaseLookupFlags flags, Cancellable cancellable)
   {
     GList* _cretval;
+    auto _issuerRawDn = gByteArrayFromD(issuerRawDn);
+    scope(exit) containerFree!(GByteArray*, ubyte, GidOwnership.None)(_issuerRawDn);
     GError *_err;
-    _cretval = g_tls_database_lookup_certificates_issued_by(cast(GTlsDatabase*)cPtr, issuerRawDn.cPtr, interaction ? cast(GTlsInteraction*)interaction.cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
+    _cretval = g_tls_database_lookup_certificates_issued_by(cast(GTlsDatabase*)cPtr, _issuerRawDn, interaction ? cast(GTlsInteraction*)interaction.cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(TlsCertificate) _retval = new List!(TlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(TlsCertificate, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -261,7 +261,7 @@ class TlsDatabase : ObjectG
    *   cancellable = a #GCancellable, or %NULL
    *   callback = callback to call when the operation completes
    */
-  void lookupCertificatesIssuedByAsync(ByteArray issuerRawDn, TlsInteraction interaction, TlsDatabaseLookupFlags flags, Cancellable cancellable, AsyncReadyCallback callback)
+  void lookupCertificatesIssuedByAsync(ubyte[] issuerRawDn, TlsInteraction interaction, TlsDatabaseLookupFlags flags, Cancellable cancellable, AsyncReadyCallback callback)
   {
     extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
     {
@@ -271,8 +271,10 @@ class TlsDatabase : ObjectG
       (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
     }
 
+    auto _issuerRawDn = gByteArrayFromD(issuerRawDn);
+    scope(exit) containerFree!(GByteArray*, ubyte, GidOwnership.None)(_issuerRawDn);
     auto _callback = freezeDelegate(cast(void*)&callback);
-    g_tls_database_lookup_certificates_issued_by_async(cast(GTlsDatabase*)cPtr, issuerRawDn.cPtr, interaction ? cast(GTlsInteraction*)interaction.cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
+    g_tls_database_lookup_certificates_issued_by_async(cast(GTlsDatabase*)cPtr, _issuerRawDn, interaction ? cast(GTlsInteraction*)interaction.cPtr(false) : null, flags, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
   }
 
   /**
@@ -283,14 +285,14 @@ class TlsDatabase : ObjectG
    * Returns: a newly allocated list of #GTlsCertificate
    *   objects. Use [GObject.ObjectG.unref] on each certificate, and [GLib.List.free] on the release the list.
    */
-  List!(TlsCertificate) lookupCertificatesIssuedByFinish(AsyncResult result)
+  TlsCertificate[] lookupCertificatesIssuedByFinish(AsyncResult result)
   {
     GList* _cretval;
     GError *_err;
     _cretval = g_tls_database_lookup_certificates_issued_by_finish(cast(GTlsDatabase*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_err);
     if (_err)
       throw new ErrorG(_err);
-    List!(TlsCertificate) _retval = new List!(TlsCertificate)(cast(GList*)_cretval, GidOwnership.Full);
+    auto _retval = gListToD!(TlsCertificate, GidOwnership.Full)(cast(GList*)_cretval);
     return _retval;
   }
 

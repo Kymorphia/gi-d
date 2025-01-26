@@ -195,24 +195,29 @@ class DelegWriter
   private void processReturnContainer()
   {
     auto retVal = callback.returnVal;
+    dstring templateParams;
 
-    assert(retVal.ownership == Ownership.Full, "Unsupported delegate return array ownership '"
-      ~ retVal.ownership.to!string ~ "' for " ~ retVal.fullName.to!string);
-
-    if (retVal.containerType == ContainerType.ByteArray)
+    switch (retVal.containerType) with(ContainerType)
     {
-      auto byteArraySym = retVal.repo.defs.resolveSymbol("GLib.ByteArray");
-      decl ~= "GByteArray ";
-      call ~= byteArraySym ~ "* _dretval = ";
-      postCall ~= "GByteArray* _retval = _dretval ? _dretval.cPtr(true) : null;\n";
-      return;
+      case ByteArray, Bytes:
+        break;
+      case Array, PtrArray:
+        templateParams = "!(" ~ retVal.elemTypes[0].dType  ~ ", " ~ retVal.zeroTerminated.to!dstring ~ ")";
+        break;
+      case List, SList:
+        templateParams = "!(" ~ retVal.elemTypes[0].dType ~ ")";
+        break;
+      case HashTable:
+        templateParams = "!(" ~ retVal.elemTypes[0].dType ~ ", " ~ retVal.elemTypes[1].dType ~ ")";
+        break;
+      default:
+        assert(0, "Unsupported delegate return container type '" ~ retVal.containerType.to!string ~ "' for "
+          ~ retVal.fullName.to!string);
     }
-    else if (retVal.containerType == ContainerType.HashTable)
-      assert(0, "Unsupported delegate return type GHashTable for " ~ callback.fullName.to!string);
 
     decl ~= retVal.cType ~ " ";
-    call ~= retVal.dType ~ "_dretval = ";
-    postCall ~= retVal.cType ~ " _retval = _dretval ? _dretval.cPtr(true) : null;\n";
+    call ~= "auto _dretval = ";
+    postCall = "auto _retval = g" ~ retVal.containerType.to!dstring ~ "FromD" ~ templateParams ~ "(_dretval);\n";
   }
 
   /// Process parameter
@@ -234,7 +239,12 @@ class DelegWriter
     }
     else if (param.containerType != ContainerType.None) // Other type of container?
     {
-      processContainerParam(param);
+      if (param.direction == ParamDirection.In)
+        processContainerInParam(param);
+      else
+          assert(0, "Delegate container " ~ param.directionStr.to!string ~ " parameters of type '"
+            ~ param.kind.to!string ~ "' not supported");
+
       return;
     }
 
@@ -374,46 +384,32 @@ class DelegWriter
     }
   }
 
-  // Process a container parameter (except array)
-  private void processContainerParam(Param param)
+  // Process a container input parameter (except array)
+  private void processContainerInParam(Param param)
   {
-    if (param.containerType == ContainerType.HashTable) // Hash tables are converted into dlang associative arrays
+    dstring templateParams;
+
+    switch (param.containerType) with(ContainerType)
     {
-      assert(param.direction == ParamDirection.Out, "Function container HashTable parameter '" ~ param
-          .fullName.to!string ~ "' direction not supported '" ~ param.direction.to!string ~ "'");
-
-      addDeclParam("GHashTable* " ~ param.dName);
-      addCallParam("_" ~ param.dName);
-
-      auto mapType = param.elemTypes[1].dType ~ "[" ~ param.elemTypes[0].dType ~ "]";
-      preCall ~= mapType ~ " _" ~ param.dName;
-
-      auto mapToHashTableSym = param.repo.defs.resolveSymbol("Gid.mapToHashTable");
-      postCall ~= "*" ~ param.dName ~ " = " ~ mapToHashTableSym ~ "!(" ~ param.elemTypes[0].dType ~ ", "
-        ~ param.elemTypes[1].dType ~ ")(_" ~ param.dName ~ ");\n";
-
-      return;
+      case ByteArray, Bytes:
+        templateParams = param.ownership.to!dstring;
+        break;
+      case Array, PtrArray, List, SList:
+        templateParams = param.elemTypes[0].dType  ~ ", " ~ "GidOwnership." ~ param.ownership.to!dstring;
+        break;
+      case HashTable:
+        templateParams = "!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType ~ ", "
+          ~ "GidOwnership." ~ param.ownership.to!dstring;
+        break;
+      default:
+        assert(0, "Unsupported 'in' container type '" ~ param.containerType.to!string ~ "' for "
+          ~ param.fullName.to!string);
     }
 
     addDeclParam(param.cType ~ " " ~ param.dName);
-    auto gidOwnershipSym = param.repo.defs.resolveSymbol("Gid.GidOwnership");
-
-    auto elemType = param.elemTypes[0];
-
-    final switch(param.direction) with(ParamDirection)
-    {
-      case In, InOut:
-        postCall ~= "_" ~ param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
-          ~ ")(_" ~ param.dName ~ ", " ~ gidOwnershipSym ~ "." ~ param.ownership.to!dstring ~ ");\n";
-        addCallParam("_" ~ param.dName);
-        break;
-      case Out:
-        preCall ~= param.cType ~ " _" ~ param.dName ~ ";\n";
-        addCallParam("&_" ~ param.dName);
-        postCall ~= param.dName ~ " = new " ~ param.dType ~ "!(" ~ elemType.dType ~ ", " ~ elemType.cType
-          ~ ")(_" ~ param.dName ~ ", " ~ gidOwnershipSym ~ "." ~ param.ownership.to!dstring ~ ");\n";
-        break;
-    }
+    addCallParam("_" ~ param.dName);
+    preCall ~= "auto _" ~ param.dName ~ " = g" ~ param.containerType.to!dstring ~ "ToD!(" ~ templateParams ~ ")("
+      ~ param.dName ~ ");\n";
   }
 
   /**

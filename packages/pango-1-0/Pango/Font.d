@@ -1,11 +1,8 @@
 module Pango.Font;
 
-import GLib.Bytes;
-import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
 import HarfBuzz.Feature;
-import Pango.Context;
 import Pango.Coverage;
 import Pango.FontDescription;
 import Pango.FontFace;
@@ -40,28 +37,6 @@ class Font : ObjectG
   override @property GType gType()
   {
     return getType();
-  }
-
-  /**
-   * Loads data previously created via [Pango.Font.serialize].
-   * For a discussion of the supported format, see that function.
-   * Note: to verify that the returned font is identical to
-   * the one that was serialized, you can compare bytes to the
-   * result of serializing the font again.
-   * Params:
-   *   context = a `PangoContext`
-   *   bytes = the bytes containing the data
-   * Returns: a new `PangoFont`
-   */
-  static Font deserialize(Context context, Bytes bytes)
-  {
-    PangoFont* _cretval;
-    GError *_err;
-    _cretval = pango_font_deserialize(context ? cast(PangoContext*)context.cPtr(false) : null, bytes ? cast(GBytes*)bytes.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? ObjectG.getDObject!Font(cast(PangoFont*)_cretval, true) : null;
-    return _retval;
   }
 
   /**
@@ -240,23 +215,6 @@ class Font : ObjectG
   {
     bool _retval;
     _retval = pango_font_has_char(cast(PangoFont*)cPtr, wc);
-    return _retval;
-  }
-
-  /**
-   * Serializes the font in a way that can be uniquely identified.
-   * There are no guarantees about the format of the output across different
-   * versions of Pango.
-   * The intended use of this function is testing, benchmarking and debugging.
-   * The format is not meant as a permanent storage format.
-   * To recreate a font from its serialized form, use [Pango.Font.deserialize].
-   * Returns: a `GBytes` containing the serialized form of font
-   */
-  Bytes serialize()
-  {
-    GBytes* _cretval;
-    _cretval = pango_font_serialize(cast(PangoFont*)cPtr);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 }

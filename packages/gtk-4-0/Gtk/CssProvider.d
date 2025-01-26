@@ -1,6 +1,5 @@
 module Gtk.CssProvider;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.DClosure;
 import GObject.ObjectG;
@@ -70,17 +69,6 @@ class CssProvider : ObjectG, StyleProvider
     GtkCssProvider* _cretval;
     _cretval = gtk_css_provider_new();
     this(_cretval, true);
-  }
-
-  /**
-   * Loads data into css_provider.
-   * This clears any previously loaded information.
-   * Params:
-   *   data = `GBytes` containing the data to load
-   */
-  void loadFromBytes(Bytes data)
-  {
-    gtk_css_provider_load_from_bytes(cast(GtkCssProvider*)cPtr, data ? cast(GBytes*)data.cPtr(false) : null);
   }
 
   /**

@@ -1,6 +1,5 @@
 module Gtk.SizeGroup;
 
-import GLib.SList;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.Buildable;
@@ -138,11 +137,11 @@ class SizeGroup : ObjectG, Buildable
    * Returns: a `GSList` of
    *   widgets. The list is owned by GTK and should not be modified.
    */
-  SList!(Widget) getWidgets()
+  Widget[] getWidgets()
   {
     GSList* _cretval;
     _cretval = gtk_size_group_get_widgets(cast(GtkSizeGroup*)cPtr);
-    SList!(Widget) _retval = new SList!(Widget)(cast(GSList*)_cretval, GidOwnership.None);
+    auto _retval = gSListToD!(Widget, GidOwnership.None)(cast(GSList*)_cretval);
     return _retval;
   }
 

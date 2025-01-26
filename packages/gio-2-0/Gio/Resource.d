@@ -1,7 +1,6 @@
 module Gio.Resource;
 
 import GLib.Boxed;
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -174,31 +173,6 @@ class Resource : Boxed
   }
 
   /**
-   * Creates a GResource from a reference to the binary resource bundle.
-   * This will keep a reference to data while the resource lives, so
-   * the data should not be modified or freed.
-   * If you want to use this resource in the global resource namespace you need
-   * to register it with [Gio.Resource.Register].
-   * Note: data must be backed by memory that is at least pointer aligned.
-   * Otherwise this function will internally create a copy of the memory since
-   * GLib 2.56, or in older versions fail and exit the process.
-   * If data is empty or corrupt, %G_RESOURCE_ERROR_INTERNAL will be returned.
-   * Params:
-   *   data = A #GBytes
-   * Returns: a new #GResource, or %NULL on error
-   */
-  static Resource newFromData(Bytes data)
-  {
-    GResource* _cretval;
-    GError *_err;
-    _cretval = g_resource_new_from_data(data ? cast(GBytes*)data.cPtr(false) : null, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Resource(cast(void*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
    * Returns all the names of children at the specified path in the resource.
    * The return result is a %NULL terminated list of strings which should
    * be released with [GLib.Global.strfreev].
@@ -253,36 +227,6 @@ class Resource : Boxed
     _retval = g_resource_get_info(cast(GResource*)cPtr, _path, lookupFlags, cast(size_t*)&size, cast(uint*)&flags, &_err);
     if (_err)
       throw new ErrorG(_err);
-    return _retval;
-  }
-
-  /**
-   * Looks for a file at the specified path in the resource and
-   * returns a #GBytes that lets you directly access the data in
-   * memory.
-   * The data is always followed by a zero byte, so you
-   * can safely use the data as a C string. However, that byte
-   * is not included in the size of the GBytes.
-   * For uncompressed resource files this is a pointer directly into
-   * the resource bundle, which is typically in some readonly data section
-   * in the program binary. For compressed files we allocate memory on
-   * the heap and automatically uncompress the data.
-   * lookup_flags controls the behaviour of the lookup.
-   * Params:
-   *   path = A pathname inside the resource
-   *   lookupFlags = A #GResourceLookupFlags
-   * Returns: #GBytes or %NULL on error.
-   *   Free the returned object with [GLib.Bytes.unref]
-   */
-  Bytes lookupData(string path, ResourceLookupFlags lookupFlags)
-  {
-    GBytes* _cretval;
-    const(char)* _path = path.toCString(false);
-    GError *_err;
-    _cretval = g_resource_lookup_data(cast(GResource*)cPtr, _path, lookupFlags, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

@@ -367,16 +367,10 @@ class TypeNode : Base
 
     if (_dType.empty && (unresolvedFlags & UnresolvedFlags.Element) == 0) // If container D type has not yet been set and elements are resolved
     {
-      if (containerType == ContainerType.Array && elemTypes.length == 1)
-        _dType = elemTypes[0]._dType ~ "[]";
-      else if (containerType == ContainerType.ArrayG && elemTypes.length == 1)
-        _dType = "ArrayG!(" ~ elemTypes.map!(x => x._dType ~ ", " ~ x.cType).join(", ") ~ ")";
-      else if (containerType == ContainerType.HashTable && elemTypes.length == 2)
+      if (containerType == ContainerType.HashTable && elemTypes.length == 2)
         _dType = elemTypes[1]._dType ~ "[" ~ elemTypes[0]._dType ~ "]"; // Uses an associative array
-      else if (containerType == ContainerType.ByteArray && elemTypes.length == 1) // ByteArray is not a template
-        _dType = containerType.to!dstring;
       else if (elemTypes.length == 1)
-        _dType = containerType.to!dstring ~ "!(" ~ elemTypes.map!(x => x._dType).join(", ") ~ ")"; // All other types use templates
+        _dType = elemTypes[0]._dType ~ "[]";
     }
   }
 
@@ -515,7 +509,7 @@ enum TypeKind
   Opaque, /// Opaque Record pointer wrapped by a D class with methods
   Wrap, /// Record or Union wrapped by a D class with defined fields and/or methods
   Boxed, /// A GLib boxed Record type which can have fields
-  Reffed, /// Referenced Class type with possible inheritence (not GObject derived), can have fields
+  Reffed, /// Referenced Class type with possible inheritance (not GObject derived), can have fields
   Object, /// A GObject Class
   Interface, /// Interface type
   Namespace, /// Namespace structure (no C type, global module for example)
@@ -527,6 +521,7 @@ enum ContainerType
   None = -2, /// No container
   Array = -1, /// Memory array
   ByteArray, /// GByteArray (uses <array>), enforces element type to be ubyte, does not use a template type
+  Bytes, /// GBytes
   ArrayG, /// GArray (uses <array>)
   PtrArray, /// GPtrArray (uses <array>)
   List, /// GList
@@ -536,7 +531,7 @@ enum ContainerType
 
 /// Container type string values matching ContainerType
 immutable dstring[] ContainerTypeValues =
-  ["GLib.ByteArray", "GLib.Array", "GLib.PtrArray", "GLib.List", "GLib.SList", "GLib.HashTable"];
+  ["GLib.ByteArray", "GLib.Bytes", "GLib.Array", "GLib.PtrArray", "GLib.List", "GLib.SList", "GLib.HashTable"];
 
 long containerTypeElemCount(ContainerType container)
 {

@@ -1,7 +1,6 @@
 module Pango.GlyphItem;
 
 import GLib.Boxed;
-import GLib.SList;
 import Gid.gid;
 import Pango.AttrList;
 import Pango.GlyphString;
@@ -108,12 +107,12 @@ class GlyphItem : Boxed
    *   the elements using [Pango.GlyphItem.free], the list using
    *   [GLib.SList.free].
    */
-  SList!(GlyphItem) applyAttrs(string text, AttrList list)
+  GlyphItem[] applyAttrs(string text, AttrList list)
   {
     GSList* _cretval;
     const(char)* _text = text.toCString(false);
     _cretval = pango_glyph_item_apply_attrs(cast(PangoGlyphItem*)cPtr, _text, list ? cast(PangoAttrList*)list.cPtr(false) : null);
-    SList!(GlyphItem) _retval = new SList!(GlyphItem)(cast(GSList*)_cretval, GidOwnership.Full);
+    auto _retval = gSListToD!(GlyphItem, GidOwnership.Full)(cast(GSList*)_cretval);
     return _retval;
   }
 

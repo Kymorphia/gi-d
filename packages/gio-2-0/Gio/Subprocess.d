@@ -1,6 +1,5 @@
 module Gio.Subprocess;
 
-import GLib.Bytes;
 import GLib.ErrorG;
 import GObject.ObjectG;
 import Gid.gid;
@@ -112,105 +111,6 @@ class Subprocess : ObjectG, Initable
     if (_err)
       throw new ErrorG(_err);
     auto _retval = _cretval ? ObjectG.getDObject!Subprocess(cast(GSubprocess*)_cretval, true) : null;
-    return _retval;
-  }
-
-  /**
-   * Communicate with the subprocess until it terminates, and all input
-   * and output has been completed.
-   * If stdin_buf is given, the subprocess must have been created with
-   * %G_SUBPROCESS_FLAGS_STDIN_PIPE.  The given data is fed to the
-   * stdin of the subprocess and the pipe is closed $(LPAREN)ie: EOF$(RPAREN).
-   * At the same time $(LPAREN)as not to cause blocking when dealing with large
-   * amounts of data$(RPAREN), if %G_SUBPROCESS_FLAGS_STDOUT_PIPE or
-   * %G_SUBPROCESS_FLAGS_STDERR_PIPE were used, reads from those
-   * streams.  The data that was read is returned in stdout and/or
-   * the stderr.
-   * If the subprocess was created with %G_SUBPROCESS_FLAGS_STDOUT_PIPE,
-   * stdout_buf will contain the data read from stdout.  Otherwise, for
-   * subprocesses not created with %G_SUBPROCESS_FLAGS_STDOUT_PIPE,
-   * stdout_buf will be set to %NULL.  Similar provisions apply to
-   * stderr_buf and %G_SUBPROCESS_FLAGS_STDERR_PIPE.
-   * As usual, any output variable may be given as %NULL to ignore it.
-   * If you desire the stdout and stderr data to be interleaved, create
-   * the subprocess with %G_SUBPROCESS_FLAGS_STDOUT_PIPE and
-   * %G_SUBPROCESS_FLAGS_STDERR_MERGE.  The merged result will be returned
-   * in stdout_buf and stderr_buf will be set to %NULL.
-   * In case of any error $(LPAREN)including cancellation$(RPAREN), %FALSE will be
-   * returned with error set.  Some or all of the stdin data may have
-   * been written.  Any stdout or stderr data that has been read will be
-   * discarded. None of the out variables $(LPAREN)aside from error$(RPAREN) will have
-   * been set to anything in particular and should not be inspected.
-   * In the case that %TRUE is returned, the subprocess has exited and the
-   * exit status inspection APIs $(LPAREN)eg: [Gio.Subprocess.getIfExited],
-   * [Gio.Subprocess.getExitStatus]$(RPAREN) may be used.
-   * You should not attempt to use any of the subprocess pipes after
-   * starting this function, since they may be left in strange states,
-   * even if the operation was cancelled.  You should especially not
-   * attempt to interact with the pipes while the operation is in progress
-   * $(LPAREN)either from another thread or if using the asynchronous version$(RPAREN).
-   * Params:
-   *   stdinBuf = data to send to the stdin of the subprocess, or %NULL
-   *   cancellable = a #GCancellable
-   *   stdoutBuf = data read from the subprocess stdout
-   *   stderrBuf = data read from the subprocess stderr
-   * Returns: %TRUE if successful
-   */
-  bool communicate(Bytes stdinBuf, Cancellable cancellable, out Bytes stdoutBuf, out Bytes stderrBuf)
-  {
-    bool _retval;
-    GBytes* _stdoutBuf;
-    GBytes* _stderrBuf;
-    GError *_err;
-    _retval = g_subprocess_communicate(cast(GSubprocess*)cPtr, stdinBuf ? cast(GBytes*)stdinBuf.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_stdoutBuf, &_stderrBuf, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    stdoutBuf = new Bytes(cast(void*)_stdoutBuf, true);
-    stderrBuf = new Bytes(cast(void*)_stderrBuf, true);
-    return _retval;
-  }
-
-  /**
-   * Asynchronous version of [Gio.Subprocess.communicate].  Complete
-   * invocation with [Gio.Subprocess.communicateFinish].
-   * Params:
-   *   stdinBuf = Input data, or %NULL
-   *   cancellable = Cancellable
-   *   callback = Callback
-   */
-  void communicateAsync(Bytes stdinBuf, Cancellable cancellable, AsyncReadyCallback callback)
-  {
-    extern(C) void _callbackCallback(ObjectC* sourceObject, GAsyncResult* res, void* data)
-    {
-      ptrThawGC(data);
-      auto _dlg = cast(AsyncReadyCallback*)data;
-
-      (*_dlg)(sourceObject ? ObjectG.getDObject!ObjectG(cast(void*)sourceObject, false) : null, res ? ObjectG.getDObject!AsyncResult(cast(void*)res, false) : null);
-    }
-
-    auto _callback = freezeDelegate(cast(void*)&callback);
-    g_subprocess_communicate_async(cast(GSubprocess*)cPtr, stdinBuf ? cast(GBytes*)stdinBuf.cPtr(false) : null, cancellable ? cast(GCancellable*)cancellable.cPtr(false) : null, &_callbackCallback, _callback);
-  }
-
-  /**
-   * Complete an invocation of [Gio.Subprocess.communicateAsync].
-   * Params:
-   *   result = Result
-   *   stdoutBuf = Return location for stdout data
-   *   stderrBuf = Return location for stderr data
-   * Returns:
-   */
-  bool communicateFinish(AsyncResult result, out Bytes stdoutBuf, out Bytes stderrBuf)
-  {
-    bool _retval;
-    GBytes* _stdoutBuf;
-    GBytes* _stderrBuf;
-    GError *_err;
-    _retval = g_subprocess_communicate_finish(cast(GSubprocess*)cPtr, result ? cast(GAsyncResult*)(cast(ObjectG)result).cPtr(false) : null, &_stdoutBuf, &_stderrBuf, &_err);
-    if (_err)
-      throw new ErrorG(_err);
-    stdoutBuf = new Bytes(cast(void*)_stdoutBuf, true);
-    stderrBuf = new Bytes(cast(void*)_stderrBuf, true);
     return _retval;
   }
 

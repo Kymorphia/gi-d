@@ -1,6 +1,5 @@
 module Gtk.WindowGroup;
 
-import GLib.List;
 import GObject.ObjectG;
 import Gid.gid;
 import Gtk.Types;
@@ -69,11 +68,11 @@ class WindowGroup : ObjectG
    * Returns: A
    *   newly-allocated list of windows inside the group.
    */
-  List!(Window) listWindows()
+  Window[] listWindows()
   {
     GList* _cretval;
     _cretval = gtk_window_group_list_windows(cast(GtkWindowGroup*)cPtr);
-    List!(Window) _retval = new List!(Window)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(Window, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

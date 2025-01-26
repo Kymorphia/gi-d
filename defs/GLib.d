@@ -1,7 +1,12 @@
 //!repo GLib-2.0
 
-//# Change Array to ArrayG
-//!subtype Array ArrayG
+//# Disable binding of container types
+//!set record[Array][disable] 1
+//!set record[ByteArray][disable] 1
+//!set record[Bytes][disable] 1
+//!set record[PtrArray][disable] 1
+//!set record[List][disable] 1
+//!set record[SList][disable] 1
 
 //# Change Variant to VariantG so as not to conflict with std.variant
 //!subdtype Variant VariantG

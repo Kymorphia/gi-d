@@ -1,6 +1,5 @@
 module Gtk.FlowBox;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -241,11 +240,11 @@ class FlowBox : Widget, Orientable
    * Returns: A `GList` containing the `GtkWidget` for each selected child.
    *   Free with [GLib.List.free] when done.
    */
-  List!(FlowBoxChild) getSelectedChildren()
+  FlowBoxChild[] getSelectedChildren()
   {
     GList* _cretval;
     _cretval = gtk_flow_box_get_selected_children(cast(GtkFlowBox*)cPtr);
-    List!(FlowBoxChild) _retval = new List!(FlowBoxChild)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(FlowBoxChild, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

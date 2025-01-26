@@ -1,6 +1,5 @@
 module Gtk.Gesture;
 
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gdk.Device;
@@ -164,11 +163,11 @@ class Gesture : EventController
    * Returns: The list
    *   of `GtkGesture`s, free with [GLib.List.free]
    */
-  List!(Gesture) getGroup()
+  Gesture[] getGroup()
   {
     GList* _cretval;
     _cretval = gtk_gesture_get_group(cast(GtkGesture*)cPtr);
-    List!(Gesture) _retval = new List!(Gesture)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(Gesture, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 
@@ -241,11 +240,11 @@ class Gesture : EventController
    *   not be freed or modified, the list itself must be deleted
    *   through [GLib.List.free]
    */
-  List!(EventSequence) getSequences()
+  EventSequence[] getSequences()
   {
     GList* _cretval;
     _cretval = gtk_gesture_get_sequences(cast(GtkGesture*)cPtr);
-    List!(EventSequence) _retval = new List!(EventSequence)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(EventSequence, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

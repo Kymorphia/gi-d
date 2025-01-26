@@ -1,7 +1,6 @@
 module GLib.Uri;
 
 import GLib.Boxed;
-import GLib.Bytes;
 import GLib.ErrorG;
 import GLib.Types;
 import GLib.c.functions;
@@ -698,7 +697,7 @@ class Uri : Boxed
     _cretval = g_uri_parse_params(_params, length, _separators, flags, &_err);
     if (_err)
       throw new UriException(_err);
-    string[string] _retval = _cretval ? hashTableToMap!(string, string, true)(_cretval) : null;
+    auto _retval = gHashTableToD!(string, string, GidOwnership.Full)(cast(GHashTable*)_cretval);
     return _retval;
   }
 
@@ -927,38 +926,6 @@ class Uri : Boxed
     path = _path.fromCString(true);
     query = _query.fromCString(true);
     fragment = _fragment.fromCString(true);
-    return _retval;
-  }
-
-  /**
-   * Unescapes a segment of an escaped string as binary data.
-   * Note that in contrast to [GLib.Uri.unescapeString], this does allow
-   * nul bytes to appear in the output.
-   * If any of the characters in illegal_characters appears as an escaped
-   * character in escaped_string, then that is an error and %NULL will be
-   * returned. This is useful if you want to avoid for instance having a slash
-   * being expanded in an escaped path element, which might confuse pathname
-   * handling.
-   * Params:
-   *   escapedString = A URI-escaped string
-   *   length = the length $(LPAREN)in bytes$(RPAREN) of escaped_string to escape, or `-1` if it
-   *     is nul-terminated.
-   *   illegalCharacters = a string of illegal characters
-   *     not to be allowed, or %NULL.
-   * Returns: an unescaped version of escaped_string
-   *   or %NULL on error $(LPAREN)if decoding failed, using %G_URI_ERROR_FAILED error
-   *   code$(RPAREN). The returned #GBytes should be unreffed when no longer needed.
-   */
-  static Bytes unescapeBytes(string escapedString, ptrdiff_t length, string illegalCharacters)
-  {
-    GBytes* _cretval;
-    const(char)* _escapedString = escapedString.toCString(false);
-    const(char)* _illegalCharacters = illegalCharacters.toCString(false);
-    GError *_err;
-    _cretval = g_uri_unescape_bytes(_escapedString, length, _illegalCharacters, &_err);
-    if (_err)
-      throw new UriException(_err);
-    auto _retval = _cretval ? new Bytes(cast(void*)_cretval, true) : null;
     return _retval;
   }
 

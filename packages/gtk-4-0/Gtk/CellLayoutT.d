@@ -1,7 +1,6 @@
 module Gtk.CellLayoutT;
 
 public import Gtk.CellLayoutIfaceProxy;
-public import GLib.List;
 public import GObject.ObjectG;
 public import Gid.gid;
 public import Gtk.CellArea;
@@ -169,11 +168,11 @@ template CellLayoutT()
    *   been newly allocated and should be freed with [GLib.List.free]
    *   when no longer needed.
    */
-  override List!(CellRenderer) getCells()
+  override CellRenderer[] getCells()
   {
     GList* _cretval;
     _cretval = gtk_cell_layout_get_cells(cast(GtkCellLayout*)cPtr);
-    List!(CellRenderer) _retval = new List!(CellRenderer)(cast(GList*)_cretval, GidOwnership.Container);
+    auto _retval = gListToD!(CellRenderer, GidOwnership.Container)(cast(GList*)_cretval);
     return _retval;
   }
 

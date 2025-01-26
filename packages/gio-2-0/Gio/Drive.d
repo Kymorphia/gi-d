@@ -2,7 +2,6 @@ module Gio.Drive;
 
 public import Gio.DriveIfaceProxy;
 import GLib.ErrorG;
-import GLib.List;
 import GObject.DClosure;
 import GObject.ObjectG;
 import Gid.gid;
@@ -189,7 +188,7 @@ interface Drive
    * its elements have been unreffed with [GObject.ObjectG.unref].
    * Returns: #GList containing any #GVolume objects on the given drive.
    */
-  List!(Volume) getVolumes();
+  Volume[] getVolumes();
 
   /**
    * Checks if the drive has media. Note that the OS may not be polling
