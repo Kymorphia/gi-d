@@ -21,6 +21,7 @@ int main(string[] args)
   string[] defPaths;
   string[] girPaths;
   bool defHelp;
+  bool dumpKinds;
 
   try
   {
@@ -34,6 +35,7 @@ int main(string[] args)
         "dump-selectors", "Dump XML selectors for warnings", &TypeNode.dumpSelectorWarnings,
         "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
         "dump-dtypes", "Dump all raw D types", &Repo.dumpDTypes,
+        "dump-kinds", "Dump the list of type kinds", &dumpKinds,
         "dump-matches", "Dump XML patch selector matches", &XmlPatch.dumpSelectorMatches,
         "dump-traps", "Dump code trap actions", &codeTrapsDump,
         "trap", "Add gdb breakpoint 'action:regex', action: domain (help to list), regex: pattern to match", &traps,
@@ -48,6 +50,12 @@ int main(string[] args)
     if (defHelp)
     {
       displayDefHelp;
+      return 0;
+    }
+
+    if (dumpKinds)
+    {
+      writeln("Type kinds: " ~ [EnumMembers!TypeKind].map!(x => x.to!string).join(", "));
       return 0;
     }
   }

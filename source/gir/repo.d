@@ -889,7 +889,6 @@ final class Repo : Base
 
   dstring namespace; /// Name space of symbols in gir file
   dstring nsVersion; /// Version of the namespace
-  dstring buildVersion; /// Build micro version number
   dstring sharedLibrary; /// Namespace shared library (multiple values separated by commas)
   dstring identifierPrefixes; /// Prefix to identifiers
   dstring symbolPrefixes; /// C symbol prefix

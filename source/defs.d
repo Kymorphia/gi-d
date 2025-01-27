@@ -270,9 +270,6 @@ class Defs
           else
             patches ~= patch;
           break;
-        case "build":
-          curRepo.buildVersion = cmdTokens[1];
-          break;
         case "class":
           curStructName = cmdTokens[1];
           classState = ClassState.In; // FIXME - How to specify other sections of modules?
@@ -920,7 +917,6 @@ immutable DefCmd[] defCommandInfo = [
   {
     "add", 2, DefCmdFlags.AllowBlock, "add <XmlSelect> <AttributeValue | Xml> - Add an XML attribute or node"
   },
-  {"build", 1, DefCmdFlags.ReqRepo, "build <BuildVersion> - Set build micro version"},
   {"class", 1, DefCmdFlags.ReqRepo, "class <Class> - Select the current structure/class"},
   {"del", 1, DefCmdFlags.None, "del <XmlSelect> - Delete an XML attribute or node"},
   {
