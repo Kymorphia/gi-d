@@ -61,6 +61,7 @@ GObject Introspection Dlang binding generator
    --dump-selectors Dump XML selectors for warnings
       --dump-ctypes Dump all raw C types
       --dump-dtypes Dump all raw D types
+       --dump-kinds Dump the list of type kinds
      --dump-matches Dump XML patch selector matches
        --dump-traps Dump code trap actions
              --trap Add gdb breakpoint 'action:regex', action: domain (help to list), regex: pattern to match
