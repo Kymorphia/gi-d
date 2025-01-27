@@ -75,7 +75,7 @@ These are basic commands which are used for general use cases.
 * **-d, --defs**: Add a path to a directory of gi-d binding definition files or a single file. Option is required and can be specified multiple times.
 * **-g, --gir-path**: Add a path to the GIR search path. This option is required and can be specified multiple times.
 * **--log-level**: Set the output log level. Can be one of: all, trace, info, warning, error, critical, fatal, or off.
-  The default value is **warning**. A value of **info** can be used to display potentially useful information about automatic binding decisions,
+  The default value is **warning**. A value of **info** can be used to display useful information about automatic binding decisions,
   which are potentially problematic.
 
 ### Binding Debugging Commands
@@ -216,7 +216,7 @@ The `class` command can be used following either a `repo` or `namespace` command
 There are several commands which modify the behavior of binding generation. These are described in more detail below:
  * **generate** - This command is used to indicate if init methods and/or binding functions should be automatically generated.
    By default class/structure definition files do not automatically generate methods.
-   This command can be used to instruct gi-d to generate init methods `//! generate init` or bind other instance/class methods `//! generate funcs`.
+   This command can be used to instruct gi-d to generate init methods `//!generate init` or bind other instance/class methods `//!generate funcs`.
  * **import** - Add a D import to the list of imports for the current class/structure.
  * **info** - Used for defining values in dub.json package files. It takes a name, which is one of: name, description, copyright, authors, or license.
    The second parameter is the value to assign. The **authors** info value can be assigned multiple times, to be used when there are multiple authors.
