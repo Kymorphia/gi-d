@@ -1,6 +1,5 @@
 {
   "name": "gi-d",
-  "version": "0.9.0",
   "description": "GObject introspection D binding generator (including Gtk4 bindings)",
   "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
