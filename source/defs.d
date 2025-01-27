@@ -898,8 +898,8 @@ void displayDefHelp()
     ~ "Commands are prefixed with '//!'.\n"
     ~ "gi-d comments are prefixed with '//#' and aren't output to binding code.\n"
     ~ "Strings can be single or double quoted.\n"
-    ~ "Some commands support multi-line values using opening and close braces within gi-d comment lines ('block' flag).\n"
-    ~ "Commands indicating 'repo' in parenthesis require a repo to have been specified, 'class' requires a class (or struct).\n"
+    ~ "Some commands support multi-line values using opening and close braces within gi-d comment lines ('Block' flag).\n"
+    ~ "Commands indicating 'Repo' in parenthesis require a repo to have been specified, 'Class' requires a class (or struct).\n"
     ~ "Commands:\n"
   );
 
