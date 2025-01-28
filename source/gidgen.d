@@ -1,7 +1,8 @@
-module gid;
+module gidgen;
 
 import std.experimental.logger;
 import std.getopt;
+import std.path : absolutePath, asNormalizedPath;
 import std.stdio : writeln;
 
 import code_traps;
@@ -20,6 +21,8 @@ int main(string[] args)
   arraySep = ","; // Allow comma separated values for array parameters (traps)
   string[] defPaths;
   string[] girPaths;
+  string pkgPath;
+  string subPkgPath;
   bool defHelp;
   bool dumpKinds;
 
@@ -29,6 +32,8 @@ int main(string[] args)
         args,
         "d|defs", "Add a path to a directory of binding definition files or a single file (one or more required)", &defPaths,
         "g|gir-path", "Add a path to search for GIR files (one or more required)", &girPaths,
+        "p|pkg-path", "Top-level package binding output path (required)", &pkgPath,
+        "s|subpkg-path", "Subpackage path to write individual library packages to (required)", &subPkgPath,
         "def-help", "Display binding definition file command help", &defHelp,
         "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string).join(", ") ~ ")", &logLevel,
         "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
@@ -71,6 +76,21 @@ int main(string[] args)
     return 1;
   }
 
+  if (!pkgPath)
+  {
+    error("A package output path must be specified with --pkg-path (-p)");
+    return 1;
+  }
+
+  if (!subPkgPath)
+  {
+    error("A sub-package output path must be specified with --subpkg-path (-s)");
+    return 1;
+  }
+
+  pkgPath = absolutePath(pkgPath).asNormalizedPath.array;
+  subPkgPath = absolutePath(subPkgPath).asNormalizedPath.array;
+
   globalLogLevel(logLevel);
 
   foreach (tr; traps)
@@ -94,7 +114,7 @@ int main(string[] args)
   auto defs = new Defs();
   defs.loadDefFiles(defPaths);
   defs.loadRepos(girPaths);
-  defs.writePackages();
+  defs.writePackages(pkgPath, subPkgPath);
 
   defs.repos.sort!((a, b) => a.namespace < b.namespace);
 

@@ -1,9 +1,9 @@
 {
-  "name": "gi-d",
-  "description": "GObject introspection D binding generator (including Gtk4 bindings)",
+  "name": "gidgen",
+  "description": "GObject introspection D binding generator",
   "copyright": "Copyright © 2024-2025, Kymorphia, PBC",
   "authors": ["Element Green <element@kymorphia.com>"],
   "license": "MIT",
   "targetType": "executable",
-  "mainSourceFile": "source/gi-d.d"
+  "mainSourceFile": "source/gidgen.d"
 }

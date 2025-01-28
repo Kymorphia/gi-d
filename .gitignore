@@ -1,6 +1,5 @@
 .dub
 dub.selections.json
-gi-d
-packages/gid-*
+gidgen
 *.o
 *.so

@@ -1,39 +1,40 @@
-# gi-d GObject Instrospection D Binding Generator
+# gidgen - GObject Instrospection D Binding Generator
 
-**gi-d** (pronounced as *giddy*) is a GObject to D language (AKA Dlang) binding generator.
-This utility takes XML GObject Introspection Repository (GIR) files and generates D binding packages which can be used with [dub](https://dub.pm/).
-Generated packages are currently included in this repository for direct use by the dub package manager.
+**gidgen** is a GObject to D language (AKA Dlang) binding generator which is part of the **giD** project (pronounced as *giddy*).
+The intention of this project is to create high quality D language bindings for libraries with GObject Introspection APIs.
 
-This document describes how to use the **gi-d** utility for creating and improving D bindings.
+The **gidgen** utility takes XML GObject Introspection Repository (GIR) files and generates D binding packages which can be used with [dub](https://dub.pm/).
 
-If you are instead interested in reading about developing Gtk4 applications with D,
-please consult the [examples/README.md](https://github.com/Kymorphia/gi-d/examples/README.md).
+The [giD Package Repository](https://github.com/Kymorphia/gid/) hosts the current archive of generated D bindings,
+and is focused primarily on Gtk4 and its dependencies. In the future it will be expanded to include additional libraries according to interest.
+
+If you are looking for documentation on how to develop D applications using giD generated bindings, such as Gtk4 GUI applications,
+please consult the [giD Package Repository Examples](https://github.com/Kymorphia/gid/tree/main/examples/).
+
+The remainder of this document describes how to use **gidgen** for creating and improving D bindings.
 
 ## Features
 
-Some of the features of the **gi-d** binding utility include:
+Some of the features of **gidgen** include:
 
-* The goal is to automatically generate the best D binding possible, with minimal custom code.
-  * Current binding coverage for Gtk4 and it's dependencies is quite high, with the majority of manual customization consisting
-    of XML patches to correct the GIR XML interfaces and additional code for GObject and fundamental types.
-* Handles C callbacks with data "closures" using delegates, marshalling arguments and return values to/from C callbacks,
-  and managing delegate lifecycle.
+* The goal is to automatically generate quality bindings based on GIR API definitions, with minimal custom code.
+* Handles C callbacks with data "closures" using delegates and intelligent delegate lifecycle management.
 * Types:
-  * Converts basic types to/from C and D.
-  * Converts to/from C zero terminated strings and D strings.
+  * Converts basic types between C and D code.
+  * Converts between C zero terminated strings and D strings.
   * Support for GBoxed types.
-  * Additional support for complex data types requiring memory management such as anonymous referenced types
-    and D Object wrapped nested structures and unions.
+  * Support for other complex memory managed referenced types, structures, and unions.
   * Arrays of any supported type.
   * Supports strv (`char**`) as `string[]` arrays.
-  * Container types (GArray, GBytes, GByteArray, GPtrArray, GList, GSList) are converted to/from native D dynamic arrays.
-  * GHashTable parameters and return values are converted to/from D associative arrays.
+  * Container types are converted between native D dynamic arrays (GArray, GBytes, GByteArray, GPtrArray, GList, GSList).
+  * GHashTable parameters and return values are converted between D associative arrays.
   * Support for getting and setting values of GValue and GVariant using templates and native D types.
-  * Creates D exceptions for GErrors.
+  * Throws D exceptions for GErrors.
   * Native C library functions can be called directly if desired and are loaded dynamically at runtime.
 * GObject:
-  * Wrapping of C GObject and Interface instances, with the use of interface proxy objects when the GObject type is unknown to D.
-  * Each object signal generates a delegate callback type alias and `connectSignalName()` method.
+  * Wrapping of C GObject and Interface instances.
+  * Uses interface proxy objects when the GObject type is unknown to D.
+  * Each GObject signal has a delegate callback type alias and `connectSignalName()` method.
   * Support for signal "detail" parameters like property names used with the GObject "notify" property.
 * Binding Package Definitions:
   * Binding package definition files are just D source code files with additional commands added as specially formatted comments,
@@ -44,17 +45,19 @@ Some of the features of the **gi-d** binding utility include:
   * Generates binding package dub.json files.
   * Outputs detailed warnings for GIR API elements which have issues or are not currently supported.
   * Command line options for identifying and resolving GIR issues.
-  * Support for debugging the gi-d binding generator using traps in gdb, to set breakpoints when specific parts of the binding are processed.
+  * Support for debugging gidgen using traps in gdb, to set breakpoints when specific parts of the binding are processed.
 
 ## Command Line Argument Reference
 
 Command line help reference is produced with the `--help` command argument:
 
 ```sh
-./gi-d --help
+./gidgen --help
 GObject Introspection Dlang binding generator
 -d           --defs Add a path to a directory of binding definition files or a single file (one or more required)
 -g       --gir-path Add a path to search for GIR files (one or more required)
+-p       --pkg-path Top-level package binding output path (required)
+-s    --subpkg-path Subpackage path to write individual library packages to (required)
          --def-help Display binding definition file command help
         --log-level Log level (all, trace, info, warning, error, critical, fatal, off)
           --suggest Output definition file command suggestions
@@ -72,7 +75,7 @@ GObject Introspection Dlang binding generator
 
 These are basic commands which are used for general use cases.
 
-* **-d, --defs**: Add a path to a directory of gi-d binding definition files or a single file. Option is required and can be specified multiple times.
+* **-d, --defs**: Add a path to a directory of giD binding definition files or a single file. Option is required and can be specified multiple times.
 * **-g, --gir-path**: Add a path to the GIR search path. This option is required and can be specified multiple times.
 * **--log-level**: Set the output log level. Can be one of: all, trace, info, warning, error, critical, fatal, or off.
   The default value is **warning**. A value of **info** can be used to display useful information about automatic binding decisions,
@@ -82,25 +85,25 @@ These are basic commands which are used for general use cases.
 
 The following commands are useful for improving and troubleshooting bindings.
 
-* **--def-help** Display gi-d binding definition file help.
+* **--def-help** Display giD binding definition file help.
 * **--suggest** Outputs automated suggestions of XML patch commands which might be applicable. They should be reviewed for correctness.
 * **--dump-selectors** Dumps `set` command XML selectors for GIR warnings as a convenient start point for defining XML patches.
 * **--dump-ctypes** Display all C types from all packages.
-* **--dump-dtypes** Display all D types from all packages and their type categories as understood by gi-d.
-* **--dump-kinds** Display the list of type kinds which are used for classifying types for bindings.
+* **--dump-dtypes** Display all D types from all packages and their designated type kinds.
+* **--dump-kinds** Display the list of type kinds which are used for classifying types for binding generation.
   Type kinds: Unknown, Basic, String, BasicAlias, Enum, Flags, Callback, Container, Simple, Pointer, Opaque, Wrap, Boxed, Reffed, Object, Interface, Namespace
 * **--dump-matches** Dumps XML selector matches. Useful for troubleshooting XML patch commands in package definition files.
 
-### gi-d Program Debugging Commands
+### gidgen Program Debugging Commands
 
-These commands are useful for debugging the gi-d CLI program itself and pausing execution in GDB at specific points of binding processing.
+These commands are useful for debugging the gidgen CLI program itself and pausing execution in GDB at specific points of binding processing.
 
 * **--dump-traps** Dump all binding generation traps, which GDB breakpoints can be set on.
 * **--trap REGEX** Add a binding generation trap matching REGEX, which will cause a GDB debugger breakpoint.
 
 ## Binding Definition File Reference
 
-Binding definition files are just D language files with a .d extension, but which can contain special gi-d command comments.
+Binding definition files are just D language files with a .d extension, but which can contain special giD command comments.
 These files control various aspects of binding generation and can also contain custom D binding code.
 
 There are 3 scopes of binding definition files, defined below:
@@ -115,9 +118,9 @@ There are 3 scopes of binding definition files, defined below:
 ### Command Syntax
 
  * Commands are prefixed with `//!`.
- * gi-d comments are prefixed with `//#` and aren't output to binding code.
+ * giD comments are prefixed with `//#` and aren't output to binding code.
  * Strings can be single or double quoted.
- * Some commands support multi-line values using opening and close braces within gi-d comment lines (seldom used).
+ * Some commands support multi-line values using opening and close braces within giD comment lines (seldom used).
 
 ### Command Reference
 
@@ -125,12 +128,12 @@ Binding definition file command reference can be output with the `--def-help` co
 This outputs the following:
 
 ```sh
-./gi-d --def-help
-gi-d binding definition command help
+./gidgen --def-help
+giD binding definition command help
 Commands are prefixed with '//!'.
-gi-d comments are prefixed with '//#' and aren't output to binding code.
+giD comments are prefixed with '//#' and aren't output to binding code.
 Strings can be single or double quoted.
-Some commands support multi-line values using opening and close braces within gi-d comment lines ('block' flag).
+Some commands support multi-line values using opening and close braces within giD comment lines ('block' flag).
 Commands indicating 'repo' in parenthesis require a repo to have been specified, 'class' requires a class (or struct).
 Commands:
 
@@ -163,7 +166,7 @@ These commands use an XML selector to find a single XML element/attribute or mat
 
 **NOTE:** In addition to the standard GIR XML attributes,
   definition files also use the XML attribute `disable` for disabling the binding of a type.
-  This is not defined by the GIR XML specification and is used internally in gi-d only.
+  This is not defined by the GIR XML specification and is used internally in gidgen only.
 
 #### XML selector reference
 
@@ -201,7 +204,7 @@ Some commands are used for defining the current scope of other commands.
 These include: `repo`, `namespace`, and `class`.
 
 The `repo` command is used for processing a GIR XML file to create bindings from.
-It is usually the first command in a library definition file and instructs gi-d to process a GIR file and create bindings for it.
+It is usually the first command in a library definition file and instructs gidgen to process a GIR file and create bindings for it.
 It takes a single argument which is the GIR filename without the **.gir** extension.
 For example: `//!repo Gtk-4.0`
 
@@ -216,16 +219,16 @@ The `class` command can be used following either a `repo` or `namespace` command
 There are several commands which modify the behavior of binding generation. These are described in more detail below:
  * **generate** - This command is used to indicate if init methods and/or binding functions should be automatically generated.
    By default class/structure definition files do not automatically generate methods.
-   This command can be used to instruct gi-d to generate init methods `//!generate init` or bind other instance/class methods `//!generate funcs`.
+   This command can be used to instruct gidgen to generate init methods `//!generate init` or bind other instance/class methods `//!generate funcs`.
  * **import** - Add a D import to the list of imports for the current class/structure.
  * **info** - Used for defining values in dub.json package files. It takes a name, which is one of: name, description, copyright, authors, or license.
    The second parameter is the value to assign. The **authors** info value can be assigned multiple times, to be used when there are multiple authors.
    Example: `//!info description "GObject introspection D binding repository"`
- * **kind** - Override the **kind** of a type. gi-d automatically determines what kind a type is (Basic, String, Object, etc).
-   This command takes a type identifier followed by the kind label, which can be obtained from executing `./gi-d --dump-kinds`.
+ * **kind** - Override the **kind** of a type. gidgen automatically determines what kind a type is (Basic, String, Object, etc).
+   This command takes a type identifier followed by the kind label, which can be obtained from executing `./gidgen --dump-kinds`.
    For example: `//!kind OptionEntry Simple`
  * **merge** - This causes the current repo to be merged with another named repo identified by it's namespace.
-   The gi-d distributed bindings use this for merging GLib, GObject, and Gid into a single library to resolve mutual dependency issues.
+   The giD Package Repository distribution use this for merging GLib, GObject, and Gid into a single library to resolve mutual dependency issues.
    For example: `//!merge GLib`
  * **reserved** - Identify a reserved word, which will cause any instances of it in binding symbols to have an underscore appended to it.
    This is primarily used for identifying all D language reserved words. For example: `//!reserved version`.

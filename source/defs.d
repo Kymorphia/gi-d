@@ -1,6 +1,7 @@
 module defs;
 
 import std.utf : toUTF32;
+import std.path : relativePath;
 
 import import_manager;
 import gir.alias_;
@@ -450,24 +451,27 @@ class Defs
   /**
    * Write the packages for the loaded Repo objects defined in the definitions files.
    * Params:
-   *   basePath = The path to the toplevel packages directory (defaults to "packages")
-   *   packagePrefix = Prefix to add to package name (defaults to "gid-")
+   *   pkgPath = The path to the toplevel packages directory (should be absolute)
+   *   subPkgPath = Sub-package path to write package libraries to (should be absolute and a subdirectory of pkgPath)
    */
-  void writePackages(string basePath = "packages")
+  void writePackages(string pkgPath, string subPkgPath)
   {
     foreach (repo; repos)
-      repo.writePackage(basePath);
+      repo.writePackage(subPkgPath);
 
-    writeDubJsonFile(basePath);
+    writeDubJsonFile(pkgPath, subPkgPath);
   }
 
   /**
    * Write master packages dub JSON file.
    * Params:
-   *   path = The path to the packages directory
+   *   pkgPath = The path to the toplevel packages directory (should be absolute)
+   *   subPkgPath = Sub-package path to write package libraries to (should be absolute and a subdirectory of pkgPath)
    */
-  private void writeDubJsonFile(string path)
+  private void writeDubJsonFile(string pkgPath, string subPkgPath)
   {
+    auto relPath = relativePath(subPkgPath, pkgPath);
+
     string output = "{\n";
 
     foreach (key; ["name", "description", "copyright", "authors", "license"])
@@ -491,10 +495,10 @@ class Defs
     output ~= "\n  },\n";
 
     output ~= `  "subPackages": [` ~ "\n";
-    output ~= sortedRepos.map!(x => `    "./` ~ x ~ `/"`).join(",\n");
+    output ~= sortedRepos.map!(x => `    "` ~ buildPath(relPath, x) ~ `/"`).join(",\n");
     output ~= "\n  ]\n}\n";
 
-    write(buildPath(path, "dub.json"), output);
+    write(buildPath(pkgPath, "dub.json"), output);
   }
 
   /**
@@ -894,11 +898,11 @@ struct DefCmd
 /// Display binding definition file help
 void displayDefHelp()
 {
-  writeln("gi-d binding definition command help\n"
+  writeln("giD binding definition command help\n"
     ~ "Commands are prefixed with '//!'.\n"
-    ~ "gi-d comments are prefixed with '//#' and aren't output to binding code.\n"
+    ~ "giD comments are prefixed with '//#' and aren't output to binding code.\n"
     ~ "Strings can be single or double quoted.\n"
-    ~ "Some commands support multi-line values using opening and close braces within gi-d comment lines ('Block' flag).\n"
+    ~ "Some commands support multi-line values using opening and close braces within giD comment lines ('Block' flag).\n"
     ~ "Commands indicating 'Repo' in parenthesis require a repo to have been specified, 'Class' requires a class (or struct).\n"
     ~ "Commands:\n"
   );
