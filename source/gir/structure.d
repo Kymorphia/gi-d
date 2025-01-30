@@ -442,32 +442,32 @@ final class Structure : TypeNode
 
     // Boxed structures with defined structures can be allocated, add ctor without args
     if (kind == TypeKind.Boxed && !ctorFunc && !opaque && !pointer && !fields.empty)
-      writer ~= ["", "this()", "{", "super(safeMalloc(" ~ cType ~ ".sizeof), true);", "}"];
+      writer ~= ["", "this()", "{", "super(safeMalloc(" ~ cType ~ ".sizeof), Yes.Take);", "}"];
 
     if (kind == TypeKind.Object && (!ctorFunc || !ctorFunc.params.empty)) // Create default unassigned GObject constructor if there isn't one already
       writer ~= ["", "this()", "{", "}"];
 
     if (kind == TypeKind.Opaque)
-      writer ~= ["", "this(void* ptr, bool owned = false)", "{",
+      writer ~= ["", "this(void* ptr, Flag!\"Take\" take = No.Take)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
     else if (kind == TypeKind.Wrap || kind == TypeKind.Reffed)
-      writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
+      writer ~= ["", "this(void* ptr, Flag!\"Take\" take = No.Take)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];
     else if (kind == TypeKind.Boxed || kind == TypeKind.Object)
-      writer ~= ["", "this(void* ptr, bool ownedRef = false)", "{",
-        "super(cast(void*)ptr, ownedRef);", "}"];
+      writer ~= ["", "this(void* ptr, Flag!\"Take\" take = No.Take)", "{",
+        "super(cast(void*)ptr, take);", "}"];
 
     if (kind == TypeKind.Opaque && !pointer)
-      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "this.owned = owned;", "}"];
+      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "owned = take;", "}"];
     else if (kind == TypeKind.Opaque && pointer)
-      writer ~= ["cInstancePtr = cast(" ~ cType ~ ")ptr;", "", "this.owned = owned;", "}"];
+      writer ~= ["cInstancePtr = cast(" ~ cType ~ ")ptr;", "", "owned = take;", "}"];
     else if (kind == TypeKind.Wrap)
-      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (ownedRef)", "safeFree(ptr);", "}"];
+      writer ~= ["cInstance = *cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (take)", "safeFree(ptr);", "}"];
     else if (kind == TypeKind.Reffed && !parentStruct)
-      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (!ownedRef)", glibRefFunc
+      writer ~= ["cInstancePtr = cast(" ~ cTypeRemPtr ~ "*)ptr;", "", "if (!take)", glibRefFunc
         ~ "(cInstancePtr);", "}", "", "~this()", "{", glibUnrefFunc ~ "(cInstancePtr);", "}", ""];
     else if (kind == TypeKind.Reffed && parentStruct)
-      writer ~= ["super(cast(" ~ parentStruct.cType ~ "*)ptr, ownedRef);", "}"];
+      writer ~= ["super(cast(" ~ parentStruct.cType ~ "*)ptr, take);", "}"];
 
     if (kind == TypeKind.Opaque && freeFunction)
       writer ~= ["", "~this()", "{", "if (owned)", freeFunction ~ "(cInstancePtr);", "}"];
@@ -477,10 +477,10 @@ final class Structure : TypeNode
     if (kind == TypeKind.Opaque)
       writer ~= ["", "void* cPtr()", "{", "return cast(void*)cInstancePtr;", "}"];
     else if (kind == TypeKind.Reffed && !parentStruct)
-      writer ~= ["", "void* cPtr(bool addRef = false)", "{", "if (addRef)", glibRefFunc ~ "(cInstancePtr);", "",
+      writer ~= ["", "void* cPtr(Flag!\"Dup\" dup = No.Dup)", "{", "if (dup)", glibRefFunc ~ "(cInstancePtr);", "",
         "return cInstancePtr;", "}"];
     else if (kind == TypeKind.Boxed)
-      writer ~= ["", "void* cPtr(bool makeCopy = false)", "{", "return makeCopy ? copy_ : cInstancePtr;", "}"];
+      writer ~= ["", "void* cPtr(Flag!\"Dup\" dup = No.Dup)", "{", "return dup ? copy_ : cInstancePtr;", "}"];
     else if (kind == TypeKind.Wrap)
       writer ~= ["", "void* cPtr()", "{", "return cast(void*)&cInstance;", "}"];
 
@@ -524,7 +524,7 @@ final class Structure : TypeNode
           lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ";";
           break;
         case String:
-          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ".fromCString(false);";
+          lines ~= "return " ~ cPtr ~ "." ~ f.dName ~ ".fromCString(No.Free);";
           break;
         case Enum, Flags:
           lines ~= "return cast(" ~ f.dType ~ ")" ~ cPtr ~ "." ~ f.dName ~ ";";
@@ -551,7 +551,7 @@ final class Structure : TypeNode
           break;
         case Object:
           auto objectGSym = repo.defs.resolveSymbol("GObject.ObjectG");
-          lines ~= "return " ~ objectGSym ~ ".getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", false);";
+          lines ~= "return " ~ objectGSym ~ ".getDObject!" ~ f.dType ~ "(" ~ cPtr ~ "." ~ f.dName ~ ", No.Take);";
           break;
         case Unknown, Interface, Container, Namespace:
           throw new Exception(
@@ -574,7 +574,7 @@ final class Structure : TypeNode
           break;
         case String:
           lines ~= ["safeFree(cast(void*)" ~ cPtr ~ "." ~ f.dName ~ ");",
-            cPtr ~ "." ~ f.dName ~ " = propval.toCString(true);"];
+            cPtr ~ "." ~ f.dName ~ " = propval.toCString(Yes.Alloc);"];
           break;
         case Enum, Flags:
           lines ~= cPtr ~ "." ~ f.dName ~ " = cast(" ~ f.cType ~ ")propval;";

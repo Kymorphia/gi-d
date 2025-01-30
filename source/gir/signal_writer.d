@@ -206,17 +206,17 @@ class SignalWriter
           break;
         case String:
           inpProcess ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ param.dName ~ "[i].fromCString("
-            ~ param.fullOwnerStr ~ ");\n";
+            ~ param.fullOwnerFlag ~ ".Free);\n";
           break;
         case Opaque, Boxed, Wrap, Reffed:
           inpProcess ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= new " ~ elemType.dType ~ "(cast("
             ~ elemType.cType.stripConst ~ "*)&" ~ param.dName ~ "[i]"
-            ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
+            ~ (param.kind != Wrap ? (", " ~ param.fullOwnerFlag ~ ".Take") : "") ~ ");\n";
           break;
         case Object, Interface:
           auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
           inpProcess ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ " ~= " ~ objectGSym ~ ".getDObject!"
-            ~ elemType.dType ~ "(" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+            ~ elemType.dType ~ "(" ~ param.dName ~ "[i], " ~ param.fullOwnerFlag ~ ".Take);\n";
           break;
         case Unknown, Callback, Container, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string

@@ -135,10 +135,10 @@ class TypeNode : Base
     return cType[0 .. $ - 1];
   }
 
-  /// Returns "true" if ownership is Full, "false" otherwise (helper function)
-  dstring fullOwnerStr()
+  /// Returns "Yes" if ownership is Full, "No" otherwise (helper function to use with Flags)
+  dstring fullOwnerFlag()
   {
-    return ownership == Ownership.Full ? "true"d : "false"d;
+    return ownership == Ownership.Full ? "Yes"d : "No"d;
   }
 
   /**

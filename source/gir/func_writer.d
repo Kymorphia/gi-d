@@ -130,7 +130,7 @@ class FuncWriter
         decl ~= "string ";
         preCall ~= retVal.cType ~ " _cretval;\n";
         call ~= "_cretval = ";
-        postCall ~= "string _retval = _cretval.fromCString("d ~ retVal.fullOwnerStr ~ ");\n";
+        postCall ~= "string _retval = _cretval.fromCString("d ~ retVal.fullOwnerFlag ~ ".Free);\n";
         break;
       case Enum, Flags:
         decl ~= retVal.dType ~ " ";
@@ -162,10 +162,10 @@ class FuncWriter
         call ~= "_cretval = ";
 
         if (!func.isCtor)
-          postCall ~= "auto _retval = _cretval ? new "d ~ retVal.dType ~ "(cast(void*)_cretval, " ~ retVal.fullOwnerStr
-            ~ ") : null;\n";
+          postCall ~= "auto _retval = _cretval ? new "d ~ retVal.dType ~ "(cast(void*)_cretval, " ~ retVal.fullOwnerFlag
+            ~ ".Take) : null;\n";
         else // Constructor method
-          postCall ~= "this(_cretval, " ~ retVal.fullOwnerStr ~ ");\n";
+          postCall ~= "this(_cretval, " ~ retVal.fullOwnerFlag ~ ".Take);\n";
         break;
       case Opaque, Wrap, Reffed, Object, Interface:
         if (!func.isCtor)
@@ -179,16 +179,18 @@ class FuncWriter
           if (retVal.kind == TypeKind.Object || retVal.kind == TypeKind.Interface)
           {
             auto objectGSym = retVal.repo.defs.resolveSymbol("GObject.ObjectG");
-            postCall ~= "auto _retval = _cretval ? " ~ objectGSym ~ ".getDObject!";
+            postCall ~= "auto _retval = " ~ objectGSym ~ ".getDObject!"
+              ~ retVal.dType ~ "(cast(" ~ retVal.cType.stripConst ~ ")_cretval"
+              ~ (retVal.kind != TypeKind.Wrap ? (", " ~ retVal.fullOwnerFlag ~ ".Take") : "") ~ ");\n";
           }
           else
-            postCall ~= "auto _retval = _cretval ? new ";
-
-          postCall ~= retVal.dType ~ "(cast(" ~ retVal.cType.stripConst ~ ")_cretval"
-            ~ (retVal.kind != TypeKind.Wrap ? ", " ~ retVal.fullOwnerStr : "") ~ ") : null;\n";
+            postCall ~= "auto _retval = _cretval ? new "
+              ~ retVal.dType ~ "(cast(" ~ retVal.cType.stripConst ~ ")_cretval"
+              ~ (retVal.kind != TypeKind.Wrap ? (", " ~ retVal.fullOwnerFlag ~ ".Take") : "") ~ ") : null;\n";
         }
         else // Constructor method
-          postCall ~= "this(_cretval" ~ (retVal.kind != TypeKind.Wrap ? ", " ~ retVal.fullOwnerStr : "") ~ ");\n";
+          postCall ~= "this(_cretval" ~ (retVal.kind != TypeKind.Wrap ? (", " ~ retVal.fullOwnerFlag ~ ".Take") : "")
+            ~ ");\n";
         break;
       case Unknown, Container, Namespace:
         assert(0, "Unsupported return value type '" ~ retVal.dType.to!string ~ "' (" ~ retVal.kind.to!string ~ ") for "
@@ -238,7 +240,7 @@ class FuncWriter
       final switch (elemType.kind) with (TypeKind)
       {
         case String:
-          postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ retVal.fullOwnerStr ~ ");\n";
+          postCall ~= "_retval[i] = _cretval[i].fromCString(" ~ retVal.fullOwnerFlag ~ ".Free);\n";
           break;
         case Enum, Flags:
           postCall ~= "_retval[i] = cast(" ~ elemType.dType ~ ")(_cretval[i]);\n";
@@ -248,12 +250,12 @@ class FuncWriter
           break;
         case Opaque, Wrap, Boxed, Reffed:
           postCall ~= "_retval[i] = new " ~ elemType.dType ~ "(cast(void*)" ~ (retVal.cType.countStars == 1 ? "&"d : "")
-            ~ "_cretval[i], " ~ retVal.fullOwnerStr ~ ");\n";
+            ~ "_cretval[i], " ~ retVal.fullOwnerFlag ~ ".Take);\n";
           break;
         case Object, Interface:
           auto objectGSym = retVal.repo.defs.resolveSymbol("GObject.ObjectG");
           postCall ~= "_retval[i] = " ~ objectGSym ~ ".getDObject!" ~ elemType.dType ~ "(_cretval[i], "
-            ~ retVal.fullOwnerStr ~ ");\n";
+            ~ retVal.fullOwnerFlag ~ ".Take);\n";
           break;
         case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported return value array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType
@@ -385,18 +387,15 @@ class FuncWriter
 
         if (param.direction == ParamDirection.In)
         {
-          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ param.dName ~ ".toCString("
-            ~ (
-                param.ownership == Ownership.Full).to!dstring ~ ");\n";
+          preCall ~= param.cType ~ " _" ~ param.dName ~ " = " ~ param.dName ~ ".toCString(" ~ param.fullOwnerFlag
+            ~ ".Alloc);\n";
           addCallParam("_" ~ param.dName);
         }
         else if (param.direction == ParamDirection.Out)
         {
           preCall ~= "char* _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = _" ~ param.dName ~ ".fromCString("
-            ~ (param.ownership == Ownership.Full)
-              .to!dstring ~ ");\n";
+          postCall ~= param.dName ~ " = _" ~ param.dName ~ ".fromCString(" ~ param.fullOwnerFlag ~ ".Free);\n";
         }
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
@@ -427,7 +426,7 @@ class FuncWriter
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
           addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)" ~ param.dName ~ ".cPtr"
-            ~ (!param.kind.among(TypeKind.Opaque, TypeKind.Wrap) ? ("(" ~ param.fullOwnerStr ~ ")") : "") ~ " : null");
+            ~ (!param.kind.among(TypeKind.Opaque, TypeKind.Wrap) ? ("(" ~ param.fullOwnerFlag ~ ".Dup)") : "") ~ " : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
@@ -436,7 +435,7 @@ class FuncWriter
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ " = " ~ "new " ~ param.dType;
           postCall ~= "(cast(void*)" ~ (param.cTypeRemPtr.endsWith('*') ? "_"d : "&_"d) ~ param.dName;
-          postCall ~= (param.kind != TypeKind.Wrap ? (", " ~ param.fullOwnerStr) : "") ~ ");\n";
+          postCall ~= (param.kind != TypeKind.Wrap ? (", " ~ param.fullOwnerFlag ~ ".Take") : "") ~ ");\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
@@ -448,15 +447,15 @@ class FuncWriter
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
           addCallParam(param.dName ~ " ? cast(" ~ param.cTypeRemPtr.stripConst ~ "*)(cast(" ~ objectGSym ~ ")"
-            ~ param.dName ~ ").cPtr(" ~ param.fullOwnerStr ~ ") : null");
+            ~ param.dName ~ ").cPtr(" ~ param.fullOwnerFlag ~ ".Dup) : null");
         }
         else if (param.direction == ParamDirection.Out)
         {
           addDeclParam("out " ~ param.dType ~ " " ~ param.dName);
           preCall ~= param.cTypeRemPtr ~ " _" ~ param.dName ~ ";\n";
           addCallParam("&_" ~ param.dName);
-          postCall ~= param.dName ~ " = _" ~ param.dName ~ " ? " ~ objectGSym ~ ".getDObject!" ~ param.dType ~ "(_"
-            ~ param.dName ~ ", " ~ param.fullOwnerStr ~ ") : null;\n";
+          postCall ~= param.dName ~ " = " ~ objectGSym ~ ".getDObject!" ~ param.dType ~ "(_"
+            ~ param.dName ~ ", " ~ param.fullOwnerFlag ~ ".Take);\n";
         }
         else // InOut
           assert(0, "InOut arguments of type '" ~ param.kind.to!string ~ "' not supported"); // FIXME - Does this even exist?
@@ -501,7 +500,7 @@ class FuncWriter
         break;
       case String:
         preCall ~= elemType.cType ~ "[] _tmp" ~ param.dName ~ ";\n";
-        preCall ~= "foreach (s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(false);\n";
+        preCall ~= "foreach (s; " ~ param.dName ~ ")\n" ~ "_tmp" ~ param.dName ~ " ~= s.toCString(No.Alloc);\n";
 
         if (param.zeroTerminated)
           preCall ~= "_tmp" ~ param.dName ~ " ~= null;\n";
@@ -604,7 +603,7 @@ class FuncWriter
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = _" ~ param.dName ~ "[i].fromCString("
-            ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ param.fullOwnerFlag ~ ".Free);\n";
 
           if (param.ownership != Ownership.None)
             postCall ~= "safeFree(cast(void*)_" ~ param.dName ~ ");\n";
@@ -616,7 +615,7 @@ class FuncWriter
           addCallParam("_" ~ param.dName ~ ".ptr");
           postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = _" ~ param.dName
-            ~ "[i].fromCString(" ~ (param.ownership == Ownership.Full).to!dstring ~ ");\n";
+            ~ "[i].fromCString(" ~ param.fullOwnerFlag ~ ".Free);\n";
         }
         break;
       case Opaque, Wrap, Boxed, Reffed:
@@ -626,7 +625,7 @@ class FuncWriter
           addCallParam("&_" ~ param.dName);
           postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = new " ~ elemType.dType ~ "(cast(void*)_"
-            ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
+            ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? (", " ~ param.fullOwnerFlag ~ ".Take") : "") ~ ");\n";
 
           if (param.ownership != Ownership.None)
             postCall ~= "safeFree(cast(void*)_" ~ param.dName ~ ");\n";
@@ -638,7 +637,8 @@ class FuncWriter
           addCallParam("_" ~ param.dName ~ ".ptr");
           postCall ~= param.dName ~ ".length = " ~ lengthStr ~ ";\n";
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = new " ~ elemType.dType
-            ~ "(cast(void*)&_" ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
+            ~ "(cast(void*)&_" ~ param.dName ~ "[i]" ~ (param.kind != Wrap ? (", " ~ param.fullOwnerFlag ~ ".Take")
+            : "") ~ ");\n";
 
           if (param.ownership != Ownership.None)
             postCall ~= "safeFree(cast(void*)_" ~ param.dName ~ ");\n";
@@ -653,7 +653,7 @@ class FuncWriter
 
           auto objectGSym = func.repo.defs.resolveSymbol("GObject.ObjectG");
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = " ~ objectGSym ~ ".getDObject!"
-            ~ elemType.dType ~ "(_" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+            ~ elemType.dType ~ "(_" ~ param.dName ~ "[i], " ~ param.fullOwnerFlag ~ ".Take);\n";
 
           if (!param.callerAllocates && param.ownership != Ownership.None)
             postCall ~= "safeFree(cast(void*)_" ~ param.dName ~ ");\n";
@@ -667,7 +667,7 @@ class FuncWriter
 
           auto objectGSym = func.repo.defs.resolveSymbol("GObject.ObjectG");
           postCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n" ~ param.dName ~ "[i] = " ~ objectGSym ~ ".getDObject!"
-            ~ elemType.dType ~ "(cast(void*)&_" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+            ~ elemType.dType ~ "(cast(void*)&_" ~ param.dName ~ "[i], " ~ param.fullOwnerFlag ~ ".Take);\n";
         }
         break;
       case Unknown, Callback, Container, Namespace:

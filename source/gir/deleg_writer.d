@@ -100,7 +100,7 @@ class DelegWriter
       case String:
         preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
-        postCall ~= retVal.cType ~ " _retval = _dretval.toCString("d ~ retVal.fullOwnerStr ~ ");\n";
+        postCall ~= retVal.cType ~ " _retval = _dretval.toCString("d ~ retVal.fullOwnerFlag ~ ".Alloc);\n";
         break;
       case Enum, Flags:
         preCall ~= retVal.dType ~ " _dretval;\n";
@@ -116,14 +116,14 @@ class DelegWriter
         preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
         postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cTypeRemPtr ~ "*)_dretval.cPtr("
-          ~ retVal.fullOwnerStr ~ ");\n";
+          ~ retVal.fullOwnerFlag ~ ".Dup);\n";
         break;
       case Interface:
         auto objectGSym = retVal.repo.defs.resolveSymbol("GObject.ObjectG");
         preCall ~= retVal.dType ~ " _dretval;\n";
         call ~= "_dretval = ";
         postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cTypeRemPtr ~ "*)(cast(" ~ objectGSym ~ ")_dretval).cPtr("
-          ~ retVal.fullOwnerStr ~ ");\n";
+          ~ retVal.fullOwnerFlag ~ ".Dup);\n";
         break;
       case Callback, Unknown, Container, Namespace:
         assert(0, "Unsupported delegate return value type '" ~ retVal.dType.to!string
@@ -168,7 +168,7 @@ class DelegWriter
       final switch (elemType.kind) with (TypeKind)
       {
         case String:
-          postCall ~= "_retval[i] = _dretval[i].toCString(true);\n";
+          postCall ~= "_retval[i] = _dretval[i].toCString(Yes.Alloc);\n";
           break;
         case Enum, Flags:
           postCall ~= "_retval[i] = cast(" ~ elemType.cType ~ ")_dretval[i];\n";
@@ -177,7 +177,7 @@ class DelegWriter
           postCall ~= "_retval[i] = _dretval[i];\n";
           break;
         case Opaque, Wrap, Boxed, Reffed, Object, Interface:
-          postCall ~= "_retval[i] = _dretval[i].cPtr(" ~ retVal.fullOwnerStr ~ ");\n";
+          postCall ~= "_retval[i] = _dretval[i].cPtr(" ~ retVal.fullOwnerFlag ~ ".Dup);\n";
           break;
         case Basic, BasicAlias, Callback, Unknown, Container, Namespace:
           assert(0, "Unsupported delegate return value array type '" ~ elemType.dType.to!string
@@ -261,14 +261,14 @@ class DelegWriter
       case String:
         if (param.direction == ParamDirection.In)
         {
-          preCall ~= "string _" ~ param.dName ~ " = " ~ param.dName ~ ".fromCString(" ~ param.fullOwnerStr ~ ");\n";
+          preCall ~= "string _" ~ param.dName ~ " = " ~ param.dName ~ ".fromCString(" ~ param.fullOwnerFlag ~ ".Free);\n";
           addCallParam("_" ~ param.dName);
         }
         else if (param.direction == ParamDirection.Out)
         {
           preCall ~= "string _" ~ param.dName ~ ";\n";
           addCallParam("_" ~ param.dName);
-          postCall ~= "*" ~ param.dName ~ " = _" ~ param.dName ~ ".toCString(" ~ param.fullOwnerStr ~ ");\n";
+          postCall ~= "*" ~ param.dName ~ " = _" ~ param.dName ~ ".toCString(" ~ param.fullOwnerFlag ~ ".Alloc);\n";
         }
         else // InOut
           assert(0, "InOut string arguments not supported"); // FIXME - Does this even exist?
@@ -282,16 +282,16 @@ class DelegWriter
           if (param.kind == TypeKind.Object || param.kind == TypeKind.Interface)
           {
             auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
-            addCallParam(param.dName ~ " ? " ~ objectGSym ~ ".getDObject!" ~ param.dType ~ "(cast(void*)"
-              ~ param.dName ~ ", " ~ param.fullOwnerStr ~ ") : null");
+            addCallParam(objectGSym ~ ".getDObject!" ~ param.dType ~ "(cast(void*)" ~ param.dName ~ ", "
+              ~ param.fullOwnerFlag ~ ".Take)");
           }
           else
             addCallParam(param.dName ~ " ? new " ~ param.dType ~ "(cast(void*)" ~ param.dName ~ ", "
-              ~ param.fullOwnerStr ~ ") : null");
+              ~ param.fullOwnerFlag ~ ".Take) : null");
         }
         else if (param.direction == ParamDirection.Out)
         { // FIXME - Not sure if this will work for all cases, also could optimize by allowing C structure to be directly used in D object
-          preCall ~= "auto _" ~ param.dName ~ " = new " ~ param.dType ~ "(" ~ param.dName ~ ", false);\n";
+          preCall ~= "auto _" ~ param.dName ~ " = new " ~ param.dType ~ "(" ~ param.dName ~ ", No.Take);\n";
           addCallParam("_" ~ param.dName);
           postCall ~= "*" ~ param.dName ~ " = *cast(" ~ param.cType ~ ")_" ~ param.dName ~ ".cPtr;\n";
         }
@@ -347,17 +347,17 @@ class DelegWriter
           break;
         case String:
           preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ "[i] = "
-            ~ param.dName ~ "[i].fromCString(" ~ param.fullOwnerStr ~ ");\n";
+            ~ param.dName ~ "[i].fromCString(" ~ param.fullOwnerFlag ~ ".Free);\n";
           break;
         case Opaque, Boxed, Wrap, Reffed:
           preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ "[i] = "
             ~ "new " ~ elemType.dType ~ "(cast(" ~ elemType.cType.stripConst ~ "*)&" ~ param.dName ~ "[i]"
-            ~ (param.kind != Wrap ? ", " ~ param.fullOwnerStr : "") ~ ");\n";
+            ~ (param.kind != Wrap ? (", " ~ param.fullOwnerFlag ~ ".Take") : "") ~ ");\n";
           break;
         case Object, Interface:
           auto objectGSym = param.repo.defs.resolveSymbol("GObject.ObjectG");
           preCall ~= "foreach (i; 0 .. " ~ lengthStr ~ ")\n_" ~ param.dName ~ "[i] = "
-            ~ objectGSym ~ ".getDObject(" ~ param.dName ~ "[i], " ~ param.fullOwnerStr ~ ");\n";
+            ~ objectGSym ~ ".getDObject(" ~ param.dName ~ "[i], " ~ param.fullOwnerFlag ~ ".Take);\n";
           break;
         case Unknown, Callback, Container, Namespace:
           assert(0, "Unsupported parameter array type '" ~ elemType.dType.to!string ~ "' (" ~ elemType.kind.to!string
@@ -374,7 +374,7 @@ class DelegWriter
       final switch (elemType.kind) with (TypeKind)
       {
         case Basic, String, BasicAlias, Enum, Flags, Simple, Pointer, Opaque, Wrap, Boxed, Reffed, Object, Interface:
-          postCall ~= param.dName ~ " = arrayDtoC!(" ~ elemType.dType ~ ", Yes.UseMalloc, "
+          postCall ~= param.dName ~ " = arrayDtoC!(" ~ elemType.dType ~ ", Yes.Alloc, "
             ~ (param.zeroTerminated ? "Yes"d : "No"d) ~ ".ZeroTerm)(_" ~ param.dName ~ ");\n";
           break;
         case Unknown, Callback, Container, Namespace:
