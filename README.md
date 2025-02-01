@@ -7,9 +7,7 @@ The **gidgen** utility takes XML GObject Introspection Repository (GIR) files an
 
 The [giD Package Repository](https://github.com/Kymorphia/gid/) hosts the current archive of generated D bindings,
 and is focused primarily on Gtk4 and its dependencies. In the future it will be expanded to include additional libraries according to interest.
-
-If you are looking for documentation on how to develop D applications using giD generated bindings, such as Gtk4 GUI applications,
-please consult the [giD Package Repository Examples](https://github.com/Kymorphia/gid/tree/main/examples/).
+Please consult the documentation there for more information on developing D applications with giD and Gtk4.
 
 The remainder of this document describes how to use **gidgen** for creating and improving D bindings.
 
