@@ -480,7 +480,6 @@ final class Repo : Base
       "import " ~ st.fullName ~ "T;", "",
       "/// Proxy object for " ~ st.fullName ~ " interface when a GObject has no applicable D binding",
       "class " ~ className ~ " : IfaceProxy, " ~ st.dType, "{",
-      "this()", "{", "}", "",
       "this(void* ptr, Flag!\"Take\" take = No.Take)", "{", "super(cast(void*)ptr, take);", "}", "",
       "override TypeInfo_Interface getIface()", "{", "return typeid(" ~ st.dType ~ ");", "}", "",
       "mixin " ~ st.dType ~ "T!();",

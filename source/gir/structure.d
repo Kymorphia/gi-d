@@ -444,9 +444,6 @@ final class Structure : TypeNode
     if (kind == TypeKind.Boxed && !ctorFunc && !opaque && !pointer && !fields.empty)
       writer ~= ["", "this()", "{", "super(safeMalloc(" ~ cType ~ ".sizeof), Yes.Take);", "}"];
 
-    if (kind == TypeKind.Object && (!ctorFunc || !ctorFunc.params.empty)) // Create default unassigned GObject constructor if there isn't one already
-      writer ~= ["", "this()", "{", "}"];
-
     if (kind == TypeKind.Opaque)
       writer ~= ["", "this(void* ptr, Flag!\"Take\" take = No.Take)", "{",
         "if (!ptr)", "throw new GidConstructException(\"Null instance pointer for " ~ fullName ~ "\");", ""];

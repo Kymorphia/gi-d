@@ -28,23 +28,23 @@ class SignalWriter
   // Process the signal
   private void process()
   {
-    auto delegateName = signal.dName(true) ~ "Callback";
-    connectDecl = "ulong connect" ~ signal.dName(true) ~ "(" ~ delegateName ~ " dlg, "
-      ~ (signal.detailed ? "string detail = null, "d : "") ~ "Flag!\"After\" after = No.After)";
-    dlgDecl = "alias " ~ delegateName ~ " = ";
+    auto baseName = signal.dName(true) ~ "Callback";
+    connectDecl = "ulong connect" ~ signal.dName(true) ~ "(T)(" ~ (signal.detailed ? "string detail = null, "d : "")
+      ~ "T callback, " ~  "Flag!\"After\" after = No.After)\nif (is(T == " ~ baseName ~ "Dlg) || is(T == " ~ baseName
+      ~ "Func))";
 
     preCall ~= "extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams,"
       ~ " const(GValue)* _paramVals, void* _invocHint, void* _marshalData)\n{\n";
     preCall ~= "assert(_nParams == " ~ (signal.params.length + 1).to!dstring
       ~ ", \"Unexpected number of signal parameters\");\n";
-    preCall ~= "auto _dgClosure = cast(DGClosure!(typeof(dlg))*)_closure;\n";
+    preCall ~= "auto _dClosure = cast(DGClosure!T*)_closure;\n";
 
     processReturn();
 
     auto instanceParamName = signal.repo.defs.symbolName(owningClass.dType[0].toLower ~ owningClass.dType[1 .. $]);
     preCall ~= "auto " ~ instanceParamName ~ " = getVal!" ~ owningClass.dType ~ "(_paramVals);\n"; // Instance parameter is the first value
-    dlgDecl ~= " delegate(";
-    call ~= "_dgClosure.dlg(";
+    aliasDecl ~= " delegate("; // Replaced in write() for function alias
+    call ~= "_dClosure.dlg(";
 
     foreach (i, param; signal.params)
       processParam(param, i);
@@ -53,7 +53,7 @@ class SignalWriter
     addDeclParam(owningClass.dType ~ " " ~ instanceParamName);
     addCallParam(instanceParamName);
 
-    dlgDecl ~= ");";
+    aliasDecl ~= ");";
     call ~= ");";
   }
 
@@ -66,13 +66,13 @@ class SignalWriter
     call ~= paramStr;
   }
 
-  // Helper to add parameter to dlgDecl string with comma separator
+  // Helper to add parameter to aliasDecl string with comma separator
   private void addDeclParam(dstring paramStr)
   {
-    if (!dlgDecl.endsWith('('))
-      dlgDecl ~= ", ";
+    if (!aliasDecl.endsWith('('))
+      aliasDecl ~= ", ";
 
-    dlgDecl ~= paramStr;
+    aliasDecl ~= paramStr;
   }
 
   /// Process return value
@@ -82,7 +82,7 @@ class SignalWriter
 
     if (!retVal || retVal.origDType == "none")
     {
-      dlgDecl ~= "void";
+      aliasDecl ~= "void";
       return;
     }
 
@@ -92,25 +92,25 @@ class SignalWriter
     final switch (retVal.kind) with (TypeKind)
     {
       case Basic, BasicAlias:
-        dlgDecl ~= retVal.dType;
+        aliasDecl ~= retVal.dType;
         preCall ~= retVal.dType ~ " _retval;\n";
         call ~= "_retval = ";
         break;
       case String:
-        dlgDecl ~= "string";
+        aliasDecl ~= "string";
         call ~= "auto _retval = ";
         break;
       case Enum, Flags:
-        dlgDecl ~= retVal.dType;
+        aliasDecl ~= retVal.dType;
         call ~= "auto _dretval = ";
         postCall ~= retVal.cType ~ " _retval = cast(" ~ retVal.cType ~ ")_dretval;\n";
         break;
       case Boxed:
-        dlgDecl ~= retVal.dType;
+        aliasDecl ~= retVal.dType;
         call ~= "auto _retval = ";
         break;
       case Wrap, Reffed, Object, Interface:
-        dlgDecl ~= retVal.dType;
+        aliasDecl ~= retVal.dType;
         call ~= "auto _retval = ";
         break;
       case Simple, Pointer, Callback, Opaque, Unknown, Container, Namespace:
@@ -235,15 +235,19 @@ class SignalWriter
   {
     signal.writeDocs(writer);
 
-    writer ~= [dlgDecl, ""];
+    auto baseName = signal.dName(true) ~ "Callback";
 
-    writer ~= ["/**", "* Connect to " ~ signal.dName(true) ~ " signal.", "* Params:",
-      "*   dlg = signal delegate callback to connect"];
+    // Define a delegate and function alias
+    writer ~= ["alias " ~ baseName ~ "Dlg = " ~ aliasDecl, "alias " ~ baseName ~ "Func = "
+      ~ aliasDecl.replaceFirst("delegate", "function"), ""];
+
+    writer ~= ["/**", "* Connect to " ~ signal.dName(true) ~ " signal.", "* Params:"];
 
     if (signal.detailed)
       writer ~= "*   detail = Signal detail or null (default)";
 
-    writer ~= ["*   after = Yes.After to execute callback after default handler, No.After to execute before (default)",
+    writer ~= ["*   callback = signal callback delegate or function to connect",
+    "*   after = Yes.After to execute callback after default handler, No.After to execute before (default)",
       "* Returns: Signal ID", "*/"];
 
     if (moduleType == ModuleType.Iface)
@@ -266,14 +270,14 @@ class SignalWriter
     if (postCall.length > 0)
       writer ~= postCall;
 
-    writer ~= ["}", "", "auto closure = new DClosure(dlg, &_cmarshal);"];
+    writer ~= ["}", "", "auto closure = new DClosure(callback, &_cmarshal);"];
     writer ~= ["return connectSignalClosure(\"" ~ signal.name ~ "\""
       ~ (signal.detailed ? `~ (detail.length ? "::" ~ detail : "")`d : "") ~ ", closure, after);", "}"];
   }
 
   Func signal; /// The signal object being written
   Structure owningClass; /// The class which owns the signal (parent)
-  dstring dlgDecl; /// Delegate alias declaration
+  dstring aliasDecl; /// Delegate/function alias declarations
   dstring connectDecl; /// Signal connect method declaration
   dstring preCall; /// Pre-call code for call return variable, call output parameter variables, and input variable processing
   dstring inpProcess; /// Input processing (after preCall variable assignments and before the delegate call)
