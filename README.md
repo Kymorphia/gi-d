@@ -24,7 +24,7 @@ Some of the features of **gidgen** include:
   * Support for other complex memory managed referenced types, structures, and unions.
   * Arrays of any supported type.
   * Supports strv (`char**`) as `string[]` arrays.
-  * Container types are converted between native D dynamic arrays (GArray, GBytes, GByteArray, GPtrArray, GList, GSList).
+  * Container types are converted between native D dynamic arrays (GArray, GByteArray, GPtrArray, GList, GSList).
   * GHashTable parameters and return values are converted between D associative arrays.
   * Support for getting and setting values of GValue and GVariant using templates and native D types.
   * Throws D exceptions for GErrors.
@@ -32,7 +32,7 @@ Some of the features of **gidgen** include:
 * GObject:
   * Wrapping of C GObject and Interface instances.
   * Uses interface proxy objects when the GObject type is unknown to D.
-  * Each GObject signal has a delegate callback type alias and `connectSignalName()` method.
+  * Each GObject signal has delegate and function callback type aliass and a `connectSignalName()` template.
   * Support for signal "detail" parameters like property names used with the GObject "notify" property.
 * Binding Package Definitions:
   * Binding package definition files are just D source code files with additional commands added as specially formatted comments,
