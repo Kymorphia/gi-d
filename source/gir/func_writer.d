@@ -276,10 +276,8 @@ class FuncWriter
       templateArgs = "!(" ~ retVal.elemTypes[0].dType ~ ", " ~ retVal.elemTypes[1].dType ~ ", "
         ~ "GidOwnership." ~ retVal.ownership.to!dstring ~ ")";
     else
-    {
       templateArgs = retVal.containerType != ContainerType.ByteArray ? ("!(" ~ retVal.elemTypes[0].dType
         ~ ", " ~ "GidOwnership." ~ retVal.ownership.to!dstring ~ ")") : "";
-    }
 
     decl ~= retVal.dType ~ " ";
     preCall ~= retVal.cType ~ " _cretval;\n";
@@ -683,7 +681,7 @@ class FuncWriter
 
     switch (param.containerType) with(ContainerType)
     {
-      case ByteArray, Bytes:
+      case ByteArray:
         break;
       case Array, PtrArray:
         templateParams = "!(" ~ param.elemTypes[0].dType  ~ ", " ~ param.zeroTerminated.to!dstring ~ ")";
@@ -718,7 +716,7 @@ class FuncWriter
 
     switch (param.containerType) with(ContainerType)
     {
-      case ByteArray, Bytes:
+      case ByteArray:
         templateParams = "GidOwnership." ~ param.ownership.to!dstring;
         break;
       case Array, PtrArray, List, SList:

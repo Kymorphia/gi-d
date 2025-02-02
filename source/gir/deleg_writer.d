@@ -199,7 +199,7 @@ class DelegWriter
 
     switch (retVal.containerType) with(ContainerType)
     {
-      case ByteArray, Bytes:
+      case ByteArray:
         break;
       case Array, PtrArray:
         templateParams = "!(" ~ retVal.elemTypes[0].dType  ~ ", " ~ retVal.zeroTerminated.to!dstring ~ ")";
@@ -391,7 +391,7 @@ class DelegWriter
 
     switch (param.containerType) with(ContainerType)
     {
-      case ByteArray, Bytes:
+      case ByteArray:
         templateParams = param.ownership.to!dstring;
         break;
       case Array, PtrArray, List, SList:

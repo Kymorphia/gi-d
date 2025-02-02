@@ -521,7 +521,6 @@ enum ContainerType
   None = -2, /// No container
   Array = -1, /// Memory array
   ByteArray, /// GByteArray (uses <array>), enforces element type to be ubyte, does not use a template type
-  Bytes, /// GBytes
   ArrayG, /// GArray (uses <array>)
   PtrArray, /// GPtrArray (uses <array>)
   List, /// GList
@@ -531,7 +530,7 @@ enum ContainerType
 
 /// Container type string values matching ContainerType
 immutable dstring[] ContainerTypeValues =
-  ["GLib.ByteArray", "GLib.Bytes", "GLib.Array", "GLib.PtrArray", "GLib.List", "GLib.SList", "GLib.HashTable"];
+  ["GLib.ByteArray", "GLib.Array", "GLib.PtrArray", "GLib.List", "GLib.SList", "GLib.HashTable"];
 
 long containerTypeElemCount(ContainerType container)
 {
