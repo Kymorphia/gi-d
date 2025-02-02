@@ -30,7 +30,7 @@ class SignalWriter
   {
     auto baseName = signal.dName(true) ~ "Callback";
     connectDecl = "ulong connect" ~ signal.dName(true) ~ "(T)(" ~ (signal.detailed ? "string detail = null, "d : "")
-      ~ "T callback, " ~  "Flag!\"After\" after = No.After)\nif (is(T == " ~ baseName ~ "Dlg) || is(T == " ~ baseName
+      ~ "T callback, " ~  "Flag!\"After\" after = No.After)\nif (is(T : " ~ baseName ~ "Dlg) || is(T : " ~ baseName
       ~ "Func))";
 
     preCall ~= "extern(C) void _cmarshal(GClosure* _closure, GValue* _returnValue, uint _nParams,"
