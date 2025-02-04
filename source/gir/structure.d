@@ -216,7 +216,7 @@ final class Structure : TypeNode
     super.resolve;
 
     if (kind == TypeKind.Boxed && parentType.empty)
-      parentType = "GLib.Boxed";
+      parentType = "GObject.Boxed";
 
     if (!parentType.empty)
     {
