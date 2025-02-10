@@ -67,9 +67,9 @@ final class Field : TypeNode
 
     foreach (s; ["reserved"d, "dummy"d])
     {
-      if (!disable && name.toLower.canFind(s))
+      if (active == Active.Enabled && name.toLower.canFind(s))
       {
-        disable = true;
+        active = Active.Disabled;
         info("Disabling field '" ~ name.to!string ~ "' containing '" ~ s.to!string ~ "'");
         break;
       }
@@ -89,7 +89,7 @@ final class Field : TypeNode
 
   override void verify()
   {
-    if (disable || private_)
+    if (active != Active.Enabled || private_)
       return;
 
     super.verify;
@@ -122,7 +122,7 @@ final class Field : TypeNode
 
     if (callback)
     {
-      if (!callback.disable)
+      if (callback.active == Active.Enabled)
         callback.verify;
       else
         throw new Exception("Field callback type is disabled");

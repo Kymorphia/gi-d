@@ -10,6 +10,7 @@ import code_writer;
 import defs;
 import gir.enumeration;
 import gir.func;
+import gir.report;
 import gir.type_node;
 import std_includes;
 import xml_patch;
@@ -25,6 +26,9 @@ int main(string[] args)
   string subPkgPath;
   bool defHelp;
   bool dumpKinds;
+  bool enableReport;
+  string reportFile;
+  string reportOptions = "AllUnsupported";
 
   try
   {
@@ -36,6 +40,9 @@ int main(string[] args)
         "s|subpkg-path", "Subpackage path to write individual library packages to (required)", &subPkgPath,
         "def-help", "Display binding definition file command help", &defHelp,
         "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string).join(", ") ~ ")", &logLevel,
+        "report", "Output binding coverage statistics (defaults to --report-options AllUnsupported)", &enableReport,
+        "report-file", "File to output report to (defaults to stdout if not specified)", &reportFile,
+        "report-options", "Customize report output (logically OR'd flags with '|' character, 'help' for flag list)", &reportOptions,
         "suggest", "Output definition file command suggestions", &Repo.suggestDefCmds,
         "dump-selectors", "Dump XML selectors for warnings", &TypeNode.dumpSelectorWarnings,
         "dump-ctypes", "Dump all raw C types", &Repo.dumpCTypes,
@@ -61,6 +68,12 @@ int main(string[] args)
     if (dumpKinds)
     {
       writeln("Type kinds: " ~ [EnumMembers!TypeKind].map!(x => x.to!string).join(", "));
+      return 0;
+    }
+
+    if (reportOptions == "help")
+    {
+      displayReportOptionsHelp;
       return 0;
     }
   }
@@ -107,6 +120,19 @@ int main(string[] args)
     catch (Exception e)
     {
       error("Invalid regex match: ", e.msg);
+      return 1;
+    }
+  }
+
+  ReportFlags reportFlags;
+
+  if (enableReport)
+  {
+    try
+      reportFlags = processReportOptions(reportOptions);
+    catch (ConvException e)
+    {
+      error("Invalid --report-options value '" ~ reportOptions ~ "': ", e.message);
       return 1;
     }
   }
@@ -166,6 +192,20 @@ int main(string[] args)
           writeln("//!" ~ sugg ~ "");
       }
     }
+  }
+
+  if (enableReport)
+  {
+    auto report = new Report(defs);
+    auto reportStr = report.generate(reportFlags);
+
+    if (reportFile)
+    {
+      import std.file : write;
+      write(reportFile, reportStr);
+    }
+    else
+      writeln(reportStr);
   }
 
   return 0;

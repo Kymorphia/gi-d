@@ -79,6 +79,15 @@ final class Func : TypeNode
     return null;
   }
 
+  /**
+   * Check if a function is static (not a method, constructor, and not in global module)
+   * Returns: true if the function is static, false otherwise
+   */
+  bool isStatic()
+  {
+    return funcType != FuncType.Method && !isCtor && parent !is repo.globalStruct;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);
@@ -192,7 +201,7 @@ final class Func : TypeNode
 
     if (!introspectable || !movedTo.empty || funcType == FuncType.VirtualMethod || funcType == FuncType.FuncMacro
         || !shadowedBy.empty)
-      disable = true;
+      active = Active.Disabled;
 
     if (returnVal)
     {
@@ -261,12 +270,12 @@ final class Func : TypeNode
 
   override void verify()
   {
-    if (disable)
+    if (active != Active.Enabled)
       return;
 
     void disableFunc(string msg, TypeNode errorNode = null)
     {
-      disable = true;
+      active = Active.Unsupported;
       warning(xmlLocation ~ "Disabling " ~ (funcType == FuncType.Signal ? "signal '" : "function '" )
         ~ fullName.to!string ~ "': " ~ msg);
       TypeNode.dumpSelectorOnWarning(errorNode ? errorNode : this);
@@ -346,14 +355,14 @@ final class Func : TypeNode
       // Resolve parameter type aliases to see if any are disabled and disable parameter if so
       for (TypeNode tn = pa.typeObject; tn; tn = typeRepo.typeObjectHash.get((cast(Alias)tn).dType, null))
       {
-        if (tn.disable)
-          pa.disable = true;
+        if (tn.active != Active.Enabled)
+          pa.active = tn.active;
 
         if (!cast(Alias)tn)
           break;
       }
 
-      if (pa.disable)
+      if (pa.active != Active.Enabled)
         disableFunc("Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled", pa);
     }
   }
@@ -427,32 +436,42 @@ final class Func : TypeNode
   }
 
   /**
-   * Check if a function needs an "override", i.e., has an ancestor or interface with the same name and return/argument types.
-   * Returns: true if the function declaration should include "override"
+   * Search a class' ancestry for a method matching this.
+   * Params:
+   *   st = Structure to search parent ancestry of (null will search from parent of function's class)
+   *   outIsIdentical = Output value set to true if method is identical (same return value and args), false otherwise
+   * Returns: The matching method or null if none found, not a method, or not a derived class
    */
-  bool needOverride()
+  Func findMatchingAncestor(Structure st, out bool outIsIdentical)
   {
-    auto parentClass = cast(Structure)parent ? (cast(Structure)parent).parentStruct : null; // Class type ancestor
+    if (!st) // If klass not specified, use this function's klass parent
+      st = cast(Structure)parent ? (cast(Structure)parent).parentStruct : null;
 
-    if (funcType != FuncType.Method || !parentClass || parentClass.structType != StructType.Class)
-      return false;
+    if (isStatic || funcType != FuncType.Method || !st || st.structType != StructType.Class)
+      return null;
 
     auto funcName = name;
 
-    for (auto klass = parentClass; klass; klass = klass.parentStruct)
+    for (auto klass = st; klass; klass = klass.parentStruct)
     {
       auto cmpFunc = klass.funcNameHash.get(funcName, null);
+      auto retFunc = cmpFunc;
 
-      if (!cmpFunc || cmpFunc.disable || returnVal.dType != cmpFunc.returnVal.dType
-          || params.length != cmpFunc.params.length)
+      if (cmpFunc && cmpFunc.shadowedByFunc) // If the method is shadowed by another one, use it instead
+        cmpFunc = cmpFunc.shadowedByFunc;
+
+      if (!cmpFunc || cmpFunc.active != Active.Enabled)
         continue;
 
-      if (params.filter!(x => !x.isInstanceParam).map!(x => x.dType) // Compare dTypes of both functions (skip instance param)
-          .equal(cmpFunc.params.filter!(x => !x.isInstanceParam).map!(x => x.dType)))
-        return true;
+      outIsIdentical = returnVal.dType == cmpFunc.returnVal.dType
+        && params.length == cmpFunc.params.length
+        && (params.filter!(x => !x.isInstanceParam).map!(x => x.dType) // Compare dTypes of both functions (skip instance param)
+          .equal(cmpFunc.params.filter!(x => !x.isInstanceParam).map!(x => x.dType)));
+
+      return retFunc;
     }
 
-    return false;
+    return null;
   }
 
   private dstring _name; /// Name of function
@@ -463,6 +482,7 @@ final class Func : TypeNode
   Param[] params; /// Parameters
   Param closureParam; /// Closure data parameter or null
   bool isCtor; /// Set for the primary constructor of an instance (not a Gir field)
+  Func shadowedByFunc; /// Resolved function object for shadowedBy
   Func shadowsFunc; /// Resolved function object for shadows
 
   bool nullable; /// Nullable return value pointer

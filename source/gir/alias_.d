@@ -42,8 +42,8 @@ final class Alias : TypeNode
   {
     super.resolve;
 
-    if (typeObject && typeObject.disable)
-      disable = true;
+    if (typeObject && typeObject.active != Active.Enabled)
+      active = typeObject.active;
 
     typeObject = null; // Alias is itself a type, unset typeObject
 

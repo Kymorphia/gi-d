@@ -211,6 +211,8 @@ final class Repo : Base
             if (auto parent = node.parent.baseParentFromXmlNode!TypeNode) // Get the parent of the array which contains the type information
               parent.elemTypes ~= new TypeNode(parent, node); // Add the element type to the container
           break;
+        case "unsupported": // Not an actual Gir attribute, used for disabling arbitrary nodes and flagging them as currently unsupported
+          break;
         case "varargs": // Varargs enable
           if (auto par = node.baseParentFromXmlNodeWarn!Param)
             par.varargs = true;
@@ -357,11 +359,14 @@ final class Repo : Base
 
     foreach (al; aliases) // Verify aliases
     {
+      if (al.active != Active.Enabled)
+        continue;
+
       try
         al.verify;
       catch (Exception e)
       {
-        al.disable = true;
+        al.active = Active.Unsupported;
         warning(al.xmlLocation ~ "Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(al);
       }
@@ -369,11 +374,14 @@ final class Repo : Base
 
     foreach (con; constants) // Verify constants
     {
+      if (con.active != Active.Enabled)
+        continue;
+
       try
         con.verify;
       catch (Exception e)
       {
-        con.disable = true;
+        con.active = Active.Unsupported;
         warning(con.xmlLocation ~ "Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(con);
       }
@@ -381,6 +389,9 @@ final class Repo : Base
 
     foreach (cb; callbacks) // Verify callbacks
     {
+      if (cb.active != Active.Enabled)
+        continue;
+
       try
       {
         if (cb.funcType != FuncType.Callback)
@@ -390,7 +401,7 @@ final class Repo : Base
       }
       catch (Exception e)
       {
-        cb.disable = true;
+        cb.active = Active.Unsupported;
         warning(cb.xmlLocation ~ "Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(cb);
       }
@@ -398,11 +409,14 @@ final class Repo : Base
 
     foreach (st; structs) // Verify structures
     {
+      if (st.active != Active.Enabled)
+        continue;
+
       try
         st.verify;
       catch (Exception e)
       {
-        st.disable = true;
+        st.active = Active.Unsupported;
         warning(st.xmlLocation ~ "Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(st);
       }
@@ -434,7 +448,7 @@ final class Repo : Base
 
     foreach (st; structs)
     {
-      if (!st.disable && ((st.defCode && st.defCode.inClass) || st.inModule) && st !is globalStruct
+      if (st.active == Active.Enabled && ((st.defCode && st.defCode.inClass) || st.inModule) && st !is globalStruct
         && st !is typesStruct)
       {
         st.write(sourcePath, st.kind == TypeKind.Interface ? ModuleType.IfaceTemplate : ModuleType.Normal);
@@ -451,7 +465,7 @@ final class Repo : Base
     {
       auto st = cast(Structure)al.typeObjectRoot;
 
-      if (!al.disable && st && st.inModule)
+      if (al.active == Active.Enabled && st && st.inModule)
       {
         auto codeWriter = new CodeWriter(buildPath(sourcePath, al.name.to!string ~ ".d"), [
           "module " ~ al.fullName ~ ";",
@@ -761,16 +775,16 @@ final class Repo : Base
 
     dstring[] callbackDecls;
 
-    foreach (i, cb; callbacks.filter!(x => !x.disable).enumerate) // Generate callback prototypes (to populate imports), added to writer output below
+    foreach (i, cb; callbacks.filter!(x => x.active == Active.Enabled).enumerate) // Generate callback prototypes (to populate imports), added to writer output below
       callbackDecls ~= (i == 0 ? [""d, "// Callbacks"] : []) ~ cb.getDelegPrototype;
 
     dstring[] aliasDecls;
 
-    foreach (i, al; aliases.filter!(x => !x.disable).enumerate) // Write out aliases
+    foreach (i, al; aliases.filter!(x => x.active == Active.Enabled).enumerate) // Write out aliases
     {
       auto st = cast(Structure)al.typeObjectRoot;
 
-      if ((al.typeObjectRoot && al.typeObjectRoot.disable) || (st && st.inModule)) // Skip if target type is disabled or an alias of a type in a module (alias is written as a module in writePackage())
+      if ((al.typeObjectRoot && al.typeObjectRoot.active != Active.Enabled) || (st && st.inModule)) // Skip if target type is disabled or an alias of a type in a module (alias is written as a module in writePackage())
         continue;
 
       if (al.kind == TypeKind.Callback) // Callback aliases should alias to D callback delegates, not C functions
@@ -798,10 +812,10 @@ final class Repo : Base
 
     writer ~= aliasDecls;
 
-    foreach (i, en; enums.filter!(x => !x.disable).enumerate) // Write out enums
+    foreach (i, en; enums.filter!(x => x.active == Active.Enabled).enumerate) // Write out enums
       writer ~= (i == 0 ? [""d, "// Enums"] : []) ~ ["alias " ~ en.dType ~ " = " ~ en.cType ~ ";"];
 
-    auto simpleStructs = structs.filter!(x => !x.disable && !x.inModule).enumerate;
+    auto simpleStructs = structs.filter!(x => x.active == Active.Enabled && !x.inModule).enumerate;
 
     foreach (i, st; simpleStructs) // Write out simple struct aliases (not classes)
     {
@@ -814,7 +828,7 @@ final class Repo : Base
 
     writer ~= callbackDecls;
 
-    foreach (i, con; constants.filter!(x => !x.disable).enumerate) // Write out constants
+    foreach (i, con; constants.filter!(x => x.active == Active.Enabled).enumerate) // Write out constants
     {
       writer ~= "";
       con.writeDocs(writer);
@@ -850,7 +864,7 @@ final class Repo : Base
 
     foreach (fn; globalStruct.functions)
     {
-      if (fn.disable)
+      if (fn.active != Active.Enabled)
         continue;
 
       funcWriters ~= new FuncWriter(fn);

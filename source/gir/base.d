@@ -69,7 +69,14 @@ abstract class Base
   void fromXml(XmlNode node)
   {
     this.xmlNode = node;
-    this.disable = node.get("disable") == "1"; // Not an actual Gir attribute, but used in def files
+
+    // "disabled" and "unsupported" are not actual Gir attributes, but used in def files
+
+    if (node.get("disable") == "1")
+      this.active = Active.Disabled;
+
+    if (node.get("unsupported") == "1")
+      this.active = Active.Unsupported;
   }
 
   /**
@@ -147,7 +154,7 @@ abstract class Base
 
   Repo repo; /// Parent repo
   Base parent; /// Parent base object
-  bool disable; /// Object is disabled
+  Active active; /// Indicates active or inactive state of an object
   dstring[dstring] attributes; /// Gir key/value attributes
   dstring docContent; /// Documentation content
   dstring docFilename; /// Documentation filename
@@ -156,6 +163,14 @@ abstract class Base
   dstring sourceFilename; /// Source code filename
   uint sourceLine; /// Source code line number
   dstring docDeprecated; /// Deprecated note documentation
+}
+
+/// Indicates active state of an object
+enum Active : ubyte
+{
+  Enabled, /// Object is enabled
+  Disabled, /// No, object was explicitly disabled
+  Unsupported, /// No, object is not supported by gidgen currently
 }
 
 /**

@@ -32,8 +32,9 @@ Some of the features of **gidgen** include:
 * GObject:
   * Wrapping of C GObject and Interface instances.
   * Uses interface proxy objects when the GObject type is unknown to D.
-  * Each GObject signal has delegate and function callback type aliass and a `connectSignalName()` template.
+  * Each GObject signal has delegate and function callback type aliases and a `connectSignalName()` template.
   * Support for signal "detail" parameters like property names used with the GObject "notify" property.
+  * Method aliases are automatically generated for class or interface methods which conflict with ancestor classes.
 * Binding Package Definitions:
   * Binding package definition files are just D source code files with additional commands added as specially formatted comments,
     making it easier to edit custom binding D code.
@@ -44,6 +45,10 @@ Some of the features of **gidgen** include:
   * Outputs detailed warnings for GIR API elements which have issues or are not currently supported.
   * Command line options for identifying and resolving GIR issues.
   * Support for debugging gidgen using traps in gdb, to set breakpoints when specific parts of the binding are processed.
+* Binding coverage reports:
+  * A differentiation is made between intentionally disabled API (Disabled) vs gidgen limitations/GIR issues (Unsupported).
+    Disabled items aren't included in the coverage statistics and are either not useful for the binding or are replaced by custom code.
+  * The report can be customized to output items of different types and their Active state.
 
 ## Command Line Argument Reference
 
@@ -58,6 +63,9 @@ GObject Introspection Dlang binding generator
 -s    --subpkg-path Subpackage path to write individual library packages to (required)
          --def-help Display binding definition file command help
         --log-level Log level (all, trace, info, warning, error, critical, fatal, off)
+           --report Output binding coverage statistics (defaults to --report-options AllUnsupported)
+      --report-file File to output report to (defaults to stdout if not specified)
+   --report-options Customize report output (logically OR'd flags with '|' character, 'help' for flag list)
           --suggest Output definition file command suggestions
    --dump-selectors Dump XML selectors for warnings
       --dump-ctypes Dump all raw C types
@@ -78,6 +86,91 @@ These are basic commands which are used for general use cases.
 * **--log-level**: Set the output log level. Can be one of: all, trace, info, warning, error, critical, fatal, or off.
   The default value is **warning**. A value of **info** can be used to display useful information about automatic binding decisions,
   which are potentially problematic.
+
+### Report Commands
+
+A binding coverage report can be created and is configurable with the following options:
+
+* **--report** Generate a coverage report
+* **--report-file** Specify a file to write the report to. Uses stdout by default if not specified.
+* **--report-options** Can be used to customize the report output.
+  Consists of one or more flags which are logically OR'd with the '|' pipe character.
+  The default is **AllUnsupported** if not specified.
+
+#### Report Options
+
+The available report options can be output by specifying **--report-options help** which will display:
+
+```sh
+./gidgen --report-options help
+Report options help (values can be logically OR'd with '|'):
+Summary        Generate a binding coverage summary table
+Enabled        Show Enabled item names
+Disabled       Show Disabled item names
+Unsupported    Show Unsupported item names
+Structs        Show Structure/Class names
+Funcs          Show Function/Method names
+Signals        Show Signal names
+Fields         Show Field names
+All            Generate a full report
+AllEnabled     Generate a report of all Enabled items
+AllDisabled    Generate a report of all Disabled items
+AllUnsupported Generate a report of all Unsupported items (default)
+```
+
+The **Summary** flag outputs a table of coverage statistics, described in more detail below.
+
+There are three flags which determine the active state of items whose names will be output:
+
+* **Enabled** Displays names of items which are enabled and present in the generated binding.
+* **Disabled** Displays names of items which are intentionally disabled, not due to gidgen limitations or GIR issues.
+* **Unsupported** Displays names of items which are inactive because of a limitation in gidgen or an issue with the GIR specification.
+
+Four of the flags determine the types of items whose names will be output:
+
+* **Structs** Structured data, including: structs, classes, interfaces, and unions. Correspond to a single module in the binding package.
+* **Funcs** Functions including: global functions, static class functions, and methods.
+* **Signals** GObject signals.
+* **Fields** Structure fields, which includes: structs, classes, and unions.
+
+The remaining flags are for convenience and are combinations of the previous flags, including:
+
+* **All** All of the above flags, which creates a full report.
+* **AllEnabled** All four of the item type flags and the Enabled flag, which outputs the names of all enabled items which are output in the binding.
+* **AllDisabled** All four of the item type flags and the Disabled flag, which outputs the names of al of the explicitly disabled items.
+* **AllUnsupported** All four of the item type flags and the Unsupported flag, which outputs the names of all of the unsupported API items which are not covered.
+  These count against the total coverage scores.
+
+
+#### Summary
+
+Example summary output:
+```sh
+[Summary]
+Package    |       Structs        |        Funcs         |       Signals        |        Fields        |
+           |  Act  Dis  Uns  Perc |  Act  Dis  Uns  Perc |  Act  Dis  Uns  Perc |  Act  Dis  Uns  Perc |
+GLib       |   86    8    0   100 | 1358  623   10  99.3 |    0    0    0   100 |  213   23   35  85.9 |
+GModule    |    3    0    0   100 |    8    6    0   100 |    0    0    0   100 |    0    0    0   100 |
+GObject    |   64    2    0   100 |  306  158    3  99.0 |    3    0    0   100 |  231    8   10  95.9 |
+Gdk        |   80    0    0   100 |  478   34    5  99.0 |   33    0    2  94.3 |   32    0    1  97.0 |
+GdkPixbuf  |   16    0    0   100 |   95   12    2  97.9 |    4    0    0   100 |   42    4    2  95.5 |
+Gid        |    3    0    0   100 |    0    0    0   100 |    0    0    0   100 |    0    0    0   100 |
+Gio        |  374    2    0   100 | 1729  162   17  99.0 |   80    0    1  98.8 |  885  195   32  96.5 |
+Graphene   |   21    0    0   100 |  367   43    0   100 |    0    0    0   100 |   40    0    0   100 |
+Gsk        |   57    0    0   100 |  266   24    4  98.5 |    0    0    0   100 |   13    0    2  86.7 |
+Gtk        |  542    0    0   100 | 3593  115   10  99.7 |  342    1    3  99.1 |  601   95    9  98.5 |
+HarfBuzz   |   35    0    0   100 |  407   52   42  90.6 |    0    0    0   100 |   71   28   11  86.6 |
+Pango      |   54    0    0   100 |  388   44   12  97.0 |    0    0    0   100 |  162   11    8  95.3 |
+PangoCairo |    4    0    0   100 |   26    5    0   100 |    0    0    0   100 |    0    0    0   100 |
+cairo      |   20    0    1  95.2 |  327   56    3  99.1 |    0    0    0   100 |   38    0    1  97.4 |
+freetype2  |    5    0    0   100 |    0    0    0   100 |    0    0    0   100 |    0    0    0   100 |
+```
+
+The **Package** column contains the package name. Additional columns are shown for the enabled item types (Structs, Funcs, Signals, Fields).
+Each of the additional columns contains sub columns for the number of Active (Act), Disabled (Dis), and Unsupported (Uns) items.
+The final sub-column contains the percentage coverage, which is the count of Active items from the total Active and Unsupported items.
+The intentionally Disabled items are not considered in the coverage percentage calculation as they are not considered to be a part of the API binding.
+
 
 ### Binding Debugging Commands
 
@@ -105,20 +198,20 @@ Binding definition files are just D language files with a .d extension, but whic
 These files control various aspects of binding generation and can also contain custom D binding code.
 
 There are 3 scopes of binding definition files, defined below:
- * **global.d** - This specially named file defines global commands which are relevant to all binding libraries.
- * **Namespace.d** - There is usually one file per library (namespace), which is used for commands and global binding code for the library.
-   For example: `GLib.d`.
- * **Namespace-Class.d** - Files for classes/structures of a library can also be defined and these take the name of the namespace and class/structure separated by a dash.
-   These files contain commands and custom code related to the specific class or structure. These are primarily used for organization purposes,
-   since commands and custom code for classes/structs can also be defined in the library definition file as well.
-   For example: `GObject-Value.d`
+* **global.d** - This specially named file defines global commands which are relevant to all binding libraries.
+* **Namespace.d** - There is usually one file per library (namespace), which is used for commands and global binding code for the library.
+  For example: `GLib.d`.
+* **Namespace-Class.d** - Files for classes/structures of a library can also be defined and these take the name of the namespace and class/structure separated by a dash.
+  These files contain commands and custom code related to the specific class or structure. These are primarily used for organization purposes,
+  since commands and custom code for classes/structs can also be defined in the library definition file as well.
+  For example: `GObject-Value.d`
 
 ### Command Syntax
 
- * Commands are prefixed with `//!`.
- * giD comments are prefixed with `//#` and aren't output to binding code.
- * Strings can be single or double quoted.
- * Some commands support multi-line values using opening and close braces within giD comment lines (seldom used).
+* Commands are prefixed with `//!`.
+* giD comments are prefixed with `//#` and aren't output to binding code.
+* Strings can be single or double quoted.
+* Some commands support multi-line values using opening and close braces within giD comment lines (seldom used).
 
 ### Command Reference
 
@@ -168,33 +261,33 @@ These commands use an XML selector to find a single XML element/attribute or mat
 
 #### XML selector reference
 
- * Provides a way of selecting one or more nodes or attributes
- * Node IDs are separated by periods: `repository.namespace`
- * "name" attributes can be matched in square brackets: `function[my_function]`
- * Other attribute values can be matched with ATTR=VAL syntax: `function[c:identifier=g_boxed_copy]`
- * Multiple attributes can be matched (logic AND) by seperating them with commas: `function[my_function,version=1.22]`
- * When selecting an attribute it follows surrounded by a second set of square brackets: `record[my_struct][opaque]`
- * If the selected node does not have any attribute selection criteria it can be empty brackets: `namespace[][name]`
- * Wildcards:
-   * Selectors select a single node/attribute unless wildcards are used
-   * To match a node anywhere in the XML doc use '*' as the first node ID component: `*.array[ByteArray]`
-   * A wildcard node selector is specified by prepending a '*' before the node ID: `function[my_function].*parameter`
-   * A wildcard attribute selector is followed by square brackets to specify the attribute: `record[my_record].*parameter[introspectable]`
-   * Wildcards can be specified in attribute values by including them in the value: `function[new*]`
+* Provides a way of selecting one or more nodes or attributes
+* Node IDs are separated by periods: `repository.namespace`
+* "name" attributes can be matched in square brackets: `function[my_function]`
+* Other attribute values can be matched with ATTR=VAL syntax: `function[c:identifier=g_boxed_copy]`
+* Multiple attributes can be matched (logic AND) by seperating them with commas: `function[my_function,version=1.22]`
+* When selecting an attribute it follows surrounded by a second set of square brackets: `record[my_struct][opaque]`
+* If the selected node does not have any attribute selection criteria it can be empty brackets: `namespace[][name]`
+* Wildcards:
+  * Selectors select a single node/attribute unless wildcards are used
+  * To match a node anywhere in the XML doc use '*' as the first node ID component: `*.array[ByteArray]`
+  * A wildcard node selector is specified by prepending a '*' before the node ID: `function[my_function].*parameter`
+  * A wildcard attribute selector is followed by square brackets to specify the attribute: `record[my_record].*parameter[introspectable]`
+  * Wildcards can be specified in attribute values by including them in the value: `function[new*]`
 
 #### Command Reference
 
 Additional details on the XML patching commands are below:
 
- * **add** - For adding XML elements. The selector defines the node or nodes under which to add the XML,
-   which is defined as the second parameter. For example: `//!add repository '<include name="GLib" version="2.0"/>'`
- * **del** - For deleting XML elements or attributes. The selector defines the node(s) or attribute(s) to delete.
-   For example: `//!del '*class[glib:get-type=intern][glib:get-type]'` which deletes all attributes named **glib:get-type**
-   that are defined within an element named **class** that has the value **intern**.
- * **rename** - Rename XML elements. For example: `//!rename record[Variant] class` would rename the **record** element
-   with the name **Variant** to be a **class** instead of a **record**.
- * **set** - Set the value of XML elements or attributes. For example: `//!set record[IOChannel][opaque] 1`
-   is used for setting IOChannel to be opaque.
+* **add** - For adding XML elements. The selector defines the node or nodes under which to add the XML,
+  which is defined as the second parameter. For example: `//!add repository '<include name="GLib" version="2.0"/>'`
+* **del** - For deleting XML elements or attributes. The selector defines the node(s) or attribute(s) to delete.
+  For example: `//!del '*class[glib:get-type=intern][glib:get-type]'` which deletes all attributes named **glib:get-type**
+  that are defined within an element named **class** that has the value **intern**.
+* **rename** - Rename XML elements. For example: `//!rename record[Variant] class` would rename the **record** element
+  with the name **Variant** to be a **class** instead of a **record**.
+* **set** - Set the value of XML elements or attributes. For example: `//!set record[IOChannel][opaque] 1`
+  is used for setting IOChannel to be opaque.
 
 ### Binding Scope Commands
 
@@ -215,25 +308,25 @@ The `class` command can be used following either a `repo` or `namespace` command
 ### Binding Behavior Commands
 
 There are several commands which modify the behavior of binding generation. These are described in more detail below:
- * **generate** - This command is used to indicate if init methods and/or binding functions should be automatically generated.
-   By default class/structure definition files do not automatically generate methods.
-   This command can be used to instruct gidgen to generate init methods `//!generate init` or bind other instance/class methods `//!generate funcs`.
- * **import** - Add a D import to the list of imports for the current class/structure.
- * **info** - Used for defining values in dub.json package files. It takes a name, which is one of: name, description, copyright, authors, or license.
-   The second parameter is the value to assign. The **authors** info value can be assigned multiple times, to be used when there are multiple authors.
-   Example: `//!info description "GObject introspection D binding repository"`
- * **kind** - Override the **kind** of a type. gidgen automatically determines what kind a type is (Basic, String, Object, etc).
-   This command takes a type identifier followed by the kind label, which can be obtained from executing `./gidgen --dump-kinds`.
-   For example: `//!kind OptionEntry Simple`
- * **merge** - This causes the current repo to be merged with another named repo identified by it's namespace.
-   The giD Package Repository distribution use this for merging GLib, GObject, and Gid into a single library to resolve mutual dependency issues.
-   For example: `//!merge GLib`
- * **reserved** - Identify a reserved word, which will cause any instances of it in binding symbols to have an underscore appended to it.
-   This is primarily used for identifying all D language reserved words. For example: `//!reserved version`.
- * **subtype** - Used for renaming (substituting) a type name. This command applies for both D and C types.
-   Example: `//!subtype "unsigned char" ubyte`.
- * **subctype** - This command is used for renaming C types only. For example: `//!subctype GObject ObjectC`.
- * **subdtype** - Used for renaming D types only. For example `//!subdtype Object ObjectG`.
+* **generate** - This command is used to indicate if init methods and/or binding functions should be automatically generated.
+  By default class/structure definition files do not automatically generate methods.
+  This command can be used to instruct gidgen to generate init methods `//!generate init` or bind other instance/class methods `//!generate funcs`.
+* **import** - Add a D import to the list of imports for the current class/structure.
+* **info** - Used for defining values in dub.json package files. It takes a name, which is one of: name, description, copyright, authors, or license.
+  The second parameter is the value to assign. The **authors** info value can be assigned multiple times, to be used when there are multiple authors.
+  Example: `//!info description "GObject introspection D binding repository"`
+* **kind** - Override the **kind** of a type. gidgen automatically determines what kind a type is (Basic, String, Object, etc).
+  This command takes a type identifier followed by the kind label, which can be obtained from executing `./gidgen --dump-kinds`.
+  For example: `//!kind OptionEntry Simple`
+* **merge** - This causes the current repo to be merged with another named repo identified by it's namespace.
+  The giD Package Repository distribution use this for merging GLib, GObject, and Gid into a single library to resolve mutual dependency issues.
+  For example: `//!merge GLib`
+* **reserved** - Identify a reserved word, which will cause any instances of it in binding symbols to have an underscore appended to it.
+  This is primarily used for identifying all D language reserved words. For example: `//!reserved version`.
+* **subtype** - Used for renaming (substituting) a type name. This command applies for both D and C types.
+  Example: `//!subtype "unsigned char" ubyte`.
+* **subctype** - This command is used for renaming C types only. For example: `//!subctype GObject ObjectC`.
+* **subdtype** - Used for renaming D types only. For example `//!subdtype Object ObjectG`.
 
 ## What about GtkD and gir-to-d?
 

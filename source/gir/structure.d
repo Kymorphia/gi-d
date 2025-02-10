@@ -103,7 +103,7 @@ final class Structure : TypeNode
       return TypeKind.Boxed;
 
     if (structType == StructType.Record && (opaque || pointer))
-      return functions.filter!(x => !x.disable).empty ? TypeKind.Pointer : TypeKind.Opaque;
+      return functions.filter!(x => x.active == Active.Enabled).empty ? TypeKind.Pointer : TypeKind.Opaque;
 
     if (structType == StructType.Record || structType == StructType.Union)
     {
@@ -169,8 +169,8 @@ final class Structure : TypeNode
     {
       f.fixup;
 
-      if (opaque || pointer)
-        f.disable = true;
+      if (f.active == Active.Enabled && (opaque || pointer))
+        f.active = Active.Unsupported;
     }
 
     foreach (fn; functions) // Fixup structure function/methods
@@ -179,6 +179,9 @@ final class Structure : TypeNode
 
       if (!fn.shadows.empty)
         fn.shadowsFunc = funcNameHash.get(fn.shadows, null);
+
+      if (!fn.shadowedBy.empty)
+        fn.shadowedByFunc = funcNameHash.get(fn.shadowedBy, null);
 
       if (fn.funcType == FuncType.Constructor && fn.name == "new") // Set "new" constructor as the primary constructor
         ctorFunc = fn;
@@ -239,7 +242,7 @@ final class Structure : TypeNode
 
   override void verify()
   {
-    if (disable || cast(Field)parent) // Don't verify if structure is disabled or a field structure
+    if (active != Active.Enabled || cast(Field)parent) // Don't verify if structure is disabled or a field structure
       return;
 
     super.verify;
@@ -259,9 +262,12 @@ final class Structure : TypeNode
 
     foreach (fn; functions) // Verify structure function/methods
     {
+      if (fn.active != Active.Enabled)
+        continue;
+
       with(FuncType) if (!fn.funcType.among(Callback, Function, Constructor, Signal, Method))
       {
-        fn.disable = true;
+        fn.active = Active.Unsupported;
         warning(fn.xmlLocation ~ "Disabling function '" ~ fn.fullName.to!string ~ "' of type '" ~ fn.funcType.to!string
             ~ "' which is not supported");
         TypeNode.dumpSelectorOnWarning(fn);
@@ -272,11 +278,14 @@ final class Structure : TypeNode
 
     foreach (sig; signals) // Verify structure signals
     {
+      if (sig.active != Active.Enabled)
+        continue;
+
       try
         sig.verify;
       catch (Exception e)
       {
-        sig.disable = true;
+        sig.active = Active.Unsupported;
         warning(sig.xmlLocation ~ "Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(sig);
       }
@@ -284,11 +293,14 @@ final class Structure : TypeNode
 
     foreach (f; fields) // Verify structure fields
     {
+      if (f.active != Active.Enabled)
+        continue;
+
       try
         f.verify;
       catch (Exception e)
       {
-        f.disable = true;
+        f.active = Active.Unsupported;
         warning(f.xmlLocation ~ "Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(f);
       }
@@ -323,12 +335,12 @@ final class Structure : TypeNode
         propMethods = constructFieldProps(); // Construct wrapper property methods in order to collect imports
 
       foreach (fn; functions)
-        if (!fn.disable)
+        if (fn.active == Active.Enabled)
           funcWriters ~= new FuncWriter(fn);
 
       foreach (sig; signals)
       {
-        if (!sig.disable)
+        if (sig.active == Active.Enabled)
         {
           codeTrap("struct.signal", sig.fullName);
           signalWriters ~= new SignalWriter(sig);
@@ -336,9 +348,8 @@ final class Structure : TypeNode
       }
     }
 
-    dstring parentStructSym;
     if (parentStruct)
-      parentStructSym = parentStruct.dType; // Add parent to imports
+      parentStruct.dType; // Add parent to imports (accessing the parent dType adds it to the active import manager)
 
     foreach (st; implementStructs) // Add implemented interfaces to imports
       repo.defs.importManager.resolveDType(st);
@@ -360,7 +371,7 @@ final class Structure : TypeNode
 
     writeDocs(writer);
 
-    dstring[] objIfaces;
+    Structure[] objIfaces;
 
     if (defCode.classDecl.empty)
     {
@@ -368,9 +379,10 @@ final class Structure : TypeNode
         writer ~= isIfaceTemplate ? ("template " ~ dType ~ "T()") : ("interface " ~ dType);
       else
       { // Create range of parent type and implemented interface types, but filter out interfaces already implemented by ancestors
-        objIfaces = implementStructs.filter!(x => !getIfaceAncestor(x)).map!(x => x.dType).array;
-        auto parentAndIfaces = (parentStruct ? [parentStructSym] : []) ~ objIfaces;
-        writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.join(", ") : "");
+        objIfaces = implementStructs.filter!(x => !getIfaceAncestor(x)).array;
+        auto parentAndIfaces = (parentStruct ? [parentStruct] : []) ~ objIfaces;
+        writer ~= "class " ~ dType ~ (!parentAndIfaces.empty ? " : " ~ parentAndIfaces.map!(x => x.dType)
+          .join(", ") : "");
       }
     }
     else
@@ -386,7 +398,23 @@ final class Structure : TypeNode
       writer ~= "";
 
       foreach (iface; objIfaces)
-        writer ~= "mixin " ~ iface ~ "T!();";
+        writer ~= "mixin " ~ iface.dType ~ "T!();";
+
+      if (parentStruct)
+      {
+        foreach (iface; objIfaces) // Look for methods in parent classes which conflict with interface methods
+        {
+          foreach (func; iface.functions)
+          {
+            bool outIsIdentical;
+
+            if (auto matchedFunc = func.findMatchingAncestor(parentStruct, outIsIdentical))
+              if (!outIsIdentical)
+                writer ~= ["alias "d ~ func.dName ~ " = " ~ (cast(Structure)matchedFunc.parent).dType ~ "."
+                  ~ func.dName ~ ";", ""];
+          }
+        }
+      }
     }
 
     if (defCode.inClass.length > 0)
@@ -413,7 +441,7 @@ final class Structure : TypeNode
     {
       foreach (quarkFunc; errorQuarks) // Add error exceptions
       {
-        if (!quarkFunc.disable)
+        if (quarkFunc.active == Active.Enabled)
         {
           writer ~= "";
           writer ~= quarkFunc.constructException;
@@ -500,7 +528,7 @@ final class Structure : TypeNode
 
     foreach (f; fields)
     {
-      if (f.disable || f.private_)
+      if (f.active != Active.Enabled || f.private_)
         continue;
 
       assert(!f.directStruct, "Unsupported embedded structure field " ~ f.fullName.to!string);

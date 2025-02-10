@@ -24,7 +24,7 @@ class FuncWriter
   {
     codeTrap("func.write", func.fullDName);
 
-    if (func.funcType != FuncType.Method && !func.isCtor && func.parent !is func.repo.globalStruct)
+    if (func.isStatic)
       decl ~= "static "; // Function is "static" if it is not a method, constructor, or global function
 
     if (func.throws)
@@ -746,10 +746,29 @@ class FuncWriter
    */
   void write(CodeWriter writer, ModuleType moduleType = ModuleType.Normal)
   {
-    auto isStatic = decl.startsWith("static");
+    auto isStatic = func.isStatic;
 
     if (moduleType == ModuleType.IfaceTemplate && isStatic) // Skip static methods in interface template files (implemented in the interface definition file)
       return;
+
+    dstring overrideStr;
+    auto parentNode = cast(TypeNode)func.parent;
+
+    if (parentNode && parentNode.kind == TypeKind.Interface && !isStatic) // All interface methods are override
+      overrideStr = "override ";
+    else if (!isStatic)
+    {
+      bool outIsIdentical;
+
+      if (auto matchedFunc = func.findMatchingAncestor(null, outIsIdentical))
+      {
+        if (outIsIdentical) // Identical methods use override
+          overrideStr = "override ";
+        else // Not-identical methods get aliased
+          writer ~= ["alias "d ~ func.dName ~ " = " ~ (cast(Structure)matchedFunc.parent).dType ~ "."
+            ~ func.dName ~ ";", ""];
+      }
+    }
 
     func.writeDocs(writer);
 
@@ -759,13 +778,8 @@ class FuncWriter
       return;
     }
 
-    auto parentNode = cast(TypeNode)func.parent;
-
     // Add "override" for methods of an interface mixin template or if an ancestor/iface has a method with the same name
-    if (parentNode && (parentNode.kind == TypeKind.Interface || func.needOverride) && !isStatic)
-      writer ~= "override " ~ decl;
-    else
-      writer ~= decl;
+    writer ~= overrideStr ~ decl;
 
     writer ~= "{";
 
