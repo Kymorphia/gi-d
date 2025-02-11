@@ -542,23 +542,6 @@ long containerTypeElemCount(ContainerType container)
     return 1;
 }
 
-/**
- * Get the module name which should be imported for a given container type.
- * Params:
- *   container = The container type
- *   defs = The definitions object
- * Returns: The module structure or null if the container has no module
- */
-Structure getModule(ContainerType container, Defs defs)
-{
-  if (container == ContainerType.Array || container == ContainerType.HashTable)
-    return null;
-  else if (container == ContainerType.ArrayG)
-    return cast(Structure)defs.findTypeObject("GLib.ArrayG");
-  else
-    return cast(Structure)defs.findTypeObject(ContainerTypeValues[cast(int)container]);
-}
-
 /// Basic type names
 immutable string[] BasicTypeValues = [
   "bool", "byte", "char", "dchar", "double", "float", "int", "long", "ptrdiff_t", "real", "short", "size_t", "ubyte",

@@ -758,11 +758,11 @@ class FuncWriter
       overrideStr = "override ";
     else if (!isStatic)
     {
-      bool outIsIdentical;
+      bool outConforms;
 
-      if (auto matchedFunc = func.findMatchingAncestor(null, outIsIdentical))
+      if (auto matchedFunc = func.findMatchingAncestor(null, outConforms))
       {
-        if (outIsIdentical) // Identical methods use override
+        if (outConforms) // Conforming methods use override
           overrideStr = "override ";
         else // Not-identical methods get aliased
           writer ~= ["alias "d ~ func.dName ~ " = " ~ (cast(Structure)matchedFunc.parent).dType ~ "."

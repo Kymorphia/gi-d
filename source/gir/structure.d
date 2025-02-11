@@ -743,3 +743,25 @@ enum ModuleType
   Iface, /// Interface definition file
   IfaceTemplate, /// Interface mixin template file
 }
+
+/**
+ * Check if a class structure is an ancestor of another. Takes TypeNode objects for convenience.
+ * Params:
+ *   possibleParent = A possible parent class
+ *   possibleChild = A possible child class of parent
+ * Returns: true if both objects are Structure objects of StructType.Class and possibleParent is an ancestor of possibleChild, false otherwise
+ */
+bool structIsDerived(TypeNode possibleParent, TypeNode possibleChild)
+{
+  auto pClass = cast(Structure)possibleParent;
+  auto cClass = cast(Structure)possibleChild;
+
+  if (!pClass || !cClass || pClass.structType != StructType.Class || cClass.structType != StructType.Class)
+    return false;
+
+  for (auto c = cClass.parentStruct; c; c = c.parentStruct)
+    if (c is pClass)
+      return true;
+
+  return false;
+}

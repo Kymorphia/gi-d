@@ -1,6 +1,7 @@
 module gir.func;
 
 import std.conv : to;
+import std.range : zip;
 
 import code_writer;
 import defs;
@@ -439,10 +440,10 @@ final class Func : TypeNode
    * Search a class' ancestry for a method matching this.
    * Params:
    *   st = Structure to search parent ancestry of (null will search from parent of function's class)
-   *   outIsIdentical = Output value set to true if method is identical (same return value and args), false otherwise
+   *   outConforms = Output value set to true if matching method conforms (ret/arg values are )
    * Returns: The matching method or null if none found, not a method, or not a derived class
    */
-  Func findMatchingAncestor(Structure st, out bool outIsIdentical)
+  Func findMatchingAncestor(Structure st, out bool outConforms)
   {
     if (!st) // If klass not specified, use this function's klass parent
       st = cast(Structure)parent ? (cast(Structure)parent).parentStruct : null;
@@ -463,10 +464,13 @@ final class Func : TypeNode
       if (!cmpFunc || cmpFunc.active != Active.Enabled)
         continue;
 
-      outIsIdentical = returnVal.dType == cmpFunc.returnVal.dType
-        && params.length == cmpFunc.params.length
-        && (params.filter!(x => !x.isInstanceParam).map!(x => x.dType) // Compare dTypes of both functions (skip instance param)
-          .equal(cmpFunc.params.filter!(x => !x.isInstanceParam).map!(x => x.dType)));
+      // Check if the method conforms to the parent class method (identical or derived parameters/return value of ancestor method)
+      outConforms = (params.length == cmpFunc.params.length // Same number of parameters
+        && (returnVal is null) == (cmpFunc.returnVal is null) // Both have return value or both do not
+        && (returnVal.dType == cmpFunc.returnVal.dType // Return value D type strings are equal
+          || structIsDerived(cmpFunc.returnVal.typeObject, returnVal.typeObject)) // or child method return type is derived from parent return type
+        && zip(cmpFunc.params.filter!(x => !x.isInstanceParam), params.filter!(x => !x.isInstanceParam))
+          .filter!(t => t[0].dType != t[1].dType).empty); // All arguments match by D type string (not including instance types)
 
       return retFunc;
     }
