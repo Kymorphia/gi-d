@@ -199,12 +199,7 @@ final class Param : TypeNode
     if (kind == TypeKind.Unknown)
       throw new Exception("Unresolved type for parameter '" ~ fullName.to!string ~ "'");
 
-    if (containerType == ContainerType.HashTable)
-    {
-      if (direction != ParamDirection.Out)
-        throw new Exception("HashTable " ~ direction.to!string ~ " parameters not supported");
-    }
-    else if (containerType != ContainerType.None)
+    if (containerType != ContainerType.None)
     {
       if ((direction == ParamDirection.In && ownership != Ownership.None) || direction == ParamDirection.InOut)
         throw new Exception("Container " ~ containerType.to!string ~ " parameter with direction "
