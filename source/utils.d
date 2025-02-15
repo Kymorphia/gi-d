@@ -1,7 +1,6 @@
 module utils;
 
 import core.stdc.signal : raise;
-import core.sys.posix.signal : SIGTRAP;
 public import std.experimental.logger;
 
 public import code_traps;
@@ -31,7 +30,14 @@ class GidLogger : Logger
 
 void breakpoint()
 {
-  raise(SIGTRAP);
+  version (Windows) // FIXME
+  {
+  }
+  else
+  {
+    import core.sys.posix.signal : SIGTRAP;
+    raise(SIGTRAP);
+  }
 }
 
 /**

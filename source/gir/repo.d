@@ -644,7 +644,7 @@ final class Repo : Base
     auto writer = new CodeWriter(path);
 
     writer ~= ["module " ~ namespace ~ ".c.functions;", ""];
-    writer ~= ["import " ~ namespace ~ ".c.types;"];
+    writer ~= ["import Gid.loader;", "import " ~ namespace ~ ".c.types;"];
 
     auto importNames = includes.map!(x => x.name).array;
 
@@ -714,7 +714,7 @@ final class Repo : Base
 
       if (st && !st.glibGetType.empty)
       { // Write GType function if set
-        writer ~= preamble ~ ["link(" ~ st.glibGetType ~ ", \"" ~ st.glibGetType ~ "\");"];
+        writer ~= preamble ~ ["gidLink(" ~ st.glibGetType ~ ", \"" ~ st.glibGetType ~ "\", LIBS);"];
         preamble = null;
       }
 
@@ -723,14 +723,12 @@ final class Repo : Base
         if (f.movedTo || !f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
 
-        writer ~= preamble ~ ["link(" ~ f.cName ~ ", \"" ~ f.cName ~ "\");"];
+        writer ~= preamble ~ ["gidLink(" ~ f.cName ~ ", \"" ~ f.cName ~ "\", LIBS);"];
         preamble = null;
       }
     }
 
     writer ~= ["}"];
-
-    writer ~= linkerCode.to!dstring;
 
     writer.write();
   }
@@ -753,7 +751,7 @@ final class Repo : Base
     writer ~= [
       "version(Windows)",
       "private immutable LIBS = [" ~ winLibs.join(", ") ~ "];",
-      "version(OSX)",
+      "else version(OSX)",
       "private immutable LIBS = [" ~ osxLibs.join(", ") ~ "];",
       "else",
       "private immutable LIBS = [" ~ posixLibs.join(", ") ~ "];",
@@ -964,34 +962,3 @@ final class DocSection : Base
 
   dstring name; /// Name of doc section
 }
-
-/// Dynamic linker code included directly in each package
-immutable string linkerCode =
-  `
-import core.sys.posix.dlfcn : dlerror, dlopen, dlsym, RTLD_GLOBAL, RTLD_NOW;
-import std.string : fromStringz, toStringz;
-
-private void link(T)(ref T funcPtr, string symbol)
-{
-  foreach (lib; LIBS)
-  {
-    if (auto handle = dlopen(cast(char*)toStringz(lib), RTLD_GLOBAL | RTLD_NOW))
-    {
-      if (auto symPtr = dlsym(handle, cast(char*)toStringz(symbol)))
-      {
-        funcPtr = cast(T)symPtr;
-        return;
-      }
-    }
-    else
-      throw new Error("Failed to load library '" ~ lib ~ "': " ~ dlerror().fromStringz.idup);
-  }
-
-  funcPtr = cast(T)&symbolNotFound;
-}
-
-private void symbolNotFound()
-{
-  throw new Error("Attempted to execute a dynamic library function which was not found");
-}
-`;
