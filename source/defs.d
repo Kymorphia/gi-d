@@ -135,12 +135,8 @@ class Defs
         curRepo = findRepo[0];
         curStructName = classSplitName[1].to!dstring;
 
-        if (curStructName !in curRepo.structDefCode) // If structure definition code wasn't already created, create it and disable generation of init/funcs by default
-        {
+        if (curStructName !in curRepo.structDefCode) // If structure definition code wasn't already created, create it
           curRepo.structDefCode[curStructName] = new DefCode();
-          curRepo.structDefCode[curStructName].genInit = false;
-          curRepo.structDefCode[curStructName].genFuncs = false;
-        }
       }
       else
       {
@@ -218,7 +214,16 @@ class Defs
         continue;
       }
 
-      if (cmdTokens.length != cmdInfo.argCount + 1)
+      if (cmdInfo.flags & DefCmdFlags.VarArgs)
+      {
+        if (cmdTokens.length < cmdInfo.argCount + 1)
+        {
+          warning("'", cmd, "' command requires at least ", cmdInfo.argCount, " ", cmdInfo.argCount == 1
+            ? "argument " : "arguments ", posInfo);
+          break;
+        }
+      }
+      else if (cmdTokens.length != cmdInfo.argCount + 1)
       {
         warning("'", cmd, "' command requires ", cmdInfo.argCount, " ", cmdInfo.argCount == 1
             ? "argument " : "arguments ", posInfo);
@@ -280,23 +285,6 @@ class Defs
           else
             warning("Duplicate class command found for '", curStructName, "' ", posInfo);
           break;
-        case "generate":
-          auto genItem = cmdTokens[1];
-
-          switch (genItem)
-          {
-            case "init":
-              curRepo.structDefCode[curStructName].genInit = true;
-              break;
-            case "funcs":
-              curRepo.structDefCode[curStructName].genFuncs = true;
-              break;
-            default:
-              warning("Unknown generate parameter '" ~ genItem ~ "' ", posInfo);
-              break;
-          }
-
-          break;
         case "import":
           curRepo.structDefCode[curStructName].imports.add(cmdTokens[1]);
           break;
@@ -305,6 +293,17 @@ class Defs
             curRepo.dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2];
           else
             dubInfo[cmdTokens[1].to!string] ~= cmdTokens[2];
+          break;
+        case "inhibit":
+          try
+            curRepo.structDefCode[curStructName].inhibitFlags = cmdTokens[1 .. $].map!(x => x.capitalize.to!DefInhibitFlags)
+              .fold!((a, b) => a | b);
+          catch (ConvException e)
+          {
+            warning("Invalid inhibit flags '" ~ cmdTokens[1 .. $].join(" ") ~ "'");
+            break;
+          }
+
           break;
         case "kind":
           TypeKind kind;
@@ -495,7 +494,7 @@ class Defs
     output ~= "\n  },\n";
 
     output ~= `  "subPackages": [` ~ "\n";
-    output ~= sortedRepos.map!(x => `    "` ~ buildPath(relPath, x) ~ `/"`).join(",\n");
+    output ~= sortedRepos.map!(x => `    "` ~ buildPath(relPath, x).replace("\\", "/") ~ `/"`).join(",\n"); // Just use forward slashes on Windows
     output ~= "\n  ]\n}\n";
 
     write(buildPath(pkgPath, "dub.json"), output);
@@ -868,13 +867,21 @@ class DefCode
     imports = new ImportManager();
   }
 
-  bool genInit = true; /// Generate class constructor/destructor init code
-  bool genFuncs = true; /// Generate functions and methods
+  DefInhibitFlags inhibitFlags; /// Module code generation inhibit flags
   ImportManager imports; /// Imports
   dstring[] preClass; /// Pre class declaration code, line separated
   dstring classDecl; /// Class declaration
   dstring[] inClass; /// Code inside of the class, line separated
   dstring[] postClass; /// Post class code
+}
+
+/// Module code generation inhibit flags
+enum DefInhibitFlags
+{
+  Nothing = 0, /// Don't inhibit anything
+  Imports = 1 << 0, /// Inhibit automatic import code generation
+  Init = 1 << 1, /// Inhibit class init code generation
+  Funcs = 1 << 2, /// Inhibit function binding code generation
 }
 
 /// Definition command flags
@@ -883,6 +890,7 @@ enum DefCmdFlags
   AllowBlock = 1 << 0, /// Allow a multi-line block argument (last arg)
   ReqRepo = 1 << 1, /// Require repo to have been specified
   ReqClass = 1 << 2, /// Require struct to have been specified
+  VarArgs = 1 << 3, /// Variable number of arguments, argCount is the minimum
   None = 0,
 }
 
@@ -923,12 +931,11 @@ immutable DefCmd[] defCommandInfo = [
   },
   {"class", 1, DefCmdFlags.ReqRepo, "class <Class> - Select the current structure/class"},
   {"del", 1, DefCmdFlags.None, "del <XmlSelect> - Delete an XML attribute or node"},
-  {
-    "generate", 1, DefCmdFlags.ReqClass, "generate <'init' | 'funcs'> - Force generation of Init or Function code"
-  },
   {"import", 1, DefCmdFlags.ReqClass, "import <Import> - Add a D import"},
   {"info", 2, DefCmdFlags.None, "info <name> <value> - Set JSON dub info for repo or master package"
     ~ " (name, description, copyright, authors, license), multiple authors values can be given"},
+  {"inhibit", 1, DefCmdFlags.ReqClass | DefCmdFlags.VarArgs, "inhibit [" ~ [EnumMembers!DefInhibitFlags]
+    .map!(x => x.to!string.toLower).join(" ") ~ "] - Inhibit generation of certain module code (space separated flags)"},
   {"kind", 2, DefCmdFlags.ReqRepo, "kind <TypeName> <TypeKind> - Override a type kind"},
   {"merge", 1, DefCmdFlags.ReqRepo, "merge <Namespace> - Merge current repo into the package identified by Namespace"},
   {"namespace", 1, DefCmdFlags.None, "namespace <Namespace> - Create a repository from a namespace instead of a Gir file"},

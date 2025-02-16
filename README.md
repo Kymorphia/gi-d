@@ -231,9 +231,9 @@ Commands:
 add <XmlSelect> <AttributeValue | Xml> - Add an XML attribute or node (Block)
 class <Class> - Select the current structure/class (Repo)
 del <XmlSelect> - Delete an XML attribute or node
-generate <'init' | 'funcs'> - Force generation of Init or Function code (Class)
 import <Import> - Add a D import (Class)
 info <name> <value> - Set JSON dub info for repo or master package (name, description, copyright, authors, license), multiple authors values can be given
+inhibit [nothing imports init funcs] - Inhibit generation of certain module code (space separated flags) (Class)
 kind <TypeName> <TypeKind> - Override a type kind (Repo)
 merge <Namespace> - Merge current repo into the package identified by Namespace (Repo)
 namespace <Namespace> - Create a repository from a namespace instead of a Gir file
@@ -308,13 +308,12 @@ The `class` command can be used following either a `repo` or `namespace` command
 ### Binding Behavior Commands
 
 There are several commands which modify the behavior of binding generation. These are described in more detail below:
-* **generate** - This command is used to indicate if init methods and/or binding functions should be automatically generated.
-  By default class/structure definition files do not automatically generate methods.
-  This command can be used to instruct gidgen to generate init methods `//!generate init` or bind other instance/class methods `//!generate funcs`.
 * **import** - Add a D import to the list of imports for the current class/structure.
 * **info** - Used for defining values in dub.json package files. It takes a name, which is one of: name, description, copyright, authors, or license.
   The second parameter is the value to assign. The **authors** info value can be assigned multiple times, to be used when there are multiple authors.
   Example: `//!info description "GObject introspection D binding repository"`
+* **inhibit** - This command is used to inhibit automatic code generation for modules and takes one or more space separated values from:
+  imports, init, or funcs. These values inhibit code generation for imports, class init methods, and methods/functions respectively.
 * **kind** - Override the **kind** of a type. gidgen automatically determines what kind a type is (Basic, String, Object, etc).
   This command takes a type identifier followed by the kind label, which can be obtained from executing `./gidgen --dump-kinds`.
   For example: `//!kind OptionEntry Simple`

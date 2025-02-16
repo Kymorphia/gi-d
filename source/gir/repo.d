@@ -523,7 +523,7 @@ final class Repo : Base
       }
     }
 
-    output ~= `  "targetType": "dynamicLibrary",` ~ "\n";
+    output ~= `  "targetType": "library",` ~ "\n";
     output ~= `  "importPaths": [".", ".."],` ~ "\n";
 
     // Include merged repos in sourcePaths list
@@ -564,11 +564,9 @@ final class Repo : Base
     auto writer = new CodeWriter(path);
 
     writer ~= ["module " ~ namespace ~ ".c.types;", ""];
-
+    writer ~= "public import Gid.basictypes;"; // Imported for glong/gulong types which change size depending on Windows or not
     writer ~= includes.map!(x => "public import " ~ x.name ~ ".c.types;\n").array;
-
-    if (!includes.empty)
-      writer ~= "";
+    writer ~= "";
 
     foreach (a; aliases)
     {
@@ -644,7 +642,7 @@ final class Repo : Base
     auto writer = new CodeWriter(path);
 
     writer ~= ["module " ~ namespace ~ ".c.functions;", ""];
-    writer ~= ["import Gid.loader;", "import " ~ namespace ~ ".c.types;"];
+    writer ~= ["public import Gid.basictypes;", "import Gid.loader;", "import " ~ namespace ~ ".c.types;"]; // Import Gid.basictypes for glong/gulong types which change size depending on Windows or not
 
     auto importNames = includes.map!(x => x.name).array;
 
@@ -667,7 +665,7 @@ final class Repo : Base
 
       if (!st.glibGetType.empty)
       { // Write GType function if set
-        writer ~= preamble ~ ["GType function() c_" ~ st.glibGetType ~ ";"];
+        writer ~= preamble ~ ["extern(C) GType function() c_" ~ st.glibGetType ~ ";"];
         preamble = null;
       }
 
@@ -714,7 +712,7 @@ final class Repo : Base
 
       if (st && !st.glibGetType.empty)
       { // Write GType function if set
-        writer ~= preamble ~ ["gidLink(" ~ st.glibGetType ~ ", \"" ~ st.glibGetType ~ "\", LIBS);"];
+        writer ~= preamble ~ ["gidLink(cast(void**)&" ~ st.glibGetType ~ ", \"" ~ st.glibGetType ~ "\", LIBS);"];
         preamble = null;
       }
 
@@ -723,7 +721,7 @@ final class Repo : Base
         if (f.movedTo || !f.funcType.among(FuncType.Function, FuncType.Constructor, FuncType.Method))
           continue;
 
-        writer ~= preamble ~ ["gidLink(" ~ f.cName ~ ", \"" ~ f.cName ~ "\", LIBS);"];
+        writer ~= preamble ~ ["gidLink(cast(void**)&" ~ f.cName ~ ", \"" ~ f.cName ~ "\", LIBS);"];
         preamble = null;
       }
     }

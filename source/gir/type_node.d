@@ -544,8 +544,8 @@ long containerTypeElemCount(ContainerType container)
 
 /// Basic type names
 immutable string[] BasicTypeValues = [
-  "bool", "byte", "char", "dchar", "double", "float", "int", "long", "ptrdiff_t", "real", "short", "size_t", "ubyte",
-  "uint", "ulong", "ushort", "void*", "void"
+  "bool", "byte", "char", "dchar", "double", "float", "glong", "gulong", "int", "long", "ptrdiff_t", "real", "short", // glong/gulong are versioned alias types which change depending on if Windows or not
+  "size_t", "ubyte", "uint", "ulong", "ushort", "void*", "void"
 ];
 
 /// Hash of basic type names to true values

@@ -257,7 +257,7 @@ final class Structure : TypeNode
         TypeNode.dumpSelectorOnWarning(this);
       }
 
-    if (!defCode.genFuncs) // Skip verification of functions, signals, and fields if they aren't being generated
+    if (defCode.inhibitFlags & DefInhibitFlags.Funcs) // Skip verification of functions, signals, and fields if they aren't being generated
       return;
 
     foreach (fn; functions) // Verify structure function/methods
@@ -329,7 +329,7 @@ final class Structure : TypeNode
     SignalWriter[] signalWriters;
 
     // Create the function and signal writers first to construct the imports
-    if (defCode.genFuncs)
+    if (!(defCode.inhibitFlags & DefInhibitFlags.Funcs))
     {
       if (kind == TypeKind.Wrap || kind == TypeKind.Boxed)
         propMethods = constructFieldProps(); // Construct wrapper property methods in order to collect imports
@@ -360,11 +360,14 @@ final class Structure : TypeNode
       repo.defs.importManager.add("GLib.ErrorG");
     }
 
-    if (kind == TypeKind.Interface)
-      writer ~= "public import " ~ fullName ~ "IfaceProxy;";
+    if (!(defCode.inhibitFlags & DefInhibitFlags.Imports))
+    {
+      if (kind == TypeKind.Interface)
+        writer ~= "public import " ~ fullName ~ "IfaceProxy;";
 
-    if (repo.defs.importManager.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
-      writer ~= "";
+      if (repo.defs.importManager.write(writer, isIfaceTemplate ? "public " : "")) // Interface templates use public imports so they are conveyed to the object they are mixed into
+        writer ~= "";
+    }
 
     if (defCode.preClass.length > 0)
       writer ~= defCode.preClass;
@@ -390,7 +393,7 @@ final class Structure : TypeNode
 
     writer ~= "{";
 
-    if (defCode.genInit)
+    if (!(defCode.inhibitFlags & DefInhibitFlags.Init))
       writeInitCode(writer, propMethods, moduleType);
 
     if (kind == TypeKind.Object && !objIfaces.empty)
@@ -420,7 +423,7 @@ final class Structure : TypeNode
     if (defCode.inClass.length > 0)
       writer ~= defCode.inClass;
 
-    if (defCode.genFuncs)
+    if (!(defCode.inhibitFlags & DefInhibitFlags.Funcs))
     {
       foreach (fnWriter; funcWriters)
       {
@@ -437,7 +440,7 @@ final class Structure : TypeNode
 
     writer ~= "}";
 
-    if (defCode.genFuncs)
+    if (!(defCode.inhibitFlags & DefInhibitFlags.Funcs))
     {
       foreach (quarkFunc; errorQuarks) // Add error exceptions
       {
@@ -510,7 +513,9 @@ final class Structure : TypeNode
       writer ~= ["", "void* cPtr()", "{", "return cast(void*)&cInstance;", "}"];
 
     if (kind.among(TypeKind.Boxed, TypeKind.Object) || (kind == TypeKind.Interface && moduleType == ModuleType.Iface))
-      writer ~= ["", "static GType getType()", "{", "return " ~ glibGetType ~ "();", "}"];
+      writer ~= ["", "static GType getType()", "{", "import Gid.loader : gidSymbolNotFound;",
+        "return cast(void function())" ~ glibGetType
+        ~ " != &gidSymbolNotFound ? " ~ glibGetType ~ "() : cast(GType)0;", "}"]; // Return 0 if get_type() function was not resolved
 
     if (kind.among(TypeKind.Boxed, TypeKind.Object))
       writer ~= ["", "override @property GType gType()", "{", "return getType();", "}"];
