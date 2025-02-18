@@ -142,7 +142,7 @@ final class Func : TypeNode
     if (funcType == FuncType.Signal) // Add documentation for the signal callback instance parameter
       writer ~= "*   " ~ signalDelegInstanceParam ~ " = the instance the signal is connected to";
 
-    if (returnVal && returnVal.origDType != "none")
+    if (returnVal && returnVal.origDType != "none" && returnVal.lengthArrayParams.length == 0)
       writer ~= "* Returns: " ~ gdocToDDoc(returnVal.docContent, "*   ");
 
     if (!docVersion.empty || !docDeprecated.empty)
@@ -206,7 +206,7 @@ final class Func : TypeNode
 
     if (returnVal)
     {
-      if (returnVal.lengthParamIndex != ArrayNoLengthParam) // Return array has a length argument?
+      if (returnVal.lengthParamIndex >= 0) // Return array has a length argument?
       {
         if (hasInstanceParam) // Array length parameter indexes don't count instance parameters
           returnVal.lengthParamIndex++;
@@ -274,17 +274,17 @@ final class Func : TypeNode
     if (active != Active.Enabled)
       return;
 
-    void disableFunc(string msg, TypeNode errorNode = null)
+    void disableFunc(string file, size_t line, string msg, TypeNode errorNode = null)
     {
       active = Active.Unsupported;
-      warning(xmlLocation ~ "Disabling " ~ (funcType == FuncType.Signal ? "signal '" : "function '" )
+      warnWithLoc(file, line, xmlLocation, "Disabling " ~ (funcType == FuncType.Signal ? "signal '" : "function '" )
         ~ fullName.to!string ~ "': " ~ msg);
       TypeNode.dumpSelectorOnWarning(errorNode ? errorNode : this);
     }
 
     if (!shadows.empty && !shadowsFunc)
     {
-      disableFunc("Could not resolve shadows function name " ~ shadows.to!string);
+      disableFunc(__FILE__, __LINE__, "Could not resolve shadows function name " ~ shadows.to!string);
       return;
     }
 
@@ -294,44 +294,40 @@ final class Func : TypeNode
         returnVal.verify; // Verify the return type
       catch (Exception e)
       {
-        disableFunc("Return type error: " ~ e.msg, returnVal);
+        disableFunc(e.file, e.line, "Return type error: " ~ e.msg, returnVal);
         return;
       }
     }
-
-    if (returnVal.containerType == ContainerType.None && returnVal.kind.among(TypeKind.Basic, TypeKind.BasicAlias)
-        && returnVal.cType.countStars != 0 && !returnVal.cType.among("void*"d, "const(void)*"d))
-      disableFunc("Unexpected basic return type '" ~ returnVal.cType.to!string ~ "'", returnVal);
 
     if (funcType == FuncType.Signal)
     {
       if (returnVal.containerType != ContainerType.None)
       {
-        disableFunc("signal container return type '" ~ returnVal.containerType.to!string ~ "' not supported",
-          returnVal);
+        disableFunc(__FILE__, __LINE__, "signal container return type '" ~ returnVal.containerType.to!string
+          ~ "' not supported", returnVal);
         return;
       }
 
       with(TypeKind) if (returnVal.kind.among(Simple, Pointer, Callback, Opaque, Unknown, Namespace))
       {
-        disableFunc("signal return type '" ~ returnVal.kind.to!string ~ "' is not supported", returnVal);
+        disableFunc(__FILE__, __LINE__, "signal return type '" ~ returnVal.kind.to!string ~ "' is not supported", returnVal);
         return;
       }
     }
 
     if (returnVal)
     {
-      if (returnVal.lengthParamIndex != ArrayNoLengthParam)
+      if (returnVal.lengthParamIndex != ArrayLengthUnset)
       {
         if (!returnVal.lengthParam) // Return array has invalid length argument?
         {
-          disableFunc("invalid return array length parameter index", returnVal);
+          disableFunc(__FILE__, __LINE__, "invalid return array length parameter index", returnVal);
           return;
         }
 
         if (returnVal.lengthParam.direction != ParamDirection.Out)
         {
-          disableFunc("return array length parameter direction must be Out", returnVal.lengthParam);
+          disableFunc(__FILE__, __LINE__, "return array length parameter direction must be Out", returnVal.lengthParam);
           return;
         }
       }
@@ -340,18 +336,18 @@ final class Func : TypeNode
     foreach (pi, pa; params)
     {
       if (pa.isInstanceParam && pi != 0)
-        disableFunc("invalid additional instance param '" ~ pa.name.to!string ~ "'", pa);
+        disableFunc(__FILE__, __LINE__, "invalid additional instance param '" ~ pa.name.to!string ~ "'", pa);
 
       if (pa.isClosure && pa != closureParam)
-        disableFunc("multiple closure parameters", pa);
+        disableFunc(__FILE__, __LINE__, "multiple closure parameters", pa);
 
       try
         pa.verify; // Verify parameter
       catch (Exception e)
-        disableFunc("Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg, pa);
+        disableFunc(e.file, e.line, "Parameter '" ~ pa.name.to!string ~ "' error: " ~ e.msg, pa);
 
       if (!pa.resolved)
-        disableFunc("Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "'", pa);
+        disableFunc(__FILE__, __LINE__, "Unresolved parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "'", pa);
 
       // Resolve parameter type aliases to see if any are disabled and disable parameter if so
       for (TypeNode tn = pa.typeObject; tn; tn = typeRepo.typeObjectHash.get((cast(Alias)tn).dType, null))
@@ -364,7 +360,7 @@ final class Func : TypeNode
       }
 
       if (pa.active != Active.Enabled)
-        disableFunc("Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled", pa);
+        disableFunc(__FILE__, __LINE__, "Parameter '" ~ pa.name.to!string ~ "' of type '" ~ pa.dType.to!string ~ "' is disabled", pa);
     }
   }
 

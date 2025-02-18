@@ -106,6 +106,12 @@ class FuncWriter
       decl ~= "void ";
       return;
     }
+    else if (retVal.lengthArrayParams.length > 0) // Function returns void if return value is an array length
+    {
+      decl ~= "void ";
+      call ~= "auto _ret_length = ";
+      return;
+    }
 
     if (retVal.containerType == ContainerType.Array)
     {
@@ -301,7 +307,7 @@ class FuncWriter
       return;
     }
 
-    if (param.lengthArrayParams.length > 0)
+    if (param.lengthArrayParams.length > 0) // Array length parameter?
     {
       addCallParam((param.direction == ParamDirection.In ? "_"d : "&_"d) ~ param.dName);
       return;
@@ -309,7 +315,7 @@ class FuncWriter
 
     if (param.containerType == ContainerType.Array) // Array container?
     { // Declare length variable before the array in case it is used by the array
-      if (param.lengthParam)
+      if (param.lengthParam && param.lengthParam.containerType != ContainerType.Array) // Skip length parameters which are other arrays (a gidgen extension)
       {
         // Only declare length parameter for first array
         if (param == param.lengthParam.lengthArrayParams[0])
@@ -565,7 +571,14 @@ class FuncWriter
     dstring lengthStr;
 
     if (param.lengthParam) // Array has length parameter?
-      lengthStr = "_" ~ param.lengthParam.dName;
+    { // gidgen extention which allows another zero-terminated array to be used for the output array length
+      if (param.lengthParam.containerType == ContainerType.Array)
+        lengthStr = param.lengthParam.dName ~ ".length";
+      else
+        lengthStr = "_" ~ param.lengthParam.dName;
+    }
+    else if (param.lengthReturn) // Array uses return value for length?
+      lengthStr = "_ret_length";
     else if (param.fixedSize != ArrayNotFixed) // Array is a fixed size?
       lengthStr = param.fixedSize.to!dstring;
     else if (param.zeroTerminated) // Array is zero terminated?
@@ -679,11 +692,11 @@ class FuncWriter
   {
     dstring templateParams;
 
-    switch (param.containerType) with(ContainerType)
+    final switch (param.containerType) with(ContainerType)
     {
       case ByteArray:
         break;
-      case Array, PtrArray:
+      case ArrayG, PtrArray:
         templateParams = "!(" ~ param.elemTypes[0].dType  ~ ", " ~ param.zeroTerminated.to!dstring ~ ")";
         break;
       case List, SList:
@@ -692,7 +705,7 @@ class FuncWriter
       case HashTable:
         templateParams = "!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType ~ ")";
         break;
-      default:
+      case Array, None:
         assert(0, "Unsupported 'in' container type '" ~ param.containerType.to!string ~ "' for "
           ~ param.fullName.to!string);
     }
@@ -714,19 +727,19 @@ class FuncWriter
   {
     dstring templateParams;
 
-    switch (param.containerType) with(ContainerType)
+    final switch (param.containerType) with(ContainerType)
     {
       case ByteArray:
         templateParams = "GidOwnership." ~ param.ownership.to!dstring;
         break;
-      case Array, PtrArray, List, SList:
+      case ArrayG, PtrArray, List, SList:
         templateParams = param.elemTypes[0].dType  ~ ", " ~ "GidOwnership." ~ param.ownership.to!dstring;
         break;
       case HashTable:
         templateParams = "!(" ~ param.elemTypes[0].dType ~ ", " ~ param.elemTypes[1].dType ~ ", "
           ~ "GidOwnership." ~ param.ownership.to!dstring;
         break;
-      default:
+      case Array, None:
         assert(0, "Unsupported 'out' container type '" ~ param.containerType.to!string ~ "' for "
           ~ param.fullName.to!string);
     }
@@ -791,7 +804,8 @@ class FuncWriter
     if (postCall.length > 0)
       writer ~= postCall;
 
-    if (func.returnVal.origDType != "none" && !func.isCtor)
+    if (func.returnVal && func.returnVal.origDType != "none" && !func.isCtor
+        && func.returnVal.lengthArrayParams.length == 0) // Don't return a value for array length return values
       writer ~= "return _retval;";
 
     writer ~= "}";

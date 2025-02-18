@@ -40,6 +40,8 @@ int main(string[] args)
         "s|subpkg-path", "Subpackage path to write individual library packages to (required)", &subPkgPath,
         "def-help", "Display binding definition file command help", &defHelp,
         "log-level", "Log level (" ~ [EnumMembers!LogLevel].map!(x => x.to!string).join(", ") ~ ")", &logLevel,
+        "log-gir-locs", "Log GIR file locations in warnings", &Repo.logGirLoc,
+        "log-code-locs", "Log code locations in warnings", &Repo.logCodeLoc,
         "report", "Output binding coverage statistics (defaults to --report-options AllUnsupported)", &enableReport,
         "report-file", "File to output report to (defaults to stdout if not specified)", &reportFile,
         "report-options", "Customize report output (logically OR'd flags with '|' character, 'help' for flag list)", &reportOptions,
@@ -160,19 +162,9 @@ int main(string[] args)
       .join.map!(baseObj => cTypeAndKind(baseObj))
       .array.sort.uniq.join("\n"));
 
-  dstring dTypeAndKind(Base baseObj)
-  {
-    if (auto typeNode = cast(TypeNode)baseObj)
-      return typeNode.fullName ~ " " ~ typeNode.kind.to!dstring;
-    else if (auto en = cast(Enumeration)baseObj)
-      return en.fullName ~ " Enum";
-    else
-      return baseObj.fullName ~ " Unknown";
-  }
-
   if (Repo.dumpDTypes)
     writeln(defs.repos.map!(repo => repo.typeObjectHash.values)
-      .join.map!(baseObj => dTypeAndKind(baseObj))
+      .join.map!(typeNode => typeNode.fullName ~ " " ~ typeNode.kind.to!dstring)
       .array.sort.uniq.join("\n"));
 
   if (Repo.suggestDefCmds) // Display suggestions if enabled

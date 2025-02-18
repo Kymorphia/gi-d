@@ -15,6 +15,11 @@ final class Enumeration : TypeNode
     fromXml(node);
   }
 
+  override @property dstring name()
+  {
+    return dType;
+  }
+
   override void fromXml(XmlNode node)
   {
     super.fromXml(node);

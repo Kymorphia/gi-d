@@ -253,7 +253,7 @@ final class Structure : TypeNode
     foreach (ifaceName; implements)
       if (!cast(Structure)repo.defs.findTypeObject(ifaceName, repo))
       {
-        warning(xmlLocation ~ "Unable to resolve structure " ~ fullName.to!string ~ " interface " ~ ifaceName.to!string);
+        warnWithLoc(__FILE__, __LINE__, xmlLocation, "Unable to resolve structure " ~ fullName.to!string ~ " interface " ~ ifaceName.to!string);
         TypeNode.dumpSelectorOnWarning(this);
       }
 
@@ -268,7 +268,7 @@ final class Structure : TypeNode
       with(FuncType) if (!fn.funcType.among(Callback, Function, Constructor, Signal, Method))
       {
         fn.active = Active.Unsupported;
-        warning(fn.xmlLocation ~ "Disabling function '" ~ fn.fullName.to!string ~ "' of type '" ~ fn.funcType.to!string
+        warnWithLoc(__FILE__, __LINE__, fn.xmlLocation, "Disabling function '" ~ fn.fullName.to!string ~ "' of type '" ~ fn.funcType.to!string
             ~ "' which is not supported");
         TypeNode.dumpSelectorOnWarning(fn);
       }
@@ -286,7 +286,7 @@ final class Structure : TypeNode
       catch (Exception e)
       {
         sig.active = Active.Unsupported;
-        warning(sig.xmlLocation ~ "Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
+        warnWithLoc(e.file, e.line, sig.xmlLocation, "Disabling signal '" ~ sig.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(sig);
       }
     }
@@ -301,7 +301,7 @@ final class Structure : TypeNode
       catch (Exception e)
       {
         f.active = Active.Unsupported;
-        warning(f.xmlLocation ~ "Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
+        warnWithLoc(e.file, e.line, f.xmlLocation, "Disabling field '" ~ f.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(f);
       }
     }

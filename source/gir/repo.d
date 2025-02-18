@@ -367,7 +367,7 @@ final class Repo : Base
       catch (Exception e)
       {
         al.active = Active.Unsupported;
-        warning(al.xmlLocation ~ "Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
+        warnWithLoc(e.file, e.line, al.xmlLocation, "Disabling alias '" ~ al.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(al);
       }
     }
@@ -382,7 +382,7 @@ final class Repo : Base
       catch (Exception e)
       {
         con.active = Active.Unsupported;
-        warning(con.xmlLocation ~ "Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
+        warnWithLoc(e.file, e.line, con.xmlLocation, "Disabling constant '" ~ con.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(con);
       }
     }
@@ -402,7 +402,7 @@ final class Repo : Base
       catch (Exception e)
       {
         cb.active = Active.Unsupported;
-        warning(cb.xmlLocation ~ "Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
+        warnWithLoc(e.file, e.line, cb.xmlLocation, "Disabling callback '" ~ cb.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(cb);
       }
     }
@@ -417,7 +417,7 @@ final class Repo : Base
       catch (Exception e)
       {
         st.active = Active.Unsupported;
-        warning(st.xmlLocation ~ "Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
+        warnWithLoc(e.file, e.line, st.xmlLocation, "Disabling structure '" ~ st.fullName.to!string ~ "': " ~ e.msg);
         TypeNode.dumpSelectorOnWarning(st);
       }
     }
@@ -930,10 +930,20 @@ final class Repo : Base
   dstring xmlnsC;
   dstring xmlnsGlib;
 
+  static bool logGirLoc; /// Log GIR locations in warnings
+  static bool logCodeLoc; /// Log code locations in warnings
   static bool dumpCTypes; /// Set to true to dump C types
   static bool dumpDTypes; /// Set to true to dump D types
   static bool suggestDefCmds; /// Output definition command suggestions
   string[][string] suggestions; /// Suggested definitions (if suggestDefCmds is enabled), keyed by type of suggestion
+}
+
+/**
+ * Print warning with location information.
+ */
+void warnWithLoc(string file, size_t line, string xmlLoc, string message)
+{
+  warning((Repo.logCodeLoc ? (file ~ ":" ~ line.to!string ~ " ") : "") ~ (Repo.logGirLoc ? (xmlLoc ~ " ") : "") ~ message);
 }
 
 /// Package include

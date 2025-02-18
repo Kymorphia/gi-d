@@ -102,15 +102,26 @@ final class Param : TypeNode
 
     auto func = getParentByType!Func;
 
-    if (lengthParamIndex != ArrayNoLengthParam) // Array has a length argument?
+    if (lengthParamIndex != ArrayLengthUnset) // Array has a length argument?
     {
-      if (func.hasInstanceParam) // Instance parameters don't count towards index
-        lengthParamIndex++;
-
-      if (lengthParamIndex < func.params.length)
+      if (lengthParamIndex >= 0)
       {
-        lengthParam = func.params[lengthParamIndex];
-        lengthParam.lengthArrayParams ~= this;
+        if (func.hasInstanceParam) // Instance parameters don't count towards index
+          lengthParamIndex++;
+
+        if (lengthParamIndex < func.params.length)
+        {
+          lengthParam = func.params[lengthParamIndex];
+
+          // gidgen extension which allows other zero terminated arrays to be used for length, should not have lengthArrayParams assigned for the reference array
+          if (lengthParam.containerType != ContainerType.Array)
+            lengthParam.lengthArrayParams ~= this;
+        }
+      }
+      else if (lengthParamIndex == ArrayLengthReturn) // Array parameter uses return value as length
+      {
+        lengthReturn = func.returnVal;
+        lengthReturn.lengthArrayParams ~= this;
       }
     }
 
@@ -206,7 +217,7 @@ final class Param : TypeNode
           ~ direction.to!string ~ " ownership " ~ ownership.to!string ~ " not supported");
     }
 
-    if (containerType == ContainerType.None && kind.among(TypeKind.Basic, TypeKind.BasicAlias))
+    with (TypeKind) if (containerType == ContainerType.None && kind.among(Basic, BasicAlias, Enum, Flags))
     {
       if (direction == ParamDirection.In && cType.countStars > 0 && cType != "void*" && cType != "const(void)*")
       {
@@ -240,7 +251,10 @@ final class Param : TypeNode
 
     with (ParamDirection) if (containerType == ContainerType.Array)
     {
-      if (lengthParamIndex != ArrayNoLengthParam && !lengthParam) // Array has invalid length argument?
+      if (lengthParamIndex == ArrayLengthReturn && (!lengthReturn || lengthReturn.kind != TypeKind.Basic))
+        throw new Exception("Invalid return value for array length");
+
+      if (lengthParamIndex >= 0 && !lengthParam) // Array has invalid length argument?
         throw new Exception("Invalid array length parameter index");
 
       if (direction == In)
@@ -248,6 +262,8 @@ final class Param : TypeNode
         if (lengthParam && lengthParam.direction != In)
           throw new Exception("Input array has unsupported length parameter direction '"
             ~ lengthParam.direction.to!string ~ "'");
+        else if (lengthReturn)
+          throw new Exception("Input array cannot specify return value as length");
 
         if (cType.countStars < 1)
           throw new Exception("Input array has unexpected C type '" ~ cType.to!string ~ "'");
@@ -265,7 +281,7 @@ final class Param : TypeNode
               throw new Exception("Caller allocated output array has unsupported length parameter direction '"
                 ~ lengthParam.direction.to!string ~ "'");
           }
-          else if (fixedSize == ArrayNotFixed)
+          else if (!lengthReturn && fixedSize == ArrayNotFixed)
             throw new Exception("Caller allocated output array has indeterminate length");
         }
         else // Caller does not allocate
@@ -273,7 +289,13 @@ final class Param : TypeNode
           if (cType.countStars < 2)
             throw new Exception("Callee allocated output array has unexpected C type '" ~ cType.to!string ~ "'");
 
-          if (lengthParam && lengthParam.direction != Out)
+          // A gidgen GIR extension which allows another zero-terminated array to be used for length
+          if (lengthParam && lengthParam.containerType == ContainerType.Array)
+          {
+            if (!lengthParam.zeroTerminated || lengthParam.direction != In)
+              throw new Exception("Using another array for length requires that it is a zero terminated input array");
+          }
+          else if (lengthParam && lengthParam.direction != Out)
             throw new Exception("Callee allocated output array has unsupported length parameter direction '"
               ~ lengthParam.direction.to!string ~ "'");
         }

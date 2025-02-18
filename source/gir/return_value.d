@@ -1,7 +1,9 @@
 module gir.return_value;
 
+import gir.param;
 import gir.type_node;
 import std_includes;
+import utils;
 
 /// Function return value
 final class ReturnValue : TypeNode
@@ -25,5 +27,24 @@ final class ReturnValue : TypeNode
     nullable = node.get("nullable") == "1";
   }
 
+  override void resolve()
+  {
+    super.resolve;
+
+    // Return pointers to basic types which aren't arrays should be treated as pointers
+    with(TypeKind) if (containerType == ContainerType.None && cType.countStars > 0
+      && kind.among(Basic, BasicAlias, Enum, Flags))
+    {
+      warning("Changing " ~ fullName.to!string ~ " with C type " ~ cType.to!string ~ " from " ~ kind.to!string ~ " to pointer");
+      kind = TypeKind.Pointer;
+
+      if (cType.startsWith("const"))
+        _dType = "const("d ~ _dType.stripConstPtr ~ ")"d ~ (cast(dchar)'*').repeat(cType.countStars).to!dstring;
+      else
+        _dType = _dType.stripConstPtr ~ (cast(dchar)'*').repeat(cType.countStars).to!dstring;
+    }
+  }
+
   bool nullable; /// Pointer can be null
+  Param[] lengthArrayParams; /// Array parameters which use return value as length
 }

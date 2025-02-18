@@ -33,6 +33,9 @@ void addCodeTrap(string action, string match)
  */
 void codeTrap(string action, lazy dstring name)
 {
+  if (codeTraps.length == 0 && !codeTrapsDump)
+    return;
+
   auto matchList = codeTraps.get(action, null);
 
   if (codeTrapsDump)

@@ -90,7 +90,7 @@ class Report
 
     with (ReportFlags)
     {
-      foreach (actNdx, af; tuple(Enabled, Disabled, Unsupported))
+      foreach (actNdx, af; tuple(Enabled, Disabled, Ignored, Unsupported))
       {
         if (!(flags & af))
           continue;
@@ -144,16 +144,18 @@ enum ReportFlags
 
   Enabled = 1 << 1, /// Output Active.Enabled object names
   Disabled = 1 << 2, /// Output Active.Disabled object names
-  Unsupported = 1 << 3, /// Output Active.Unsupported object names
+  Ignored = 1 << 3, /// Output Active.Ignored object names
+  Unsupported = 1 << 4, /// Output Active.Unsupported object names
 
-  Structs = 1 << 4, /// Output structures
-  Funcs = 1 << 5, /// Output funcs
-  Signals = 1 << 6, /// Output signals
-  Fields = 1 << 7, /// Output fields
+  Structs = 1 << 5, /// Output structures
+  Funcs = 1 << 6, /// Output funcs
+  Signals = 1 << 7, /// Output signals
+  Fields = 1 << 8, /// Output fields
 
   All = Summary | Enabled | Disabled | Unsupported | Structs | Funcs | Signals | Fields, /// Output full report
   AllEnabled = Summary | Enabled | Structs | Funcs | Signals | Fields, /// Output report with enabled object names only
   AllDisabled = Summary | Disabled | Structs | Funcs | Signals | Fields, /// Output report with explicitly disabled object names only
+  AllIgnored = Summary | Ignored | Structs | Funcs | Signals | Fields, /// Output report with ignored object names only
   AllUnsupported = Summary | Unsupported | Structs | Funcs | Signals | Fields, /// Output report with unsupported object names only
 }
 
@@ -162,6 +164,7 @@ string[] reportFlagDescriptions = [
   "Show Enabled item names", // Enabled
   "Show Disabled item names", // Disabled
   "Show Unsupported item names", // Unsupported
+  "Show Ignored item names", // Ignored
   "Show Structure/Class names", // Structs
   "Show Function/Method names", // Funcs
   "Show Signal names", // Signals
@@ -169,6 +172,7 @@ string[] reportFlagDescriptions = [
   "Generate a full report", // All
   "Generate a report of all Enabled items", // AllEnabled
   "Generate a report of all Disabled items", // AllDisabled
+  "Generate a report of all Ignored items", // AllIgnored
   "Generate a report of all Unsupported items (default)", // AllUnsupported
 ];
 

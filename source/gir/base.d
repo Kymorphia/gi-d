@@ -70,10 +70,13 @@ abstract class Base
   {
     this.xmlNode = node;
 
-    // "disabled" and "unsupported" are not actual Gir attributes, but used in def files
+    // "disable", "ignore", and "unsupported" are gidgen extensions (not part of GIR spec)
 
     if (node.get("disable") == "1")
       this.active = Active.Disabled;
+
+    if (node.get("ignore") == "1")
+      this.active = Active.Ignored;
 
     if (node.get("unsupported") == "1")
       this.active = Active.Unsupported;
@@ -97,7 +100,6 @@ abstract class Base
 
   /**
    * Returns a "file:line " location string from where this node was parsed from or empty string if not set.
-   * A space is appended to the file location for convenience for logging.
    * Returns: Location information in the form of file:line
    */
   string xmlLocation()
@@ -105,7 +107,7 @@ abstract class Base
     if (!_node || _node.parseFile.empty)
       return "";
 
-    return _node.parseFile ~ (_node.parseLine != 0 ? (":" ~ _node.parseLine.to!string) : "") ~ " ";
+    return _node.parseFile ~ (_node.parseLine != 0 ? (":" ~ _node.parseLine.to!string) : "");
   }
 
   /**
@@ -169,8 +171,9 @@ abstract class Base
 enum Active : ubyte
 {
   Enabled, /// Object is enabled
-  Disabled, /// No, object was explicitly disabled
-  Unsupported, /// No, object is not supported by gidgen currently
+  Disabled, /// Object was explicitly disabled
+  Ignored, /// Object was explicitly ignored (does not appear in stats table)
+  Unsupported, /// Object is not supported by gidgen currently
 }
 
 /**

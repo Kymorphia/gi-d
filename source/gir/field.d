@@ -115,7 +115,7 @@ final class Field : TypeNode
     with (TypeKind) if (writable && kind.among(Opaque, Boxed, Wrap, Reffed, Object, Interface))
     {
       writable = false;
-      warning(xmlLocation ~ "Setting writable to false for field '" ~ fullName.to!string ~ "' with unhandled type '"
+      warnWithLoc(__FILE__, __LINE__, xmlLocation, "Setting writable to false for field '" ~ fullName.to!string ~ "' with unhandled type '"
           ~ dType.to!string ~ "' (" ~ kind.to!string ~ ")");
       TypeNode.dumpSelectorOnWarning(this);
     }

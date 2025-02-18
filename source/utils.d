@@ -165,9 +165,6 @@ dstring stripConst(dstring type)
  */
 dstring stripConstPtr(dstring type)
 {
-  if (!type.startsWith("const")) // Optimization
-    return type;
-
   return tokenizeType(type).filter!(x => !x.among("const"d, "("d, ")"d, "*"d)).join;
 }
 

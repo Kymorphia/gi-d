@@ -6,6 +6,7 @@ public import gir.base;
 import gir.field;
 import gir.func;
 import gir.param;
+import gir.return_value;
 import gir.structure;
 import import_manager;
 import std_includes;
@@ -142,6 +143,34 @@ class TypeNode : Base
   }
 
   /**
+   * Method which returns a descriptive string of an array size.
+   * Returns: null if not an array, "length" if length is specified, "fixed" if fixed size, "unknown" if array size unknown.
+   *   If length is specified or fixed size, and the array is zero terminated, "-zero" is appended to "length" or "fixed".
+   */
+  string arraySizeStr()
+  {
+    if (containerType != ContainerType.Array)
+      return null;
+
+    if (zeroTerminated)
+    {
+      if (lengthParamIndex != ArrayLengthUnset)
+        return "length-zero";
+      else if (fixedSize != ArrayNotFixed)
+        return "fixed-zero";
+      else
+        return "zero";
+    }
+
+    if (lengthParamIndex != ArrayLengthUnset)
+      return "length";
+    else if (fixedSize != ArrayNotFixed)
+      return "fixed";
+    else
+      return "unknown";
+  }
+
+  /**
    * Update unresolved flags and add/remove to/from Defs.unresolvedTypes as appropriate.
    * Params:
    *   flags = The unresolved flags to set or clear
@@ -197,7 +226,7 @@ class TypeNode : Base
         if (auto pLength = "length" in arr.attrs)
           lengthParamIndex = (*pLength).to!int;
         else
-          lengthParamIndex = ArrayNoLengthParam;
+          lengthParamIndex = ArrayLengthUnset;
       }
 
       if (_dType == "GLib.Array")
@@ -222,7 +251,7 @@ class TypeNode : Base
         if (outRepo)
           return t[1];
 
-        warning("Repo '" ~ t[0].to!string ~ "' not found for type '" ~ type.to!string ~ "'");
+        warnWithLoc(__FILE__, __LINE__, null, "Repo '" ~ t[0].to!string ~ "' not found for type '" ~ type.to!string ~ "'");
         type = t[1];
       }
 
@@ -253,13 +282,13 @@ class TypeNode : Base
     if (containerType == ContainerType.Array)
     {
       if (elemTypes.length == 1 && elemTypes[0].cType == "char"
-        && lengthParamIndex != ArrayNoLengthParam) // If this is a char[] array, set element type to Basic char, but FuncWriter will consider it as a string.
+        && lengthParamIndex != ArrayLengthUnset) // If this is a char[] array, set element type to Basic char, but FuncWriter will consider it as a string.
       {
         elemTypes[0].kind = TypeKind.Basic;
         elemTypes[0]._dType = "char";
         info("'" ~ fullName.to!string ~ "' using string for char array with length");
       }
-      else if (lengthParamIndex != ArrayNoLengthParam && !elemTypes.empty && elemTypes[0]._dType == "ubyte"
+      else if (lengthParamIndex != ArrayLengthUnset && !elemTypes.empty && elemTypes[0]._dType == "ubyte"
         && cType.stripConst.startsWith("char")) // If there is a length parameter, dType is "ubyte", and array type uses char - treat it as a ubyte array
       {
         info("Changing array cType from " ~ cType.to!string ~ " to ubyte for " ~ fullName.to!string);
@@ -339,7 +368,7 @@ class TypeNode : Base
         }
       }
 
-      with (TypeKind) if (!kind.among(Unknown, Basic, String, Namespace))
+      with (TypeKind) if (!kind.among(Unknown, Basic, String, Pointer, Namespace))
         _dType = _dType.normalizeDTypeName(); // Strip _t from type name and CamelCase it
 
       if (auto st = cast(Structure)typeObject) // Should only be set to a Structure for non-struct dependencies
@@ -379,6 +408,9 @@ class TypeNode : Base
     if (unresolvedFlags)
       throw new Exception("Unresolved type '" ~ fullName.to!string ~ "' (flags = " ~ unresolvedFlags.to!string ~ ")");
 
+    if (typeObject && typeObject.active != Active.Enabled)
+      throw new Exception("Resolved type '" ~ typeObject.fullName.to!string ~ "' is not active");
+
     foreach (typ; elemTypes)
       if (typ.containerType != ContainerType.None)
         throw new Exception("Nested container types not yet supported");
@@ -388,7 +420,7 @@ class TypeNode : Base
       if (elemTypes.empty)
         throw new Exception("Array type '" ~ cType.to!string ~ "' has no element type");
 
-      if (lengthParamIndex == ArrayNoLengthParam && fixedSize == ArrayNotFixed && !zeroTerminated)
+      if (lengthParamIndex == ArrayLengthUnset && fixedSize == ArrayNotFixed && !zeroTerminated)
       {
         if (Repo.suggestDefCmds)
           repo.suggestions["Set arrays to be zero-terminated=1"] ~= "set " ~ xmlSelector.to!string ~ (cast(Func)this
@@ -402,8 +434,8 @@ class TypeNode : Base
 
       if (cType.empty && fixedSize == 0) // No array C type and not fixed size?
       {
-        warning(xmlLocation ~ "No array c:type for array of D type '" ~ _dType.to!string ~ "' in '"
-            ~ fullName.to!string ~ "'");
+        warnWithLoc(__FILE__, __LINE__, xmlLocation, "No array c:type for array of D type '" ~ _dType.to!string ~ "' in '"
+          ~ fullName.to!string ~ "'");
         TypeNode.dumpSelectorOnWarning(this);
       }
 
@@ -422,12 +454,24 @@ class TypeNode : Base
             ~ elemTypes.length.to!string);
 
       if (elemTypes.length > reqElemTypes)
-        warning(xmlLocation ~ "Container '" ~ fullDType.to!string ~ "' has excess types");
+        warnWithLoc(__FILE__, __LINE__, xmlLocation, "Container '" ~ fullDType.to!string ~ "' has excess types");
 
-      foreach (type; elemTypes)
-        if (type.kind.among(TypeKind.Unknown, TypeKind.Namespace))
-          throw new Exception("unhandled container type kind '" ~ type.kind.to!string ~ "' for type '"
-              ~ fullDType.to!string ~ "'");
+      if (containerType == ContainerType.HashTable)
+      {
+        with (TypeKind) if (!elemTypes[0].kind.among(String, Pointer))
+          throw new Exception("Unsupported hash table key type " ~ elemTypes[0].dType.to!string ~ " ("
+            ~ elemTypes[0].kind.to!string ~ ")");
+
+        with (TypeKind) if (!elemTypes[1].kind.among(Object, Interface, String, Pointer))
+          throw new Exception("Unsupported hash table value type " ~ elemTypes[1].dType.to!string ~ " ("
+            ~ elemTypes[1].kind.to!string ~ ")");
+      }
+      else if (containerType != ContainerType.None)
+      {
+        with (TypeKind) if (elemTypes[0].kind.among(Unknown, Callback, Container, Opaque, Wrap, Namespace))
+          throw new Exception("Unsupported " ~ containerType.to!string ~ " container element type "
+            ~ elemTypes[0].dType.to!string ~ " (" ~ elemTypes[0].kind.to!string ~ ")");
+      }
     }
 
     if (containerType == ContainerType.None && kind != TypeKind.Namespace)
@@ -437,7 +481,7 @@ class TypeNode : Base
         auto parentTypeNode = cast(TypeNode)parent;
         if (!parentTypeNode || parentTypeNode.containerType != ContainerType.Array) // Warn if not an array container type (handled separately)
         {
-          warning(xmlLocation ~ "No c:type for D type '" ~ _dType.to!string ~ "' in '" ~ fullName.to!string ~ "'");
+          warnWithLoc(__FILE__, __LINE__, xmlLocation, "No c:type for D type '" ~ _dType.to!string ~ "' in '" ~ fullName.to!string ~ "'");
           dumpSelectorOnWarning(this);
         }
       }
@@ -448,7 +492,7 @@ class TypeNode : Base
 
       if (!elemTypes.empty)
       {
-        warning(xmlLocation ~ "Unexpected element type in unrecognized container '" ~ fullName.to!string ~ "'");
+        warnWithLoc(__FILE__, __LINE__, xmlLocation, "Unexpected element type in unrecognized container '" ~ fullName.to!string ~ "'");
         dumpSelectorOnWarning(this);
       }
     }
@@ -457,7 +501,7 @@ class TypeNode : Base
   static void dumpSelectorOnWarning(TypeNode node)
   {
     if (dumpSelectorWarnings)
-      writeln("//set " ~ node.xmlSelector);
+      writeln("//!set " ~ node.xmlSelector);
   }
 
   Repo typeRepo; /// Repo containing the dType (can be this.repo)
@@ -471,16 +515,19 @@ class TypeNode : Base
   Ownership ownership; /// Ownership of passed value (return values, parameters, and properties)
   ContainerType containerType; /// The type of container or None
   Param lengthParam; /// Set to a length parameter for arrays
+  ReturnValue lengthReturn; /// Set to length return value for arrays
   UnresolvedFlags unresolvedFlags; /// Flags of what type references are unresolved (0 if none)
   bool zeroTerminated; /// true if array is zero terminated
   int fixedSize = ArrayNotFixed; /// Non-zero if array is a fixed size
-  int lengthParamIndex = ArrayNoLengthParam; /// >= 0 if a length parameter index is set
+  int lengthParamIndex = ArrayLengthUnset; /// >= 0 if a length parameter index is set, -1 (ArrayLengthReturn) if length is return value (GIR non-standard extension)
 
   static bool dumpSelectorWarnings; /// Enable dumping of XML selectors for warnings
 }
 
 enum ArrayNotFixed = 0; /// Value for TypeNode.fixedSize which indicates size is not fixed
-enum ArrayNoLengthParam = -1; /// Value used for TypeNode.lengthParamIndex which indicates no length parameter
+
+enum ArrayLengthReturn = -1; /// Value used for TypeNode.lengthParamIndex which indicates no length parameter
+enum ArrayLengthUnset = -2; /// Value used for TypeNode.lengthParamIndex which indicates no length parameter
 
 /// Ownership transfer of a type
 enum Ownership
