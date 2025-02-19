@@ -240,7 +240,7 @@ final class Func : TypeNode
     {
       pa.fixup;
 
-      if (pa.isClosure)
+      if (pa.isClosure && funcType == FuncType.Callback)
         closureParam = pa;
     }
 
@@ -338,7 +338,7 @@ final class Func : TypeNode
       if (pa.isInstanceParam && pi != 0)
         disableFunc(__FILE__, __LINE__, "invalid additional instance param '" ~ pa.name.to!string ~ "'", pa);
 
-      if (pa.isClosure && pa != closureParam)
+      if (pa.isClosure && pa != closureParam && funcType == FuncType.Callback)
         disableFunc(__FILE__, __LINE__, "multiple closure parameters", pa);
 
       try
@@ -480,7 +480,7 @@ final class Func : TypeNode
   dstring cName; /// C type name (Gir c:identifier)
   ReturnValue returnVal; /// Return value type
   Param[] params; /// Parameters
-  Param closureParam; /// Closure data parameter or null
+  Param closureParam; /// Closure data parameter or null (Callback only)
   bool isCtor; /// Set for the primary constructor of an instance (not a Gir field)
   Func shadowedByFunc; /// Resolved function object for shadowedBy
   Func shadowsFunc; /// Resolved function object for shadows
