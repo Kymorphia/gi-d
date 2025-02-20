@@ -146,10 +146,7 @@ class SignalWriter
 
     final switch (param.kind) with (TypeKind)
     {
-      case Basic, BasicAlias:
-        addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
-        break;
-      case Enum, Flags:
+      case Basic, BasicAlias, Enum, Flags, Simple, Pointer, Opaque:
         addDeclParam(param.directionStr ~ param.dType ~ " " ~ param.dName);
         break;
       case String:
@@ -158,7 +155,7 @@ class SignalWriter
       case Wrap, Boxed, Reffed, Object, Interface:
         addDeclParam(param.dType ~ " " ~ param.dName);
         break;
-      case Simple, Pointer, Opaque, Callback, Unknown, Container, Namespace:
+      case Callback, Unknown, Container, Namespace:
         assert(0, "Unsupported signal parameter type '" ~ param.dType.to!string ~ "' (" ~ param.kind.to!string ~ ") for "
             ~ signal.fullName.to!string);
     }

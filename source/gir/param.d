@@ -201,8 +201,8 @@ final class Param : TypeNode
         throw new Exception("Signal array parameter element kind '" ~ kind.to!string ~ "' not supported");
 
       with(TypeKind) if (containerType == ContainerType.None
-          && kind.among(Simple, Pointer, Opaque, Callback, Unknown, Namespace))
-        throw new Exception("Signal parameter kind '" ~ kind.to!string ~ "' not supported");
+          && kind.among(Callback, Unknown, Namespace))
+        throw new Exception("Signal parameter '" ~ dType.to!string ~ "' with kind '" ~ kind.to!string ~ "' not supported");
 
       return;
     }
