@@ -432,9 +432,10 @@ class DelegWriter
       output ~= "return _retval;\n";
 
     output ~= "}\n";
-    output ~= "auto _" ~ delegParam.dName ~"CB = (" ~ delegParam.dName ~" is null) ? null : &_" ~ delegParam.dName ~"Callback;\n";
-    return output;
+    output ~= "auto _" ~ delegParam.dName ~ "CB = " ~ delegParam.dName ~ " ? &_" ~ delegParam.dName
+      ~ "Callback : null;\n";
 
+    return output;
   }
 
   Param delegParam; /// The parameter of the callback delegate
