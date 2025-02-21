@@ -353,8 +353,12 @@ class FuncWriter
         auto freezeDeleg = callbackParam.scope_ != ParamScope.Call;
 
         // Duplicate delegate to malloc heap memory and pin the context if not Call scope
-        preCall ~= "auto _" ~ callbackParam.dName ~ " = " ~ (freezeDeleg ? "freezeDelegate("d : ""d)
-          ~ "cast(void*)&" ~ callbackParam.dName ~ (freezeDeleg ? ");\n"d : ";\n"d);
+        if (freezeDeleg) 
+          preCall ~= "auto _" ~ callbackParam.dName ~" = (" ~ callbackParam.dName ~" is null) ? null : freezeDelegate(cast(void*)&" ~ callbackParam.dName ~");\n";
+        else 
+          preCall ~= "auto _" ~ callbackParam.dName ~" = (" ~ callbackParam.dName ~" is null) ? null : cast(void*)&(" ~ callbackParam.dName ~");\n";
+
+        
         addCallParam("_" ~ callbackParam.dName); // Pass the duplicate pinned delegate as closure data
       }
       else
@@ -364,8 +368,11 @@ class FuncWriter
     }
     else if (param.isDestroy) // Destroy callback?
     {
+      auto callbackParam = func.params[param.callbackIndex];
+      preCall ~= "GDestroyNotify _" ~ callbackParam.dName ~"DestroyCB = (" ~ callbackParam.dName ~" is null) ? null : &thawDelegate;\n";
+
       if (param.callbackIndex != NoCallback)
-        addCallParam("&thawDelegate"); // Free the duplicate delegate and unpin the context
+        addCallParam("_" ~ callbackParam.dName ~"DestroyCB"); // Free the duplicate delegate and unpin the context
       else
         addCallParam("null"); // Pass null if there is no callback associated with this destroy notify
 
@@ -417,7 +424,7 @@ class FuncWriter
         if (cast(Func)param.typeObjectRoot)
         {
           addDeclParam(param.dType ~ " " ~ param.dName);
-          addCallParam("&_" ~ param.dName ~ "Callback");
+          addCallParam("_" ~ param.dName ~ "CB");
         }
         else
         {
